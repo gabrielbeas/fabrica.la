@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="La Fábrica de Chocolate — Plaza comercial con carácter. Locales únicos, comunidad creativa.">
+<meta name="description" content="La Fábrica de Chocolate — Locales únicos, comunidad creativa. Col. Americana, Guadalajara.">
 <meta property="og:title" content="La Fábrica de Chocolate">
-<meta property="og:description" content="Plaza comercial con carácter. Locales únicos, comunidad creativa.">
-<meta property="og:url" content="https://www.lafabdechoc.mx">
+<meta property="og:description" content="Locales únicos, comunidad creativa. Col. Americana, Guadalajara.">
+<meta property="og:url" content="https://fabrica.la">
 <title>La Fábrica de Chocolate</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -593,9 +593,6 @@
     aspect-ratio: 4/3;
     background: #EDEAE4;
     border: 1px solid rgba(0,0,0,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     position: relative;
     overflow: hidden;
   }
@@ -800,6 +797,103 @@
     color: var(--smoke);
   }
 
+  /* ── CARRUSEL ── */
+  .carousel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  }
+
+  .carousel-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .slide-caption {
+    position: absolute;
+    bottom: 3.5rem;
+    left: 1.5rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.3);
+    padding: 0.3rem 0.7rem;
+    backdrop-filter: blur(4px);
+  }
+
+  .carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    line-height: 1;
+  }
+
+  .carousel-btn:hover { background: rgba(255,255,255,0.3); }
+  .carousel-prev { left: 1rem; }
+  .carousel-next { right: 1rem; }
+
+  .carousel-dots {
+    position: absolute;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.4rem;
+    z-index: 10;
+  }
+
+  .dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+    padding: 0;
+  }
+
+  .dot.active {
+    background: #ffffff;
+    transform: scale(1.3);
+  }
+
   @media (max-width: 768px) {
     nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
@@ -844,7 +938,7 @@
 <!-- HERO -->
 <section class="hero" style="padding: 0;">
   <div class="hero-text">
-    <p class="hero-eyebrow">Plaza Comercial · Col. Americana · Guadalajara</p>
+    <p class="hero-eyebrow">Col. Americana · Guadalajara</p>
     <h1 class="hero-title">
       LA FÁBRICA<br>
       <span class="hero-title-l2">DE CHOCOLATE</span>
@@ -859,12 +953,48 @@
   </div>
 
   <div class="hero-visual">
-    <div class="hero-visual-inner">
-      <div class="big-type">LA<br>FÁB</div>
+    <!-- CARRUSEL -->
+    <div class="carousel">
+      <div class="carousel-track">
+        <div class="carousel-slide active">
+          <img src="img/1_EXTERIOR.png" alt="La Fábrica de Chocolate — Vista exterior nocturna" loading="eager">
+          <div class="slide-caption">Vista exterior</div>
+        </div>
+        <div class="carousel-slide">
+          <img src="img/2_EXTERIOR.png" alt="La Fábrica de Chocolate — Fachada de día" loading="lazy">
+          <div class="slide-caption">Fachada</div>
+        </div>
+        <div class="carousel-slide">
+          <img src="img/3_ESPACIO_CENTRAL.png" alt="La Fábrica de Chocolate — Espacio central" loading="lazy">
+          <div class="slide-caption">Espacio central</div>
+        </div>
+        <div class="carousel-slide">
+          <img src="img/4_OFICINAS.png" alt="La Fábrica de Chocolate — Patio interior" loading="lazy">
+          <div class="slide-caption">Patio interior</div>
+        </div>
+        <div class="carousel-slide">
+          <img src="img/5_LOCALES_56.png" alt="La Fábrica de Chocolate — Locales" loading="lazy">
+          <div class="slide-caption">Locales</div>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <button class="carousel-btn carousel-prev" aria-label="Anterior">‹</button>
+      <button class="carousel-btn carousel-next" aria-label="Siguiente">›</button>
+
+      <!-- Dots -->
+      <div class="carousel-dots">
+        <button class="dot active" aria-label="Imagen 1"></button>
+        <button class="dot" aria-label="Imagen 2"></button>
+        <button class="dot" aria-label="Imagen 3"></button>
+        <button class="dot" aria-label="Imagen 4"></button>
+        <button class="dot" aria-label="Imagen 5"></button>
+      </div>
     </div>
+
     <div class="hero-coords">
       20°40′N 103°22′O<br>
-      lafabdechoc.mx
+      fabrica.la
     </div>
   </div>
 
@@ -879,24 +1009,19 @@
   <div class="ticker-inner">
     <span class="ticker-item">La Fábrica de Chocolate</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Plaza Comercial</span>
-    <span class="ticker-item ticker-dot">·</span>
     <span class="ticker-item">Locales Disponibles</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">info@lafabdechoc.mx</span>
+    <span class="ticker-item">info@fabrica.la</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Ciudad de México</span>
+    <span class="ticker-item">Col. Americana · Guadalajara</span>
     <span class="ticker-item ticker-dot">·</span>
-    <!-- duplicate for seamless loop -->
     <span class="ticker-item">La Fábrica de Chocolate</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Plaza Comercial</span>
-    <span class="ticker-item ticker-dot">·</span>
     <span class="ticker-item">Locales Disponibles</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">info@lafabdechoc.mx</span>
+    <span class="ticker-item">info@fabrica.la</span>
     <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Ciudad de México</span>
+    <span class="ticker-item">Col. Americana · Guadalajara</span>
     <span class="ticker-item ticker-dot">·</span>
   </div>
 </div>
@@ -910,7 +1035,7 @@
       con <em>alma</em>
     </h2>
     <p class="about-body">
-      La Fábrica de Chocolate es una plaza comercial con historia y carácter propio. 
+      La Fábrica de Chocolate es un espacio con historia y carácter propio. 
       Aquí no hay franquicias genéricas ni pasillos fríos — hay negocios reales, 
       personas con propósito y una comunidad que se construye día con día.
     </p>
@@ -1065,19 +1190,22 @@
       </div>
       <div class="detail-row">
         <strong>Contacto</strong>
-        <span>info@lafabdechoc.mx</span>
+        <span>info@fabrica.la</span>
       </div>
     </div>
   </div>
   <div>
     <div class="map-block">
-      <div class="map-grid"></div>
-      <div class="map-pin">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/>
-        </svg>
-        <p>La Fábrica de Chocolate</p>
-      </div>
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d929.9!2d-103.3680421!3d20.6784277!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8428ae1af82ca431%3A0x93dd5e87a573f47c!2sLa%20F%C3%A1brica%20De%20Chocolate!5e0!3m2!1ses!2smx!4v1"
+        width="100%"
+        height="100%"
+        style="border:0; position:absolute; inset:0;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="La Fábrica de Chocolate en Google Maps">
+      </iframe>
       <a class="map-cta" href="https://maps.app.goo.gl/iufqpmsJL8w2L9Gj9" target="_blank" rel="noopener">
         Ver en Google Maps →
       </a>
@@ -1099,21 +1227,21 @@
       o simplemente quieres saber más? Escríbenos.
     </p>
     <div class="contact-links">
-      <a href="mailto:info@lafabdechoc.mx" class="contact-link">
+      <a href="mailto:info@fabrica.la" class="contact-link">
         <div class="icon">
           <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
           </svg>
         </div>
-        info@lafabdechoc.mx
+        info@fabrica.la
       </a>
-      <a href="https://www.lafabdechoc.mx" class="contact-link">
+      <a href="https://fabrica.la" class="contact-link">
         <div class="icon">
           <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
           </svg>
         </div>
-        lafabdechoc.mx
+        fabrica.la
       </a>
     </div>
   </div>
@@ -1143,8 +1271,8 @@
     <span style="display:block; font-family:'DM Sans','Arial Black',sans-serif; font-weight:900; font-size:1rem; letter-spacing:-0.02em; text-transform:uppercase; color:var(--cream);">La Fábrica</span>
     <span style="display:block; font-family:'DM Sans','Arial Black',sans-serif; font-weight:900; font-size:0.65rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--cream-dim);">de Chocolate</span>
   </div>
-  <p class="footer-copy">Plaza comercial · Ciudad de México<br>© 2025 La Fábrica de Chocolate</p>
-  <p class="footer-domain">lafabdechoc.mx</p>
+  <p class="footer-copy">Col. Americana · Guadalajara<br>© 2025 La Fábrica de Chocolate</p>
+  <p class="footer-domain">fabrica.la</p>
 </footer>
 
 <script>
@@ -1156,12 +1284,53 @@
       alert('Por favor completa todos los campos.');
       return;
     }
-    const subject = encodeURIComponent('Mensaje desde lafabdechoc.mx — ' + nombre);
+    const subject = encodeURIComponent('Mensaje desde fabrica.la — ' + nombre);
     const body = encodeURIComponent('Nombre: ' + nombre + '\nCorreo: ' + email + '\n\n' + mensaje);
-    window.location.href = 'mailto:info@lafabdechoc.mx?subject=' + subject + '&body=' + body;
+    window.location.href = 'mailto:info@fabrica.la?subject=' + subject + '&body=' + body;
   }
 
-  // Smooth nav highlight
+  // ── CARRUSEL ──
+  const slides = document.querySelectorAll('.carousel-slide');
+  const dots = document.querySelectorAll('.dot');
+  let current = 0;
+  let autoTimer;
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  function startAuto() {
+    autoTimer = setInterval(next, 4000);
+  }
+
+  function resetAuto() {
+    clearInterval(autoTimer);
+    startAuto();
+  }
+
+  document.querySelector('.carousel-next').addEventListener('click', () => { next(); resetAuto(); });
+  document.querySelector('.carousel-prev').addEventListener('click', () => { prev(); resetAuto(); });
+  dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); resetAuto(); }));
+
+  // Swipe en móvil
+  const carousel = document.querySelector('.carousel');
+  let touchStartX = 0;
+  carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  carousel.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); resetAuto(); }
+  }, { passive: true });
+
+  startAuto();
+
+  // ── NAV HIGHLIGHT ──
   const sections = document.querySelectorAll('section[id], div[id]');
   const navLinks = document.querySelectorAll('.nav-links a');
   const obs = new IntersectionObserver(entries => {
