@@ -11,7 +11,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&family=Roboto:ital,wght@0,300;0,400;0,700;0,900;1,300&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -33,8 +33,8 @@
 
   body {
     background: var(--espresso);
-    color: var(--cream);
-    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    font-family: 'Roboto', sans-serif;
     font-size: 15px;
     line-height: 1.6;
     overflow-x: hidden;
@@ -47,7 +47,7 @@
   nav {
     position: fixed;
     top: 0; left: 0; right: 0;
-    z-index: 100;
+    z-index: 550;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -92,7 +92,7 @@
     transition: width 0.3s;
   }
 
-  .nav-links a:hover { color: var(--gold-light); }
+  .nav-links a:hover { color: var(--gold); }
   .nav-links a:hover::after { width: 100%; }
 
   .nav-cta {
@@ -114,8 +114,20 @@
     min-height: 100vh;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
     position: relative;
     overflow: hidden;
+  }
+
+  .carousel-controls-bar {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 0.8rem 0;
+    background: #ffffff;
+    border-top: 1px solid rgba(0,0,0,0.06);
   }
 
   .hero-text {
@@ -161,10 +173,10 @@
   }
 
   .hero-sub {
-    font-family: 'Fraunces', serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1.3rem;
     font-style: italic;
-    font-weight: 300;
+    font-weight: 400;
     color: var(--cream-dim);
     margin: 1.5rem 0 2.5rem;
     max-width: 28rem;
@@ -222,7 +234,7 @@
   }
 
   .big-type {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(7rem, 14vw, 14rem);
     font-weight: 900;
     line-height: 0.85;
@@ -335,11 +347,8 @@
 
   /* ── ABOUT ── */
   .about {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-    background: #F7F4EF;
+    display: block;
+    background: #ffffff;
     border-top: 1px solid rgba(0,0,0,0.06);
     border-bottom: 1px solid rgba(0,0,0,0.06);
   }
@@ -347,7 +356,7 @@
   .about-left { padding-top: 1rem; }
 
   .about-title {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(3rem, 5vw, 5rem);
     font-weight: 900;
     line-height: 0.95;
@@ -357,14 +366,14 @@
   }
 
   .about-title em {
-    color: var(--gold);
+    color: #111111;
     font-style: normal;
   }
 
   .about-body {
-    font-family: 'Fraunces', serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1.1rem;
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.8;
     color: #444444;
     max-width: 34rem;
@@ -386,7 +395,7 @@
   }
 
   .stat-num {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 2.8rem;
     font-weight: 900;
     color: var(--gold);
@@ -408,7 +417,7 @@
   }
 
   .manifesto {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(2rem, 3.5vw, 3.5rem);
     font-weight: 900;
     line-height: 1.05;
@@ -420,11 +429,32 @@
     text-transform: uppercase;
   }
 
+  .ig-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: #111111;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .ig-link:hover { color: var(--gold); }
+
+  .ig-link svg {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
   /* ── TENANTS ── */
   .tenants { background: #ffffff; }
 
   .tenants-title {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(3rem, 5vw, 4.5rem);
     font-weight: 900;
     color: #111111;
@@ -435,43 +465,57 @@
 
   .tenants-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 1px;
     background: rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.06);
   }
 
   .tenant-card {
-    display: block;
+    display: grid;
+    grid-template-columns: 220px 1fr;
     background: #ffffff;
-    padding: 2.5rem 2rem;
     position: relative;
     overflow: hidden;
     transition: background 0.35s;
     cursor: pointer;
     text-decoration: none;
     color: inherit;
+    min-height: 220px;
   }
 
-  .tenant-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 2px;
-    height: 0;
-    background: #111111;
-    transition: height 0.35s;
-  }
+  .tenant-card:hover { background: #ffffff; }
 
-  .tenant-card:hover { background: #F7F4EF; }
-  .tenant-card:hover::before { height: 100%; }
-
-  .tenant-num {
-    font-size: 0.55rem;
-    letter-spacing: 0.3em;
-    color: var(--smoke);
-    margin-bottom: 1rem;
+  .tenant-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     display: block;
+    background: #E8E4DE;
+    min-height: 220px;
+  }
+
+  .tenant-img-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    background: #E8E4DE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tenant-img-placeholder svg {
+    width: 2rem;
+    fill: rgba(0,0,0,0.15);
+  }
+
+  .tenant-body {
+    padding: 1.8rem 1.8rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .tenant-type {
@@ -479,64 +523,149 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     display: block;
   }
 
   .tenant-name {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
-    font-size: 1.8rem;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.3rem;
     font-weight: 900;
     color: #111111;
-    line-height: 1;
-    margin-bottom: 1rem;
+    line-height: 1.05;
+    margin-bottom: 0.8rem;
     text-transform: uppercase;
   }
 
   .tenant-desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #555555;
     line-height: 1.7;
+    flex: 1;
   }
 
-  .tenant-tag {
-    display: inline-block;
-    margin-top: 1.5rem;
-    font-size: 0.55rem;
+  .tenant-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.2rem;
+    font-size: 0.65rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--smoke);
-    border: 1px solid rgba(0,0,0,0.15);
-    padding: 0.3rem 0.8rem;
+    color: #111111;
+    font-weight: 700;
+    transition: color 0.2s;
   }
 
+  .tenant-card:hover .tenant-more { color: var(--gold); }
+
   .tenant-placeholder {
-    border: 1px dashed rgba(0,0,0,0.12);
-    background: transparent !important;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
+    background: #ffffff !important;
+    opacity: 0.5;
+  }
+
+  .tenant-placeholder .tenant-img-placeholder {
+    background: #EDEAE4;
   }
 
   .tenant-placeholder .tenant-name {
-    color: rgba(0,0,0,0.15);
+    color: rgba(0,0,0,0.2);
   }
 
-  .tenant-placeholder::after {
-    content: 'Espacio disponible';
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
+  /* ── HISTORIA ── */
+  .historia {
+    background: #ffffff;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .historia-inner {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .historia-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    font-weight: 900;
+    color: #111111;
+    line-height: 0.95;
     text-transform: uppercase;
-    color: rgba(0,0,0,0.25);
-    border: 1px solid rgba(0,0,0,0.12);
-    padding: 0.3rem 0.8rem;
-    margin-top: 1.5rem;
+  }
+
+  .historia-title em {
+    color: #111111;
+    font-style: normal;
+  }
+
+  .historia-body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #444444;
+    line-height: 1.8;
+  }
+
+  /* ── CARRUSEL HISTÓRICO ── */
+  .hc-track { position: relative; width: 100%; height: 100%; }
+
+  .hc-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .hc-slide.active { opacity: 1; }
+
+  .hc-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .hc-dots { bottom: 1.2rem; }
+
+  .hc-ctrl {
+    background: none;
+    border: 1px solid rgba(0,0,0,0.2);
+    color: #111111;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .hc-dots .dot {
+    background: rgba(0,0,0,0.2);
+  }
+
+  .hc-dots .dot.active {
+    background: #111111;
+  }
+
+  /* Los dots del hero también van sobre fondo claro */
+  .carousel-controls-bar .dot {
+    background: rgba(0,0,0,0.2);
+  }
+
+  .carousel-controls-bar .dot.active {
+    background: #111111;
+    transform: scale(1.3);
   }
 
   /* ── LOCATION ── */
   .location {
-    background: #F7F4EF;
+    background: #ffffff;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4rem;
@@ -545,7 +674,7 @@
   }
 
   .location-title {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(2.5rem, 4vw, 4rem);
     font-weight: 900;
     color: #111111;
@@ -555,9 +684,9 @@
   }
 
   .location-body {
-    font-family: 'Fraunces', serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1rem;
-    font-weight: 300;
+    font-weight: 400;
     color: #444444;
     line-height: 1.8;
     margin-bottom: 2rem;
@@ -642,8 +771,8 @@
 
   /* ── CONTACT ── */
   .contact {
-    background: #111111;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    background: #ffffff;
+    border-top: 1px solid rgba(0,0,0,0.06);
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4rem;
@@ -651,28 +780,22 @@
   }
 
   .contact-title {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
-    font-size: clamp(3rem, 5vw, 5rem);
+    font-family: 'Roboto', sans-serif;
+    font-size: clamp(2.5rem, 4vw, 4rem);
     font-weight: 900;
     line-height: 0.92;
-    color: #ffffff;
+    color: #111111;
     margin-bottom: 2rem;
     text-transform: uppercase;
   }
 
   .contact-body {
-    font-family: 'Fraunces', serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1rem;
-    font-weight: 300;
-    color: rgba(255,255,255,0.6);
+    font-weight: 400;
+    color: #444444;
     line-height: 1.8;
     margin-bottom: 2.5rem;
-  }
-
-  .contact-links {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
   }
 
   .contact-link {
@@ -681,17 +804,17 @@
     gap: 1rem;
     font-size: 0.75rem;
     letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.6);
+    color: #444444;
     transition: color 0.2s;
     text-decoration: none;
   }
 
-  .contact-link:hover { color: #ffffff; }
+  .contact-link:hover { color: #111111; }
 
   .contact-link .icon {
     width: 2rem;
     height: 2rem;
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(0,0,0,0.15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -700,11 +823,17 @@
   }
 
   .contact-link:hover .icon {
-    border-color: rgba(255,255,255,0.5);
-    background: rgba(255,255,255,0.05);
+    border-color: #111111;
+    background: rgba(0,0,0,0.04);
   }
 
-  .contact-icon-svg { width: 14px; fill: #ffffff; }
+  .contact-icon-svg { width: 14px; fill: #111111; }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
 
   .contact-form-side {
     padding-top: 1rem;
@@ -729,7 +858,7 @@
     border: none;
     border-bottom: 1px solid rgba(255,255,255,0.15);
     color: #ffffff;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Roboto', sans-serif;
     font-size: 0.85rem;
     padding: 0.6rem 0;
     outline: none;
@@ -756,7 +885,7 @@
     color: #111111;
     border: none;
     padding: 0.9rem 2rem;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Roboto', sans-serif;
     font-size: 0.7rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -770,9 +899,45 @@
     background: rgba(255,255,255,0.85);
   }
 
+  .form-group-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #111111;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    color: #444444;
+    cursor: pointer;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #111111;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   /* ── RENTAR ── */
   .rentar {
-    background: #F7F4EF;
+    background: #ffffff;
     border-top: 1px solid rgba(0,0,0,0.06);
   }
 
@@ -784,7 +949,7 @@
   }
 
   .rentar-title {
-    font-family: 'DM Sans', 'Arial Black', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: clamp(2.5rem, 4vw, 4rem);
     font-weight: 900;
     color: #111111;
@@ -827,9 +992,9 @@
   }
 
   .rentar-body {
-    font-family: 'Fraunces', serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 1rem;
-    font-weight: 300;
+    font-weight: 400;
     color: #444444;
     line-height: 1.8;
   }
@@ -838,6 +1003,36 @@
     background: #ffffff;
     border: 1px solid rgba(0,0,0,0.06);
     padding: 2.5rem;
+  }
+
+  .rentar-right .form-label {
+    color: #888888;
+  }
+
+  .rentar-right .form-input,
+  .rentar-right .form-textarea {
+    color: #111111;
+    border-bottom: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .rentar-right .form-input:focus,
+  .rentar-right .form-textarea:focus {
+    border-bottom-color: #111111;
+  }
+
+  .rentar-right .form-input::placeholder,
+  .rentar-right .form-textarea::placeholder {
+    color: #aaaaaa;
+    font-style: italic;
+  }
+
+  .rentar-right .form-submit {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  .rentar-right .form-submit:hover {
+    background: #333333;
   }
 
   .form-section-title {
@@ -982,27 +1177,100 @@
     transform: scale(1.3);
   }
 
+  .hamburger { display: none; }
+
+  .nav-ig {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-ig svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: #111111;
+    transition: opacity 0.2s;
+  }
+
+  .nav-ig:hover svg { opacity: 0.6; }
+
+  .nav-ig-mobile { display: none; }
+
   @media (max-width: 768px) {
-    nav { padding: 1rem 1.5rem; }
+    .nav-ig-mobile { display: flex; align-items: center; }
+    .hamburger { display: flex; }
     .nav-links { display: none; }
+    .nav-links.open {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(20,18,16,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+    .nav-links.open li a {
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      color: #ffffff;
+    }
+    .nav-links.open .nav-cta {
+      font-size: 1rem !important;
+      border: 1px solid rgba(255,255,255,0.4) !important;
+      color: #ffffff !important;
+    }
+    .nav-links.open .nav-cta:hover {
+      background: #ffffff !important;
+      color: #111111 !important;
+    }
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      z-index: 600;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: #111111;
+      transition: all 0.3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); background: #ffffff; }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: #ffffff; }
 
-    .hero { grid-template-columns: 1fr; min-height: auto; }
-
-    .hero-text { padding: 7rem 1.5rem 3rem; }
-
-    .hero-visual { display: none; }
+    .hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto; min-height: auto; }
+    .hero-text { padding: 7rem 1.5rem 2rem; }
+    .hero-visual {
+      display: block;
+      height: 60vw;
+      min-height: 240px;
+    }
+    .carousel-controls-bar {
+      grid-column: 1;
+    }
 
     section { padding: 4rem 1.5rem; }
 
-    .about, .location, .contact {
+    .about, .location, .contact, .historia-inner {
       grid-template-columns: 1fr;
       gap: 2rem;
     }
+    .tenants-grid { grid-template-columns: 1fr; }
+    .tenant-card { grid-template-columns: 120px 1fr; min-height: 140px; }
+    .tenant-img-placeholder { min-height: 140px; }
 
     .about-stats { grid-template-columns: repeat(3, 1fr); }
-
     .manifesto { display: none; }
-
     footer { flex-direction: column; gap: 1rem; text-align: center; }
     .rentar-inner { grid-template-columns: 1fr; gap: 2rem; }
     .rentar-form-grid { grid-template-columns: 1fr; }
@@ -1012,18 +1280,46 @@
 </head>
 <body>
 
+<!-- OVERLAY MENÚ MÓVIL -->
+<div id="menu-overlay" style="display:none; position:fixed; inset:0; background:rgba(20,18,16,0.35); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); z-index:900; flex-direction:column; align-items:center; justify-content:center; gap:2rem;">
+  <a href="#" onclick="closeMenu()" style="font-size:1.4rem; letter-spacing:0.1em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700;">La Fábrica</a>
+  <a href="#locales" onclick="closeMenu()" style="font-size:1.4rem; letter-spacing:0.1em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700;">Comunidad</a>
+  <a href="#historia" onclick="closeMenu()" style="font-size:1.4rem; letter-spacing:0.1em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700;">Historia</a>
+  <a href="#ubicacion" onclick="closeMenu()" style="font-size:1.4rem; letter-spacing:0.1em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700;">Ubicación</a>
+  <a href="#contacto" onclick="closeMenu()" style="font-size:1.4rem; letter-spacing:0.1em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700;">Contacto</a>
+  <a href="#rentar" onclick="closeMenu()" style="font-size:1rem; letter-spacing:0.15em; color:#ffffff; text-decoration:none; text-transform:uppercase; font-family:'Roboto',sans-serif; font-weight:700; border:1px solid rgba(255,255,255,0.4); padding:0.7rem 1.8rem; margin-top:0.5rem;">Renta</a>
+</div>
+
 <!-- NAV -->
 <nav>
-  <a href="#" class="nav-logo">
-    <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" class="nav-logo-img">
-  </a>
-  <ul class="nav-links">
-    <li><a href="#plaza">La Plaza</a></li>
-    <li><a href="#locales">Locales</a></li>
-    <li><a href="#ubicacion">Ubicación</a></li>
-    <li><a href="#contacto">Contacto</a></li>
-    <li><a href="#rentar" class="nav-cta">Rentar un local</a></li>
+  <div style="display:flex; align-items:center; gap:1.2rem;">
+    <a href="#" class="nav-logo">
+      <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" class="nav-logo-img">
+    </a>
+  </div>
+  <ul class="nav-links" id="nav-links">
+    <li>
+      <a href="https://www.instagram.com/lafabrica.gdl" target="_blank" rel="noopener" class="nav-ig" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      </a>
+    </li>
+    <li><a href="#" onclick="closeMenu()">La Fábrica</a></li>
+    <li><a href="#locales" onclick="closeMenu()">Comunidad</a></li>
+    <li><a href="#historia" onclick="closeMenu()">Historia</a></li>
+    <li><a href="#ubicacion" onclick="closeMenu()">Ubicación</a></li>
+    <li><a href="#contacto" onclick="closeMenu()">Contacto</a></li>
+    <li><a href="#rentar" class="nav-cta" onclick="closeMenu()">Renta</a></li>
   </ul>
+  <div style="display:flex; align-items:center; gap:1rem;">
+    <a href="https://www.instagram.com/lafabrica.gdl" target="_blank" rel="noopener" class="nav-ig-mobile" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:1.3rem; height:1.3rem; fill:#111111;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    </a>
+    <button class="hamburger" id="hamburger" aria-label="Menú" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -1033,9 +1329,7 @@
     <h1 class="hero-title">
       <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" class="hero-logo-img">
     </h1>
-    <a href="#locales" class="hero-cta">
-      Ver locales <span class="arrow">→</span>
-    </a>
+    <p style="font-size:0.65rem; letter-spacing:0.15em; color:#111111; margin-top:0.8rem; font-family:'DM Mono',monospace;">20°40′42″N 103°22′05″O</p>
   </div>
 
   <div class="hero-visual">
@@ -1044,78 +1338,42 @@
       <div class="carousel-track">
         <div class="carousel-slide active">
           <img src="img/1 EXTERIOR.jpg" alt="La Fábrica de Chocolate — Vista exterior nocturna" loading="eager">
-          <div class="slide-caption">Vista exterior</div>
         </div>
         <div class="carousel-slide">
           <img src="img/2 EXTERIOR.jpg" alt="La Fábrica de Chocolate — Fachada de día" loading="lazy">
-          <div class="slide-caption">Fachada</div>
         </div>
         <div class="carousel-slide">
           <img src="img/3 ESPACIO CENTRAL.jpg" alt="La Fábrica de Chocolate — Espacio central" loading="lazy">
-          <div class="slide-caption">Espacio central</div>
         </div>
         <div class="carousel-slide">
           <img src="img/4 OFICINAS.jpg" alt="La Fábrica de Chocolate — Patio interior" loading="lazy">
-          <div class="slide-caption">Patio interior</div>
         </div>
         <div class="carousel-slide">
           <img src="img/5 LOCALES 56.jpg" alt="La Fábrica de Chocolate — Locales" loading="lazy">
-          <div class="slide-caption">Locales</div>
         </div>
       </div>
-
-      <!-- Controles -->
-      <button class="carousel-btn carousel-prev" aria-label="Anterior">‹</button>
-      <button class="carousel-btn carousel-next" aria-label="Siguiente">›</button>
-
-      <!-- Dots -->
-      <div class="carousel-dots">
-        <button class="dot active" aria-label="Imagen 1"></button>
-        <button class="dot" aria-label="Imagen 2"></button>
-        <button class="dot" aria-label="Imagen 3"></button>
-        <button class="dot" aria-label="Imagen 4"></button>
-        <button class="dot" aria-label="Imagen 5"></button>
-      </div>
-    </div>
-
-    <div class="hero-coords">
-      20°40′N 103°22′O<br>
-      fabrica.la
     </div>
   </div>
 
-  <div class="hero-scroll-hint">
-    <span class="scroll-line"></span>
-    Scroll
+  <!-- Controles carrusel FUERA de la imagen -->
+  <div class="carousel-controls-bar">
+    <button class="hc-ctrl" onclick="prevSlide()" aria-label="Anterior">‹</button>
+    <div style="display:flex; gap:0.4rem;">
+      <button class="dot active hc-dots" aria-label="Imagen 1" onclick="goToSlide(0)"></button>
+      <button class="dot hc-dots" aria-label="Imagen 2" onclick="goToSlide(1)"></button>
+      <button class="dot hc-dots" aria-label="Imagen 3" onclick="goToSlide(2)"></button>
+      <button class="dot hc-dots" aria-label="Imagen 4" onclick="goToSlide(3)"></button>
+      <button class="dot hc-dots" aria-label="Imagen 5" onclick="goToSlide(4)"></button>
+    </div>
+    <button class="hc-ctrl" onclick="nextSlide()" aria-label="Siguiente">›</button>
   </div>
+
 </section>
-
-<!-- TICKER -->
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-inner">
-    <span class="ticker-item">La Fábrica de Chocolate</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Locales Disponibles</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">info@fabrica.la</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Col. Americana · Guadalajara</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">La Fábrica de Chocolate</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Locales Disponibles</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">info@fabrica.la</span>
-    <span class="ticker-item ticker-dot">·</span>
-    <span class="ticker-item">Col. Americana · Guadalajara</span>
-    <span class="ticker-item ticker-dot">·</span>
-  </div>
-</div>
 
 <!-- ABOUT -->
 <section class="about" id="plaza">
   <div class="about-left">
-    <p class="section-label">La Plaza</p>
+    
     <h2 class="about-title">
       Aquí converge<br>
       la <em>ciudad</em>
@@ -1136,155 +1394,287 @@
       "Nunca demoler, nunca quitar o reemplazar, siempre agregar, transformar y reutilizar."<br>
       <span style="font-style: normal; font-size: 0.75rem; letter-spacing: 0.1em;">— Lacaton &amp; Vassal, Premio Pritzker 2021</span>
     </p>
-    <div class="about-stats">
-      <div class="stat">
-        <span class="stat-num">+10</span>
-        <span class="stat-label">Años<br>operando</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">12</span>
-        <span class="stat-label">Locales<br>en plaza</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">100%</span>
-        <span class="stat-label">Negocios<br>locales</span>
-      </div>
-    </div>
+    <a href="https://www.instagram.com/lafabrica.gdl" target="_blank" rel="noopener" class="ig-link">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      @lafabrica.gdl
+    </a>
   </div>
   <div class="about-right">
-    <div class="manifesto" aria-hidden="true">
-      NEGOCIOS<br>
-      CON<br>
-      HISTORIA.<br>
-      ESPACIOS<br>
-      CON<br>
-      CARÁCTER.
-    </div>
   </div>
 </section>
 
 <!-- TENANTS -->
 <section class="tenants" id="locales">
-  <p class="section-label">Locales</p>
-  <h2 class="tenants-title">Quiénes<br>están aquí</h2>
+  
+  <h2 class="tenants-title">La<br>comunidad</h2>
   <div class="tenants-grid">
 
     <!-- Estéreo Americana -->
     <a class="tenant-card" href="https://www.instagram.com/estereoamericana" target="_blank" rel="noopener">
-      <span class="tenant-num">01</span>
-      <span class="tenant-type">Dining Bar · Soul Food</span>
-      <h3 class="tenant-name">Estéreo Americana</h3>
-      <p class="tenant-desc">Bar gastronómico con cocina de comfort food y cócteles creativos. Música en vivo, ambiente íntimo. Chef Álvaro Betancourt.</p>
-      <span class="tenant-tag">Mié–Jue 6pm–1am · Vie–Sáb 2pm–2am · Dom 2pm–7pm</span>
+      <img src="img/estereo.jpg" alt="Estéreo Americana" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Dining Bar · Soul Food</span>
+          <h3 class="tenant-name">Estéreo Americana</h3>
+          <p class="tenant-desc">Bar gastronómico con cocina de comfort food y cócteles creativos. Música en vivo, ambiente íntimo. Chef Álvaro Betancourt.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Pilea Nitro -->
     <a class="tenant-card" href="https://www.instagram.com/pilea.nitro" target="_blank" rel="noopener">
-      <span class="tenant-num">02</span>
-      <span class="tenant-type">Café de Especialidad</span>
-      <h3 class="tenant-name">Pilea Nitro Coffee Bar</h3>
-      <p class="tenant-desc">Barra de cold brew nitrogenado, desayunos, brunch y panadería artesanal. Una de las mejores barras de café de la Americana.</p>
-      <span class="tenant-tag">Lun–Sáb 9am–8pm · Dom 8am–2pm</span>
+      <img src="img/pilea.jpg" alt="Pilea Nitro Coffee Bar" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Café de Especialidad</span>
+          <h3 class="tenant-name">Pilea Nitro Coffee Bar</h3>
+          <p class="tenant-desc">Barra de cold brew nitrogenado, desayunos, brunch y panadería artesanal. Una de las mejores barras de café de la Americana.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Boku -->
     <a class="tenant-card" href="https://www.instagram.com/eatbokumx" target="_blank" rel="noopener">
-      <span class="tenant-num">03</span>
-      <span class="tenant-type">Izakaya Japonesa</span>
-      <h3 class="tenant-name">Boku</h3>
-      <p class="tenant-desc">El primer bar de takoyaki y highball en Guadalajara. Cocina japonesa auténtica, dueño japonés certificado como Maestro Tequilero. Diseño ganador de premios internacionales.</p>
-      <span class="tenant-tag">Takoyaki &amp; Highball</span>
+      <img src="img/boku.jpg" alt="Boku" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Izakaya Japonesa</span>
+          <h3 class="tenant-name">Boku</h3>
+          <p class="tenant-desc">El primer bar de takoyaki y highball en Guadalajara. Cocina japonesa auténtica, dueño japonés certificado como Maestro Tequilero.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Mexa Design -->
     <a class="tenant-card" href="https://www.instagram.com/mexadesign" target="_blank" rel="noopener">
-      <span class="tenant-num">04</span>
-      <span class="tenant-type">Diseño &amp; Mobiliario</span>
-      <h3 class="tenant-name">Mexa Design</h3>
-      <p class="tenant-desc">Muebles y accesorios hecho a mano en Guadalajara. Modern Mexico — piezas de diseño con identidad local y envíos a todo el mundo.</p>
-      <span class="tenant-tag">Full handcrafted in GDL</span>
+      <img src="img/mexa.jpg" alt="Mexa Design" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Diseño &amp; Mobiliario</span>
+          <h3 class="tenant-name">Mexa Design</h3>
+          <p class="tenant-desc">Muebles y accesorios hecho a mano en Guadalajara. Modern Mexico — piezas de diseño con identidad local y envíos a todo el mundo.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Efímero Lab -->
     <a class="tenant-card" href="https://www.instagram.com/efimero_lab" target="_blank" rel="noopener">
-      <span class="tenant-num">05</span>
-      <span class="tenant-type">Club Bar Sensorial</span>
-      <h3 class="tenant-name">Efímero Lab</h3>
-      <p class="tenant-desc">Laboratorio sensorial y cocktail bar de atmósfera mística. Espacio bellamente decorado, cócteles memorables y lecturas de tarot en noches especiales.</p>
-      <span class="tenant-tag">Mié–Dom 6pm–12am</span>
+      <img src="img/efimero.jpg" alt="Efímero Lab" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Club Bar Sensorial</span>
+          <h3 class="tenant-name">Efímero Lab</h3>
+          <p class="tenant-desc">Laboratorio sensorial y cocktail bar de atmósfera mística. Cócteles memorables y lecturas de tarot en noches especiales.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Xaneque -->
     <a class="tenant-card" href="https://www.instagram.com/xanequegdl" target="_blank" rel="noopener">
-      <span class="tenant-num">06</span>
-      <span class="tenant-type">Cocktail Room</span>
-      <h3 class="tenant-name">Xaneque</h3>
-      <p class="tenant-desc">Bar de cócteles de autor con identidad propia. Ambiente íntimo y propuesta de mixología cuidada en el corazón de la Fábrica.</p>
-      <span class="tenant-tag">Lun–Sáb desde las 4 pm</span>
+      <img src="img/xaneque.jpg" alt="Xaneque" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Cocktail Room</span>
+          <h3 class="tenant-name">Xaneque</h3>
+          <p class="tenant-desc">Bar de cócteles de autor con identidad propia. Ambiente íntimo y propuesta de mixología cuidada en el corazón de la Fábrica.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
-    <!-- En Crudo -->
+    <!-- Encrudo -->
     <a class="tenant-card" href="https://www.instagram.com/encrudo" target="_blank" rel="noopener">
-      <span class="tenant-num">07</span>
-      <span class="tenant-type">Diseño &amp; Objetos</span>
-      <h3 class="tenant-name">Encrudo</h3>
-      <p class="tenant-desc">Proyecto de diseño que trabaja con artesanos mexicanos para crear objetos de cerámica y materiales naturales. Piezas hechas a mano con técnicas tradicionales.</p>
-      <span class="tenant-tag">Artesanía · Cerámica · Diseño</span>
+      <img src="img/encrudo.jpg" alt="Encrudo" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Diseño &amp; Objetos</span>
+          <h3 class="tenant-name">Encrudo</h3>
+          <p class="tenant-desc">Proyecto de diseño que trabaja con artesanos mexicanos para crear objetos de cerámica y materiales naturales. Piezas hechas a mano con técnicas tradicionales.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Sarape Social -->
     <a class="tenant-card" href="https://www.instagram.com/sarapesocial" target="_blank" rel="noopener">
-      <span class="tenant-num">08</span>
-      <span class="tenant-type">Agencia · Innovación Social</span>
-      <h3 class="tenant-name">Sarape Social</h3>
-      <p class="tenant-desc">Agencia de marketing con causa. Fusionan creatividad, innovación y pensamiento ecosistémico para proyectos de responsabilidad social y regeneración. GDL · CDMX · Madrid · Guatemala.</p>
-      <span class="tenant-tag">¡Diseñemos un futuro más humano!</span>
+      <img src="img/sarapesocial.jpg" alt="Sarape Social" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Agencia · Innovación Social</span>
+          <h3 class="tenant-name">Sarape Social</h3>
+          <p class="tenant-desc">Agencia de marketing con causa. Creatividad, innovación y pensamiento ecosistémico para proyectos de responsabilidad social. GDL · CDMX · Madrid · Guatemala.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
     <!-- Semillero Estudios -->
     <a class="tenant-card" href="https://www.instagram.com/semillerostudios" target="_blank" rel="noopener">
-      <span class="tenant-num">09</span>
-      <span class="tenant-type">Música &amp; Sonido</span>
-      <h3 class="tenant-name">Semillero Estudios</h3>
-      <p class="tenant-desc">Estudio de composición musical, diseño sonoro y mezcla Dolby Atmos. El primero en Jalisco certificado en mezcla inmersiva. Proyectos de cine, TV, música y publicidad.</p>
-      <span class="tenant-tag">Dolby Atmos · Filmscore · Sound Design</span>
+      <img src="img/semillero.jpg" alt="Semillero Estudios" class="tenant-img">
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Música &amp; Sonido</span>
+          <h3 class="tenant-name">Semillero Estudios</h3>
+          <p class="tenant-desc">Estudio de composición musical, diseño sonoro y mezcla Dolby Atmos. El primero en Jalisco certificado en mezcla inmersiva.</p>
+        </div>
+        <span class="tenant-more">Ver más →</span>
+      </div>
     </a>
 
-    <!-- Placeholder -->
+    <!-- Próximamente -->
     <div class="tenant-card tenant-placeholder">
-      <span class="tenant-num">10</span>
-      <span class="tenant-type" style="color: rgba(200,146,42,0.25);">Tu negocio aquí</span>
-      <h3 class="tenant-name">—</h3>
+      <div class="tenant-img-placeholder">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      </div>
+      <div class="tenant-body">
+        <div>
+          <span class="tenant-type">Próximamente</span>
+          <h3 class="tenant-name" style="color:rgba(0,0,0,0.2); font-size:1.1rem;">Aquí algo se está<br>cocinando</h3>
+        </div>
+      </div>
     </div>
 
   </div>
+</section>
+<section class="historia" id="historia">
+  
+  <div class="historia-inner">
+    <div class="historia-left">
+      <h2 class="historia-title">Del pasado<br>al <em>presente</em></h2>
+    </div>
+    <div class="historia-right">
+      <p class="historia-body">
+        Este edificio fue durante décadas una fábrica de chocolate real — uno de esos espacios industriales que dieron carácter a la Colonia Americana y a Santa Tere. Con el tiempo la producción se fue, pero los muros, la estructura y el espíritu permanecieron.
+      </p>
+      <p class="historia-body" style="margin-top: 1rem;">
+        Hoy lo que fue una línea de producción se convierte en una comunidad de negocios, cultura y vida urbana. Sin demoler nada. Sin borrar nada. Transformando lo que ya existía en algo nuevo.
+      </p>
+      <p class="historia-body" style="margin-top: 1rem; font-style: italic; color: var(--smoke);">
+        — Texto placeholder. Agrega aquí la historia real del edificio.
+      </p>
+    </div>
+  </div>
 
-  <p style="margin-top: 2rem; font-size: 0.7rem; color: var(--smoke); letter-spacing: 0.1em;">
-    ¿Tienes un negocio? <a href="#contacto" style="color: var(--gold); text-decoration: underline; text-underline-offset: 3px;">Platícanos →</a>
-  </p>
+  <!-- Carrusel histórico -->
+  <div style="margin-top: 3rem; margin-left: -3rem; margin-right: -3rem;">
+    <div class="historia-carousel" style="position: relative; overflow: hidden; aspect-ratio: 2/1;">
+      <div class="hc-track">
+        <div class="hc-slide active"><img src="img/lfdc0.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+        <div class="hc-slide"><img src="img/lfdc1.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+        <div class="hc-slide"><img src="img/lfdc2.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+        <div class="hc-slide"><img src="img/lfdc3.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+        <div class="hc-slide"><img src="img/lfdc4.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+        <div class="hc-slide"><img src="img/lfdc5.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>
+      </div>
+    </div>
+    <!-- Controles FUERA de la imagen -->
+    <div style="display:flex; align-items:center; justify-content:center; gap:1.5rem; padding:0.8rem 3rem; background:#ffffff;">
+      <button class="hc-ctrl" onclick="hcPrev()" aria-label="Anterior">‹</button>
+      <div class="carousel-dots hc-dots" style="position:static; transform:none;">
+        <button class="dot active" onclick="hcGoTo(0)"></button>
+        <button class="dot" onclick="hcGoTo(1)"></button>
+        <button class="dot" onclick="hcGoTo(2)"></button>
+        <button class="dot" onclick="hcGoTo(3)"></button>
+        <button class="dot" onclick="hcGoTo(4)"></button>
+        <button class="dot" onclick="hcGoTo(5)"></button>
+      </div>
+      <button class="hc-ctrl" onclick="hcNext()" aria-label="Siguiente">›</button>
+    </div>
+  </div>
+</section>
+
+<!-- RENTAR -->
+<section class="rentar" id="rentar">
+  <div class="rentar-inner" style="grid-template-columns: 1fr; max-width: 48rem;">
+    <div class="rentar-left">
+      <h2 class="rentar-title">¿Te interesa<br>rentar?</h2>
+      <div class="disponibilidad" style="margin-bottom: 1.5rem;">
+        <div class="dot-status rojo"></div>
+        <span class="disponibilidad-label">Sin disponibilidad</span>
+      </div>
+      <p class="rentar-body">
+        Por ahora todos los espacios están ocupados. Sin embargo nos encanta escuchar de nuevos proyectos para cuando algo se desocupe.
+      </p>
+      <p class="rentar-body" style="margin-top: 1rem;">
+        <a href="mailto:info@fabrica.la" style="color:#111111; font-weight:700; text-decoration:underline; text-underline-offset:3px;">¡Escríbenos!</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contacto">
+  <div>
+    <h2 class="contact-title">
+      Contáctanos
+    </h2>
+    <div class="contact-links">
+      <a href="https://www.instagram.com/lafabrica.gdl" target="_blank" rel="noopener" class="contact-link">
+        <div class="icon">
+          <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+        </div>
+        @lafabrica.gdl
+      </a>
+      <a href="mailto:info@fabrica.la" class="contact-link">
+        <div class="icon">
+          <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+          </svg>
+        </div>
+        info@fabrica.la
+      </a>
+      <a href="https://fabrica.la" class="contact-link">
+        <div class="icon">
+          <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </div>
+        fabrica.la
+      </a>
+    </div>
+  </div>
 </section>
 
 <!-- LOCATION -->
 <section class="location" id="ubicacion">
   <div>
-    <p class="section-label">Ubicación</p>
     <h2 class="location-title">
-      Dónde<br>
-      encontrarnos
+      Visítanos
     </h2>
     <p class="location-body">
-      Ubicados en el corazón de la ciudad, con acceso sencillo desde transporte público 
-      y amplias opciones de estacionamiento cercano.
+      Priv. Andrés Terán 31, en la frontera entre la Colonia Americana y Santa Tere. Accesible en bici, camión y tren ligero.
     </p>
     <div class="location-details">
+      <div class="detail-row">
+        <strong>Contacto</strong>
+        <span><strong style="color:#111111;">info@fabrica.la</strong></span>
+      </div>
       <div class="detail-row">
         <strong>Dirección</strong>
         <span>Priv. Andrés Terán 31, Ladrón de Guevara<br>Col. Americana, Guadalajara, Jalisco</span>
       </div>
+      <hr style="border:none; border-top:1px solid rgba(0,0,0,0.1); margin:1rem 0;">
+      <p style="font-size:0.6rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); margin-bottom:0.8rem; font-weight:700;">Cómo llegar</p>
       <div class="detail-row">
-        <strong>Contacto</strong>
-        <span>info@fabrica.la</span>
+        <strong>MiBici</strong>
+        <span>Estación GDL-019 — Juan Manuel y Andrés Terán<br>A unos pasos de la entrada principal</span>
       </div>
+      <div class="detail-row">
+        <strong>Camión</strong>
+        <span>Rutas C54 · C79 · T06 · T08<br>Parada: Andrés Terán</span>
+      </div>
+      <div class="detail-row">
+        <strong>Tren Ligero</strong>
+        <span>Líneas TL-1 y TL-2<br>Estación Juárez — 5 min caminando</span>
+      </div>
+      <p style="font-size:0.75rem; color:#111111; margin-top:0.5rem;"><strong>No contamos con estacionamiento</strong></p>
     </div>
   </div>
   <div>
@@ -1306,107 +1696,10 @@
   </div>
 </section>
 
-<!-- CONTACT -->
-<section class="contact" id="contacto">
-  <div>
-    <p class="section-label">Contacto</p>
-    <h2 class="contact-title">
-      Hablemos<br>
-      de tu<br>
-      local
-    </h2>
-    <p class="contact-body">
-      ¿Buscas un espacio para tu negocio, tienes preguntas sobre la plaza, 
-      o simplemente quieres saber más? Escríbenos.
-    </p>
-    <div class="contact-links">
-      <a href="mailto:info@fabrica.la" class="contact-link">
-        <div class="icon">
-          <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-          </svg>
-        </div>
-        info@fabrica.la
-      </a>
-      <a href="https://fabrica.la" class="contact-link">
-        <div class="icon">
-          <svg class="contact-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          </svg>
-        </div>
-        fabrica.la
-      </a>
-    </div>
-  </div>
-
-  <div class="contact-form-side">
-    <div class="form-group">
-      <label class="form-label" for="nombre">Nombre</label>
-      <input class="form-input" type="text" id="nombre" placeholder="Tu nombre completo">
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="email">Correo electrónico</label>
-      <input class="form-input" type="email" id="email" placeholder="correo@ejemplo.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="mensaje">Mensaje</label>
-      <textarea class="form-textarea" id="mensaje" placeholder="Cuéntanos sobre tu negocio o tu consulta..."></textarea>
-    </div>
-    <button class="form-submit" onclick="handleSubmit()">
-      Enviar mensaje →
-    </button>
-  </div>
-</section>
-
-<!-- RENTAR -->
-<section class="rentar" id="rentar">
-  <p class="section-label">Rentar un local</p>
-  <div class="rentar-inner">
-    <div class="rentar-left">
-      <h2 class="rentar-title">¿Quieres<br>estar aquí?</h2>
-      <div class="disponibilidad">
-        <div class="dot-status rojo"></div>
-        <span class="disponibilidad-label">Sin disponibilidad</span>
-      </div>
-      <p class="rentar-body">Todos los locales están ocupados actualmente. Únete a nuestra lista de espera y te avisamos cuando haya un espacio disponible.</p>
-    </div>
-    <div class="rentar-right">
-      <p class="form-section-title">Lista de espera</p>
-      <p class="form-section-sub">Te contactamos cuando haya disponibilidad.</p>
-      <div class="rentar-form-grid">
-        <div class="form-group">
-          <label class="form-label" for="r-nombre">Nombre</label>
-          <input class="form-input" type="text" id="r-nombre" placeholder="Tu nombre completo">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="r-email">Correo</label>
-          <input class="form-input" type="email" id="r-email" placeholder="correo@ejemplo.com">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="r-tel">Teléfono</label>
-        <input class="form-input" type="tel" id="r-tel" placeholder="+52 33 ...">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="r-negocio">Tipo de negocio</label>
-        <input class="form-input" type="text" id="r-negocio" placeholder="¿Qué tipo de negocio tienes en mente?">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="r-mensaje">Mensaje (opcional)</label>
-        <textarea class="form-textarea" id="r-mensaje" placeholder="Cuéntanos más sobre tu proyecto..."></textarea>
-      </div>
-      <button class="form-submit" onclick="handleRentar()">
-        Unirme a la lista de espera →
-      </button>
-    </div>
-  </div>
-</section>
-
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">
-    <span style="display:block; font-family:'DM Sans','Arial Black',sans-serif; font-weight:900; font-size:1rem; letter-spacing:-0.02em; text-transform:uppercase; color:var(--cream);">La Fábrica</span>
-    <span style="display:block; font-family:'DM Sans','Arial Black',sans-serif; font-weight:900; font-size:0.65rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--cream-dim);">de Chocolate</span>
+    <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" style="height: 2rem; width: auto; display: block;">
   </div>
   <p class="footer-copy">Col. Americana · Guadalajara<br>© 2025 La Fábrica de Chocolate</p>
   <p class="footer-domain">fabrica.la</p>
@@ -1427,55 +1720,79 @@
   }
 
   function handleRentar() {
+    const proyecto = document.getElementById('r-proyecto').value.trim();
+    const giro = document.getElementById('r-giro').value.trim();
+    const descripcion = document.getElementById('r-descripcion').value.trim();
     const nombre = document.getElementById('r-nombre').value.trim();
-    const email = document.getElementById('r-email').value.trim();
     const tel = document.getElementById('r-tel').value.trim();
-    const negocio = document.getElementById('r-negocio').value.trim();
-    const mensaje = document.getElementById('r-mensaje').value.trim();
-    if (!nombre || !email || !tel || !negocio) {
-      alert('Por favor completa los campos requeridos.');
+    const email = document.getElementById('r-email').value.trim();
+    const uso = document.getElementById('r-uso').value.trim();
+    const enteraste = document.getElementById('r-enteraste').value.trim();
+    const porque = document.getElementById('r-porque').value.trim();
+    const comentarios = document.getElementById('r-comentarios').value.trim();
+    const metros = [...document.querySelectorAll('input[name="metros"]:checked')].map(c => c.value).join(', ');
+
+    if (!proyecto || !nombre || !email || !tel) {
+      alert('Por favor completa los campos requeridos: nombre del proyecto, nombre, teléfono y correo.');
       return;
     }
-    const subject = encodeURIComponent('Lista de espera — ' + nombre);
+
+    const subject = encodeURIComponent('Solicitud de local — ' + proyecto);
     const body = encodeURIComponent(
-      'Nombre: ' + nombre +
-      '\nCorreo: ' + email +
-      '\nTeléfono: ' + tel +
-      '\nTipo de negocio: ' + negocio +
-      '\n\n' + mensaje
+      '— SOBRE EL PROYECTO —\n' +
+      'Proyecto: ' + proyecto + '\n' +
+      'Giro: ' + giro + '\n' +
+      'Descripción: ' + descripcion + '\n\n' +
+      '— DATOS DE CONTACTO —\n' +
+      'Nombre: ' + nombre + '\n' +
+      'Teléfono: ' + tel + '\n' +
+      'Correo: ' + email + '\n\n' +
+      '— SOBRE EL ESPACIO —\n' +
+      'M² requeridos: ' + metros + '\n' +
+      'Uso del espacio: ' + uso + '\n\n' +
+      '— CONTEXTO —\n' +
+      '¿Cómo se enteró? ' + enteraste + '\n' +
+      '¿Por qué La Fábrica? ' + porque + '\n\n' +
+      '— COMENTARIOS ADICIONALES —\n' + comentarios
     );
     window.location.href = 'mailto:info@fabrica.la?subject=' + subject + '&body=' + body;
   }
 
-  // ── CARRUSEL ──
+  // ── HAMBURGER ──
+  function toggleMenu() {
+    const overlay = document.getElementById('menu-overlay');
+    const btn = document.getElementById('hamburger');
+    const isOpen = overlay.style.display === 'flex';
+    overlay.style.display = isOpen ? 'none' : 'flex';
+    btn.classList.toggle('open', !isOpen);
+  }
+
+  function closeMenu() {
+    const overlay = document.getElementById('menu-overlay');
+    const btn = document.getElementById('hamburger');
+    overlay.style.display = 'none';
+    btn.classList.remove('open');
+  }
+
+  // ── CARRUSEL HERO ──
   const slides = document.querySelectorAll('.carousel-slide');
-  const dots = document.querySelectorAll('.dot');
+  const heroDots = document.querySelectorAll('.hc-dots');
   let current = 0;
   let autoTimer;
 
-  function goTo(n) {
+  function goToSlide(n) {
     slides[current].classList.remove('active');
-    dots[current].classList.remove('active');
+    heroDots[current].classList.remove('active');
     current = (n + slides.length) % slides.length;
     slides[current].classList.add('active');
-    dots[current].classList.add('active');
+    heroDots[current].classList.add('active');
   }
 
-  function next() { goTo(current + 1); }
-  function prev() { goTo(current - 1); }
+  function nextSlide() { goToSlide(current + 1); resetAuto(); }
+  function prevSlide() { goToSlide(current - 1); resetAuto(); }
 
-  function startAuto() {
-    autoTimer = setInterval(next, 4000);
-  }
-
-  function resetAuto() {
-    clearInterval(autoTimer);
-    startAuto();
-  }
-
-  document.querySelector('.carousel-next').addEventListener('click', () => { next(); resetAuto(); });
-  document.querySelector('.carousel-prev').addEventListener('click', () => { prev(); resetAuto(); });
-  dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); resetAuto(); }));
+  function startAuto() { autoTimer = setInterval(() => goToSlide(current + 1), 4000); }
+  function resetAuto() { clearInterval(autoTimer); startAuto(); }
 
   // Swipe en móvil
   const carousel = document.querySelector('.carousel');
@@ -1483,10 +1800,37 @@
   carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
   carousel.addEventListener('touchend', e => {
     const diff = touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); resetAuto(); }
+    if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
   }, { passive: true });
 
   startAuto();
+
+  // ── CARRUSEL HISTÓRICO ──
+  const hcSlides = document.querySelectorAll('.hc-slide');
+  const hcDots = document.querySelectorAll('.hc-dots .dot');
+  let hcCurrent = 0;
+
+  function hcGoTo(n) {
+    hcSlides[hcCurrent].classList.remove('active');
+    hcDots[hcCurrent].classList.remove('active');
+    hcCurrent = (n + hcSlides.length) % hcSlides.length;
+    hcSlides[hcCurrent].classList.add('active');
+    hcDots[hcCurrent].classList.add('active');
+  }
+
+  function hcNext() { hcGoTo(hcCurrent + 1); }
+  function hcPrev() { hcGoTo(hcCurrent - 1); }
+
+  // Swipe táctil
+  const hcEl = document.querySelector('.historia-carousel');
+  let hcTouchX = 0;
+  hcEl.addEventListener('touchstart', e => { hcTouchX = e.touches[0].clientX; }, { passive: true });
+  hcEl.addEventListener('touchend', e => {
+    const diff = hcTouchX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) diff > 0 ? hcNext() : hcPrev();
+  }, { passive: true });
+
+  setInterval(hcNext, 5000);
 
   // ── NAV HIGHLIGHT ──
   const sections = document.querySelectorAll('section[id], div[id]');
@@ -1496,7 +1840,7 @@
       if (entry.isIntersecting) {
         navLinks.forEach(l => l.style.color = '');
         const active = document.querySelector('.nav-links a[href="#' + entry.target.id + '"]');
-        if (active) active.style.color = 'var(--gold-light)';
+        if (active) active.style.color = 'var(--gold)';
       }
     });
   }, { threshold: 0.4 });
