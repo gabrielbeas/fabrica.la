@@ -1748,37 +1748,6 @@
     btn.classList.remove('open');
   }
 
-  // ── CARRUSEL HERO ──
-  const slides = document.querySelectorAll('.carousel-slide');
-  const heroDots = document.querySelectorAll('.hc-dots');
-  let current = 0;
-  let autoTimer;
-
-  function goToSlide(n) {
-    slides[current].classList.remove('active');
-    heroDots[current].classList.remove('active');
-    current = (n + slides.length) % slides.length;
-    slides[current].classList.add('active');
-    heroDots[current].classList.add('active');
-  }
-
-  function nextSlide() { goToSlide(current + 1); resetAuto(); }
-  function prevSlide() { goToSlide(current - 1); resetAuto(); }
-
-  function startAuto() { autoTimer = setInterval(() => goToSlide(current + 1), 4000); }
-  function resetAuto() { clearInterval(autoTimer); startAuto(); }
-
-  // Swipe en móvil
-  const carousel = document.querySelector('.carousel');
-  let touchStartX = 0;
-  carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-  carousel.addEventListener('touchend', e => {
-    const diff = touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
-  }, { passive: true });
-
-  startAuto();
-
   // ── CARRUSEL HISTÓRICO ──
   const hcSlides = document.querySelectorAll('.hc-slide');
   const hcDots = document.querySelectorAll('.hc-dots .dot');
@@ -1786,10 +1755,10 @@
 
   function hcGoTo(n) {
     hcSlides[hcCurrent].classList.remove('active');
-    hcDots[hcCurrent].classList.remove('active');
+    if (hcDots[hcCurrent]) hcDots[hcCurrent].classList.remove('active');
     hcCurrent = (n + hcSlides.length) % hcSlides.length;
     hcSlides[hcCurrent].classList.add('active');
-    hcDots[hcCurrent].classList.add('active');
+    if (hcDots[hcCurrent]) hcDots[hcCurrent].classList.add('active');
   }
 
   function hcNext() { hcGoTo(hcCurrent + 1); }
@@ -1797,12 +1766,14 @@
 
   // Swipe táctil
   const hcEl = document.querySelector('.historia-carousel');
-  let hcTouchX = 0;
-  hcEl.addEventListener('touchstart', e => { hcTouchX = e.touches[0].clientX; }, { passive: true });
-  hcEl.addEventListener('touchend', e => {
-    const diff = hcTouchX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) diff > 0 ? hcNext() : hcPrev();
-  }, { passive: true });
+  if (hcEl) {
+    let hcTouchX = 0;
+    hcEl.addEventListener('touchstart', e => { hcTouchX = e.touches[0].clientX; }, { passive: true });
+    hcEl.addEventListener('touchend', e => {
+      const diff = hcTouchX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) diff > 0 ? hcNext() : hcPrev();
+    }, { passive: true });
+  }
 
   setInterval(hcNext, 5000);
 
