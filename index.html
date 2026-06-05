@@ -1323,49 +1323,23 @@
 </nav>
 
 <!-- HERO -->
-<section class="hero" style="padding: 0;">
-  <div class="hero-text">
-    <p class="hero-eyebrow">Col. Americana · Guadalajara</p>
+<section class="hero" style="padding: 0; position: relative; min-height: 100vh; display: flex; align-items: flex-end; overflow: hidden;">
+
+  <!-- VIDEO DE FONDO -->
+  <video autoplay muted loop playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;">
+    <source src="img/lfdc v2.mp4" type="video/mp4">
+  </video>
+
+  <!-- OVERLAY oscuro para legibilidad del texto -->
+  <div style="position:absolute; inset:0; background:rgba(0,0,0,0.35); z-index:1;"></div>
+
+  <!-- CONTENIDO -->
+  <div class="hero-text" style="position:relative; z-index:2; padding: 4rem 3rem;">
+    <p class="hero-eyebrow" style="color:rgba(255,255,255,0.7);">Col. Americana · Guadalajara</p>
     <h1 class="hero-title">
-      <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" class="hero-logo-img">
+      <img src="img/LFdC LOGO.png" alt="La Fábrica de Chocolate" class="hero-logo-img" style="filter: brightness(0) invert(1);">
     </h1>
-    <p style="font-size:0.65rem; letter-spacing:0.15em; color:#111111; margin-top:0.8rem; font-family:'DM Mono',monospace;">20°40′42″N 103°22′05″O</p>
-  </div>
-
-  <div class="hero-visual">
-    <!-- CARRUSEL -->
-    <div class="carousel">
-      <div class="carousel-track">
-        <div class="carousel-slide active">
-          <img src="img/1 EXTERIOR.jpg" alt="La Fábrica de Chocolate — Vista exterior nocturna" loading="eager">
-        </div>
-        <div class="carousel-slide">
-          <img src="img/2 EXTERIOR.jpg" alt="La Fábrica de Chocolate — Fachada de día" loading="lazy">
-        </div>
-        <div class="carousel-slide">
-          <img src="img/3 ESPACIO CENTRAL.jpg" alt="La Fábrica de Chocolate — Espacio central" loading="lazy">
-        </div>
-        <div class="carousel-slide">
-          <img src="img/4 OFICINAS.jpg" alt="La Fábrica de Chocolate — Patio interior" loading="lazy">
-        </div>
-        <div class="carousel-slide">
-          <img src="img/5 LOCALES 56.jpg" alt="La Fábrica de Chocolate — Locales" loading="lazy">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Controles carrusel FUERA de la imagen -->
-  <div class="carousel-controls-bar">
-    <button class="hc-ctrl" onclick="prevSlide()" aria-label="Anterior">‹</button>
-    <div style="display:flex; gap:0.4rem;">
-      <button class="dot active hc-dots" aria-label="Imagen 1" onclick="goToSlide(0)"></button>
-      <button class="dot hc-dots" aria-label="Imagen 2" onclick="goToSlide(1)"></button>
-      <button class="dot hc-dots" aria-label="Imagen 3" onclick="goToSlide(2)"></button>
-      <button class="dot hc-dots" aria-label="Imagen 4" onclick="goToSlide(3)"></button>
-      <button class="dot hc-dots" aria-label="Imagen 5" onclick="goToSlide(4)"></button>
-    </div>
-    <button class="hc-ctrl" onclick="nextSlide()" aria-label="Siguiente">›</button>
+    <p style="font-size:0.65rem; letter-spacing:0.15em; color:rgba(255,255,255,0.6); margin-top:0.8rem; font-family:'DM Mono',monospace;">20°40′42″N 103°22′05″O</p>
   </div>
 
 </section>
