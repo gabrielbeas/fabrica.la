@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Espacio aéreo y regulación del vuelo libre en Jalisco — Club de Vuelo Libre de Jalisco">
+<title>Espacio Aéreo — Club de Vuelo Libre de Jalisco</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Roboto+Condensed:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --azul: #2B6CB0;
+    --azul-claro: #4A90D9;
+    --azul-cielo: #EBF4FF;
+    --amarillo: #F5C518;
+    --blanco: #FFFFFF;
+    --gris-oscuro: #1A202C;
+    --gris-medio: #4A5568;
+    --gris-claro: #F7FAFC;
+    --borde: rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--blanco);
+    color: var(--gris-oscuro);
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 2.5rem;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .nav-logo img { height: 2.4rem; width: auto; }
+
+  .nav-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .nav-logo-text .l1 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--azul);
+  }
+  .nav-logo-text .l2 {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gris-medio);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.8rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gris-medio);
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--azul); }
+  .nav-links a.active { color: var(--azul); border-bottom: 2px solid var(--azul); padding-bottom: 2px; }
+
+  .nav-links a.nav-sos,
+  #menu-overlay a.sos-mobile { color: var(--rojo, #C53030); }
+  .nav-links a.nav-sos:hover { color: #9B2C2C; }
+  .nav-links a.nav-sos.active { color: var(--rojo, #C53030); border-bottom-color: var(--rojo, #C53030); }
+  #menu-overlay a.sos-mobile { color: var(--amarillo); }
+
+  .nav-cta {
+    background: var(--amarillo);
+    color: var(--gris-oscuro) !important;
+    padding: 0.5rem 1.2rem;
+    font-weight: 700 !important;
+    transition: background 0.2s !important;
+  }
+  .nav-cta:hover { background: #e0b000 !important; }
+
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 600;
+    padding: 4px;
+  }
+  .hamburger span { display: block; width: 24px; height: 2px; background: var(--gris-oscuro); transition: all 0.3s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ── OVERLAY MÓVIL ── */
+  #menu-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43,108,176,0.95);
+    backdrop-filter: blur(20px);
+    z-index: 500;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+  #menu-overlay a {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+  #menu-overlay .cta-mobile {
+    background: var(--amarillo);
+    color: var(--gris-oscuro) !important;
+    padding: 0.8rem 2rem;
+    margin-top: 0.5rem;
+    font-size: 1.1rem !important;
+  }
+
+  /* ── HERO SUBPÁGINA ── */
+  .page-hero {
+    background: url('img/header.JPEG') center center / cover no-repeat;
+    padding: 7rem 2.5rem 3rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .page-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(43,108,176,0.6);
+  }
+
+  .page-hero .eyebrow,
+  .page-hero h1,
+  .page-hero p {
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-hero .eyebrow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--amarillo);
+    margin-bottom: 1rem;
+  }
+
+  .page-hero h1 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #ffffff;
+    line-height: 0.95;
+    margin-bottom: 1rem;
+  }
+
+  .page-hero p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.7);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ── CONTENIDO ── */
+  .page-content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 4rem 2.5rem;
+  }
+
+  /* ── BLOQUES DE INFORMACIÓN ── */
+  .info-block {
+    margin-bottom: 2rem;
+  }
+
+  .info-block-title {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gris-oscuro);
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--azul-claro);
+    display: inline-block;
+  }
+
+  .info-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .info-list li {
+    font-size: 0.9rem;
+    color: var(--gris-medio);
+    padding-left: 1.2rem;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .info-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--azul-claro);
+  }
+
+  .espacio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+    margin-top: 1rem;
+  }
+
+  .aviso-box {
+    background: var(--azul-cielo);
+    border-left: 4px solid var(--amarillo);
+    padding: 1.5rem 1.8rem;
+    margin-top: 3rem;
+  }
+
+  .aviso-box h3 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gris-oscuro);
+    margin-bottom: 0.6rem;
+  }
+
+  .aviso-box p {
+    font-size: 0.88rem;
+    color: var(--gris-medio);
+    line-height: 1.7;
+  }
+
+  /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
+  @media (max-width: 1100px) {
+    nav { padding: 0.9rem 1.5rem; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0.9rem 1.5rem; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .page-content { padding: 3rem 1.5rem; }
+    .espacio-grid { grid-template-columns: 1fr; gap: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- OVERLAY MÓVIL -->
+<div id="menu-overlay">
+  <a href="index.html" onclick="closeMenu()">Inicio</a>
+  <a href="index.html#pilotos" onclick="closeMenu()">Pilotos</a>
+  <a href="index.html#cuotas" onclick="closeMenu()">Cuotas</a>
+  <a href="meteorologia.html" onclick="closeMenu()">Meteorología</a>
+  <a href="despegues.html" onclick="closeMenu()">Despegues</a>
+  <a href="espacio-aereo.html" onclick="closeMenu()">Espacio Aéreo</a>
+  <a href="eventos.html" onclick="closeMenu()">Eventos</a>
+  <a href="nosotros.html" onclick="closeMenu()">Nosotros</a>
+  <a href="sos.html" onclick="closeMenu()" class="sos-mobile">🆘 SOS</a>
+  <a href="index.html#cuotas" onclick="closeMenu()" class="cta-mobile">Únete al Club</a>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <img src="img/logo-vlj.png" alt="Club de Vuelo Libre de Jalisco">
+    <div class="nav-logo-text">
+      <span class="l1">Club de Vuelo Libre de Jalisco</span>
+      <span class="l2">Desde 1978</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html#pilotos">Pilotos</a></li>
+    <li><a href="index.html#cuotas">Cuotas</a></li>
+    <li><a href="meteorologia.html">Meteorología</a></li>
+    <li><a href="despegues.html">Despegues</a></li>
+    <li><a href="espacio-aereo.html" class="active">Espacio Aéreo</a></li>
+    <li><a href="eventos.html">Eventos</a></li>
+    <li><a href="nosotros.html">Nosotros</a></li>
+    <li><a href="sos.html" class="nav-sos">SOS</a></li>
+    <li><a href="index.html#cuotas" class="nav-cta">Únete al Club</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menú" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<div class="page-hero">
+  <p class="eyebrow">Regulación · Jalisco</p>
+  <h1>Espacio Aéreo</h1>
+  <p>El vuelo libre en Jalisco opera en espacios aéreos no controlados. Es responsabilidad de cada piloto conocer las restricciones de la zona antes de despegar.</p>
+</div>
+
+<!-- CONTENIDO -->
+<div class="page-content">
+
+  <div class="espacio-grid">
+
+    <div class="info-block">
+      <h3 class="info-block-title">Aeropuerto GDL (MMGL)</h3>
+      <ul class="info-list">
+        <li>El aeropuerto internacional de Guadalajara tiene espacio aéreo controlado Clase C</li>
+        <li>Los sitios de vuelo en Tapalpa y sierra quedan fuera del área de influencia directa</li>
+        <li>Verificar NOTAM vigentes antes de cada vuelo</li>
+        <li>Sitios costeros: revisar zonas restringidas de Puerto Vallarta</li>
+      </ul>
+    </div>
+
+    <div class="info-block">
+      <h3 class="info-block-title">Marco legal en México</h3>
+      <ul class="info-list">
+        <li>Regulado por la Dirección General de Aeronáutica Civil (DGAC)</li>
+        <li>Licencia de piloto libre expedida por la FEHM</li>
+        <li>Seguro de responsabilidad civil obligatorio</li>
+        <li>Los drones y vehículos no tripulados requieren permisos adicionales</li>
+      </ul>
+    </div>
+
+    <div class="info-block">
+      <h3 class="info-block-title">Federación</h3>
+      <ul class="info-list">
+        <li>FEHM — Federación de Parapente y Ala Delta de México</li>
+        <li>Club de Vuelo Libre de Jalisco es asociación afiliada a la FEHM</li>
+        <li>La licencia FEHM es requerida para volar en sitios administrados</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="aviso-box">
+    <h3>Responsabilidad del piloto</h3>
+    <p>Esta página es una guía de referencia, no un documento oficial. Cada piloto es responsable de consultar la reglamentación vigente y los NOTAM aplicables antes de volar. Ante cualquier duda sobre una zona, contacta al piloto local de referencia del sitio o escríbenos a <a href="mailto:vuelolibrejalisco@gmail.com" style="color:var(--azul);text-decoration:underline;text-underline-offset:2px;">vuelolibrejalisco@gmail.com</a>.</p>
+  </div>
+
+</div>
+
+<script>
+  function toggleMenu() {
+    const overlay = document.getElementById('menu-overlay');
+    const btn = document.getElementById('hamburger');
+    const isOpen = overlay.style.display === 'flex';
+    overlay.style.display = isOpen ? 'none' : 'flex';
+    btn.classList.toggle('open', !isOpen);
+  }
+  function closeMenu() {
+    document.getElementById('menu-overlay').style.display = 'none';
+    document.getElementById('hamburger').classList.remove('open');
+  }
+</script>
+
+</body>
+</html>

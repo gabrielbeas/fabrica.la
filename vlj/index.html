@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Vuelo Libre Jalisco A.C. — Asociación de parapente y ala delta en Jalisco, México. Volamos desde 1978.">
-<meta property="og:title" content="Vuelo Libre Jalisco A.C.">
+<meta name="description" content="Club de Vuelo Libre de Jalisco — Asociación de parapente y ala delta en Jalisco, México. Volamos desde 1978.">
+<meta property="og:title" content="Club de Vuelo Libre de Jalisco">
 <meta property="og:description" content="Asociación de parapente y ala delta en Jalisco, México.">
 <meta property="og:url" content="https://www.vuelolibrejalisco.com">
-<title>Vuelo Libre Jalisco A.C.</title>
+<title>Club de Vuelo Libre de Jalisco</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,6 +106,12 @@
 
   .nav-links a:hover { color: var(--azul); }
 
+  .nav-links a.nav-sos,
+  #menu-overlay a.sos-mobile { color: var(--rojo, #C53030); }
+  .nav-links a.nav-sos:hover { color: #9B2C2C; }
+  .nav-links a.nav-sos.active { color: var(--rojo, #C53030); border-bottom-color: var(--rojo, #C53030); }
+  #menu-overlay a.sos-mobile { color: var(--amarillo); }
+
   .nav-cta {
     background: var(--amarillo);
     color: var(--gris-oscuro) !important;
@@ -184,18 +190,8 @@
   .hero-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(160deg, #2B6CB0 0%, #4A90D9 40%, #87CEEB 80%, #C8E8F8 100%);
+    background: url('img/header.JPEG') center center / cover no-repeat;
     z-index: 0;
-  }
-
-  /* Placeholder pattern que simula cielo/vuelo */
-  .hero-bg::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 70% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse at 30% 70%, rgba(43,108,176,0.3) 0%, transparent 50%);
   }
 
   .hero-img-placeholder {
@@ -341,6 +337,11 @@
   /* ── SECCIONES ── */
   section { padding: 5rem 2.5rem; }
 
+  .section-inner {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
   .section-eyebrow {
     font-size: 0.62rem;
     font-weight: 700;
@@ -371,22 +372,25 @@
     margin-bottom: 1.5rem;
   }
 
+  .section-eyebrow,
+  .section-title,
+  .section-body { max-width: 860px; }
+
   .section-body {
     font-size: 1rem;
     font-weight: 400;
     color: var(--gris-medio);
     line-height: 1.8;
-    max-width: 38rem;
   }
 
   /* ── METEOROLOGÍA (bloque en inicio) ── */
   .meteo-strip {
     background: var(--azul);
     padding: 2rem 2.5rem;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 1px;
-    background-color: rgba(255,255,255,0.15);
+    align-items: center;
   }
 
   .meteo-item {
@@ -397,9 +401,27 @@
     gap: 1.2rem;
     text-decoration: none;
     transition: background 0.2s;
+    width: 100%;
+    max-width: 860px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
 
   .meteo-item:hover { background: #1a5a9a; }
+
+  .meteo-mas {
+    display: block;
+    width: 100%;
+    max-width: 860px;
+    margin-top: 1.2rem;
+    text-align: right;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--amarillo);
+  }
+
+  .meteo-mas:hover { text-decoration: underline; text-underline-offset: 3px; }
 
   .meteo-icon {
     font-size: 1.8rem;
@@ -427,11 +449,13 @@
   /* ── CUOTAS ── */
   .cuotas { background: var(--gris-claro); }
 
-  .cuotas-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
+  .cuotas-inner,
+  .pilotos-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    max-width: 860px;
+    margin: 0 auto;
   }
 
   .cuotas-tabla {
@@ -544,11 +568,17 @@
 
   .despegues-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 1px;
     background: var(--borde);
     border: 1px solid var(--borde);
     margin-top: 3rem;
+    max-width: 860px;
+  }
+
+  .section-content {
+    max-width: 860px;
+    margin: 0 auto;
   }
 
   .despegue-card {
@@ -625,15 +655,111 @@
     margin-top: 0.5rem;
   }
 
-  /* ── VISITANTES ── */
-  .visitantes { background: var(--gris-claro); }
+  /* ── PILOTOS ── */
+  .pilotos { background: var(--blanco); }
 
-  .visitantes-inner {
+  .pilotos-inner {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 4rem;
     align-items: start;
   }
+
+  /* ── BIENVENIDA TRILINGÜE ── */
+  .bienvenida {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1rem;
+    margin: -0.6rem 0 1.6rem;
+  }
+
+  .bienvenida span {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    color: var(--azul-claro);
+  }
+
+  .bienvenida span.principal { color: var(--azul); }
+  .bienvenida .sep { color: var(--amarillo); }
+
+  /* ── AVISO DE RESPONSABILIDAD ── */
+  .responsabilidad {
+    background: var(--gris-claro);
+    border-left: 4px solid var(--azul);
+    padding: 2rem 2rem 2rem 1.8rem;
+    margin-top: 2.5rem;
+  }
+
+  .responsabilidad h3 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gris-oscuro);
+    margin-bottom: 1rem;
+  }
+
+  .responsabilidad p {
+    font-size: 0.92rem;
+    color: var(--gris-medio);
+    line-height: 1.75;
+    margin-bottom: 1rem;
+  }
+
+  .responsabilidad p:last-child { margin-bottom: 0; }
+  .responsabilidad .info-list { margin: 0 0 1.2rem; }
+  .responsabilidad .info-list li::before { color: var(--azul); }
+
+  /* ── SUBSECCIÓN: PILOTOS VISITANTES ── */
+  .visitantes-box {
+    max-width: 860px;
+    margin: 4rem auto 0;
+    background: var(--azul-cielo);
+    border-left: 4px solid var(--amarillo);
+    padding: 2.5rem 2rem;
+  }
+
+  .visitantes-box .eyebrow-mini {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--azul);
+    margin-bottom: 0.6rem;
+  }
+
+  .visitantes-box h3.visitantes-title {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--gris-oscuro);
+    margin-bottom: 0.8rem;
+  }
+
+  .visitantes-box > p.visitantes-body {
+    font-size: 0.95rem;
+    color: var(--gris-medio);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  .visitantes-box-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 2rem;
+  }
+
+  .visitantes-box-grid .info-block { margin-bottom: 0; }
+  .visitantes-box-grid .info-block-title { border-bottom-color: var(--amarillo); }
+  .visitantes-box-grid .info-list li::before { color: var(--azul); }
 
   .info-block {
     margin-bottom: 2rem;
@@ -675,6 +801,8 @@
   }
 
   /* SOS */
+  .pilotos > .sos-box { max-width: 860px; margin: 3rem auto 0; }
+
   .sos-box {
     background: #C53030;
     color: white;
@@ -700,184 +828,6 @@
     line-height: 1.6;
   }
 
-  /* ── METEOROLOGÍA SECCIÓN ── */
-  .meteorologia { background: var(--azul); }
-
-  .meteorologia .section-eyebrow::before { background: var(--amarillo); }
-  .meteorologia .section-eyebrow { color: var(--amarillo); }
-  .meteorologia .section-title { color: #ffffff; }
-  .meteorologia .section-body { color: rgba(255,255,255,0.7); }
-
-  .meteo-tools {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-top: 3rem;
-  }
-
-  .meteo-tool {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 1.8rem;
-    text-decoration: none;
-    color: white;
-    transition: background 0.2s;
-    display: block;
-  }
-
-  .meteo-tool:hover { background: rgba(255,255,255,0.2); }
-
-  .meteo-tool-icon { font-size: 2rem; margin-bottom: 0.8rem; }
-
-  .meteo-tool-name {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    margin-bottom: 0.4rem;
-  }
-
-  .meteo-tool-desc {
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.5;
-  }
-
-  .meteo-guia {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 2rem;
-    margin-top: 2rem;
-  }
-
-  .meteo-guia h3 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--amarillo);
-    margin-bottom: 1rem;
-  }
-
-  .meteo-guia-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-
-  .meteo-guia-item {
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.5;
-  }
-
-  .meteo-guia-item strong {
-    color: white;
-    display: block;
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 0.2rem;
-  }
-
-  /* ── ESPACIO AÉREO ── */
-  .espacio-aereo { background: var(--blanco); }
-
-  .espacio-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-  }
-
-  /* ── NOSOTROS ── */
-  .nosotros { background: var(--gris-claro); }
-
-  .nosotros-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-  }
-
-  .mision-vision {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .mv-block {
-    border-left: 3px solid var(--azul-claro);
-    padding-left: 1.5rem;
-  }
-
-  .mv-block h3 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 900;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--azul-claro);
-    margin-bottom: 0.6rem;
-  }
-
-  .mv-block p {
-    font-size: 0.9rem;
-    color: var(--gris-medio);
-    line-height: 1.7;
-  }
-
-  .estructura-comites {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.6rem;
-    margin-top: 1rem;
-  }
-
-  .comite-item {
-    font-size: 0.78rem;
-    color: var(--gris-medio);
-    padding: 0.6rem 0.8rem;
-    background: var(--blanco);
-    border: 1px solid var(--borde);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .comite-item::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--azul-claro);
-    flex-shrink: 0;
-  }
-
-  .proyectos-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-
-  .proyecto-item {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    font-size: 0.88rem;
-    color: var(--gris-medio);
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--borde);
-  }
-
-  .proyecto-item::before {
-    content: '→';
-    color: var(--amarillo);
-    font-weight: 700;
-  }
-
   /* ── FOOTER ── */
   footer {
     background: var(--gris-oscuro);
@@ -887,7 +837,7 @@
 
   .footer-inner {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 3rem;
     margin-bottom: 2.5rem;
   }
@@ -971,34 +921,11 @@
 
   .footer-social a:hover { color: white; }
 
-  /* ── EVENTOS ── */
-  .eventos { background: var(--blanco); }
-
-  .eventos-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-  }
-
-  .calendario-embed {
-    background: var(--gris-claro);
-    border: 1px solid var(--borde);
-    height: 350px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--gris-medio);
-    font-size: 0.82rem;
-    text-align: center;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .calendario-embed a {
-    color: var(--azul-claro);
-    text-decoration: underline;
-    font-size: 0.75rem;
+  /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
+  @media (max-width: 1100px) {
+    nav { padding: 0.9rem 1.5rem; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
   }
 
   /* ── RESPONSIVE ── */
@@ -1015,18 +942,16 @@
     .meteo-strip { grid-template-columns: 1fr; }
 
     .cuotas-inner,
-    .visitantes-inner,
-    .espacio-inner,
-    .nosotros-inner,
-    .eventos-inner { grid-template-columns: 1fr; gap: 2rem; }
+    .pilotos-inner { grid-template-columns: 1fr; gap: 2rem; }
 
-    .meteo-tools { grid-template-columns: 1fr; }
-    .meteo-guia-grid { grid-template-columns: 1fr; }
+    .responsabilidad { padding: 1.6rem 1.4rem; }
+    .visitantes-box { padding: 2rem 1.4rem; margin-top: 3rem; }
+    .visitantes-box-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+
 
     .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
     .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
 
-    .estructura-comites { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1035,31 +960,35 @@
 <!-- OVERLAY MÓVIL -->
 <div id="menu-overlay">
   <a href="#inicio" onclick="closeMenu()">Inicio</a>
+  <a href="#pilotos" onclick="closeMenu()">Pilotos</a>
   <a href="#cuotas" onclick="closeMenu()">Cuotas</a>
-  <a href="#visitantes" onclick="closeMenu()">Visitantes</a>
-  <a href="#meteorologia" onclick="closeMenu()">Meteorología</a>
-  <a href="#despegues" onclick="closeMenu()">Despegues</a>
-  <a href="#espacio-aereo" onclick="closeMenu()">Espacio Aéreo</a>
-  <a href="#nosotros" onclick="closeMenu()">Nosotros</a>
+  <a href="meteorologia.html" onclick="closeMenu()">Meteorología</a>
+  <a href="despegues.html" onclick="closeMenu()">Despegues</a>
+  <a href="espacio-aereo.html" onclick="closeMenu()">Espacio Aéreo</a>
+  <a href="eventos.html" onclick="closeMenu()">Eventos</a>
+  <a href="nosotros.html" onclick="closeMenu()">Nosotros</a>
+  <a href="sos.html" onclick="closeMenu()" class="sos-mobile">🆘 SOS</a>
   <a href="#cuotas" onclick="closeMenu()" class="cta-mobile">Únete al Club</a>
 </div>
 
 <!-- NAV -->
 <nav>
   <a href="#inicio" class="nav-logo">
-    <img src="img/logo-vlj.png" alt="Vuelo Libre Jalisco">
+    <img src="img/logo-vlj.png" alt="Club de Vuelo Libre de Jalisco">
     <div class="nav-logo-text">
-      <span class="l1">Vuelo Libre Jalisco</span>
-      <span class="l2">A.C. · Desde 1978</span>
+      <span class="l1">Club de Vuelo Libre de Jalisco</span>
+      <span class="l2">Desde 1978</span>
     </div>
   </a>
   <ul class="nav-links">
+    <li><a href="#pilotos">Pilotos</a></li>
     <li><a href="#cuotas">Cuotas</a></li>
-    <li><a href="#visitantes">Visitantes</a></li>
-    <li><a href="#meteorologia">Meteorología</a></li>
-    <li><a href="#despegues">Despegues</a></li>
-    <li><a href="#espacio-aereo">Espacio Aéreo</a></li>
-    <li><a href="#nosotros">Nosotros</a></li>
+    <li><a href="meteorologia.html">Meteorología</a></li>
+    <li><a href="despegues.html">Despegues</a></li>
+    <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
+    <li><a href="eventos.html">Eventos</a></li>
+    <li><a href="nosotros.html">Nosotros</a></li>
+    <li><a href="sos.html" class="nav-sos">SOS</a></li>
     <li><a href="#cuotas" class="nav-cta">Únete al Club</a></li>
   </ul>
   <button class="hamburger" id="hamburger" aria-label="Menú" onclick="toggleMenu()">
@@ -1092,7 +1021,7 @@
     </p>
     <div class="hero-btns">
       <a href="#cuotas" class="btn-primary">Únete al Club →</a>
-      <a href="#despegues" class="btn-secondary">Ver despegues</a>
+      <a href="despegues.html" class="btn-secondary">Ver despegues</a>
     </div>
   </div>
   <div class="hero-stats">
@@ -1130,7 +1059,84 @@
       <span class="meteo-name">Tapalpa #73067</span>
     </div>
   </a>
+  <a href="meteorologia.html" class="meteo-mas">Guía completa de meteorología →</a>
 </div>
+
+<!-- PILOTOS -->
+<section class="pilotos" id="pilotos">
+  <div class="pilotos-inner">
+    <div>
+      <p class="section-eyebrow">Comunidad</p>
+      <h2 class="section-title">Pilotos</h2>
+      <p class="bienvenida">
+        <span class="principal">Bienvenido</span>
+        <span class="sep">·</span>
+        <span>Welcome</span>
+        <span class="sep">·</span>
+        <span>Bienvenue</span>
+      </p>
+      <p class="section-body">Desde 1978 reunimos a quienes vuelan parapente y ala delta en Jalisco — desde las sierras de Tapalpa hasta la costa de Yelapa. Vueles con nosotros un solo día o muchos años, aquí encontrarás una comunidad organizada, sitios cuidados y gente dispuesta a compartir el cielo.</p>
+
+      <div class="responsabilidad">
+        <h3>Tu vuelo, tu responsabilidad</h3>
+        <p>Volar en Jalisco es un privilegio que compartimos con propietarios de terrenos, comunidades locales y otros usuarios del espacio aéreo. Por eso lo decimos de frente: cada piloto es responsable de conocer y respetar las reglas del sitio donde vuela.</p>
+        <ul class="info-list">
+          <li>Los procedimientos y restricciones de cada despegue</li>
+          <li>El espacio aéreo aplicable y los avisos vigentes</li>
+          <li>Las zonas de aterrizaje autorizadas y los terrenos privados</li>
+          <li>Tu propio nivel, equipo, licencia y seguro</li>
+        </ul>
+        <p>El club organiza, gestiona los accesos e informa — pero no supervisa ni autoriza vuelos individuales. La decisión de despegar es siempre tuya, y también sus consecuencias. Si tienes cualquier duda sobre un sitio, pregunta antes de volar: siempre habrá alguien de la comunidad dispuesto a explicarte.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSECCIÓN: PILOTOS VISITANTES -->
+  <div class="visitantes-box" id="visitantes">
+    <p class="eyebrow-mini">Bienvenidos a Jalisco</p>
+    <h3 class="visitantes-title">Pilotos visitantes</h3>
+    <p class="visitantes-body">¿Vienes de otro estado o de otro país? Nos dará gusto recibirte. Esto es lo que conviene resolver antes de tu primer vuelo con nosotros.</p>
+
+    <div class="visitantes-box-grid">
+      <div class="info-block">
+        <h3 class="info-block-title">Protocolo de llegada</h3>
+        <ul class="info-list">
+          <li>Escríbenos antes de tu viaje</li>
+          <li>Contacta al piloto local del sitio</li>
+          <li>Preséntate con licencia y seguro</li>
+          <li>Paga la cuota de visitante</li>
+          <li>Toma el briefing antes de despegar</li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <h3 class="info-block-title">Cuotas de visitante</h3>
+        <ul class="info-list">
+          <li>$100 MXN por día</li>
+          <li>$1,000 MXN por 15 días</li>
+          <li>Pago disponible por MercadoPago</li>
+          <li><a href="#cuotas" style="color:var(--azul);text-decoration:underline;text-underline-offset:2px;">Ver todas las cuotas →</a></li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <h3 class="info-block-title">Antes de venir</h3>
+        <ul class="info-list">
+          <li>Verifica que tu seguro cubra México</li>
+          <li>Revisa el nivel exigido por cada sitio</li>
+          <li><a href="espacio-aereo.html" style="color:var(--azul);text-decoration:underline;text-underline-offset:2px;">Consulta el espacio aéreo vigente →</a></li>
+          <li><a href="despegues.html" style="color:var(--azul);text-decoration:underline;text-underline-offset:2px;">Ver los 9 despegues →</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sos-box">
+    <h3>🆘 Emergencias</h3>
+    <p>En caso de accidente, llama de inmediato al <strong>911</strong> y da la ubicación GPS lo más precisa posible. El protocolo completo, los contactos de rescate y los servicios médicos cercanos están en la <a href="sos.html" style="color:#ffffff;text-decoration:underline;text-underline-offset:3px;"><strong>página SOS →</strong></a></p>
+  </div>
+
+</section>
 
 <!-- CUOTAS -->
 <section class="cuotas" id="cuotas">
@@ -1144,7 +1150,7 @@
         <li>Acceso a los 9 sitios de vuelo en Jalisco</li>
         <li>Voto en asambleas de la asociación</li>
         <li>Descuentos en eventos y competencias</li>
-        <li>Participación en proyectos 2026–2027</li>
+        <li><a href="eventos.html" style="color:var(--azul);text-decoration:underline;text-underline-offset:2px;">Participación en proyectos 2026–2027 →</a></li>
         <li>Comunidad de pilotos organizada</li>
         <li>Menores de 18 años sin costo</li>
       </ul>
@@ -1206,376 +1212,16 @@
   </div>
 </section>
 
-<!-- VISITANTES -->
-<section class="visitantes" id="visitantes">
-  <div class="visitantes-inner">
-    <div>
-      <p class="section-eyebrow">Pilotos visitantes</p>
-      <h2 class="section-title">Bienvenidos<br>a Jalisco</h2>
-      <p class="section-body">Jalisco ofrece algunos de los mejores sitios de vuelo libre en México. Desde las sierras de Tapalpa hasta la costa de Yelapa — cielos variados para todos los niveles.</p>
-
-      <div class="info-block" style="margin-top:2rem;">
-        <h3 class="info-block-title">Requisitos para volar</h3>
-        <ul class="info-list">
-          <li>Licencia vigente (FEHM o equivalente internacional)</li>
-          <li>Seguro de vuelo obligatorio</li>
-          <li>Nivel mínimo según el sitio (P2 a P4)</li>
-          <li>Registro con piloto local de referencia</li>
-        </ul>
-      </div>
-
-      <div class="info-block">
-        <h3 class="info-block-title">Cuotas visitante</h3>
-        <ul class="info-list">
-          <li>$100 MXN por día</li>
-          <li>$1,000 MXN por 15 días</li>
-          <li>Pago disponible por MercadoPago</li>
-        </ul>
-      </div>
-
-      <div class="info-block">
-        <h3 class="info-block-title">Contacto de referencia</h3>
-        <ul class="info-list">
-          <li>Tapalpa: Juan Carlos Madrigal +52-341-108-9337</li>
-          <li>Tapalpa: Diego Vásquez +52-33-3903-2373</li>
-          <li>General: vuelolibrejalisco@gmail.com</li>
-        </ul>
-      </div>
-    </div>
-
-    <div>
-      <div class="info-block">
-        <h3 class="info-block-title">Protocolo de llegada</h3>
-        <ul class="info-list">
-          <li>Contacta a un piloto local antes de volar</li>
-          <li>Preséntate en el despegue con tu licencia</li>
-          <li>Paga la cuota de visitante</li>
-          <li>Sigue el briefing de seguridad local</li>
-          <li>Registra tu vuelo antes de despegar</li>
-        </ul>
-      </div>
-
-      <div class="info-block">
-        <h3 class="info-block-title">Mejor temporada</h3>
-        <ul class="info-list">
-          <li>Noviembre a abril — temporada seca, vientos estables</li>
-          <li>Tapalpa: mejores condiciones de diciembre a marzo</li>
-          <li>Costa: temporada variable, consultar condiciones</li>
-        </ul>
-      </div>
-
-      <div class="sos-box">
-        <h3>🆘 Emergencias</h3>
-        <p>En caso de accidente, llama al <strong>911</strong>. Informa la ubicación GPS del aterrizaje de emergencia y el sitio de despegue. Contacta de inmediato al piloto local de referencia. Cruces Rojas más cercanas: Tapalpa, Ciudad Guzmán, Guadalajara.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- DESPEGUES -->
-<section class="despegues" id="despegues">
-  <p class="section-eyebrow">Sitios de vuelo</p>
-  <h2 class="section-title">Despegues<br>en Jalisco</h2>
-  <p class="section-body">9 sitios de vuelo libre en el estado. Desde laderas de sierra hasta despegues costeros — parapente y ala delta para todos los niveles.</p>
-
-  <div class="despegues-grid">
-
-    <!-- La Ceja -->
-    <div class="despegue-card">
-      <div class="despegue-img">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Tapalpa · Ladera</div>
-        <div class="despegue-nombre">La Ceja</div>
-        <p style="font-size:0.8rem; color:var(--gris-medio);">2,180 msnm · Viento E–SE–S · 4.5 km al aterrizaje</p>
-        <div class="despegue-info">
-          <span class="despegue-tag">PG Intermedio</span>
-          <span class="despegue-tag">HG Avanzado</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Topland Los Papalotes -->
-    <div class="despegue-card">
-      <div class="despegue-img">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Tapalpa · Ladera</div>
-        <div class="despegue-nombre">Topland Los Papalotes</div>
-        <p style="font-size:0.8rem; color:var(--gris-medio);">2,180 msnm · Viento E–SE–S · 4.5 km al aterrizaje</p>
-        <div class="despegue-info">
-          <span class="despegue-tag">PG Intermedio</span>
-          <span class="despegue-tag">HG Avanzado</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gravedad Cero -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Tapalpa</div>
-        <div class="despegue-nombre">Gravedad Cero</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- El Chante -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Jalisco</div>
-        <div class="despegue-nombre">El Chante</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Tepa-trepa -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Jalisco</div>
-        <div class="despegue-nombre">Tepa-trepa</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Atotonilco -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Jalisco</div>
-        <div class="despegue-nombre">Atotonilco</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Mazamitla -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Jalisco</div>
-        <div class="despegue-nombre">Mazamitla</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Yelapa -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #2F855A 0%, #48BB78 100%);">
-        <span class="despegue-img-placeholder">🌊</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Costa</div>
-        <div class="despegue-nombre">Yelapa</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Conchas Chinas -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #2F855A 0%, #48BB78 100%);">
-        <span class="despegue-img-placeholder">🌊</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Costa</div>
-        <div class="despegue-nombre">Conchas Chinas</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- METEOROLOGÍA -->
-<section class="meteorologia" id="meteorologia">
-  <p class="section-eyebrow">Clima y viento</p>
-  <h2 class="section-title">Meteorología</h2>
-  <p class="section-body">Consulta las condiciones en tiempo real antes de volar. Tapalpa cuenta con una estación meteorológica propia.</p>
-
-  <div class="meteo-tools">
-    <a href="https://www.wunderground.com/dashboard/pws/ITAPAL5" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">🌡️</div>
-      <div class="meteo-tool-name">Estación Tapalpa</div>
-      <div class="meteo-tool-desc">Condiciones en tiempo real. Estación ITAPAL5 — temperatura, viento, humedad y presión.</div>
-    </a>
-    <a href="https://www.windy.com/19.935/-103.654?19.939,-103.657,12,p:pgspots" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">🌬️</div>
-      <div class="meteo-tool-name">Windy</div>
-      <div class="meteo-tool-desc">Pronóstico visual de vientos en altura. Ideal para planear el vuelo con 2–3 días de anticipación.</div>
-    </a>
-    <a href="https://www.windguru.cz/73067" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">📡</div>
-      <div class="meteo-tool-name">Windguru</div>
-      <div class="meteo-tool-desc">Pronóstico especializado para vuelo libre. Sitio #73067 — Tapalpa, Jalisco.</div>
-    </a>
-  </div>
-
-  <div class="meteo-guia">
-    <h3>Guía de condiciones — Tapalpa</h3>
-    <div class="meteo-guia-grid">
-      <div class="meteo-guia-item">
-        <strong>Mejor temporada</strong>
-        Noviembre a abril. Vientos estables, cielos despejados y térmica moderada.
-      </div>
-      <div class="meteo-guia-item">
-        <strong>Viento ideal</strong>
-        Este – Sureste – Sur, entre 15 y 30 km/h. Revisar siempre condiciones locales.
-      </div>
-      <div class="meteo-guia-item">
-        <strong>Horario de vuelo</strong>
-        De 10:00 a 16:00 hrs en temporada seca. La térmica inicia alrededor de las 11:00.
-      </div>
-      <div class="meteo-guia-item">
-        <strong>Condiciones a evitar</strong>
-        Cúmulos de desarrollo vertical, vientos del norte, lluvia o niebla en la sierra.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ESPACIO AÉREO -->
-<section class="espacio-aereo" id="espacio-aereo">
-  <div class="espacio-inner">
-    <div>
-      <p class="section-eyebrow">Regulación</p>
-      <h2 class="section-title">Espacio<br>Aéreo</h2>
-      <p class="section-body">El vuelo libre en Jalisco opera en espacios aéreos no controlados. Es responsabilidad de cada piloto conocer las restricciones de la zona.</p>
-
-      <div class="info-block" style="margin-top:2rem;">
-        <h3 class="info-block-title">Aeropuerto GDL (MMGL)</h3>
-        <ul class="info-list">
-          <li>El aeropuerto internacional de Guadalajara tiene espacio aéreo controlado Clase C</li>
-          <li>Los sitios de vuelo en Tapalpa y sierra quedan fuera del área de influencia directa</li>
-          <li>Verificar NOTAM vigentes antes de cada vuelo</li>
-          <li>Sitios costeros: revisar zonas restringidas de Puerto Vallarta</li>
-        </ul>
-      </div>
-    </div>
-
-    <div>
-      <div class="info-block" style="margin-top:0;">
-        <h3 class="info-block-title">Marco legal en México</h3>
-        <ul class="info-list">
-          <li>Regulado por la Dirección General de Aeronáutica Civil (DGAC)</li>
-          <li>Licencia de piloto libre expedida por la FEHM</li>
-          <li>Seguro de responsabilidad civil obligatorio</li>
-          <li>Los drones y vehículos no tripulados requieren permisos adicionales</li>
-        </ul>
-      </div>
-
-      <div class="info-block">
-        <h3 class="info-block-title">Federación</h3>
-        <ul class="info-list">
-          <li>FEHM — Federación de Parapente y Ala Delta de México</li>
-          <li>Vuelo Libre Jalisco A.C. es asociación afiliada a la FEHM</li>
-          <li>La licencia FEHM es requerida para volar en sitios administrados</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- EVENTOS -->
-<section class="eventos" id="eventos">
-  <div class="eventos-inner">
-    <div>
-      <p class="section-eyebrow">Agenda</p>
-      <h2 class="section-title">Eventos<br>y calendario</h2>
-      <p class="section-body">Competencias, vuelos grupales, reuniones de la asociación y eventos sociales. Mantente al día con la comunidad.</p>
-
-      <div class="info-block" style="margin-top:2rem;">
-        <h3 class="info-block-title">Proyectos 2026–2027</h3>
-        <div class="proyectos-list">
-          <div class="proyecto-item">Liga Jalisciense de Vuelo Libre</div>
-          <div class="proyecto-item">Fly in Tapalpa</div>
-          <div class="proyecto-item">Campañas de reforestación</div>
-          <div class="proyecto-item">Rampa de entrenamiento</div>
-          <div class="proyecto-item">Cursos de formación</div>
-          <div class="proyecto-item">Kit de primeros auxilios</div>
-          <div class="proyecto-item">Viajes de vuelo</div>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="calendario-embed">
-        <span style="font-size:2rem;">📅</span>
-        <span>Calendario de eventos</span>
-        <a href="https://www.google.com/calendar/embed?src=1812d7a2a61dab6110329d0a99470ff4aa73170c90ce0ddd281a4d2e732c3971@group.calendar.google.com" target="_blank" rel="noopener">Ver en Google Calendar →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- NOSOTROS -->
-<section class="nosotros" id="nosotros">
-  <div class="nosotros-inner">
-    <div>
-      <p class="section-eyebrow">La asociación</p>
-      <h2 class="section-title">Nosotros</h2>
-      <p class="section-body">Vuelo Libre Jalisco A.C. reúne y organiza a los practicantes de vuelo libre en el estado de Jalisco desde 1978.</p>
-
-      <div class="mision-vision" style="margin-top:2rem;">
-        <div class="mv-block">
-          <h3>Misión</h3>
-          <p>Construir una comunidad unida y participativa que impulse el crecimiento organizado del vuelo libre y proteja los seres y espacios donde practicamos nuestra pasión.</p>
-        </div>
-        <div class="mv-block">
-          <h3>Visión</h3>
-          <p>Ser una institución humana, representativa y transparente, reconocida por fortalecer la comunidad de vuelo, impulsar un crecimiento sostenible y asegurar la permanencia y el acceso a nuestros sitios de vuelo para las futuras generaciones.</p>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="info-block" style="margin-top:0;">
-        <h3 class="info-block-title">Estructura del Consejo</h3>
-        <div class="estructura-comites">
-          <div class="comite-item">Seguridad</div>
-          <div class="comite-item">Relaciones Institucionales</div>
-          <div class="comite-item">Certificaciones y Capacitación</div>
-          <div class="comite-item">Medio Ambiente</div>
-          <div class="comite-item">Operaciones e Infraestructura</div>
-          <div class="comite-item">Comunicación y Marketing</div>
-          <div class="comite-item">Competencias y Eventos</div>
-          <div class="comite-item">Desarrollo Humano y Social</div>
-        </div>
-      </div>
-
-      <div class="info-block" style="margin-top:2rem;">
-        <h3 class="info-block-title">Contacto</h3>
-        <ul class="info-list">
-          <li>vuelolibrejalisco@gmail.com</li>
-          <li>Facebook: facebook.com/vuelolibrejal</li>
-          <li>Jalisco, México</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
     <div>
       <div class="footer-logo">
-        <img src="img/logo-vlj.png" alt="Vuelo Libre Jalisco">
+        <img src="img/logo-vlj.png" alt="Club de Vuelo Libre de Jalisco">
         <div class="footer-logo-text">
-          <span class="l1">Vuelo Libre Jalisco</span>
-          <span class="l2">Asociación Civil · Desde 1978</span>
+          <span class="l1">Club de Vuelo Libre de Jalisco</span>
+          <span class="l2">Desde 1978</span>
         </div>
       </div>
       <p class="footer-desc">Asociación de pilotos de parapente y ala delta en Jalisco, México. Promovemos el vuelo libre, protegemos nuestros sitios de vuelo y construimos comunidad.</p>
@@ -1583,12 +1229,14 @@
     <div class="footer-links">
       <h4>Secciones</h4>
       <ul>
+        <li><a href="#pilotos">Pilotos</a></li>
         <li><a href="#cuotas">Cuotas</a></li>
-        <li><a href="#visitantes">Visitantes</a></li>
-        <li><a href="#meteorologia">Meteorología</a></li>
-        <li><a href="#despegues">Despegues</a></li>
-        <li><a href="#espacio-aereo">Espacio Aéreo</a></li>
-        <li><a href="#nosotros">Nosotros</a></li>
+        <li><a href="meteorologia.html">Meteorología</a></li>
+        <li><a href="despegues.html">Despegues</a></li>
+        <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
+        <li><a href="eventos.html">Eventos</a></li>
+    <li><a href="nosotros.html">Nosotros</a></li>
+        <li><a href="sos.html">SOS</a></li>
       </ul>
     </div>
     <div class="footer-links">
@@ -1601,7 +1249,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 Vuelo Libre Jalisco A.C. Todos los derechos reservados.</span>
+    <span>© 2025 Club de Vuelo Libre de Jalisco. Todos los derechos reservados.</span>
     <div class="footer-social">
       <a href="https://www.facebook.com/vuelolibrejal" target="_blank" rel="noopener">Facebook</a>
       <a href="mailto:vuelolibrejalisco@gmail.com">Email</a>
