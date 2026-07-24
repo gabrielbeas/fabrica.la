@@ -385,6 +385,41 @@
     line-height: 1.6;
   }
 
+  /* ── PARTNERS ── */
+  .partners-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .partner-slot {
+    aspect-ratio: 3 / 2;
+    border: 2px dashed var(--borde);
+    background: var(--gris-claro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .partner-slot:hover { border-color: var(--azul-claro); background: var(--azul-cielo); }
+
+  .partner-slot img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .partner-slot-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gris-medio);
+    text-align: center;
+  }
+
   .nos-contacto {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -477,6 +512,7 @@
   <a href="despegues.html" onclick="closeMenu()">Despegues</a>
   <a href="espacio-aereo.html" onclick="closeMenu()">Espacio Aéreo</a>
   <a href="eventos.html" onclick="closeMenu()">Eventos</a>
+  <a href="tandems.html" onclick="closeMenu()">Vuelos Tándem</a>
   <a href="nosotros.html" onclick="closeMenu()">Nosotros</a>
   <a href="sos.html" onclick="closeMenu()" class="sos-mobile">🆘 SOS</a>
   <a href="index.html#cuotas" onclick="closeMenu()" class="cta-mobile">Únete al Club</a>
@@ -498,6 +534,7 @@
     <li><a href="despegues.html">Despegues</a></li>
     <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
     <li><a href="eventos.html">Eventos</a></li>
+    <li><a href="tandems.html">Vuelos Tándem</a></li>
     <li><a href="nosotros.html" class="active">Nosotros</a></li>
     <li><a href="sos.html" class="nav-sos">SOS</a></li>
     <li><a href="index.html#cuotas" class="nav-cta">Únete al Club</a></li>
@@ -586,6 +623,16 @@
       <div class="nombre">Viajes de vuelo</div>
       <div class="desc">Salidas organizadas a sitios dentro y fuera de Jalisco.</div>
     </div>
+  </div>
+
+  <h2 class="nos-h2">Partners</h2>
+  <p class="nos-intro">Aliados estratégicos que hacen posible el trabajo del club. Sección en construcción — próximamente los logotipos.</p>
+
+  <div class="partners-grid">
+    <div class="partner-slot"><span class="partner-slot-label">Logo próximamente</span></div>
+    <div class="partner-slot"><span class="partner-slot-label">Logo próximamente</span></div>
+    <div class="partner-slot"><span class="partner-slot-label">Logo próximamente</span></div>
+    <div class="partner-slot"><span class="partner-slot-label">Logo próximamente</span></div>
   </div>
 
   <h2 class="nos-h2">Contacto</h2>

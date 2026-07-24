@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Condiciones meteorológicas, pronóstico de viento y guía de vuelo en Jalisco — Club de Vuelo Libre de Jalisco">
-<title>Meteorología — Club de Vuelo Libre de Jalisco</title>
+<meta name="description" content="Vuelos tándem de parapente en Jalisco — operadoras y precios — Club de Vuelo Libre de Jalisco">
+<title>Vuelos Tándem — Club de Vuelo Libre de Jalisco</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -155,7 +155,7 @@
 
   /* ── HERO SUBPÁGINA ── */
   .page-hero {
-    background: url('img/header.JPEG') center center / cover no-repeat;
+    background: url('img/despegue.JPEG') center center / cover no-repeat;
     padding: 7rem 2.5rem 3rem;
     text-align: center;
     position: relative;
@@ -209,51 +209,97 @@
     padding: 4rem 2.5rem;
   }
 
-  /* ── BLOQUES DE INFORMACIÓN ── */
-  .info-block {
+  .tdm-h2 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--gris-oscuro);
+    margin: 3.5rem 0 1.5rem;
+  }
+
+  .tdm-h2:first-child { margin-top: 0; }
+
+  .tdm-intro {
+    font-size: 0.95rem;
+    color: var(--gris-medio);
+    line-height: 1.75;
     margin-bottom: 2rem;
   }
 
-  .info-block-title {
+  /* ── TABLA DE OPERADORAS ── */
+  .tdm-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--borde);
+  }
+
+  .tdm-tabla thead th {
+    background: var(--azul);
+    color: #ffffff;
     font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.9rem 1rem;
+  }
+
+  .tdm-tabla tbody tr { border-bottom: 1px solid var(--borde); transition: background 0.2s; }
+  .tdm-tabla tbody tr:last-child { border-bottom: 0; }
+  .tdm-tabla tbody tr:hover { background: var(--azul-cielo); }
+
+  .tdm-tabla td { padding: 1rem; vertical-align: top; font-size: 0.85rem; color: var(--gris-medio); }
+
+  .tdm-operador {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.05rem;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    color: var(--azul);
+    line-height: 1.15;
+    margin-bottom: 0.25rem;
+  }
+
+  .tdm-sitio { font-size: 0.75rem; color: var(--gris-medio); }
+
+  .tdm-precio {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
     color: var(--gris-oscuro);
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--azul-claro);
-    display: inline-block;
   }
 
-  .info-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .info-list li {
-    font-size: 0.9rem;
+  .tdm-precio.tbd {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    font-style: italic;
     color: var(--gris-medio);
-    padding-left: 1.2rem;
-    position: relative;
-    line-height: 1.5;
   }
 
-  .info-list li::before {
-    content: '—';
-    position: absolute;
-    left: 0;
-    color: var(--azul-claro);
+  .tdm-tabla a {
+    color: var(--azul);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-size: 0.8rem;
+    word-break: break-word;
+  }
+
+  .tdm-nota {
+    font-size: 0.8rem;
+    color: var(--gris-medio);
+    line-height: 1.7;
+    margin-top: 1rem;
+    font-style: italic;
   }
 
   .aviso-box {
     background: var(--azul-cielo);
     border-left: 4px solid var(--amarillo);
     padding: 1.5rem 1.8rem;
-    margin-top: 3rem;
+    margin: 2.5rem 0 0;
   }
 
   .aviso-box h3 {
@@ -272,131 +318,37 @@
     line-height: 1.7;
   }
 
-  /* ── METEOROLOGÍA ── */
-  .meteo-h2 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: clamp(1.6rem, 3vw, 2.2rem);
-    font-weight: 900;
-    text-transform: uppercase;
-    color: var(--gris-oscuro);
-    margin: 3.5rem 0 1.5rem;
-  }
-
-  .meteo-h2:first-child { margin-top: 0; }
-
-  .meteo-intro {
-    font-size: 0.95rem;
-    color: var(--gris-medio);
-    line-height: 1.75;
-    margin-bottom: 2rem;
-  }
-
-  /* Tarjetas de herramientas */
-  .meteo-tools {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1px;
-    background: var(--borde);
-    border: 1px solid var(--borde);
-  }
-
-  .meteo-tool {
-    background: var(--blanco);
-    padding: 1.8rem 1.6rem;
-    display: block;
-    transition: background 0.2s;
-  }
-
-  .meteo-tool:hover { background: var(--azul-cielo); }
-
-  .meteo-tool-icon { font-size: 2rem; margin-bottom: 0.8rem; }
-
-  .meteo-tool-name {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1.15rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    color: var(--azul);
-    margin-bottom: 0.4rem;
-  }
-
-  .meteo-tool-desc {
-    font-size: 0.8rem;
-    color: var(--gris-medio);
-    line-height: 1.6;
-  }
-
-  .meteo-tool-link {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--azul-claro);
-    margin-top: 0.9rem;
-    display: block;
-  }
-
-  /* Guía de condiciones — bloque azul */
-  .meteo-guia {
+  .tdm-cta {
     background: var(--azul);
     padding: 2.2rem 2rem;
-  }
-
-  .meteo-guia h3 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--amarillo);
-    margin-bottom: 1.4rem;
-  }
-
-  .meteo-guia-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.6rem;
-  }
-
-  .meteo-guia-item {
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.75);
-    line-height: 1.6;
-  }
-
-  .meteo-guia-item strong {
-    color: #ffffff;
-    display: block;
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 0.35rem;
-  }
-
-  .meteo-guia-item.alerta strong { color: var(--amarillo); }
-
-  /* Nota final */
-  .meteo-nota {
-    background: var(--gris-claro);
-    border-left: 4px solid var(--amarillo);
-    padding: 1.5rem 1.8rem;
     margin-top: 3rem;
+    text-align: center;
   }
 
-  .meteo-nota h3 {
+  .tdm-cta h3 {
     font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
+    font-size: clamp(1.3rem, 2.5vw, 1.8rem);
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--gris-oscuro);
+    color: #ffffff;
     margin-bottom: 0.6rem;
   }
 
-  .meteo-nota p { font-size: 0.88rem; color: var(--gris-medio); line-height: 1.7; }
-  .meteo-nota a { color: var(--azul); text-decoration: underline; text-underline-offset: 2px; }
+  .tdm-cta p { font-size: 0.9rem; color: rgba(255,255,255,0.75); line-height: 1.7; margin-bottom: 1.5rem; }
+
+  .tdm-cta a {
+    display: inline-block;
+    background: var(--amarillo);
+    color: var(--gris-oscuro);
+    padding: 0.8rem 2rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+
+  .tdm-cta a:hover { background: #e0b000; }
 
   /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
   @media (max-width: 1100px) {
@@ -405,14 +357,20 @@
     .hamburger { display: flex; }
   }
 
+  @media (max-width: 700px) {
+    .tdm-tabla, .tdm-tabla tbody, .tdm-tabla tr, .tdm-tabla td { display: block; width: 100%; }
+    .tdm-tabla thead { display: none; }
+    .tdm-tabla tbody tr { border-bottom: 1px solid var(--borde); padding: 1rem 0.2rem; }
+    .tdm-tabla td { padding: 0.2rem 0.8rem; }
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 768px) {
     nav { padding: 0.9rem 1.5rem; }
     .nav-links { display: none; }
     .hamburger { display: flex; }
     .page-content { padding: 3rem 1.5rem; }
-    .meteo-tools, .meteo-guia-grid { grid-template-columns: 1fr; }
-    .meteo-guia { padding: 1.8rem 1.4rem; }
+    .tdm-cta { padding: 1.8rem 1.4rem; }
   }
 </style>
 </head>
@@ -445,11 +403,11 @@
   <ul class="nav-links">
     <li><a href="index.html#pilotos">Pilotos</a></li>
     <li><a href="index.html#cuotas">Cuotas</a></li>
-    <li><a href="meteorologia.html" class="active">Meteorología</a></li>
+    <li><a href="meteorologia.html">Meteorología</a></li>
     <li><a href="despegues.html">Despegues</a></li>
     <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
     <li><a href="eventos.html">Eventos</a></li>
-    <li><a href="tandems.html">Vuelos Tándem</a></li>
+    <li><a href="tandems.html" class="active">Vuelos Tándem</a></li>
     <li><a href="nosotros.html">Nosotros</a></li>
     <li><a href="sos.html" class="nav-sos">SOS</a></li>
     <li><a href="index.html#cuotas" class="nav-cta">Únete al Club</a></li>
@@ -461,65 +419,68 @@
 
 <!-- HERO -->
 <div class="page-hero">
-  <p class="eyebrow">Clima y viento · Jalisco</p>
-  <h1>Meteorología</h1>
-  <p>Consulta las condiciones en tiempo real antes de volar. Tapalpa cuenta con estación meteorológica propia.</p>
+  <p class="eyebrow">Vuelo en pareja · Turismo aéreo</p>
+  <h1>Vuelos Tándem</h1>
+  <p>Vive la experiencia de volar acompañado de un piloto certificado, sin necesidad de experiencia previa. Aquí encontrarás las operadoras que ofrecen vuelos tándem en los sitios del club.</p>
 </div>
 
 <!-- CONTENIDO -->
 <div class="page-content">
 
-  <h2 class="meteo-h2">Herramientas</h2>
-  <p class="meteo-intro">Tres fuentes que se complementan: la estación te da lo que está pasando ahora mismo en el despegue, Windy te deja ver el viento en altura, y Windguru te da el pronóstico afinado para vuelo libre.</p>
+  <h2 class="tdm-h2">Operadoras</h2>
+  <p class="tdm-intro">Esta sección está en construcción — todavía no tenemos operadoras ni precios confirmados publicados. En cuanto tengamos la información la agregamos aquí.</p>
 
-  <div class="meteo-tools">
-    <a href="https://www.wunderground.com/dashboard/pws/ITAPAL5" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">🌡️</div>
-      <div class="meteo-tool-name">Estación Tapalpa</div>
-      <div class="meteo-tool-desc">Condiciones en tiempo real. Estación ITAPAL5 — temperatura, viento, humedad y presión.</div>
-      <span class="meteo-tool-link">Abrir Wunderground →</span>
-    </a>
-    <a href="https://www.windy.com/19.935/-103.654?19.939,-103.657,12,p:pgspots" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">🌬️</div>
-      <div class="meteo-tool-name">Windy</div>
-      <div class="meteo-tool-desc">Pronóstico visual de vientos en altura. Ideal para planear el vuelo con 2–3 días de anticipación.</div>
-      <span class="meteo-tool-link">Abrir Windy →</span>
-    </a>
-    <a href="https://www.windguru.cz/73067" target="_blank" rel="noopener" class="meteo-tool">
-      <div class="meteo-tool-icon">📡</div>
-      <div class="meteo-tool-name">Windguru</div>
-      <div class="meteo-tool-desc">Pronóstico especializado para vuelo libre. Sitio #73067 — Tapalpa, Jalisco.</div>
-      <span class="meteo-tool-link">Abrir Windguru →</span>
-    </a>
+  <table class="tdm-tabla">
+    <thead>
+      <tr>
+        <th>Operadora</th>
+        <th>Sitio(s)</th>
+        <th>Precio</th>
+        <th>Contacto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="tdm-operador">Próximamente</div>
+          <div class="tdm-sitio">Por confirmar</div>
+        </td>
+        <td>Por confirmar</td>
+        <td><span class="tdm-precio tbd">Por confirmar</span></td>
+        <td>Por confirmar</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="tdm-operador">Próximamente</div>
+          <div class="tdm-sitio">Por confirmar</div>
+        </td>
+        <td>Por confirmar</td>
+        <td><span class="tdm-precio tbd">Por confirmar</span></td>
+        <td>Por confirmar</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="tdm-operador">Próximamente</div>
+          <div class="tdm-sitio">Por confirmar</div>
+        </td>
+        <td>Por confirmar</td>
+        <td><span class="tdm-precio tbd">Por confirmar</span></td>
+        <td>Por confirmar</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="tdm-nota">Precios y disponibilidad los define cada operadora de forma independiente y pueden cambiar. Confirma directamente con ellos antes de reservar.</p>
+
+  <div class="aviso-box">
+    <h3>Sobre los vuelos tándem</h3>
+    <p>Un vuelo tándem lo realiza siempre un piloto tándem certificado, volando en pareja con el pasajero en un mismo parapente. Es la forma más accesible de conocer el vuelo libre sin necesidad de tomar un curso. El club no opera vuelos tándem directamente — enlaza aquí a las operadoras y pilotos tándem que trabajan en nuestros sitios.</p>
   </div>
 
-  <h2 class="meteo-h2">Guía de condiciones — Tapalpa</h2>
-
-  <div class="meteo-guia">
-    <h3>Lo que buscamos en el aire</h3>
-    <div class="meteo-guia-grid">
-      <div class="meteo-guia-item">
-        <strong>Mejor temporada</strong>
-        Noviembre a abril. Vientos estables, cielos despejados y térmica moderada.
-      </div>
-      <div class="meteo-guia-item">
-        <strong>Viento ideal</strong>
-        Este – Sureste – Sur, entre 15 y 30 km/h. Revisar siempre condiciones locales.
-      </div>
-      <div class="meteo-guia-item">
-        <strong>Horario de vuelo</strong>
-        De 10:00 a 16:00 hrs en temporada seca. La térmica inicia alrededor de las 11:00.
-      </div>
-      <div class="meteo-guia-item alerta">
-        <strong>Condiciones a evitar</strong>
-        Cúmulos de desarrollo vertical, vientos del norte, lluvia o niebla en la sierra.
-      </div>
-    </div>
-  </div>
-
-  <div class="meteo-nota">
-    <h3>El pronóstico no vuela por ti</h3>
-    <p>Estas herramientas son un punto de partida, no una autorización. Las condiciones en la sierra cambian rápido y de forma local: lo que marca el modelo puede no ser lo que hay en el despegue. Evalúa en sitio, escucha a los pilotos locales y no dudes en no volar. La guía de arriba aplica a Tapalpa; cada sitio tiene su propio comportamiento — consulta la ficha en <a href="despegues.html">Despegues</a>.</p>
+  <div class="tdm-cta">
+    <h3>¿Operas vuelos tándem en Jalisco?</h3>
+    <p>Si eres piloto tándem certificado u operadora y quieres aparecer en este listado, mándanos tus sitios de operación y tarifas.</p>
+    <a href="mailto:vuelolibrejalisco@gmail.com?subject=Alta%20de%20operadora%20de%20vuelos%20tándem">Escríbenos</a>
   </div>
 
 </div>
