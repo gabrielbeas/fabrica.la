@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ROCA 1909 — Panel de Ventas</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#f1f3f6; --border:#e1e5eb;
+    --text:#1c2733; --muted:#6b7684;
+    --green:#1e9e57; --green-bg:rgba(30,158,87,.09);
+    --yellow:#b8860b; --yellow-bg:rgba(230,164,20,.10);
+    --gray:#8895a3; --gray-bg:rgba(136,149,163,.10);
+    --accent:#a3781f; --danger:#b3413a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;padding:32px 40px 60px}
+  h1{font-size:22px;margin:0 0 2px;letter-spacing:.5px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+  .btn{font-size:12px;padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-weight:600;font-family:inherit}
+  .btn:hover{background:var(--panel2)}
+  .btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+  .btn.primary:hover{opacity:.88}
+  .btn.danger{color:var(--danger);border-color:rgba(179,65,58,.3)}
+  .btn.small{font-size:11px;padding:4px 10px;margin-top:4px}
+  .file-label{margin:0}
+  .file-label input{display:none}
+  .toolbar-note{font-size:11px;color:var(--muted);width:100%;margin-top:2px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(20,30,45,.06)}
+  .kpi .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .kpi .value{font-size:24px;font-weight:600}
+  .kpi .value.green{color:var(--green)} .kpi .value.yellow{color:var(--yellow)} .kpi .value.accent{color:var(--accent)}
+  .kpi .sub2{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+  section{margin-bottom:36px}
+  h2{font-size:15px;font-weight:600;margin:0 0 14px;color:var(--text);display:flex;align-items:center;gap:10px}
+  h2 .count{color:var(--muted);font-weight:400;font-size:12.5px}
+
+  .legend{display:flex;gap:18px;margin-bottom:16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+  .floor{margin-bottom:10px}
+  .floor-label{font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px}
+  .floor-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+  .unit{border-radius:9px;padding:12px 14px;border:1px solid var(--border);position:relative;cursor:pointer;transition:transform .1s;box-shadow:0 1px 3px rgba(20,30,45,.05)}
+  .unit:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(20,30,45,.12);border-color:var(--accent)}
+  .unit.disponible{background:var(--panel);}
+  .unit.apartado{background:var(--yellow-bg);border-color:rgba(245,185,66,.35)}
+  .unit.vendido{background:var(--green-bg);border-color:rgba(46,204,113,.35)}
+  .unit .id{font-size:16px;font-weight:700}
+  .unit .badge{position:absolute;top:10px;right:12px;font-size:9.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  .unit.disponible .badge{background:var(--gray-bg);color:#6b7684}
+  .unit.apartado .badge{background:rgba(245,185,66,.2);color:var(--yellow)}
+  .unit.vendido .badge{background:rgba(46,204,113,.2);color:var(--green)}
+  .unit .meta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .unit .price{font-size:13px;margin-top:6px;font-weight:600}
+  .unit .buyer{font-size:11.5px;margin-top:4px;color:var(--text);opacity:.85}
+  .unit .buyer::after{content:' →';opacity:.6}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden;font-size:13px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:var(--panel2)}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .status-pill{padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;text-transform:uppercase}
+  .status-pill.vendido{background:rgba(46,204,113,.15);color:var(--green)}
+  .status-pill.apartado{background:rgba(245,185,66,.15);color:var(--yellow)}
+
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6}
+  footer{color:var(--muted);font-size:11px;margin-top:40px;border-top:1px solid var(--border);padding-top:16px}
+
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover{background:var(--panel2)}
+  tr.clickable td:first-child{color:var(--accent)}
+  tr.clickable td:first-child::after{content:' →';opacity:.5;font-size:11px}
+  .placeholder{color:var(--muted);font-size:12.5px;font-style:italic}
+
+  .overlay{display:none;position:fixed;inset:0;background:rgba(20,26,34,.45);z-index:50;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+  .overlay.open{display:flex}
+  .modal{background:var(--panel);border-radius:14px;max-width:640px;width:100%;padding:28px 30px 30px;box-shadow:0 12px 40px rgba(20,30,45,.18);position:relative}
+  .modal-close{position:absolute;top:18px;right:20px;border:none;background:var(--panel2);color:var(--muted);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1}
+  .modal-close:hover{background:var(--border)}
+  .modal h3{margin:0 0 2px;font-size:19px}
+  .modal .modal-sub{color:var(--muted);font-size:12.5px;margin-bottom:20px}
+  .modal h4{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:22px 0 10px}
+  .modal h4:first-of-type{margin-top:0}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+  .info-item .k{font-size:11px;color:var(--muted)}
+  .info-item .v{font-size:13.5px;margin-top:2px;font-weight:500}
+  .edited-tag{display:inline-block;font-size:10px;color:var(--accent);background:rgba(163,120,31,.1);padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;text-transform:none;letter-spacing:0}
+
+  .tl{position:relative;margin-left:6px;padding-left:22px;border-left:2px solid var(--border)}
+  .tl-item{position:relative;padding-bottom:20px}
+  .tl-item:last-child{padding-bottom:0}
+  .tl-dot{position:absolute;left:-28px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel)}
+  .tl-item.pagado .tl-dot{background:var(--green)}
+  .tl-item.pendiente .tl-dot{background:var(--gray)}
+  .tl-fecha{font-size:11.5px;color:var(--muted)}
+  .tl-concepto{font-size:13.5px;font-weight:600;margin-top:1px}
+  .tl-monto{font-size:13.5px;margin-top:2px}
+  .tl-pill{display:inline-block;margin-left:8px;font-size:9.5px;padding:1px 7px;border-radius:20px;text-transform:uppercase;font-weight:600;letter-spacing:.3px}
+  .tl-item.pagado .tl-pill{background:rgba(30,158,87,.12);color:var(--green)}
+  .tl-item.pendiente .tl-pill{background:rgba(136,149,163,.15);color:var(--muted)}
+
+  form .field{margin-bottom:12px}
+  form label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+  .field input, .field select, .field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--panel);color:var(--text);font-family:inherit}
+  .field textarea{resize:vertical;min-height:64px}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--accent)}
+  .field.full{grid-column:1 / -1}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+
+  .tl-edit-row{display:grid;grid-template-columns:1fr 2fr .8fr .9fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  .tl-edit-row input, .tl-edit-row select{padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:var(--panel);color:var(--text)}
+  .tl-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px}
+  .tl-remove:hover{color:var(--danger)}
+
+  .modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
+
+  .discount-tables{display:flex;gap:24px;flex-wrap:wrap}
+  .discount-tables>div{flex:1;min-width:220px}
+  .discount-table-title{font-size:12px;font-weight:600;margin-bottom:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .etapa-current{color:var(--accent);font-weight:700}
+  .etapa-sold{font-weight:700}
+  .etapa-not-sold{color:var(--muted);text-decoration:line-through}
+  .etapa-taken{color:var(--muted);text-decoration:line-through}
+  .price-list-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<h1>ROCA 1909 — Panel de Ventas</h1>
+<div class="sub">Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · 20 unidades privativas en 5 niveles · Actualizado al 26 de julio de 2026</div>
+
+<div class="toolbar">
+  <button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
+  <button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
+  <label class="btn file-label">⬆ Importar cambios (JSON)<input type="file" id="btnImport" accept=".json"></label>
+  <button class="btn danger" id="btnReset">↺ Restablecer todo</button>
+  <div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan automáticamente en este navegador. Usa "Exportar" para respaldarlos o compártemelos para incorporarlos de forma permanente al archivo.</div>
+</div>
+
+<section>
+  <h2>Finanzas</h2>
+  <div class="kpis" id="kpisFinanzas"></div>
+</section>
+
+<section>
+  <h2>Inventario <span class="count">20 unidades — click en cualquier depto para ver o editar su información</span></h2>
+  <div class="kpis" id="kpisInventario"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--gray)"></i>Disponible</span>
+    <span><i class="dot" style="background:var(--yellow)"></i>Apartado (contrato pendiente de firma)</span>
+    <span><i class="dot" style="background:var(--green)"></i>Vendido (contrato firmado)</span>
+  </div>
+  <div id="floors"></div>
+</section>
+
+<section>
+  <h2>Ingresos y cobranza <span class="count">unidades apartadas / vendidas</span></h2>
+  <table id="cobranzaTable">
+    <thead>
+      <tr>
+        <th>Depto</th><th>Estatus</th><th>Comprador</th><th class="num">Precio pactado</th>
+        <th class="num">Recibido a la fecha</th><th class="num">Saldo pendiente</th><th>Financiamiento</th><th>Fecha firma</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="note">
+    "Recibido a la fecha" incluye únicamente los pagos cuya fecha contractual ya se cumplió (apartado + pago de firma, cuando la firma ya ocurrió). El depto 102 tiene firma de contrato programada para el 03/ago/2026, por lo que solo se ha recibido el apartado de $20,000; el resto del anticipo se cobra ese día.
+  </div>
+</section>
+
+<footer>
+  Datos base extraídos de: "PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf" (inventario y precios de lista) y de las carátulas de los contratos de promesa de compraventa de los deptos 102, 103 y 204. Los cambios que registres tú mismo (nuevas ventas, pagos, contactos) se guardan localmente en tu navegador — no en un servidor.
+</footer>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="priceOverlay">
+  <div class="modal" style="max-width:900px">
+    <button class="modal-close" id="priceModalClose">✕</button>
+    <div id="priceModalBody"></div>
+  </div>
+</div>
+
+<script>
+const baseUnits = [
+  {id:'101',piso:1,m2:85.14,vista:'FRONTAL',cajones:1,precioLista:3959010,status:'disponible'},
+  {id:'102',piso:1,m2:90.30,vista:'FRONTAL',cajones:1,precioLista:4198950,status:'apartado',
+    comprador:'Susana Neri Valdes',precioContrato:3575880,recibido:20000,fechaFirma:'03/08/2026 (pendiente)',financia:'Recurso propio',
+    etapaVenta:'etapa1',
+    esquemaContrato:'Anticipo inicial 80% en dos exhibiciones: $20,000 (apartado) + $2,840,704 (a la firma). 10% de pago parcial antes de la entrega. 10% de finiquito contra entrega. Pago con recurso propio, sin financiamiento.',
+    contacto:{
+      nombre:'Susana Neri Valdes',
+      telefono:'333 814 8997',
+      email:'No proporcionado en el contrato',
+      rfc:'NEVS470120BM4',
+      curp:'NEVS470120MDFRLS05'
+    },
+    timeline:[
+      {fecha:'20/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
+      {fecha:'03/08/2026',concepto:'Firma de contrato (anticipo inicial 80%)',monto:2840704,estatus:'pendiente'},
+      {fecha:'03/09/2026',concepto:'Pago parcial (10%)',monto:357588,estatus:'pendiente'},
+      {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (10% restante)',monto:357588,estatus:'pendiente'}
+    ]},
+  {id:'103',piso:1,m2:79.75,vista:'POSTERIOR',cajones:1,precioLista:3283580,status:'vendido',
+    comprador:'Pedro Sinuhe Rodríguez Cervantes',precioContrato:3124280,recibido:156214,fechaFirma:'22/07/2026',financia:'Banco Santander (preaprobado $3,067,434)',
+    etapaVenta:'etapa1',
+    esquemaContrato:'Anticipo inicial 5% en dos exhibiciones: $20,000 (apartado) + $136,214 (a la firma). 5% de pago parcial en la fecha de entrega y escrituración. Saldo mediante crédito hipotecario Banco Santander, preaprobado por $3,067,434.',
+    contacto:{
+      nombre:'Pedro Sinuhe Rodríguez Cervantes',
+      telefono:'33 1406 5102',
+      email:'pedro.rguez1689@gmail.com',
+      rfc:'ROCP890616JD5',
+      curp:'ROCP890616HJCDRD03'
+    },
+    timeline:[
+      {fecha:'10/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
+      {fecha:'22/07/2026',concepto:'Firma de contrato (anticipo inicial 5%)',monto:136214,estatus:'pagado'},
+      {fecha:'Fecha de entrega y escrituración (o 06/01/2027 si es posterior)',concepto:'Pago parcial (5%)',monto:156214,estatus:'pendiente'},
+      {fecha:'Fecha de entrega y escrituración',concepto:'Finiquito (saldo, vía crédito hipotecario Santander)',monto:2811852,estatus:'pendiente'}
+    ]},
+  {id:'104',piso:1,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2707740,status:'disponible'},
+
+  {id:'201',piso:2,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4056895,status:'disponible'},
+  {id:'202',piso:2,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4300925,status:'disponible'},
+  {id:'203',piso:2,m2:65.45,vista:'POSTERIOR',cajones:0,precioLista:2886070,status:'disponible'},
+  {id:'204',piso:2,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2722770,status:'vendido',
+    comprador:'Gustavo Soto Villalpando',precioContrato:2330000,recibido:1200000,fechaFirma:'23/07/2026',financia:'INFONAVIT (preaprobado $1,130,000)',
+    etapaVenta:'etapa1',
+    esquemaContrato:'Anticipo inicial 51.51% en dos exhibiciones: $20,000 (apartado) + $1,180,000 (a la firma). Saldo (48.49%) mediante crédito INFONAVIT preaprobado por $1,130,000, contra escrituración.',
+    contacto:{
+      nombre:'Gustavo Soto Villalpando',
+      telefono:'449 279 9649',
+      email:'soto.gustavo.v@gmail.com',
+      rfc:'SOVG950114S81',
+      curp:'SOVG950114HASTLS02'
+    },
+    timeline:[
+      {fecha:'13/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
+      {fecha:'23/07/2026',concepto:'Firma de contrato (anticipo inicial 51.51%)',monto:1180000,estatus:'pagado'},
+      {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (saldo, vía crédito INFONAVIT)',monto:1130000,estatus:'pendiente'}
+    ]},
+
+  {id:'301',piso:3,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4078180,status:'disponible'},
+  {id:'302',piso:3,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4323500,status:'disponible'},
+  {id:'303',piso:3,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3029440,status:'disponible'},
+  {id:'304',piso:3,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2737800,status:'disponible'},
+
+  {id:'401',piso:4,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4099465,status:'disponible'},
+  {id:'402',piso:4,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4346075,status:'disponible'},
+  {id:'403',piso:4,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3045370,status:'disponible'},
+  {id:'404',piso:4,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2752830,status:'disponible'},
+
+  {id:'501',piso:5,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4120750,status:'disponible'},
+  {id:'502',piso:5,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4368650,status:'disponible'},
+  {id:'503',piso:5,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3061300,status:'disponible'},
+  {id:'504',piso:5,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2767860,status:'disponible'},
+];
+
+// Listas de precios históricas por etapa (fuente: ETAPA 1.png, DESCUENTOS ETAPA 1.png,
+// PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf). Etapa 2 = lista vigente (= precioLista arriba).
+const etapaPrices = {
+  '101':{etapa0:4171860,etapa1:3746160}, '102':{etapa0:4424700,etapa1:3973200},
+  '103':{etapa0:3442880,etapa1:3124280}, '104':{etapa0:2888100,etapa1:2557440},
+  '201':{etapa0:4269745,etapa1:3844045}, '202':{etapa0:4526675,etapa1:4075175},
+  '203':{etapa0:3077230,etapa1:2726770}, '204':{etapa0:2903130,etapa1:2572470},
+  '301':{etapa0:4291030,etapa1:3865330}, '302':{etapa0:4549250,etapa1:4097750},
+  '303':{etapa0:3188740,etapa1:2870140}, '304':{etapa0:2918160,etapa1:2587500},
+  '401':{etapa0:4312315,etapa1:3886615}, '402':{etapa0:4571825,etapa1:4120325},
+  '403':{etapa0:3204670,etapa1:2886070}, '404':{etapa0:2933190,etapa1:2602530},
+  '501':{etapa0:4333600,etapa1:3907900}, '502':{etapa0:4594400,etapa1:4142900},
+  '503':{etapa0:3220600,etapa1:2902000}, '504':{etapa0:2948220,etapa1:2617560},
+};
+function etapa2Price(id){ const u = baseUnits.find(x=>x.id===id); return u ? u.precioLista : null; }
+
+const schemeMeta = {
+  '90-10':{label:'90% - 10%', forma:'90% antes de la entrega, 10% contra entrega'},
+  '50-50':{label:'50% - 50%', forma:'50% antes de la entrega, 50% contra entrega'},
+  '30-70':{label:'30% - 70%', forma:'30% antes de la entrega, 70% contra entrega'},
+  '10-10-80':{label:'10% - 10% - 80%', forma:'10% enganche, 10% en mensualidades, 80% contra entrega'},
+  '20-20-60':{label:'20% - 20% - 60%', forma:'20% enganche, 20% en mensualidades, 60% contra entrega'},
+  '10-90':{label:'10% - 90%', forma:'10% antes de la entrega, 90% contra entrega'},
+  '5-95':{label:'5% - 95%', forma:'5% antes de la entrega, 95% contra entrega'},
+};
+const discountSchedule = {
+  etapa1:[{key:'90-10',descuento:10},{key:'50-50',descuento:5},{key:'30-70',descuento:3},{key:'10-10-80',descuento:1},{key:'10-90',descuento:0},{key:'5-95',descuento:0}],
+  etapa2:[{key:'90-10',descuento:7},{key:'50-50',descuento:4},{key:'30-70',descuento:2},{key:'20-20-60',descuento:1},{key:'10-90',descuento:0},{key:'5-95',descuento:0}],
+};
+
+// Encuentra, entre Etapa 1 y Etapa 2, a qué esquema de descuento se acerca más el precio pactado.
+function bestDiscountFit(u){
+  const prices = etapaPrices[u.id];
+  if(!prices || !u.precioContrato) return null;
+  const bases = { etapa1: prices.etapa1, etapa2: etapa2Price(u.id) };
+  let best = null;
+  Object.keys(bases).forEach(ek=>{
+    const base = bases[ek];
+    if(!base) return;
+    const pct = (base - u.precioContrato) / base * 100;
+    discountSchedule[ek].forEach(s=>{
+      const diff = Math.abs(s.descuento - pct);
+      if(!best || diff < best.diff){
+        best = { etapa: ek, etapaLabel: ek==='etapa1' ? 'Etapa 1' : 'Etapa 2', base, pct, scheme: s, diff };
+      }
+    });
+  });
+  return best;
+}
+
+// Etapa/descuento a mostrar en el modal: usa la etapa declarada explícitamente en el depto
+// (u.etapaVenta, capturada de la carátula) y, si no existe, cae al mejor ajuste automático.
+function discountInfo(u){
+  if(!u.precioContrato) return null;
+  const prices = etapaPrices[u.id];
+  const auto = bestDiscountFit(u);
+  const etapaKey = u.etapaVenta || (auto ? auto.etapa : null);
+  if(!etapaKey) return null;
+  const base = etapaKey === 'etapa1' ? (prices ? prices.etapa1 : null) : etapa2Price(u.id);
+  if(!base) return null;
+  const pct = (base - u.precioContrato) / base * 100;
+  let closest = null;
+  discountSchedule[etapaKey].forEach(s=>{
+    const diff = Math.abs(s.descuento - pct);
+    if(!closest || diff < closest.diff) closest = Object.assign({}, s, {diff});
+  });
+  return { etapa: etapaKey, etapaLabel: etapaKey==='etapa1' ? 'Etapa 1' : 'Etapa 2', base, pct, closest };
+}
+
+const money = n => (n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+
+// ---------- Persistencia (overrides guardados en este navegador) ----------
+const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
+function loadOverrides(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+let overrides = loadOverrides();
+function persistOverrides(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }
+function getUnits(){
+  return baseUnits.map(u=>{
+    const ov = overrides[u.id];
+    return ov ? Object.assign({}, u, ov) : u;
+  });
+}
+function saveUnitOverride(id, patch){
+  overrides[id] = Object.assign({}, overrides[id]||{}, patch);
+  persistOverrides();
+}
+function resetUnitOverride(id){
+  delete overrides[id];
+  persistOverrides();
+}
+function resetAllOverrides(){
+  overrides = {};
+  persistOverrides();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(overrides, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'roca1909_cambios_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const imported = JSON.parse(reader.result);
+      overrides = Object.assign({}, overrides, imported);
+      persistOverrides();
+      renderAll();
+      alert('Datos importados correctamente.');
+    }catch(e){
+      alert('No se pudo leer el archivo. Verifica que sea un JSON exportado desde este mismo panel.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ---------- Elementos persistentes ----------
+const kpisFinanzasEl = document.getElementById('kpisFinanzas');
+const kpisInventarioEl = document.getElementById('kpisInventario');
+const floorsEl = document.getElementById('floors');
+const tbody = document.querySelector('#cobranzaTable tbody');
+const overlay = document.getElementById('overlay');
+const modalBody = document.getElementById('modalBody');
+const priceOverlay = document.getElementById('priceOverlay');
+const priceModalBody = document.getElementById('priceModalBody');
+
+// ---------- Render ----------
+function renderAll(){
+  const units = getUnits();
+  renderKPIs(units);
+  renderFloors(units);
+  renderTable(units);
+}
+
+function renderKpiRow(el, kpis){
+  el.innerHTML = kpis.map(k=>`
+    <div class="kpi">
+      <div class="label">${k.label}</div>
+      <div class="value ${k.cls||''}">${k.value}</div>
+      <div class="sub2">${k.sub||''}</div>
+    </div>`).join('');
+}
+
+function renderKPIs(units){
+  const vendidos = units.filter(u=>u.status==='vendido');
+  const apartados = units.filter(u=>u.status==='apartado');
+  const disponibles = units.filter(u=>u.status==='disponible');
+  const valorTotalLista = units.reduce((s,u)=>s+u.precioLista,0);
+  const valorVendido = vendidos.reduce((s,u)=>s+(u.precioContrato||0),0);
+  const valorApartado = apartados.reduce((s,u)=>s+(u.precioContrato||0),0);
+  const cobranza = [...vendidos,...apartados].reduce((s,u)=>s+(u.recibido||0),0);
+  const valorDisponible = valorTotalLista - valorVendido - valorApartado;
+
+  const valorContratado = valorVendido + valorApartado;
+  const pctCobradoContratado = valorContratado > 0 ? (cobranza / valorContratado * 100) : 0;
+  const pctCobradoTotal = valorTotalLista > 0 ? (cobranza / valorTotalLista * 100) : 0;
+
+  renderKpiRow(kpisFinanzasEl, [
+    {label:'Valor total del proyecto', value: money(valorTotalLista), cls:'accent', sub:'precio de lista, Etapa 2 · 20 unidades'},
+    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato'},
+    {label:'% cobrado vs. lo contratado', value: pctCobradoContratado.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorContratado)+' contratados'},
+    {label:'% cobrado vs. total de ventas', value: pctCobradoTotal.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorTotalLista)+' (lista Etapa 2)'},
+  ]);
+
+  renderKpiRow(kpisInventarioEl, [
+    {label:'Unidades totales', value: units.length, sub:'5 niveles · 4 deptos por nivel'},
+    {label:'Vendidos (firmados)', value: vendidos.length, cls:'green', sub: money(valorVendido)},
+    {label:'Apartados', value: apartados.length, cls:'yellow', sub: money(valorApartado)+' (contrato pendiente)'},
+    {label:'Disponibles', value: disponibles.length, sub: money(valorDisponible)+' en inventario'},
+  ]);
+}
+
+function unitCardHTML(u){
+  return `<div class="unit ${u.status}" data-id="${u.id}">
+      <span class="badge">${u.status}</span>
+      <div class="id">${u.id}</div>
+      <div class="meta">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es)</div>
+      <div class="price">${money(u.status==='disponible' ? u.precioLista : (u.precioContrato || u.precioLista))}</div>
+      ${u.comprador?`<div class="buyer">${u.comprador}</div>`:''}
+    </div>`;
+}
+
+function renderFloors(units){
+  let html = '';
+  for(let p=1;p<=5;p++){
+    const row = units.filter(u=>u.piso===p);
+    html += `<div class="floor"><div class="floor-label">NIVEL ${p}</div><div class="floor-row">${row.map(unitCardHTML).join('')}</div></div>`;
+  }
+  floorsEl.innerHTML = html;
+}
+
+function renderTable(units){
+  const rows = units.filter(u=>u.status!=='disponible').sort((a,b)=>a.id.localeCompare(b.id));
+  tbody.innerHTML = rows.map(u=>`
+    <tr class="clickable" data-id="${u.id}">
+      <td><strong>${u.id}</strong></td>
+      <td><span class="status-pill ${u.status}">${u.status}</span></td>
+      <td>${u.comprador ? u.comprador : '<span class="placeholder">Sin registrar</span>'}</td>
+      <td class="num">${money(u.precioContrato)}</td>
+      <td class="num">${money(u.recibido)}</td>
+      <td class="num">${money((u.precioContrato||0)-(u.recibido||0))}</td>
+      <td>${u.financia || '—'}</td>
+      <td>${u.fechaFirma || '—'}</td>
+    </tr>`).join('');
+}
+
+function priceListTemplate(units){
+  const rows = [...units].sort((a,b)=>a.id.localeCompare(b.id));
+  const rowsHTML = rows.map(u=>{
+    const p = etapaPrices[u.id] || {};
+    const fit = u.precioContrato ? bestDiscountFit(u) : null;
+    const vendidoEnEtapa1 = !!(fit && fit.etapa === 'etapa1');
+    const etapa1Class = vendidoEnEtapa1 ? 'etapa-sold' : 'etapa-not-sold';
+    const etapa2Class = u.precioContrato ? 'etapa-taken' : 'etapa-current';
+    const m2xE1 = u.m2 ? p.etapa1 / u.m2 : null;
+    const m2xE2 = u.m2 ? u.precioLista / u.m2 : null;
+    return `<tr>
+      <td><strong>${u.id}</strong></td>
+      <td><span class="status-pill ${u.status}">${u.status}</span></td>
+      <td class="num ${etapa1Class}">${money(p.etapa1)}</td>
+      <td class="num ${etapa1Class}">${money(m2xE1)}/m²</td>
+      <td class="num ${etapa2Class}">${money(u.precioLista)}</td>
+      <td class="num ${etapa2Class}">${money(m2xE2)}/m²</td>
+    </tr>`;
+  }).join('');
+
+  const d2 = discountSchedule.etapa2.map(s=>
+    `<tr><td>${schemeMeta[s.key].label}</td><td class="num">${s.descuento}%</td></tr>`).join('');
+
+  return `
+    <h3>Lista de precios y etapas</h3>
+    <div class="price-list-note">
+      Etapa 1: primera etapa de venta. Etapa 2: lista vigente, usada para valuar el inventario disponible.
+      En Etapa 1, <strong>negritas</strong> = depto vendido con esa lista; <span style="text-decoration:line-through">tachado</span> = no se vendió en esa etapa.
+      En Etapa 2, <span style="text-decoration:line-through">tachado</span> = depto ya vendido/apartado (fuera de lista). "$/m²" usa m² totales del depto. Fuente: "ETAPA 1.png", "DESCUENTOS ETAPA 1.png" y "PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf".
+    </div>
+    <table>
+      <thead><tr><th>Depto</th><th>Estatus</th><th class="num">Etapa 1</th><th class="num">$/m² Etapa 1</th><th class="num">Etapa 2 (vigente)</th><th class="num">$/m² Etapa 2</th></tr></thead>
+      <tbody>${rowsHTML}</tbody>
+    </table>
+
+    <h4 style="margin-top:26px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Descuento por esquema de pago (Etapa 2, vigente)</h4>
+    <table>
+      <thead><tr><th>Esquema</th><th class="num">Descuento</th></tr></thead>
+      <tbody>${d2}</tbody>
+    </table>
+  `;
+}
+
+function openPriceListModal(){
+  priceModalBody.innerHTML = priceListTemplate(getUnits());
+  priceOverlay.classList.add('open');
+}
+function closePriceListModal(){ priceOverlay.classList.remove('open'); }
+
+// Delegación de clicks (una sola vez; el contenido interno se reconstruye en cada render)
+floorsEl.addEventListener('click', e=>{
+  const card = e.target.closest('.unit[data-id]');
+  if(card) openModal(card.dataset.id, 'view');
+});
+tbody.addEventListener('click', e=>{
+  const tr = e.target.closest('tr[data-id]');
+  if(tr) openModal(tr.dataset.id, 'view');
+});
+
+// ---------- Modal: ver / editar ----------
+let editTimeline = [];
+
+function openModal(id, mode){
+  const u = getUnits().find(x=>x.id===id);
+  if(!u) return;
+  modalBody.innerHTML = mode==='edit' ? editTemplate(u) : viewTemplate(u);
+  overlay.classList.add('open');
+  if(mode==='edit') wireEditForm(u); else wireViewButtons(u);
+}
+function closeModal(){ overlay.classList.remove('open'); }
+
+function viewTemplate(u){
+  const hasInfo = !!u.contacto;
+  const c = u.contacto || {};
+  const tl = u.timeline || [];
+  return `
+    <h3>Depto ${u.id}${overrides[u.id] ? '<span class="edited-tag">Editado manualmente</span>' : ''}</h3>
+    <div class="modal-sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · <span class="status-pill ${u.status}">${u.status}</span></div>
+
+    <h4>Datos de contacto</h4>
+    ${hasInfo ? `
+    <div class="info-grid">
+      <div class="info-item"><div class="k">Nombre</div><div class="v">${c.nombre || '—'}</div></div>
+      <div class="info-item"><div class="k">Teléfono</div><div class="v">${c.telefono || '—'}</div></div>
+      <div class="info-item"><div class="k">Email</div><div class="v">${c.email || '—'}</div></div>
+      <div class="info-item"><div class="k">RFC</div><div class="v">${c.rfc || '—'}</div></div>
+      <div class="info-item"><div class="k">CURP</div><div class="v">${c.curp || '—'}</div></div>
+      <div class="info-item"><div class="k">Precio pactado</div><div class="v">${money(u.precioContrato)}</div></div>
+    </div>` : `<div class="placeholder">Sin comprador registrado todavía.</div>`}
+
+    ${(() => {
+      const info = discountInfo(u);
+      if(!info) return '';
+      const cercaTabla = info.closest.diff <= 0.3;
+      return `
+    <h4>Etapa de venta</h4>
+    <div class="info-grid">
+      <div class="info-item"><div class="k">Etapa</div><div class="v">${info.etapaLabel}</div></div>
+      <div class="info-item"><div class="k">Precio de lista (${info.etapaLabel})</div><div class="v">${money(info.base)}</div></div>
+      <div class="info-item"><div class="k">Descuento autorizado</div><div class="v">${info.pct.toFixed(2)}% (${money(info.base - u.precioContrato)})</div></div>
+      <div class="info-item"><div class="k">Referencia de tabla más cercana</div><div class="v">${schemeMeta[info.closest.key].label} — ${info.closest.descuento}%${cercaTabla ? '' : ' (aprox.)'}</div></div>
+    </div>
+
+    <h4>Esquema de pago (según contrato)</h4>
+    <div style="font-size:13px;line-height:1.6;color:var(--text)">${u.esquemaContrato || '<span class="placeholder">No capturado todavía.</span>'}</div>
+      `;
+    })()}
+
+    <h4>Calendario de pagos</h4>
+    ${tl.length ? `<div class="tl">
+      ${tl.map(t=>`
+        <div class="tl-item ${t.estatus}">
+          <div class="tl-dot"></div>
+          <div class="tl-fecha">${t.fecha}</div>
+          <div class="tl-concepto">${t.concepto}<span class="tl-pill">${t.estatus}</span></div>
+          <div class="tl-monto">${money(t.monto)}</div>
+        </div>`).join('')}
+    </div>` : `<div class="placeholder">Sin pagos registrados.</div>`}
+
+    <div class="modal-actions">
+      <button class="btn primary" id="btnEdit">${hasInfo ? 'Editar información' : 'Registrar comprador'}</button>
+    </div>
+  `;
+}
+function wireViewButtons(u){
+  document.getElementById('btnEdit').addEventListener('click', () => openModal(u.id, 'edit'));
+}
+
+function renderTimelineEditor(){
+  if(!editTimeline.length) return `<div class="placeholder">Sin pagos. Agrega el primero.</div>`;
+  return editTimeline.map((t,i)=>`
+    <div class="tl-edit-row" data-idx="${i}">
+      <input type="text" class="tl-fecha-input" placeholder="Fecha" value="${(t.fecha||'').replace(/"/g,'&quot;')}">
+      <input type="text" class="tl-concepto-input" placeholder="Concepto" value="${(t.concepto||'').replace(/"/g,'&quot;')}">
+      <input type="number" class="tl-monto-input" placeholder="Monto" value="${t.monto||0}">
+      <select class="tl-estatus-input">
+        <option value="pagado" ${t.estatus==='pagado'?'selected':''}>Pagado</option>
+        <option value="pendiente" ${t.estatus==='pendiente'?'selected':''}>Pendiente</option>
+      </select>
+      <button class="tl-remove" data-remove="${i}" title="Quitar">✕</button>
+    </div>`).join('');
+}
+
+function syncTimelineFromDOM(){
+  const rows = modalBody.querySelectorAll('.tl-edit-row');
+  editTimeline = Array.from(rows).map(row=>({
+    fecha: row.querySelector('.tl-fecha-input').value.trim(),
+    concepto: row.querySelector('.tl-concepto-input').value.trim(),
+    monto: parseFloat(row.querySelector('.tl-monto-input').value) || 0,
+    estatus: row.querySelector('.tl-estatus-input').value
+  }));
+}
+
+function editTemplate(u){
+  editTimeline = (u.timeline || []).map(t => Object.assign({}, t));
+  const c = u.contacto || {};
+  return `
+    <h3>Editar depto ${u.id}</h3>
+    <div class="modal-sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es)</div>
+
+    <h4>Estatus y venta</h4>
+    <div class="form-grid">
+      <div class="field"><label>Estatus</label>
+        <select id="f_status">
+          <option value="disponible" ${u.status==='disponible'?'selected':''}>Disponible</option>
+          <option value="apartado" ${u.status==='apartado'?'selected':''}>Apartado</option>
+          <option value="vendido" ${u.status==='vendido'?'selected':''}>Vendido</option>
+        </select>
+      </div>
+      <div class="field"><label>Precio pactado</label><input id="f_precio" type="number" value="${u.precioContrato||''}"></div>
+      <div class="field"><label>Recibido a la fecha</label><input id="f_recibido" type="number" value="${u.recibido||''}"></div>
+      <div class="field"><label>Financiamiento</label><input id="f_financia" type="text" value="${(u.financia||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Fecha de firma</label><input id="f_fechaFirma" type="text" value="${(u.fechaFirma||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+
+    <h4>Etapa de venta</h4>
+    <div class="form-grid">
+      <div class="field"><label>Etapa</label>
+        <select id="f_etapaVenta">
+          <option value="" ${!u.etapaVenta?'selected':''}>Sin especificar</option>
+          <option value="etapa1" ${u.etapaVenta==='etapa1'?'selected':''}>Etapa 1</option>
+          <option value="etapa2" ${u.etapaVenta==='etapa2'?'selected':''}>Etapa 2 (vigente)</option>
+        </select>
+      </div>
+      <div class="field full"><label>Esquema de pago (según contrato)</label>
+        <textarea id="f_esquemaContrato" placeholder="Describe la forma de pago tal como aparece en la carátula del contrato...">${(u.esquemaContrato||'').replace(/</g,'&lt;')}</textarea>
+      </div>
+    </div>
+
+    <h4>Datos de contacto</h4>
+    <div class="form-grid">
+      <div class="field"><label>Nombre</label><input id="f_nombre" type="text" value="${(c.nombre||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Teléfono</label><input id="f_telefono" type="text" value="${(c.telefono||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Email</label><input id="f_email" type="text" value="${(c.email||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>RFC</label><input id="f_rfc" type="text" value="${(c.rfc||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>CURP</label><input id="f_curp" type="text" value="${(c.curp||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+
+    <h4>Calendario de pagos</h4>
+    <div id="tlEditor">${renderTimelineEditor()}</div>
+    <button class="btn small" id="btnAddPago">+ Agregar pago</button>
+
+    <div class="modal-actions">
+      ${overrides[u.id] ? `<button class="btn danger" id="btnResetUnit">Restablecer original</button>` : ''}
+      <button class="btn" id="btnCancel">Cancelar</button>
+      <button class="btn primary" id="btnSave">Guardar</button>
+    </div>
+  `;
+}
+
+function wireEditForm(u){
+  const tlEditor = document.getElementById('tlEditor');
+
+  document.getElementById('btnAddPago').addEventListener('click', () => {
+    syncTimelineFromDOM();
+    editTimeline.push({fecha:'', concepto:'', monto:0, estatus:'pendiente'});
+    tlEditor.innerHTML = renderTimelineEditor();
+  });
+
+  tlEditor.addEventListener('click', e => {
+    const idx = e.target.dataset.remove;
+    if(idx !== undefined){
+      syncTimelineFromDOM();
+      editTimeline.splice(Number(idx), 1);
+      tlEditor.innerHTML = renderTimelineEditor();
+    }
+  });
+
+  document.getElementById('btnCancel').addEventListener('click', () => openModal(u.id, 'view'));
+
+  const resetBtn = document.getElementById('btnResetUnit');
+  if(resetBtn){
+    resetBtn.addEventListener('click', () => {
+      if(confirm('¿Restablecer este depto a la información original y descartar tus cambios?')){
+        resetUnitOverride(u.id);
+        renderAll();
+        openModal(u.id, 'view');
+      }
+    });
+  }
+
+  document.getElementById('btnSave').addEventListener('click', () => {
+    syncTimelineFromDOM();
+    const patch = {
+      status: document.getElementById('f_status').value,
+      precioContrato: parseFloat(document.getElementById('f_precio').value) || 0,
+      recibido: parseFloat(document.getElementById('f_recibido').value) || 0,
+      financia: document.getElementById('f_financia').value.trim(),
+      fechaFirma: document.getElementById('f_fechaFirma').value.trim(),
+      etapaVenta: document.getElementById('f_etapaVenta').value || null,
+      esquemaContrato: document.getElementById('f_esquemaContrato').value.trim(),
+      comprador: document.getElementById('f_nombre').value.trim(),
+      contacto: {
+        nombre: document.getElementById('f_nombre').value.trim(),
+        telefono: document.getElementById('f_telefono').value.trim(),
+        email: document.getElementById('f_email').value.trim(),
+        rfc: document.getElementById('f_rfc').value.trim(),
+        curp: document.getElementById('f_curp').value.trim()
+      },
+      timeline: editTimeline.filter(t => t.fecha || t.concepto || t.monto)
+    };
+    saveUnitOverride(u.id, patch);
+    renderAll();
+    openModal(u.id, 'view');
+  });
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+document.getElementById('priceModalClose').addEventListener('click', closePriceListModal);
+priceOverlay.addEventListener('click', e => { if(e.target === priceOverlay) closePriceListModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); } });
+
+// ---------- Barra de herramientas ----------
+document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
+document.getElementById('btnExport').addEventListener('click', exportData);
+document.getElementById('btnImport').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file) importData(file);
+  e.target.value = '';
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  if(confirm('¿Restablecer TODOS los cambios guardados en este navegador? Esta acción no se puede deshacer.')){
+    resetAllOverrides();
+    renderAll();
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
