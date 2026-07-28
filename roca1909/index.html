@@ -490,15 +490,11 @@ function priceListTemplate(units){
     const vendidoEnEtapa1 = !!(fit && fit.etapa === 'etapa1');
     const etapa1Class = vendidoEnEtapa1 ? 'etapa-sold' : 'etapa-not-sold';
     const etapa2Class = u.precioContrato ? 'etapa-taken' : 'etapa-current';
-    const m2xE1 = u.m2 ? p.etapa1 / u.m2 : null;
-    const m2xE2 = u.m2 ? u.precioLista / u.m2 : null;
     return `<tr>
       <td><strong>${u.id}</strong></td>
       <td><span class="status-pill ${u.status}">${u.status}</span></td>
       <td class="num ${etapa1Class}">${money(p.etapa1)}</td>
-      <td class="num ${etapa1Class}">${money(m2xE1)}/m²</td>
       <td class="num ${etapa2Class}">${money(u.precioLista)}</td>
-      <td class="num ${etapa2Class}">${money(m2xE2)}/m²</td>
     </tr>`;
   }).join('');
 
@@ -510,10 +506,10 @@ function priceListTemplate(units){
     <div class="price-list-note">
       Etapa 1: primera etapa de venta. Etapa 2: lista vigente, usada para valuar el inventario disponible.
       En Etapa 1, <strong>negritas</strong> = depto vendido con esa lista; <span style="text-decoration:line-through">tachado</span> = no se vendió en esa etapa.
-      En Etapa 2, <span style="text-decoration:line-through">tachado</span> = depto ya vendido/apartado (fuera de lista). "$/m²" usa m² totales del depto. Fuente: "ETAPA 1.png", "DESCUENTOS ETAPA 1.png" y "PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf".
+      En Etapa 2, <span style="text-decoration:line-through">tachado</span> = depto ya vendido/apartado (fuera de lista). Fuente: "ETAPA 1.png", "DESCUENTOS ETAPA 1.png" y "PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf".
     </div>
     <table>
-      <thead><tr><th>Depto</th><th>Estatus</th><th class="num">Etapa 1</th><th class="num">$/m² Etapa 1</th><th class="num">Etapa 2 (vigente)</th><th class="num">$/m² Etapa 2</th></tr></thead>
+      <thead><tr><th>Depto</th><th>Estatus</th><th class="num">Etapa 1</th><th class="num">Etapa 2 (vigente)</th></tr></thead>
       <tbody>${rowsHTML}</tbody>
     </table>
 
@@ -583,6 +579,7 @@ function viewTemplate(u){
       <div class="info-item"><div class="k">Precio de lista (${info.etapaLabel})</div><div class="v">${money(info.base)}</div></div>
       <div class="info-item"><div class="k">Descuento autorizado</div><div class="v">${info.pct.toFixed(2)}% (${money(info.base - u.precioContrato)})</div></div>
       <div class="info-item"><div class="k">Referencia de tabla más cercana</div><div class="v">${schemeMeta[info.closest.key].label} — ${info.closest.descuento}%${cercaTabla ? '' : ' (aprox.)'}</div></div>
+      <div class="info-item"><div class="k">Precio por m² (pactado)</div><div class="v">${u.m2 ? money(u.precioContrato / u.m2) + '/m²' : '—'}</div></div>
     </div>
 
     <h4>Esquema de pago (según contrato)</h4>
