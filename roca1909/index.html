@@ -30,6 +30,9 @@
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
   .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(20,30,45,.06)}
+  .kpi.kpi-clickable{cursor:pointer;transition:transform .1s}
+  .kpi.kpi-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(20,30,45,.12);border-color:var(--accent)}
+  .kpi.kpi-clickable .label::after{content:' →';opacity:.5;font-size:10px}
   .kpi .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
   .kpi .value{font-size:24px;font-weight:600}
   .kpi .value.green{color:var(--green)} .kpi .value.yellow{color:var(--yellow)} .kpi .value.accent{color:var(--accent)}
@@ -130,6 +133,7 @@
   .etapa-not-sold{color:var(--muted);text-decoration:line-through}
   .etapa-taken{color:var(--muted);text-decoration:line-through}
   .price-list-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+  .table-center th, .table-center td{text-align:center}
 </style>
 </head>
 <body>
@@ -148,6 +152,11 @@
 <section>
   <h2>Finanzas</h2>
   <div class="kpis" id="kpisFinanzas"></div>
+</section>
+
+<section>
+  <h2>Comisiones <span class="count">equipo de ventas</span></h2>
+  <div class="kpis" id="kpisComisiones"></div>
 </section>
 
 <section>
@@ -195,6 +204,13 @@
   </div>
 </div>
 
+<div class="overlay" id="comisionesOverlay">
+  <div class="modal" style="max-width:800px">
+    <button class="modal-close" id="comisionesModalClose">✕</button>
+    <div id="comisionesModalBody"></div>
+  </div>
+</div>
+
 <script>
 const baseUnits = [
   {id:'101',piso:1,m2:85.14,vista:'FRONTAL',cajones:1,precioLista:3959010,status:'disponible'},
@@ -214,7 +230,8 @@ const baseUnits = [
       {fecha:'03/08/2026',concepto:'Firma de contrato (anticipo inicial 80%)',monto:2840704,estatus:'pendiente'},
       {fecha:'03/09/2026',concepto:'Pago parcial (10%)',monto:357588,estatus:'pendiente'},
       {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (10% restante)',monto:357588,estatus:'pendiente'}
-    ]},
+    ],
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:178794,exigible:178794,pagado:0,fechaPago:null}},
   {id:'103',piso:1,m2:79.75,vista:'POSTERIOR',cajones:1,precioLista:3283580,status:'vendido',
     comprador:'Pedro Sinuhe Rodríguez Cervantes',precioContrato:3124280,recibido:156214,fechaFirma:'22/07/2026',financia:'Banco Santander (preaprobado $3,067,434)',
     etapaVenta:'etapa1',
@@ -231,7 +248,8 @@ const baseUnits = [
       {fecha:'22/07/2026',concepto:'Firma de contrato (anticipo inicial 5%)',monto:136214,estatus:'pagado'},
       {fecha:'Fecha de entrega y escrituración (o 06/01/2027 si es posterior)',concepto:'Pago parcial (5%)',monto:156214,estatus:'pendiente'},
       {fecha:'Fecha de entrega y escrituración',concepto:'Finiquito (saldo, vía crédito hipotecario Santander)',monto:2811852,estatus:'pendiente'}
-    ]},
+    ],
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:156214,exigible:78107,pagado:78107,fechaPago:'27/07/2026'}},
   {id:'104',piso:1,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2707740,status:'disponible'},
 
   {id:'201',piso:2,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4056895,status:'disponible'},
@@ -252,7 +270,8 @@ const baseUnits = [
       {fecha:'13/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
       {fecha:'23/07/2026',concepto:'Firma de contrato (anticipo inicial 51.51%)',monto:1180000,estatus:'pagado'},
       {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (saldo, vía crédito INFONAVIT)',monto:1130000,estatus:'pendiente'}
-    ]},
+    ],
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.04,total:93200,exigible:93200,pagado:93200,fechaPago:'27/07/2026'}},
 
   {id:'301',piso:3,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4078180,status:'disponible'},
   {id:'302',piso:3,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4323500,status:'disponible'},
@@ -394,6 +413,7 @@ function importData(file){
 
 // ---------- Elementos persistentes ----------
 const kpisFinanzasEl = document.getElementById('kpisFinanzas');
+const kpisComisionesEl = document.getElementById('kpisComisiones');
 const kpisInventarioEl = document.getElementById('kpisInventario');
 const floorsEl = document.getElementById('floors');
 const tbody = document.querySelector('#cobranzaTable tbody');
@@ -401,6 +421,8 @@ const overlay = document.getElementById('overlay');
 const modalBody = document.getElementById('modalBody');
 const priceOverlay = document.getElementById('priceOverlay');
 const priceModalBody = document.getElementById('priceModalBody');
+const comisionesOverlay = document.getElementById('comisionesOverlay');
+const comisionesModalBody = document.getElementById('comisionesModalBody');
 
 // ---------- Render ----------
 function renderAll(){
@@ -412,39 +434,66 @@ function renderAll(){
 
 function renderKpiRow(el, kpis){
   el.innerHTML = kpis.map(k=>`
-    <div class="kpi">
+    <div class="kpi ${k.clickable?'kpi-clickable':''}" ${k.action?`data-action="${k.action}"`:''}>
       <div class="label">${k.label}</div>
       <div class="value ${k.cls||''}">${k.value}</div>
       <div class="sub2">${k.sub||''}</div>
     </div>`).join('');
 }
 
+// Precio de referencia de una unidad para el "valor total del proyecto":
+// si se vendió/apartó en una etapa con precio histórico registrado (etapaPrices),
+// usa ESE precio de esa etapa; si no (disponible, o etapa sin historial guardado
+// todavía —p.ej. una futura Etapa 3—), usa el precio de lista vigente (precioLista).
+// Así el total siempre queda como "suma de cada depto a la etapa en que realmente
+// se vendió/está en venta", y se mantiene correcto según se agreguen nuevas etapas.
+function referencePriceForUnit(u){
+  const historico = (u.etapaVenta && etapaPrices[u.id]) ? etapaPrices[u.id][u.etapaVenta] : null;
+  return historico || u.precioLista;
+}
+
 function renderKPIs(units){
   const vendidos = units.filter(u=>u.status==='vendido');
   const apartados = units.filter(u=>u.status==='apartado');
   const disponibles = units.filter(u=>u.status==='disponible');
-  const valorTotalLista = units.reduce((s,u)=>s+u.precioLista,0);
+  const valorTotalProyecto = units.reduce((s,u)=>s+referencePriceForUnit(u),0);
   const valorVendido = vendidos.reduce((s,u)=>s+(u.precioContrato||0),0);
   const valorApartado = apartados.reduce((s,u)=>s+(u.precioContrato||0),0);
   const cobranza = [...vendidos,...apartados].reduce((s,u)=>s+(u.recibido||0),0);
-  const valorDisponible = valorTotalLista - valorVendido - valorApartado;
+  const valorDisponible = disponibles.reduce((s,u)=>s+u.precioLista,0);
 
   const valorContratado = valorVendido + valorApartado;
   const pctCobradoContratado = valorContratado > 0 ? (cobranza / valorContratado * 100) : 0;
-  const pctCobradoTotal = valorTotalLista > 0 ? (cobranza / valorTotalLista * 100) : 0;
+  const pctCobradoTotal = valorTotalProyecto > 0 ? (cobranza / valorTotalProyecto * 100) : 0;
 
   renderKpiRow(kpisFinanzasEl, [
-    {label:'Valor total del proyecto', value: money(valorTotalLista), cls:'accent', sub:'precio de lista, Etapa 2 · 20 unidades'},
+    {label:'Valor total del proyecto', value: money(valorTotalProyecto), cls:'accent', sub:'suma por etapa real de venta de cada depto · 20 unidades'},
     {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato'},
     {label:'% cobrado vs. lo contratado', value: pctCobradoContratado.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorContratado)+' contratados'},
-    {label:'% cobrado vs. total de ventas', value: pctCobradoTotal.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorTotalLista)+' (lista Etapa 2)'},
+    {label:'% cobrado vs. total de ventas', value: pctCobradoTotal.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorTotalProyecto)+' (valor total por etapa real)'},
   ]);
 
   renderKpiRow(kpisInventarioEl, [
     {label:'Unidades totales', value: units.length, sub:'5 niveles · 4 deptos por nivel'},
     {label:'Vendidos (firmados)', value: vendidos.length, cls:'green', sub: money(valorVendido)},
     {label:'Apartados', value: apartados.length, cls:'yellow', sub: money(valorApartado)+' (contrato pendiente)'},
-    {label:'Disponibles', value: disponibles.length, sub: money(valorDisponible)+' en inventario'},
+    {label:'Disponibles', value: disponibles.length, sub: money(valorDisponible)+' en inventario (lista vigente)'},
+  ]);
+
+  // Comisiones al equipo de ventas (fuente: ROCA1909_VENTAS.xlsx, hoja "Estado de Cuenta").
+  // Todas las cifras se muestran SIN IVA. "Exigible" respeta la regla pactada: 50% de la
+  // comisión se vuelve exigible con un enganche del 1%-29%, y el 100% con un enganche del
+  // 30% o más.
+  const comisionUnits = units.filter(u=>u.comision);
+  const comisionTotal = comisionUnits.reduce((s,u)=>s+u.comision.total,0);
+  const comisionPagada = comisionUnits.reduce((s,u)=>s+(u.comision.pagado||0),0);
+  const comisionExigible = comisionUnits.reduce((s,u)=>s+u.comision.exigible,0);
+  const comisionPendiente = comisionExigible - comisionPagada;
+
+  renderKpiRow(kpisComisionesEl, [
+    {label:'Comisiones pagadas al equipo de ventas', value: money(comisionPagada), cls: comisionPagada>0?'green':'yellow', sub: comisionUnits.length+' operación(es) con comisión pactada · sin IVA · click para ver detalle', clickable:true, action:'openComisiones'},
+    {label:'Comisión exigible pendiente de pago', value: money(comisionPendiente), cls:'yellow', sub:'ya exigible según % de enganche cobrado · sin IVA'},
+    {label:'Comisión total pactada', value: money(comisionTotal), cls:'accent', sub:'incluye lo aún no exigible · sin IVA'},
   ]);
 }
 
@@ -527,6 +576,41 @@ function openPriceListModal(){
 }
 function closePriceListModal(){ priceOverlay.classList.remove('open'); }
 
+function comisionesListTemplate(units){
+  const rows = units.filter(u=>u.comision).sort((a,b)=>a.id.localeCompare(b.id));
+  const rowsHTML = rows.map(u=>{
+    const c = u.comision;
+    const pendiente = c.exigible - (c.pagado||0);
+    return `<tr>
+      <td><strong>${u.id}</strong></td>
+      <td>${c.comisionista}</td>
+      <td class="num">${(c.pctPactado*100).toFixed(0)}%</td>
+      <td class="num">${money(c.total)}</td>
+      <td class="num">${money(c.pagado||0)}</td>
+      <td>${c.fechaPago || '<span class="placeholder">Sin pagar</span>'}</td>
+      <td class="num">${money(pendiente)}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <h3>Comisiones al equipo de ventas</h3>
+    <div class="price-list-note">Cifras sin IVA. Fuente: "ROCA1909_VENTAS.xlsx" y los pagos que se registren en cada depto.</div>
+    <table class="table-center">
+      <thead><tr><th>Depto</th><th>Comisionista</th><th>% pactado</th><th>Comisión total</th><th>Pagado</th><th>Fecha de pago</th><th>Pendiente</th></tr></thead>
+      <tbody>${rowsHTML}</tbody>
+    </table>
+  `;
+}
+function openComisionesModal(){
+  comisionesModalBody.innerHTML = comisionesListTemplate(getUnits());
+  comisionesOverlay.classList.add('open');
+}
+function closeComisionesModal(){ comisionesOverlay.classList.remove('open'); }
+
+kpisComisionesEl.addEventListener('click', e=>{
+  const card = e.target.closest('.kpi-clickable[data-action="openComisiones"]');
+  if(card) openComisionesModal();
+});
+
 // Delegación de clicks (una sola vez; el contenido interno se reconstruye en cada render)
 floorsEl.addEventListener('click', e=>{
   const card = e.target.closest('.unit[data-id]');
@@ -571,18 +655,17 @@ function viewTemplate(u){
     ${(() => {
       const info = discountInfo(u);
       if(!info) return '';
-      const cercaTabla = info.closest.diff <= 0.3;
       return `
     <h4>Etapa de venta</h4>
     <div class="info-grid">
       <div class="info-item"><div class="k">Etapa</div><div class="v">${info.etapaLabel}</div></div>
       <div class="info-item"><div class="k">Precio de lista (${info.etapaLabel})</div><div class="v">${money(info.base)}</div></div>
       <div class="info-item"><div class="k">Descuento autorizado</div><div class="v">${info.pct.toFixed(2)}% (${money(info.base - u.precioContrato)})</div></div>
-      <div class="info-item"><div class="k">Referencia de tabla más cercana</div><div class="v">${schemeMeta[info.closest.key].label} — ${info.closest.descuento}%${cercaTabla ? '' : ' (aprox.)'}</div></div>
-      <div class="info-item"><div class="k">Precio por m² (pactado)</div><div class="v">${u.m2 ? money(u.precioContrato / u.m2) + '/m²' : '—'}</div></div>
+      <div class="info-item"><div class="k">Precio de venta</div><div class="v">${money(u.precioContrato)}</div></div>
+      <div class="info-item"><div class="k">Precio por m²</div><div class="v">${u.m2 ? money(u.precioContrato / u.m2) + '/m²' : '—'}</div></div>
     </div>
 
-    <h4>Esquema de pago (según contrato)</h4>
+    <h4>Esquema de pago</h4>
     <div style="font-size:13px;line-height:1.6;color:var(--text)">${u.esquemaContrato || '<span class="placeholder">No capturado todavía.</span>'}</div>
       `;
     })()}
@@ -597,6 +680,21 @@ function viewTemplate(u){
           <div class="tl-monto">${money(t.monto)}</div>
         </div>`).join('')}
     </div>` : `<div class="placeholder">Sin pagos registrados.</div>`}
+
+    ${u.comision ? (() => {
+      const pendiente = u.comision.exigible - (u.comision.pagado||0);
+      return `
+    <h4>Comisión al equipo de ventas <span style="font-weight:400;text-transform:none;letter-spacing:0">(cifras sin IVA)</span></h4>
+    <div class="info-grid">
+      <div class="info-item"><div class="k">Comisionista</div><div class="v">${u.comision.comisionista}</div></div>
+      <div class="info-item"><div class="k">% pactado</div><div class="v">${(u.comision.pctPactado*100).toFixed(0)}%</div></div>
+      <div class="info-item"><div class="k">Comisión total</div><div class="v">${money(u.comision.total)}</div></div>
+      <div class="info-item"><div class="k">Exigible a la fecha</div><div class="v">${money(u.comision.exigible)}</div></div>
+      <div class="info-item"><div class="k">Pagado</div><div class="v">${money(u.comision.pagado||0)}</div></div>
+      <div class="info-item"><div class="k">Pendiente por pagar</div><div class="v">${money(pendiente)}</div></div>
+    </div>
+      `;
+    })() : ''}
 
     <div class="modal-actions">
       <button class="btn primary" id="btnEdit">${hasInfo ? 'Editar información' : 'Registrar comprador'}</button>
@@ -681,6 +779,17 @@ function editTemplate(u){
     <div id="tlEditor">${renderTimelineEditor()}</div>
     <button class="btn small" id="btnAddPago">+ Agregar pago</button>
 
+    ${u.comision ? `
+    <h4>Comisión al equipo de ventas (cifras sin IVA)</h4>
+    <div class="form-grid">
+      <div class="field"><label>Comisionista</label><input id="f_comisionista" type="text" value="${(u.comision.comisionista||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>% pactado</label><input id="f_comisionPct" type="number" step="0.01" value="${(u.comision.pctPactado*100)||0}"></div>
+      <div class="field"><label>Comisión total</label><input id="f_comisionTotal" type="number" value="${u.comision.total||0}"></div>
+      <div class="field"><label>Exigible a la fecha</label><input id="f_comisionExigible" type="number" value="${u.comision.exigible||0}"></div>
+      <div class="field"><label>Pagado</label><input id="f_comisionPagado" type="number" value="${u.comision.pagado||0}"></div>
+    </div>
+    ` : ''}
+
     <div class="modal-actions">
       ${overrides[u.id] ? `<button class="btn danger" id="btnResetUnit">Restablecer original</button>` : ''}
       <button class="btn" id="btnCancel">Cancelar</button>
@@ -740,6 +849,15 @@ function wireEditForm(u){
       },
       timeline: editTimeline.filter(t => t.fecha || t.concepto || t.monto)
     };
+    if(u.comision){
+      patch.comision = {
+        comisionista: document.getElementById('f_comisionista').value.trim(),
+        pctPactado: (parseFloat(document.getElementById('f_comisionPct').value) || 0) / 100,
+        total: parseFloat(document.getElementById('f_comisionTotal').value) || 0,
+        exigible: parseFloat(document.getElementById('f_comisionExigible').value) || 0,
+        pagado: parseFloat(document.getElementById('f_comisionPagado').value) || 0
+      };
+    }
     saveUnitOverride(u.id, patch);
     renderAll();
     openModal(u.id, 'view');
@@ -750,7 +868,9 @@ document.getElementById('modalClose').addEventListener('click', closeModal);
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
 document.getElementById('priceModalClose').addEventListener('click', closePriceListModal);
 priceOverlay.addEventListener('click', e => { if(e.target === priceOverlay) closePriceListModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); } });
+document.getElementById('comisionesModalClose').addEventListener('click', closeComisionesModal);
+comisionesOverlay.addEventListener('click', e => { if(e.target === comisionesOverlay) closeComisionesModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); } });
 
 // ---------- Barra de herramientas ----------
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
