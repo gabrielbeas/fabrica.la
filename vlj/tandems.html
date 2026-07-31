@@ -554,7 +554,7 @@
   <h2 class="tdm-h2">Operadoras</h2>
   <p class="tdm-intro">Operadoras que ofrecen vuelos tándem en los sitios del club. Todavía nos falta confirmar más — en cuanto tengamos la información la agregamos aquí.</p>
 
-  <div class="tdm-grid">
+  <div class="tdm-grid" id="operadoras-grid">
     <div class="tdm-card">
       <a class="tdm-card-photo" href="https://www.instagram.com/lospapalotes" target="_blank" rel="noopener">
         <img src="img/lospapalotes.png" alt="Vuelo tándem Los Papalotes, Tapalpa">
@@ -600,7 +600,43 @@
     <div class="tdm-card tdm-card-pending">
       <div class="tdm-card-photo tdm-card-photo-tbd"><span class="tdm-card-photo-placeholder">📷</span></div>
       <div class="tdm-card-body">
-        <div class="tdm-card-header"><span class="tdm-card-nombre">Próximamente</span></div>
+        <div class="tdm-card-header"><span class="tdm-card-nombre">Operadora 1</span></div>
+        <div class="tdm-card-sitio">Por confirmar</div>
+        <p class="tdm-card-desc tbd">Aún no tenemos esta información.</p>
+      </div>
+    </div>
+
+    <div class="tdm-card tdm-card-pending">
+      <div class="tdm-card-photo tdm-card-photo-tbd"><span class="tdm-card-photo-placeholder">📷</span></div>
+      <div class="tdm-card-body">
+        <div class="tdm-card-header"><span class="tdm-card-nombre">Operadora 2</span></div>
+        <div class="tdm-card-sitio">Por confirmar</div>
+        <p class="tdm-card-desc tbd">Aún no tenemos esta información.</p>
+      </div>
+    </div>
+
+    <div class="tdm-card tdm-card-pending">
+      <div class="tdm-card-photo tdm-card-photo-tbd"><span class="tdm-card-photo-placeholder">📷</span></div>
+      <div class="tdm-card-body">
+        <div class="tdm-card-header"><span class="tdm-card-nombre">Operadora 3</span></div>
+        <div class="tdm-card-sitio">Por confirmar</div>
+        <p class="tdm-card-desc tbd">Aún no tenemos esta información.</p>
+      </div>
+    </div>
+
+    <div class="tdm-card tdm-card-pending">
+      <div class="tdm-card-photo tdm-card-photo-tbd"><span class="tdm-card-photo-placeholder">📷</span></div>
+      <div class="tdm-card-body">
+        <div class="tdm-card-header"><span class="tdm-card-nombre">Operadora 4</span></div>
+        <div class="tdm-card-sitio">Por confirmar</div>
+        <p class="tdm-card-desc tbd">Aún no tenemos esta información.</p>
+      </div>
+    </div>
+
+    <div class="tdm-card tdm-card-pending">
+      <div class="tdm-card-photo tdm-card-photo-tbd"><span class="tdm-card-photo-placeholder">📷</span></div>
+      <div class="tdm-card-body">
+        <div class="tdm-card-header"><span class="tdm-card-nombre">Operadora 5</span></div>
         <div class="tdm-card-sitio">Por confirmar</div>
         <p class="tdm-card-desc tbd">Aún no tenemos esta información.</p>
       </div>
@@ -634,6 +670,18 @@
     document.getElementById('menu-overlay').style.display = 'none';
     document.getElementById('hamburger').classList.remove('open');
   }
+
+  // Orden aleatorio de las fichas de operadoras en cada carga de página
+  (function shuffleOperadoras() {
+    const grid = document.getElementById('operadoras-grid');
+    if (!grid) return;
+    const cards = Array.from(grid.children);
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    cards.forEach(card => grid.appendChild(card));
+  })();
 </script>
 
 </body>
