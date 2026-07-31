@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medidores Hidráulicos - La Fábrica de Chocolate</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --dark: #333;
+            --light: #f8f9fa;
+            --border: #eee;
+            --text-muted: #666;
+            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            min-height: 100vh;
+            color: var(--dark);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-content h1 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .content-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 30px;
+        }
+
+        .content-card h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--secondary);
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95em;
+        }
+
+        table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        table tbody tr:hover {
+            background-color: var(--light);
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .diametro {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .search-filter {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-filter input {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .header-content h1 {
+                font-size: 1.8em;
+            }
+
+            .nav-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            table th,
+            table td {
+                padding: 8px;
+            }
+
+            .search-filter {
+                flex-direction: column;
+            }
+
+            .search-filter input {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>💧 Medidores Hidráulicos</h1>
+                <p class="header-subtitle">Registro de medidores de agua por local</p>
+            </div>
+            <div class="nav-buttons">
+                <a href="index.html?activeTab=dashboard" class="nav-btn">DASHBOARD</a>
+                <a href="index.html?activeTab=building" class="nav-btn">EDIFICIO COMPLETO</a>
+                <a href="index.html?activeTab=contracts" class="nav-btn">LOCALES</a>
+            </div>
+        </header>
+
+        <div class="content-card">
+            <h2>Registro de Medidores</h2>
+
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="search-filter">
+                <input type="text" id="searchInput" placeholder="Buscar por local, empresa o notas...">
+            </div>
+
+            <div class="table-wrapper">
+                <table id="medidoresTable">
+                    <thead>
+                        <tr>
+                            <th>LOCAL</th>
+                            <th>TUBO</th>
+                            <th>MEDIDOR</th>
+                            <th>EMPRESA</th>
+                            <th>DIÁMETRO</th>
+                            <th>FECHA DE INSTALACIÓN</th>
+                            <th>NOTAS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de medidores hidráulicos
+        const medidores = [
+            { local: "0", tubo: "0", medidor: "SI", empresa: "LAFABDECHOC", diametro: "2\"", fecha: "03/01/2023", notas: "SERVICIOS GENERALES" },
+            { local: "1", tubo: "1", medidor: "X", empresa: "8 SAMURAIS", diametro: "1\"", fecha: "08/05/2024", notas: "" },
+            { local: "2", tubo: "2", medidor: "SI", empresa: "MEXA DISEÑO SA DE CV", diametro: "1\"", fecha: "10/19/2023", notas: "" },
+            { local: "3", tubo: "3", medidor: "SI", empresa: "ALQUIMIA DE VINOS", diametro: "3/4\"", fecha: "02/21/2024", notas: "" },
+            { local: "4", tubo: "4", medidor: "SI", empresa: "ENCRUDO, S.A.P.I. DE C.V.", diametro: "1\"", fecha: "08/16/2023", notas: "Restaurant-bar. Contacto: Ana Paula Isaac" },
+            { local: "5", tubo: "5", medidor: "SI", empresa: "PILEA NITRO COFFEE BAR", diametro: "1\"", fecha: "02/21/2024", notas: "" },
+            { local: "6", tubo: "6", medidor: "SI", empresa: "COCKTAILS AND DIAMONDS", diametro: "1\"", fecha: "08/16/2023", notas: "COCKTAILS AND DIAMONDS" },
+            { local: "7", tubo: "7", medidor: "X", empresa: "", diametro: "3/4\"", fecha: "", notas: "CLAUSURADO" },
+            { local: "8", tubo: "8", medidor: "X", empresa: "", diametro: "1\"", fecha: "", notas: "" },
+            { local: "9", tubo: "9", medidor: "X", empresa: "ESTEREO AMERICANA 2023", diametro: "1\"", fecha: "", notas: "" },
+            { local: "10", tubo: "10", medidor: "SI", empresa: "SEMILLERO STUDIOS", diametro: "1\"", fecha: "01/11/2023", notas: "" },
+            { local: "11", tubo: "11", medidor: "SI", empresa: "SEMILLERO STUDIOS", diametro: "1\"", fecha: "03/01/2023", notas: "" },
+            { local: "12", tubo: "12", medidor: "X", empresa: "SEMILLERO STUDIOS", diametro: "1\"", fecha: "", notas: "SE INTERCONECTÓ CON 11" },
+            { local: "13", tubo: "13", medidor: "X", empresa: "SEMILLERO STUDIOS", diametro: "3/4\"", fecha: "", notas: "SE INTERCONECTÓ CON 11" },
+            { local: "14", tubo: "14", medidor: "SI", empresa: "LAFABDECHOC", diametro: "3/4\"", fecha: "01/11/2023", notas: "LOCAL 14" },
+            { local: "15", tubo: "15", medidor: "SI", empresa: "A MI ME GUSTA LA GASOLINA", diametro: "3/4\"", fecha: "08/16/2023", notas: "MAMMUT" },
+            { local: "16", tubo: "16", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "17", tubo: "17", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "18", tubo: "18", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "19", tubo: "19", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "SE INTERCONECTÓ CON 21" },
+            { local: "20", tubo: "20", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "21", tubo: "21", medidor: "SI", empresa: "SARAPE SOCIAL", diametro: "1\"", fecha: "03/01/2023", notas: "LA LINEA HACIA EL LOCAL ES DE 3/4\"" },
+            { local: "22", tubo: "22", medidor: "X", empresa: "SARAPE SOCIAL", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "23", tubo: "23", medidor: "X", empresa: "", diametro: "3/4\"", fecha: "", notas: "" },
+            { local: "24", tubo: "24", medidor: "", empresa: "", diametro: "3/4\"", fecha: "", notas: "?" },
+            { local: "", tubo: "25", medidor: "", empresa: "", diametro: "1\"", fecha: "", notas: "?" }
+        ];
+
+        // Renderizar tabla
+        function renderTable(data = medidores) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #666;">No se encontraron medidores.</td></tr>';
+                return;
+            }
+
+            data.forEach(medidor => {
+                const row = document.createElement('tr');
+                const medidorStatus = medidor.medidor === 'SI' ? '<span class="status-active">ACTIVO</span>' :
+                                     medidor.medidor === 'X' ? '<span class="status-inactive">INACTIVO</span>' : '-';
+
+                row.innerHTML = `
+                    <td><strong>${medidor.local || '-'}</strong></td>
+                    <td>${medidor.tubo}</td>
+                    <td>${medidorStatus}</td>
+                    <td>${medidor.empresa || '-'}</td>
+                    <td><span class="diametro">${medidor.diametro}</span></td>
+                    <td>${medidor.fecha || '-'}</td>
+                    <td>${medidor.notas || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Búsqueda
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const search = this.value.toLowerCase();
+            const filtered = medidores.filter(m =>
+                m.local.toLowerCase().includes(search) ||
+                m.empresa.toLowerCase().includes(search) ||
+                m.notas.toLowerCase().includes(search) ||
+                m.tubo.toLowerCase().includes(search)
+            );
+            renderTable(filtered);
+        });
+
+        // Estadísticas
+        function renderStats() {
+            const stats = {
+                total: medidores.length,
+                activos: medidores.filter(m => m.medidor === 'SI').length,
+                inactivos: medidores.filter(m => m.medidor === 'X').length,
+                conFecha: medidores.filter(m => m.fecha).length
+            };
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total}</div>
+                    <div class="stat-label">Medidores Totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.activos}</div>
+                    <div class="stat-label">Medidores Activos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.inactivos}</div>
+                    <div class="stat-label">Medidores Inactivos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.conFecha}</div>
+                    <div class="stat-label">Con Fecha Instalación</div>
+                </div>
+            `;
+        }
+
+        // Inicializar
+        renderTable();
+        renderStats();
+
+        // Manejo de URL parameters para navegación desde index.html
+        const params = new URLSearchParams(window.location.search);
+        const activeTab = params.get('activeTab');
+        if (activeTab) {
+            // El parámetro se usaría si esta página fuera parte de index.html
+            // Por ahora solo navegamos hacia index.html con el tab especificado
+        }
+    </script>
+</body>
+</html>

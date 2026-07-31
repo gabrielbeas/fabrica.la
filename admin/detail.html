@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Contrato</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --dark: #333;
+            --light: #f8f9fa;
+            --border: #eee;
+            --text-muted: #666;
+            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: var(--dark);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-size: 1.2em;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .detail-value.highlight {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.4em;
+        }
+
+        .detail-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid var(--border);
+        }
+
+        .detail-section h3 {
+            color: var(--primary);
+            font-size: 1.4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .back-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1 id="contractName">Detalles del Contrato</h1>
+                <p class="header-subtitle" id="contractNumber">Local</p>
+            </div>
+            <div class="nav-buttons">
+                <a href="index.html?activeTab=dashboard" class="nav-btn">DASHBOARD</a>
+                <a href="index.html?activeTab=building" class="nav-btn">EDIFICIO COMPLETO</a>
+                <a href="index.html?activeTab=contracts" class="nav-btn">LOCALES</a>
+            </div>
+        </div>
+
+        <div class="content" id="detailContent">
+            <p>Cargando detalles...</p>
+        </div>
+    </div>
+
+    <script>
+        // Obtener datos de la URL
+        const params = new URLSearchParams(window.location.search);
+        const contractId = params.get('id');
+        const encodedData = params.get('data');
+
+        if (encodedData) {
+            try {
+                const contractJson = atob(encodedData);
+                const contract = JSON.parse(contractJson);
+
+                // Actualizar encabezado
+                document.getElementById('contractName').textContent = contract.name;
+                document.getElementById('contractNumber').textContent = contract.number;
+
+                // Renderizar detalles
+                const content = document.getElementById('detailContent');
+
+                if (contract.detail) {
+                    content.innerHTML = `
+                        <div class="detail-section">
+                            <h3>Información General</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Inquilino</span>
+                                    <span class="detail-value">${contract.tenant}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Superficie</span>
+                                    <span class="detail-value">${contract.area}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Contacto</span>
+                                    <span class="detail-value">${contract.contact}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">${contract.email}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Datos del Contrato</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Firma de Contrato</span>
+                                    <span class="detail-value">${contract.detail.firmaContrato}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Plazo</span>
+                                    <span class="detail-value">${contract.detail.plazo}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Inicio del Contrato</span>
+                                    <span class="detail-value">${contract.detail.inicioContrato}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Fin del Contrato</span>
+                                    <span class="detail-value">${contract.detail.finContrato}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Incremento de Renta</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Fecha de Incremento</span>
+                                    <span class="detail-value">${contract.detail.incrementoRenta}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Tipo</span>
+                                    <span class="detail-value highlight">${contract.detail.incrementoTipo}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Fecha Límite</span>
+                                    <span class="detail-value">${contract.detail.fechaLimite}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Depósito y Pagos</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Depósito</span>
+                                    <span class="detail-value highlight">${contract.detail.deposito}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Fecha Depósito</span>
+                                    <span class="detail-value">${contract.detail.fechaDeposito}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Meses</span>
+                                    <span class="detail-value">${contract.detail.meses}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Por Pagar</span>
+                                    <span class="detail-value">${contract.detail.porPagar}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Renta Mensual por Año</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">2024</span>
+                                    <span class="detail-value">${contract.detail.renta2024}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">2025 (${contract.detail.incremento2025})</span>
+                                    <span class="detail-value">${contract.detail.renta2025}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">2026 (${contract.detail.incremento2026})</span>
+                                    <span class="detail-value">${contract.detail.renta2026}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Resumen Financiero</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Mantenimiento (${contract.detail.porcentajeMantenimiento})</span>
+                                    <span class="detail-value">${contract.detail.mantenimiento}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Total</span>
+                                    <span class="detail-value highlight">${contract.detail.total}</span>
+                                </div>
+                                <div class="detail-item" style="grid-column: 1 / -1;">
+                                    <span class="detail-label">Total + IVA</span>
+                                    <span class="detail-value highlight">${contract.detail.totalIVA}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="detail-section">
+                            <h3>Información General</h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Inquilino</span>
+                                    <span class="detail-value">${contract.tenant}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Superficie</span>
+                                    <span class="detail-value">${contract.area}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Renta Mensual</span>
+                                    <span class="detail-value highlight">${contract.rent}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Contacto</span>
+                                    <span class="detail-value">${contract.contact}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">${contract.email}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Período</span>
+                                    <span class="detail-value">${contract.startDate} - ${contract.endDate}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('detailContent').innerHTML = '<p>Error al cargar los detalles.</p>';
+            }
+        } else {
+            document.getElementById('detailContent').innerHTML = '<p>No se encontraron datos del contrato.</p>';
+        }
+    </script>
+</body>
+</html>

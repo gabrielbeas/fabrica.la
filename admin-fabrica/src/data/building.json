@@ -1,0 +1,45 @@
+{
+  "id": 1,
+  "name": "La Fábrica de Chocolate",
+  "description": "Centro comercial multifuncional con 12 locales",
+  "address": "[Dirección completa]",
+  "city": "[Ciudad/Municipio]",
+  "state": "[Estado]",
+  "country": "México",
+  "postalCode": "[Código Postal]",
+  "totalArea": "1,250 m²",
+  "numberOfLocals": 12,
+  "numberOfFloors": 3,
+  "yearBuilt": 2015,
+  "owner": {
+    "name": "[Nombre del propietario]",
+    "email": "[Email del propietario]",
+    "phone": "[Teléfono]"
+  },
+  "documentation": {
+    "propertyRegistry": "[Número de folio]",
+    "rfc": "[RFC del propietario]",
+    "certificateOfInhabitability": "Disponible"
+  },
+  "services": {
+    "electricity": "Incluida",
+    "water": "Incluida",
+    "internet": "Disponible",
+    "parking": "Disponible",
+    "security": "24/7 con cámaras"
+  },
+  "status": {
+    "occupancyPercentage": 92,
+    "occupiedLocals": 11,
+    "availableLocals": 1,
+    "monthlyIncome": "$45,000 USD"
+  },
+  "operationalStatus": "Óptimo",
+  "alerts": {
+    "contractsExpiringIn3Months": 2,
+    "maintenanceIssues": 0,
+    "urgentTasks": 0
+  },
+  "createdAt": "2026-01-15T00:00:00Z",
+  "updatedAt": "2026-07-28T00:00:00Z"
+}

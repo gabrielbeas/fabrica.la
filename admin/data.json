@@ -1,0 +1,112 @@
+{
+  "building": {
+    "name": "La Fábrica de Chocolate",
+    "totalLocals": 13
+  },
+  "locales": [
+    {
+      "id": 1,
+      "number": "LOCAL 1",
+      "name": "8 SAMURAIS",
+      "area": "92 m²",
+      "rent": "$31,437.69",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "number": "LOCAL 2",
+      "name": "MEXA DISEÑO SA DE CV",
+      "area": "106 m²",
+      "rent": "$27,894.63",
+      "status": "active"
+    },
+    {
+      "id": 3,
+      "number": "LOCAL 3",
+      "name": "ALQUIMISTA DE VINOS SA DE CV",
+      "area": "76 m²",
+      "rent": "$23,200.84",
+      "status": "active"
+    },
+    {
+      "id": 4,
+      "number": "LOCAL 4",
+      "name": "ENCRUDO",
+      "area": "100 m²",
+      "rent": "$31,482.00",
+      "status": "active"
+    },
+    {
+      "id": 5,
+      "number": "LOCAL 5",
+      "name": "PILEA NITRO COFFEE BAR SA DE CV",
+      "area": "100 m²",
+      "rent": "$29,683.93",
+      "status": "active"
+    },
+    {
+      "id": 6,
+      "number": "LOCAL 6",
+      "name": "COCKTAILS AND DIAMONDS SAPI DE CV",
+      "area": "77 m²",
+      "rent": "$23,442.40",
+      "status": "active"
+    },
+    {
+      "id": 7,
+      "number": "LOCAL 7,15",
+      "name": "A MI ME GUSTA LA GASOLINA SAPI DE CV",
+      "area": "76 m²",
+      "rent": "$23,442.40",
+      "status": "active"
+    },
+    {
+      "id": 8,
+      "number": "LOCAL 8,9",
+      "name": "ESTEREO AMERICANA 2023 SAPI DE CV",
+      "area": "177 m²",
+      "rent": "$54,699.78",
+      "status": "active"
+    },
+    {
+      "id": 9,
+      "number": "LOCAL 10",
+      "name": "SEMILLERO STUDIOS SA DE CV",
+      "area": "100 m²",
+      "rent": "$25,300.00",
+      "status": "active"
+    },
+    {
+      "id": 10,
+      "number": "LOCAL 11,12,13",
+      "name": "SEMILLERO STUDIOS SA DE CV",
+      "area": "175 m²",
+      "rent": "$43,198.50",
+      "status": "active"
+    },
+    {
+      "id": 11,
+      "number": "LOCAL 14",
+      "name": "GBD",
+      "area": "58 m²",
+      "rent": "$16,240.00",
+      "status": "active"
+    },
+    {
+      "id": 12,
+      "number": "LOCAL 16,17,18",
+      "name": "PROYECTOS SARAPEROS SAPI DE CV",
+      "area": "194 m²",
+      "rent": "$36,000.00",
+      "status": "active"
+    },
+    {
+      "id": 13,
+      "number": "LOCAL 19,20,21,22",
+      "name": "CINE RESPONSABLE SA DE CV",
+      "area": "222 m²",
+      "rent": "$36,000.00",
+      "status": "active"
+    }
+  ]
+}
