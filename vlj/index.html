@@ -386,35 +386,15 @@
   /* ── METEOROLOGÍA (bloque en inicio) ── */
   .meteo-strip {
     background: var(--azul);
-    padding: 2rem 2.5rem;
+    padding: 1.6rem 2.5rem;
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    justify-content: center;
     align-items: center;
   }
-
-  .meteo-item {
-    background: var(--azul);
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    text-decoration: none;
-    transition: background 0.2s;
-    width: 100%;
-    max-width: 860px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .meteo-item:hover { background: #1a5a9a; }
 
   .meteo-mas {
     display: block;
-    width: 100%;
-    max-width: 860px;
-    margin-top: 1.2rem;
-    text-align: right;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -422,29 +402,6 @@
   }
 
   .meteo-mas:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-  .meteo-icon {
-    font-size: 1.8rem;
-    flex-shrink: 0;
-  }
-
-  .meteo-label {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
-    display: block;
-    margin-bottom: 0.2rem;
-  }
-
-  .meteo-name {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #ffffff;
-    text-transform: uppercase;
-  }
 
   /* ── CUOTAS ── */
   .cuotas { background: var(--gris-claro); }
@@ -835,66 +792,23 @@
     color: rgba(255,255,255,0.6);
   }
 
-  .footer-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .footer-legal-row {
+    display: flex;
     gap: 3rem;
+    flex-wrap: wrap;
     margin-bottom: 2.5rem;
   }
 
-  .footer-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    margin-bottom: 1rem;
-  }
-
-  .footer-logo img { height: 2.5rem; }
-
-  .footer-logo-text .l1 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    color: white;
-  }
-
-  .footer-logo-text .l2 {
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
-  }
-
-  .footer-desc {
-    font-size: 0.82rem;
-    line-height: 1.7;
-    color: rgba(255,255,255,0.5);
-  }
-
-  .footer-links h4 {
+  .footer-legal-row a {
     font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.4);
-    margin-bottom: 1rem;
-  }
-
-  .footer-links ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .footer-links a {
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.6);
     transition: color 0.2s;
   }
 
-  .footer-links a:hover { color: white; }
+  .footer-legal-row a:hover { color: white; }
 
   .footer-bottom {
     border-top: 1px solid rgba(255,255,255,0.1);
@@ -939,8 +853,6 @@
     .hero-content { padding: 4rem 1.5rem 4rem; }
     .hero-stats { display: none; }
 
-    .meteo-strip { grid-template-columns: 1fr; }
-
     .cuotas-inner,
     .pilotos-inner { grid-template-columns: 1fr; gap: 2rem; }
 
@@ -949,7 +861,7 @@
     .visitantes-box-grid { grid-template-columns: 1fr; gap: 1.5rem; }
 
 
-    .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
+    .footer-legal-row { gap: 1.5rem; }
     .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
 
   }
@@ -962,7 +874,7 @@
   <a href="#inicio" onclick="closeMenu()">Inicio</a>
   <a href="#pilotos" onclick="closeMenu()">Pilotos</a>
   <a href="#cuotas" onclick="closeMenu()">Cuotas</a>
-  <a href="meteorologia.html" onclick="closeMenu()">Meteorología</a>
+  <a href="clima.html" onclick="closeMenu()">Clima</a>
   <a href="despegues.html" onclick="closeMenu()">Despegues</a>
   <a href="espacio-aereo.html" onclick="closeMenu()">Espacio Aéreo</a>
   <a href="eventos.html" onclick="closeMenu()">Eventos</a>
@@ -975,7 +887,7 @@
 <!-- NAV -->
 <nav>
   <a href="#inicio" class="nav-logo">
-    <img src="img/logo-vlj.png" alt="Club de Vuelo Libre de Jalisco">
+    <img src="img/logovlj.png" alt="Club de Vuelo Libre de Jalisco">
     <div class="nav-logo-text">
       <span class="l1">Club de Vuelo Libre de Jalisco</span>
       <span class="l2">Desde 1978</span>
@@ -984,7 +896,7 @@
   <ul class="nav-links">
     <li><a href="#pilotos">Pilotos</a></li>
     <li><a href="#cuotas">Cuotas</a></li>
-    <li><a href="meteorologia.html">Meteorología</a></li>
+    <li><a href="clima.html">Clima</a></li>
     <li><a href="despegues.html">Despegues</a></li>
     <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
     <li><a href="eventos.html">Eventos</a></li>
@@ -1040,28 +952,7 @@
 
 <!-- METEOROLOGÍA RÁPIDA -->
 <div class="meteo-strip">
-  <a href="https://www.wunderground.com/dashboard/pws/ITAPAL5" target="_blank" rel="noopener" class="meteo-item">
-    <span class="meteo-icon">🌡️</span>
-    <div>
-      <span class="meteo-label">Estación en vivo</span>
-      <span class="meteo-name">Tapalpa ITAPAL5</span>
-    </div>
-  </a>
-  <a href="https://www.windy.com/19.935/-103.654?19.939,-103.657,12,p:pgspots" target="_blank" rel="noopener" class="meteo-item">
-    <span class="meteo-icon">🌬️</span>
-    <div>
-      <span class="meteo-label">Pronóstico</span>
-      <span class="meteo-name">Windy Tapalpa</span>
-    </div>
-  </a>
-  <a href="https://www.windguru.cz/73067" target="_blank" rel="noopener" class="meteo-item">
-    <span class="meteo-icon">📡</span>
-    <div>
-      <span class="meteo-label">Windguru</span>
-      <span class="meteo-name">Tapalpa #73067</span>
-    </div>
-  </a>
-  <a href="meteorologia.html" class="meteo-mas">Guía completa de meteorología →</a>
+  <a href="clima.html" class="meteo-mas">Guía completa del clima →</a>
 </div>
 
 <!-- PILOTOS -->
@@ -1215,39 +1106,10 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-inner">
-    <div>
-      <div class="footer-logo">
-        <img src="img/logo-vlj.png" alt="Club de Vuelo Libre de Jalisco">
-        <div class="footer-logo-text">
-          <span class="l1">Club de Vuelo Libre de Jalisco</span>
-          <span class="l2">Desde 1978</span>
-        </div>
-      </div>
-      <p class="footer-desc">Asociación de pilotos de parapente y ala delta en Jalisco, México. Promovemos el vuelo libre, protegemos nuestros sitios de vuelo y construimos comunidad.</p>
-    </div>
-    <div class="footer-links">
-      <h4>Secciones</h4>
-      <ul>
-        <li><a href="#pilotos">Pilotos</a></li>
-        <li><a href="#cuotas">Cuotas</a></li>
-        <li><a href="meteorologia.html">Meteorología</a></li>
-        <li><a href="despegues.html">Despegues</a></li>
-        <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
-        <li><a href="eventos.html">Eventos</a></li>
-        <li><a href="tandems.html">Vuelos Tándem</a></li>
-    <li><a href="nosotros.html">Nosotros</a></li>
-        <li><a href="sos.html">SOS</a></li>
-      </ul>
-    </div>
-    <div class="footer-links">
-      <h4>Legal</h4>
-      <ul>
-        <li><a href="#">Aviso de privacidad</a></li>
-        <li><a href="#">Términos y condiciones</a></li>
-        <li><a href="mailto:vuelolibrejalisco@gmail.com">Contacto</a></li>
-      </ul>
-    </div>
+  <div class="footer-legal-row">
+    <a href="#">Aviso de privacidad</a>
+    <a href="#">Términos y condiciones</a>
+    <a href="mailto:vuelolibrejalisco@gmail.com">Contacto</a>
   </div>
   <div class="footer-bottom">
     <span>© 2025 Club de Vuelo Libre de Jalisco. Todos los derechos reservados.</span>
