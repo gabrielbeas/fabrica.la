@@ -1,294 +1,221 @@
 <!DOCTYPE html>
-
-<html lang="es"><head>
-<meta charset="utf-8"/>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 <title>ROCA 1909 — Panel de Ventas</title>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
   :root{
-    --bg:#f8f9fa; --panel:#ffffff; --panel2:#f3f4f5; --border:#E2E8F0;
-    --text:#2d3436; --muted:#434749;
-    --green:#10B981; --green-bg:rgba(16, 185, 129, 0.1);
-    --yellow:#F59E0B; --yellow-bg:rgba(245, 158, 11, 0.1);
-    --gray:#959c9f; --gray-bg:rgba(149, 156, 159, 0.1);
-    --accent:#556435; --danger:#ba1a1a;
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#f1f3f6; --border:#e1e5eb;
+    --text:#1c2733; --muted:#6b7684;
+    --green:#1e9e57; --green-bg:rgba(30,158,87,.09);
+    --yellow:#b8860b; --yellow-bg:rgba(230,164,20,.10);
+    --gray:#8895a3; --gray-bg:rgba(136,149,163,.10);
+    --accent:#a3781f; --danger:#b3413a;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',system-ui,-apple-system,Arial,sans-serif;padding:32px 40px 60px}
-  h1{font-size:24px;margin:0 0 4px;letter-spacing:-0.02em;font-weight:600}
-  .sub{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.6}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;padding:32px 40px 60px}
+  h1{font-size:22px;margin:0 0 2px;letter-spacing:.5px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
 
-  .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-  .btn{font-size:13px;padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-weight:500;font-family:inherit;transition:all 0.2s}
+  .toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+  .btn{font-size:12px;padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-weight:600;font-family:inherit}
   .btn:hover{background:var(--panel2)}
   .btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
-  .btn.primary:hover{opacity:.9}
-  .btn.danger{color:var(--danger);border-color:rgba(186,26,26,.3)}
-  .btn.small{font-size:12px;padding:6px 12px;margin-top:6px}
+  .btn.primary:hover{opacity:.88}
+  .btn.danger{color:var(--danger);border-color:rgba(179,65,58,.3)}
+  .btn.small{font-size:11px;padding:4px 10px;margin-top:4px}
   .file-label{margin:0}
   .file-label input{display:none}
-  .toolbar-note{font-size:12px;color:var(--muted);width:100%;margin-top:4px}
+  .toolbar-note{font-size:11px;color:var(--muted);width:100%;margin-top:2px}
 
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-  .kpi.kpi-clickable{cursor:pointer;transition:transform .15s, box-shadow .15s, border-color .15s}
-  .kpi.kpi-clickable:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.06);border-color:var(--accent)}
-  .kpi.kpi-clickable .label::after{content:' →';opacity:.5;font-size:11px}
-  .kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:8px}
-  .kpi .value{font-size:26px;font-weight:600;letter-spacing:-0.01em;line-height:1.1}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(20,30,45,.06)}
+  .kpi.kpi-clickable{cursor:pointer;transition:transform .1s}
+  .kpi.kpi-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(20,30,45,.12);border-color:var(--accent)}
+  .kpi.kpi-clickable .label::after{content:' →';opacity:.5;font-size:10px}
+  .kpi .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .kpi .value{font-size:24px;font-weight:600}
   .kpi .value.green{color:var(--green)} .kpi .value.yellow{color:var(--yellow)} .kpi .value.accent{color:var(--accent)}
-  .kpi .sub2{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .kpi .sub2{font-size:11.5px;color:var(--muted);margin-top:4px}
 
-  .chart-area{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,.03);margin-bottom:32px;margin-top:-16px}
-  .chart-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:20px}
-  .chart-progress-group{margin-bottom:24px}
-  .chart-progress-group:last-child{margin-bottom:0}
-  .chart-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;font-weight:600}
-  .chart-progress-sub{font-size:12px;color:var(--muted);font-weight:400}
-  .chart-progress-bar-bg{width:100%;height:12px;background:var(--panel2);border-radius:6px;overflow:hidden;position:relative}
-  .chart-progress-bar-fill{height:100%;border-radius:6px;position:absolute;left:0;top:0;transition:width 0.5s ease}
-  .chart-progress-bar-fill.accent{background:var(--accent)}
-  .chart-progress-bar-fill.green{background:var(--green)}
+  section{margin-bottom:36px}
+  h2{font-size:15px;font-weight:600;margin:0 0 14px;color:var(--text);display:flex;align-items:center;gap:10px}
+  h2 .count{color:var(--muted);font-weight:400;font-size:12.5px}
 
-  section{margin-bottom:40px}
-  h2{font-size:16px;font-weight:700;margin:0 0 16px;color:var(--text);display:flex;align-items:center;gap:12px;letter-spacing:0.02em}
-  h2 .count{color:var(--muted);font-weight:500;font-size:13px;letter-spacing:0}
+  .legend{display:flex;gap:18px;margin-bottom:16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 
-  .legend{display:flex;gap:20px;margin-bottom:20px;font-size:13px;color:var(--muted)}
-  .legend span{display:inline-flex;align-items:center;gap:8px}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .floor{margin-bottom:10px}
+  .floor-label{font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px}
+  .floor-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 
-  .floor{margin-bottom:12px}
-  .floor-label{font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.06em;font-weight:700;text-transform:uppercase}
-  .floor-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-
-  .unit{border-radius:8px;padding:16px;border:1px solid var(--border);position:relative;cursor:pointer;transition:transform .15s, box-shadow .15s, border-color .15s;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-  .unit:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.06);border-color:var(--accent)}
+  .unit{border-radius:9px;padding:12px 14px;border:1px solid var(--border);position:relative;cursor:pointer;transition:transform .1s;box-shadow:0 1px 3px rgba(20,30,45,.05)}
+  .unit:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(20,30,45,.12);border-color:var(--accent)}
   .unit.disponible{background:var(--panel);}
-  .unit.apartado{background:var(--yellow-bg);border-color:rgba(245,158,11,.3)}
-  .unit.vendido{background:var(--green-bg);border-color:rgba(16,185,129,.3)}
-  .unit .id{font-size:18px;font-weight:700;letter-spacing:-0.01em}
-  .unit .badge{position:absolute;top:14px;right:14px;font-size:10px;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.04em;font-weight:700}
-  .unit.disponible .badge{background:var(--gray-bg);color:var(--muted)}
-  .unit.apartado .badge{background:rgba(245,158,11,.15);color:var(--yellow)}
-  .unit.vendido .badge{background:rgba(16,185,129,.15);color:var(--green)}
-  .unit .meta{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;font-weight:500}
-  .unit .price{font-size:14px;margin-top:8px;font-weight:600}
-  .unit .buyer{font-size:12px;margin-top:6px;color:var(--text);opacity:.9;font-weight:500}
-  .unit .buyer::after{content:' →';opacity:.5}
+  .unit.apartado{background:var(--yellow-bg);border-color:rgba(245,185,66,.35)}
+  .unit.vendido{background:var(--green-bg);border-color:rgba(46,204,113,.35)}
+  .unit .id{font-size:16px;font-weight:700}
+  .unit .badge{position:absolute;top:10px;right:12px;font-size:9.5px;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  .unit.disponible .badge{background:var(--gray-bg);color:#6b7684}
+  .unit.apartado .badge{background:rgba(245,185,66,.2);color:var(--yellow)}
+  .unit.vendido .badge{background:rgba(46,204,113,.2);color:var(--green)}
+  .unit .meta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .unit .price{font-size:13px;margin-top:6px;font-weight:600}
+  .unit .buyer{font-size:11.5px;margin-top:4px;color:var(--text);opacity:.85}
+  .unit .buyer::after{content:' →';opacity:.6}
 
-  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:8px;overflow:hidden;font-size:13px;box-shadow:0 1px 2px rgba(0,0,0,.03);border:1px solid var(--border)}
-  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
-  th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;background:var(--panel2)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden;font-size:13px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:var(--panel2)}
   tr:last-child td{border-bottom:none}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-  .status-pill{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em}
-  .status-pill.vendido{background:var(--green-bg);color:var(--green)}
-  .status-pill.apartado{background:var(--yellow-bg);color:var(--yellow)}
+  .status-pill{padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;text-transform:uppercase}
+  .status-pill.vendido{background:rgba(46,204,113,.15);color:var(--green)}
+  .status-pill.apartado{background:rgba(245,185,66,.15);color:var(--yellow)}
 
-  .note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6}
-  footer{color:var(--muted);font-size:12px;margin-top:48px;border-top:1px solid var(--border);padding-top:20px;line-height:1.6}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6}
+  footer{color:var(--muted);font-size:11px;margin-top:40px;border-top:1px solid var(--border);padding-top:16px}
 
-  tr.clickable{cursor:pointer;transition:background 0.2s}
+  tr.clickable{cursor:pointer}
   tr.clickable:hover{background:var(--panel2)}
-  tr.clickable td:first-child{color:var(--accent);font-weight:600}
+  tr.clickable td:first-child{color:var(--accent)}
   tr.clickable td:first-child::after{content:' →';opacity:.5;font-size:11px}
-  .placeholder{color:var(--muted);font-size:13px;font-style:italic}
+  .placeholder{color:var(--muted);font-size:12.5px;font-style:italic}
 
-  .overlay{display:none;position:fixed;inset:0;background:rgba(24,31,33,.6);z-index:50;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(20,26,34,.45);z-index:50;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
   .overlay.open{display:flex}
-  .modal{background:var(--panel);border-radius:12px;max-width:640px;width:100%;padding:32px;box-shadow:0 20px 40px rgba(0,0,0,.15);position:relative}
-  .modal-close{position:absolute;top:20px;right:20px;border:none;background:var(--panel2);color:var(--muted);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;transition:all 0.2s}
-  .modal-close:hover{background:var(--border);color:var(--text)}
-  .modal h3{margin:0 0 4px;font-size:20px;font-weight:600;letter-spacing:-0.01em}
-  .modal .modal-sub{color:var(--muted);font-size:13px;margin-bottom:24px}
-  .modal h4{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:28px 0 12px;font-weight:700}
+  .modal{background:var(--panel);border-radius:14px;max-width:640px;width:100%;padding:28px 30px 30px;box-shadow:0 12px 40px rgba(20,30,45,.18);position:relative}
+  .modal-close{position:absolute;top:18px;right:20px;border:none;background:var(--panel2);color:var(--muted);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1}
+  .modal-close:hover{background:var(--border)}
+  .modal h3{margin:0 0 2px;font-size:19px}
+  .modal .modal-sub{color:var(--muted);font-size:12.5px;margin-bottom:20px}
+  .modal h4{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:22px 0 10px}
   .modal h4:first-of-type{margin-top:0}
-  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
-  .info-item .k{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:4px}
-  .info-item .v{font-size:14px;font-weight:500;color:var(--text)}
-  .edited-tag{display:inline-block;font-size:10px;color:var(--accent);background:rgba(85,100,53,.1);padding:2px 8px;border-radius:20px;margin-left:12px;vertical-align:middle;text-transform:uppercase;letter-spacing:0.04em;font-weight:700}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+  .info-item .k{font-size:11px;color:var(--muted)}
+  .info-item .v{font-size:13.5px;margin-top:2px;font-weight:500}
+  .edited-tag{display:inline-block;font-size:10px;color:var(--accent);background:rgba(163,120,31,.1);padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;text-transform:none;letter-spacing:0}
 
-  .tl{position:relative;margin-left:8px;padding-left:24px;border-left:2px solid var(--border)}
-  .tl-item{position:relative;padding-bottom:24px}
+  .tl{position:relative;margin-left:6px;padding-left:22px;border-left:2px solid var(--border)}
+  .tl-item{position:relative;padding-bottom:20px}
   .tl-item:last-child{padding-bottom:0}
-  .tl-dot{position:absolute;left:-31px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border)}
-  .tl-item.pagado .tl-dot{background:var(--green);border-color:var(--green);box-shadow:none}
-  .tl-item.pendiente .tl-dot{background:var(--panel2)}
-  .tl-fecha{font-size:12px;color:var(--muted);font-weight:500}
-  .tl-concepto{font-size:14px;font-weight:600;margin-top:2px;display:flex;align-items:center;}
-  .tl-monto{font-size:14px;margin-top:4px;color:var(--text)}
-  .tl-pill{display:inline-block;margin-left:10px;font-size:10px;padding:4px 10px;border-radius:20px;text-transform:uppercase;font-weight:700;letter-spacing:0.04em}
-  .tl-item.pagado .tl-pill{background:var(--green-bg);color:var(--green)}
-  .tl-item.pendiente .tl-pill{background:var(--panel2);color:var(--muted)}
+  .tl-dot{position:absolute;left:-28px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel)}
+  .tl-item.pagado .tl-dot{background:var(--green)}
+  .tl-item.pendiente .tl-dot{background:var(--gray)}
+  .tl-fecha{font-size:11.5px;color:var(--muted)}
+  .tl-concepto{font-size:13.5px;font-weight:600;margin-top:1px}
+  .tl-monto{font-size:13.5px;margin-top:2px}
+  .tl-pill{display:inline-block;margin-left:8px;font-size:9.5px;padding:1px 7px;border-radius:20px;text-transform:uppercase;font-weight:600;letter-spacing:.3px}
+  .tl-item.pagado .tl-pill{background:rgba(30,158,87,.12);color:var(--green)}
+  .tl-item.pendiente .tl-pill{background:rgba(136,149,163,.15);color:var(--muted)}
 
-  form .field{margin-bottom:16px}
-  form label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700}
-  .field input, .field select, .field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--panel);color:var(--text);font-family:inherit;transition:border-color 0.2s}
-  .field textarea{resize:vertical;min-height:80px}
+  form .field{margin-bottom:12px}
+  form label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+  .field input, .field select, .field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--panel);color:var(--text);font-family:inherit}
+  .field textarea{resize:vertical;min-height:64px}
   .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--accent)}
   .field.full{grid-column:1 / -1}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
 
-  .tl-edit-row{display:grid;grid-template-columns:1fr 2fr 1.2fr auto;gap:16px;margin-bottom:12px;align-items:center}
-  .tl-edit-row input{padding:10px 12px;font-size:13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:var(--panel);color:var(--text)}
-  .tl-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;border-radius:4px}
-  .tl-remove:hover{color:var(--danger);background:rgba(186,26,26,.1)}
+  .tl-edit-row{display:grid;grid-template-columns:1fr 2fr .8fr .9fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  .tl-edit-row input, .tl-edit-row select{padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:var(--panel);color:var(--text)}
+  .tl-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px}
+  .tl-remove:hover{color:var(--danger)}
 
-  /* Modern Switch styles */
-  .switch-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-  }
-  .switch-container.view-mode {
-    gap: 8px;
-  }
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 18px;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 34px;
-  }
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 12px;
-    width: 12px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-  }
-  input:checked + .slider {
-    background-color: var(--green);
-  }
-  input:checked + .slider:before {
-    transform: translateX(16px);
-  }
-  .switch-label {
-    font-size: 11px;
-    color: var(--text);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .modal-actions{display:flex;gap:12px;margin-top:32px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:24px}
+  .modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
 
   .discount-tables{display:flex;gap:24px;flex-wrap:wrap}
   .discount-tables>div{flex:1;min-width:220px}
-  .discount-table-title{font-size:12px;font-weight:700;margin-bottom:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
+  .discount-table-title{font-size:12px;font-weight:600;margin-bottom:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .etapa-current{color:var(--accent);font-weight:700}
-  .etapa-sold{font-weight:700;color:var(--text)}
+  .etapa-sold{font-weight:700}
   .etapa-not-sold{color:var(--muted);text-decoration:line-through}
   .etapa-taken{color:var(--muted);text-decoration:line-through}
-  .price-list-note{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+  .price-list-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:16px}
   .table-center th, .table-center td{text-align:center}
   .v-green{color:var(--green)}
   .v-yellow{color:var(--yellow)}
-  .comision-status{margin-top:16px;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;display:inline-block}
+  .comision-status{margin-top:14px;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;display:inline-block}
   .comision-status.status-ok{background:var(--green-bg);color:var(--green)}
   .comision-status.status-pending{background:var(--yellow-bg);color:var(--yellow)}
-
-  @media (max-width: 600px) {
-    .tl-edit-row {
-      grid-template-columns: 1fr;
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 8px;
-    }
-    .tl-remove {
-      justify-self: end;
-    }
-  }
 </style>
 </head>
 <body>
+
 <h1>ROCA 1909 — Panel de Ventas</h1>
 <div class="sub">Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · 20 unidades privativas en 5 niveles · Actualizado al 26 de julio de 2026</div>
+
 <div class="toolbar">
-<button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
-<button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
-<label class="btn file-label">⬆ Importar cambios (JSON)<input accept=".json" id="btnImport" type="file"/></label>
-<button class="btn danger" id="btnReset">↺ Restablecer todo</button>
-<div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan automáticamente en este navegador. Usa "Exportar" para respaldarlos o compártemelos para incorporarlos de forma permanente al archivo.</div>
+  <button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
+  <button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
+  <label class="btn file-label">⬆ Importar cambios (JSON)<input type="file" id="btnImport" accept=".json"></label>
+  <button class="btn danger" id="btnReset">↺ Restablecer todo</button>
+  <div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan automáticamente en este navegador. Usa "Exportar" para respaldarlos o compártemelos para incorporarlos de forma permanente al archivo.</div>
 </div>
+
 <section>
-<h2>Finanzas</h2>
-<div class="kpis" id="kpisFinanzas"></div>
-<div id="chartFinanzas"></div>
+  <h2>Finanzas</h2>
+  <div class="kpis" id="kpisFinanzas"></div>
 </section>
+
 <section>
-<h2>Comisiones <span class="count">equipo de ventas</span></h2>
-<div class="kpis" id="kpisComisiones"></div>
+  <h2>Comisiones <span class="count">equipo de ventas</span></h2>
+  <div class="kpis" id="kpisComisiones"></div>
 </section>
+
 <section>
-<h2>Inventario <span class="count">20 unidades — click en cualquier depto para ver o editar su información</span></h2>
-<div class="kpis" id="kpisInventario"></div>
-<div class="legend">
-<span><i class="dot" style="background:var(--gray)"></i>Disponible</span>
-<span><i class="dot" style="background:var(--yellow)"></i>Apartado (contrato pendiente de firma)</span>
-<span><i class="dot" style="background:var(--green)"></i>Vendido (contrato firmado)</span>
-</div>
-<div id="floors"></div>
+  <h2>Inventario <span class="count">20 unidades — click en cualquier depto para ver o editar su información</span></h2>
+  <div class="kpis" id="kpisInventario"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--gray)"></i>Disponible</span>
+    <span><i class="dot" style="background:var(--yellow)"></i>Apartado (contrato pendiente de firma)</span>
+    <span><i class="dot" style="background:var(--green)"></i>Vendido (contrato firmado)</span>
+  </div>
+  <div id="floors"></div>
 </section>
+
 <section>
-<h2>Ingresos y cobranza <span class="count">unidades apartadas / vendidas</span></h2>
-<table id="cobranzaTable">
-<thead>
-<tr>
-<th>Depto</th><th>Estatus</th><th>Comprador</th><th class="num">Precio pactado</th>
-<th class="num">Recibido a la fecha</th><th class="num">Saldo pendiente</th><th>Financiamiento</th><th>Fecha firma</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-<div class="note">
+  <h2>Ingresos y cobranza <span class="count">unidades apartadas / vendidas</span></h2>
+  <table id="cobranzaTable">
+    <thead>
+      <tr>
+        <th>Depto</th><th>Estatus</th><th>Comprador</th><th class="num">Precio pactado</th>
+        <th class="num">Recibido a la fecha</th><th class="num">Saldo pendiente</th><th>Financiamiento</th><th>Fecha firma</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="note">
     "Recibido a la fecha" incluye únicamente los pagos cuya fecha contractual ya se cumplió (apartado + pago de firma, cuando la firma ya ocurrió). El depto 102 tiene firma de contrato programada para el 03/ago/2026, por lo que solo se ha recibido el apartado de $20,000; el resto del anticipo se cobra ese día.
   </div>
 </section>
+
 <footer>
   Datos base extraídos de: "PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf" (inventario y precios de lista) y de las carátulas de los contratos de promesa de compraventa de los deptos 102, 103 y 204. Los cambios que registres tú mismo (nuevas ventas, pagos, contactos) se guardan localmente en tu navegador — no en un servidor.
 </footer>
+
 <div class="overlay" id="overlay">
-<div class="modal">
-<button class="modal-close" id="modalClose">✕</button>
-<div id="modalBody"></div>
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
 </div>
-</div>
+
 <div class="overlay" id="priceOverlay">
-<div class="modal" style="max-width:900px">
-<button class="modal-close" id="priceModalClose">✕</button>
-<div id="priceModalBody"></div>
+  <div class="modal" style="max-width:900px">
+    <button class="modal-close" id="priceModalClose">✕</button>
+    <div id="priceModalBody"></div>
+  </div>
 </div>
-</div>
+
 <div class="overlay" id="comisionesOverlay">
-<div class="modal" style="max-width:800px">
-<button class="modal-close" id="comisionesModalClose">✕</button>
-<div id="comisionesModalBody"></div>
+  <div class="modal" style="max-width:800px">
+    <button class="modal-close" id="comisionesModalClose">✕</button>
+    <div id="comisionesModalBody"></div>
+  </div>
 </div>
-</div>
+
 <script>
 const baseUnits = [
   {id:'101',piso:1,m2:85.14,vista:'FRONTAL',cajones:1,precioLista:3959010,status:'disponible'},
@@ -367,6 +294,8 @@ const baseUnits = [
   {id:'504',piso:5,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2767860,status:'disponible'},
 ];
 
+// Listas de precios históricas por etapa (fuente: ETAPA 1.png, DESCUENTOS ETAPA 1.png,
+// PRECIOS Y ESQUEMAS ROCA 1909 Etapa 2.pdf). Etapa 2 = lista vigente (= precioLista arriba).
 const etapaPrices = {
   '101':{etapa0:4171860,etapa1:3746160}, '102':{etapa0:4424700,etapa1:3973200},
   '103':{etapa0:3442880,etapa1:3124280}, '104':{etapa0:2888100,etapa1:2557440},
@@ -395,6 +324,7 @@ const discountSchedule = {
   etapa2:[{key:'90-10',descuento:7},{key:'50-50',descuento:4},{key:'30-70',descuento:2},{key:'20-20-60',descuento:1},{key:'10-90',descuento:0},{key:'5-95',descuento:0}],
 };
 
+// Encuentra, entre Etapa 1 y Etapa 2, a qué esquema de descuento se acerca más el precio pactado.
 function bestDiscountFit(u){
   const prices = etapaPrices[u.id];
   if(!prices || !u.precioContrato) return null;
@@ -414,6 +344,8 @@ function bestDiscountFit(u){
   return best;
 }
 
+// Etapa/descuento a mostrar en el modal: usa la etapa declarada explícitamente en el depto
+// (u.etapaVenta, capturada de la carátula) y, si no existe, cae al mejor ajuste automático.
 function discountInfo(u){
   if(!u.precioContrato) return null;
   const prices = etapaPrices[u.id];
@@ -433,6 +365,7 @@ function discountInfo(u){
 
 const money = n => (n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
 
+// ---------- Persistencia (overrides guardados en este navegador) ----------
 const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
 function loadOverrides(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
@@ -483,8 +416,8 @@ function importData(file){
   reader.readAsText(file);
 }
 
+// ---------- Elementos persistentes ----------
 const kpisFinanzasEl = document.getElementById('kpisFinanzas');
-const chartFinanzasEl = document.getElementById('chartFinanzas');
 const kpisComisionesEl = document.getElementById('kpisComisiones');
 const kpisInventarioEl = document.getElementById('kpisInventario');
 const floorsEl = document.getElementById('floors');
@@ -496,6 +429,7 @@ const priceModalBody = document.getElementById('priceModalBody');
 const comisionesOverlay = document.getElementById('comisionesOverlay');
 const comisionesModalBody = document.getElementById('comisionesModalBody');
 
+// ---------- Render ----------
 function renderAll(){
   const units = getUnits();
   renderKPIs(units);
@@ -512,6 +446,12 @@ function renderKpiRow(el, kpis){
     </div>`).join('');
 }
 
+// Precio de referencia de una unidad para el "valor total del proyecto":
+// si se vendió/apartó en una etapa con precio histórico registrado (etapaPrices),
+// usa ESE precio de esa etapa; si no (disponible, o etapa sin historial guardado
+// todavía —p.ej. una futura Etapa 3—), usa el precio de lista vigente (precioLista).
+// Así el total siempre queda como "suma de cada depto a la etapa en que realmente
+// se vendió/está en venta", y se mantiene correcto según se agreguen nuevas etapas.
 function referencePriceForUnit(u){
   const historico = (u.etapaVenta && etapaPrices[u.id]) ? etapaPrices[u.id][u.etapaVenta] : null;
   return historico || u.precioLista;
@@ -533,34 +473,10 @@ function renderKPIs(units){
 
   renderKpiRow(kpisFinanzasEl, [
     {label:'Valor total del proyecto', value: money(valorTotalProyecto), cls:'accent', sub:'suma por etapa real de venta de cada depto · 20 unidades'},
-    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato'}
+    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato'},
+    {label:'% cobrado vs. lo contratado', value: pctCobradoContratado.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorContratado)+' contratados'},
+    {label:'% cobrado vs. total de ventas', value: pctCobradoTotal.toFixed(1)+'%', cls:'accent', sub: money(cobranza)+' de '+money(valorTotalProyecto)+' (valor total por etapa real)'},
   ]);
-
-  chartFinanzasEl.innerHTML = `
-    <div class="chart-area">
-      <div class="chart-title">Progreso de Cobranza</div>
-      
-      <div class="chart-progress-group">
-        <div class="chart-progress-label">
-          <span>Cobrado vs. Lo Contratado</span>
-          <span class="chart-progress-sub">${pctCobradoContratado.toFixed(1)}% (${money(cobranza)} de ${money(valorContratado)})</span>
-        </div>
-        <div class="chart-progress-bar-bg">
-          <div class="chart-progress-bar-fill green" style="width: ${pctCobradoContratado}%"></div>
-        </div>
-      </div>
-
-      <div class="chart-progress-group">
-        <div class="chart-progress-label">
-          <span>Cobrado vs. Total del Proyecto</span>
-          <span class="chart-progress-sub">${pctCobradoTotal.toFixed(1)}% (${money(cobranza)} de ${money(valorTotalProyecto)})</span>
-        </div>
-        <div class="chart-progress-bar-bg">
-          <div class="chart-progress-bar-fill accent" style="width: ${pctCobradoTotal}%"></div>
-        </div>
-      </div>
-    </div>
-  `;
 
   renderKpiRow(kpisInventarioEl, [
     {label:'Unidades totales', value: units.length, sub:'5 niveles · 4 deptos por nivel'},
@@ -569,6 +485,10 @@ function renderKPIs(units){
     {label:'Disponibles', value: disponibles.length, sub: money(valorDisponible)+' en inventario (lista vigente)'},
   ]);
 
+  // Comisiones al equipo de ventas (fuente: ROCA1909_VENTAS.xlsx, hoja "Estado de Cuenta").
+  // Todas las cifras se muestran SIN IVA. "Exigible" respeta la regla pactada: 50% de la
+  // comisión se vuelve exigible con un enganche del 1%-29%, y el 100% con un enganche del
+  // 30% o más.
   const comisionUnits = units.filter(u=>u.comision);
   const comisionTotal = comisionUnits.reduce((s,u)=>s+u.comision.total,0);
   const comisionPagada = comisionUnits.reduce((s,u)=>s+(u.comision.pagado||0),0);
@@ -696,6 +616,7 @@ kpisComisionesEl.addEventListener('click', e=>{
   if(card) openComisionesModal();
 });
 
+// Delegación de clicks (una sola vez; el contenido interno se reconstruye en cada render)
 floorsEl.addEventListener('click', e=>{
   const card = e.target.closest('.unit[data-id]');
   if(card) openModal(card.dataset.id, 'view');
@@ -705,6 +626,7 @@ tbody.addEventListener('click', e=>{
   if(tr) openModal(tr.dataset.id, 'view');
 });
 
+// ---------- Modal: ver / editar ----------
 let editTimeline = [];
 
 function openModal(id, mode){
@@ -755,20 +677,11 @@ function viewTemplate(u){
 
     <h4>Calendario de pagos</h4>
     ${tl.length ? `<div class="tl">
-      ${tl.map((t, i)=>`
+      ${tl.map(t=>`
         <div class="tl-item ${t.estatus}">
           <div class="tl-dot"></div>
           <div class="tl-fecha">${t.fecha}</div>
-          <div class="tl-concepto">
-            <label class="switch-container view-mode" title="Marcar como ${t.estatus==='pagado'?'pendiente':'pagado'}">
-              <div class="switch">
-                <input type="checkbox" class="tl-quick-paid-switch" data-unit-id="${u.id}" data-pago-idx="${i}" ${t.estatus==='pagado'?'checked':''}>
-                <span class="slider"></span>
-              </div>
-            </label>
-            ${t.concepto}
-            <span class="tl-pill">${t.estatus}</span>
-          </div>
+          <div class="tl-concepto">${t.concepto}<span class="tl-pill">${t.estatus}</span></div>
           <div class="tl-monto">${money(t.monto)}</div>
         </div>`).join('')}
     </div>` : `<div class="placeholder">Sin pagos registrados.</div>`}
@@ -809,21 +722,22 @@ function renderTimelineEditor(){
       <input type="text" class="tl-fecha-input" placeholder="Fecha" value="${(t.fecha||'').replace(/"/g,'&quot;')}">
       <input type="text" class="tl-concepto-input" placeholder="Concepto" value="${(t.concepto||'').replace(/"/g,'&quot;')}">
       <input type="number" class="tl-monto-input" placeholder="Monto" value="${t.monto||0}">
+      <select class="tl-estatus-input">
+        <option value="pagado" ${t.estatus==='pagado'?'selected':''}>Pagado</option>
+        <option value="pendiente" ${t.estatus==='pendiente'?'selected':''}>Pendiente</option>
+      </select>
       <button class="tl-remove" data-remove="${i}" title="Quitar">✕</button>
     </div>`).join('');
 }
 
 function syncTimelineFromDOM(){
   const rows = modalBody.querySelectorAll('.tl-edit-row');
-  editTimeline = Array.from(rows).map((row, i)=>{
-    const prev = editTimeline[i];
-    return {
-      fecha: row.querySelector('.tl-fecha-input').value.trim(),
-      concepto: row.querySelector('.tl-concepto-input').value.trim(),
-      monto: parseFloat(row.querySelector('.tl-monto-input').value) || 0,
-      estatus: prev ? prev.estatus : 'pendiente'
-    };
-  });
+  editTimeline = Array.from(rows).map(row=>({
+    fecha: row.querySelector('.tl-fecha-input').value.trim(),
+    concepto: row.querySelector('.tl-concepto-input').value.trim(),
+    monto: parseFloat(row.querySelector('.tl-monto-input').value) || 0,
+    estatus: row.querySelector('.tl-estatus-input').value
+  }));
 }
 
 function editTemplate(u){
@@ -960,30 +874,6 @@ function wireEditForm(u){
   });
 }
 
-modalBody.addEventListener('change', e => {
-  if(e.target.classList.contains('tl-quick-paid-switch')){
-    const unitId = e.target.dataset.unitId;
-    const pagoIdx = parseInt(e.target.dataset.pagoIdx, 10);
-    const u = getUnits().find(x=>x.id===unitId);
-    if(!u) return;
-
-    const newTimeline = (u.timeline || []).map(t => Object.assign({}, t));
-    if(newTimeline[pagoIdx]){
-      newTimeline[pagoIdx].estatus = e.target.checked ? 'pagado' : 'pendiente';
-      
-      let newRecibido = 0;
-      newTimeline.forEach(t => {
-        if(t.estatus === 'pagado') newRecibido += (t.monto || 0);
-      });
-
-      saveUnitOverride(unitId, { timeline: newTimeline, recibido: newRecibido });
-      renderAll();
-      openModal(unitId, 'view');
-    }
-  }
-});
-
-
 document.getElementById('modalClose').addEventListener('click', closeModal);
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
 document.getElementById('priceModalClose').addEventListener('click', closePriceListModal);
@@ -992,6 +882,7 @@ document.getElementById('comisionesModalClose').addEventListener('click', closeC
 comisionesOverlay.addEventListener('click', e => { if(e.target === comisionesOverlay) closeComisionesModal(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); } });
 
+// ---------- Barra de herramientas ----------
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
 document.getElementById('btnExport').addEventListener('click', exportData);
 document.getElementById('btnImport').addEventListener('change', e => {
@@ -1008,4 +899,5 @@ document.getElementById('btnReset').addEventListener('click', () => {
 
 renderAll();
 </script>
-</body></html>
+</body>
+</html>
