@@ -15,7 +15,9 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',system-ui,-apple-system,Arial,sans-serif;padding:32px 40px 60px}
-  h1{font-size:24px;margin:0 0 4px;letter-spacing:-0.02em;font-weight:600}
+  .header-flex { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
+  .header-logo { height: 48px; width: auto; object-fit: contain; }
+  h1{font-size:24px;margin:0;letter-spacing:-0.02em;font-weight:600; display: flex; align-items: center;}
   .sub{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.6}
 
   .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
@@ -100,6 +102,7 @@
   .modal{background:var(--panel);border-radius:12px;max-width:640px;width:100%;padding:32px;box-shadow:0 20px 40px rgba(0,0,0,.15);position:relative}
   .modal-close{position:absolute;top:20px;right:20px;border:none;background:var(--panel2);color:var(--muted);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;transition:all 0.2s}
   .modal-close:hover{background:var(--border);color:var(--text)}
+  .modal-header-logo { height: 32px; width: auto; object-fit: contain; position: absolute; top: 32px; right: 64px; }
   .modal h3{margin:0 0 4px;font-size:20px;font-weight:600;letter-spacing:-0.01em}
   .modal .modal-sub{color:var(--muted);font-size:13px;margin-bottom:24px}
   .modal h4{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:28px 0 12px;font-weight:700}
@@ -223,9 +226,32 @@
     }
   }
 </style>
-</head>
-<body>
-<h1>ROCA 1909 — Panel de Ventas</h1>
+<style>
+  .tl-item .tl-fecha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .tl-item .tl-concepto {
+    display: block !important;
+    margin-top: 4px;
+  }
+  .tl-item .tl-concepto .switch-container.view-mode {
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin: 0;
+  }
+  .tl-item {
+    position: relative;
+  }
+</style></head>
+<body class="custom-timeline-layout">
+<div class="header-flex">
+<img alt="ROCA 1909 Logo" class="header-logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEER05LR5-9MeXnKlQD0tetde7k8So7ZYEVMPYR_6Deriy0WMdr6lMjEhwZYZtbUOuzgemD9DsEx5ft5qgSzp5sF4XU6g6w6Qjs-b_xJLQJtlkh-2jTeWvQq_HS0vxBHrJ7v-JxM-wo6VVjmFMRvFl_BBG1DYBosItuBFMMwZ2rNKaXbrL63SPeaIKK-byKTlYC2F5bh4M1khlzD3jcGcE8KOly7CQTYOraZA5mxM6Oxr8sw8qwGrDKAw46dhTh-F96nU"/>
+<h1>— Panel de Ventas</h1>
+</div>
 <div class="sub">Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · 20 unidades privativas en 5 niveles · Actualizado al 26 de julio de 2026</div>
 <div class="toolbar">
 <button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
@@ -716,11 +742,66 @@ function openModal(id, mode){
 }
 function closeModal(){ overlay.classList.remove('open'); }
 
+function printFicha(id) {
+  const u = getUnits().find(x => x.id === id);
+  if (!u) return;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Ficha Depto ${u.id}</title>
+        <style>
+          body { font-family: 'Hanken Grotesk', system-ui, sans-serif; padding: 40px; color: #191c1d; }
+          .logo { height: 48px; margin-bottom: 24px; }
+          h3 { font-size: 24px; margin-bottom: 8px; }
+          .sub { font-size: 14px; color: #434749; margin-bottom: 32px; }
+          h4 { font-size: 12px; text-transform: uppercase; color: #434749; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-top: 24px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+          .item-k { font-size: 12px; color: #434749; }
+          .item-v { font-size: 14px; font-weight: 500; }
+          .tl-item { margin-bottom: 12px; font-size: 14px; }
+          .tl-fecha { color: #434749; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-_xCubB1BOdjBkjc7UDyUXNif4jrVkssVy36TcJt5rdS1EchEq9brHWJ03a7-lEjVATgaCC_OGguUouC7Nce3PRQU59528ffLtFQ8WUSoAv0sEWW5-XV2tLOz93kJ18rmhf8abfPbm-J9rftiRJ4QvIL6gk-JpUP520uxCJiVQ6FtU5CQMxjc6U_0RTQIHB_H5ZXO_sMxgNdtMrSB_xBJgJpTC_ovOV7uosVf5SP_pdknKhio7wG82Di8RXN_ZBqUTS0" class="logo" />
+        <h3>Depto ${u.id}</h3>
+        <div class="sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · Estatus: ${u.status.toUpperCase()}</div>
+
+        ${u.contacto ? `
+        <h4>Datos de contacto</h4>
+        <div class="grid">
+          <div><div class="item-k">Nombre</div><div class="item-v">${u.contacto.nombre || '—'}</div></div>
+          <div><div class="item-k">Teléfono</div><div class="item-v">${u.contacto.telefono || '—'}</div></div>
+          <div><div class="item-k">Email</div><div class="item-v">${u.contacto.email || '—'}</div></div>
+          <div><div class="item-k">RFC</div><div class="item-v">${u.contacto.rfc || '—'}</div></div>
+          <div><div class="item-k">CURP</div><div class="item-v">${u.contacto.curp || '—'}</div></div>
+          <div><div class="item-k">Precio pactado</div><div class="item-v">${money(u.precioContrato)}</div></div>
+        </div>
+        ` : ''}
+
+        <h4>Calendario de pagos</h4>
+        ${u.timeline && u.timeline.length ? u.timeline.map(t => `
+          <div class="tl-item">
+            <div class="tl-fecha">${t.fecha} - ${t.estatus.toUpperCase()}</div>
+            <div>${t.concepto}: <strong>${money(t.monto)}</strong></div>
+          </div>
+        `).join('') : 'Sin pagos registrados.'}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); }, 500);
+}
+
 function viewTemplate(u){
   const hasInfo = !!u.contacto;
   const c = u.contacto || {};
   const tl = u.timeline || [];
   return `
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8otgrdQpVdwQBnJ-kF4n4K1txfZ3tzA4_LZeRmOyI9vfTEinGsI62hVHZGCIkNJeYuvQvn5IdJQzHjPgm_ScWPrUFQY0uXGvFZnJpm2D0cpD5RPrk3QclAhTp88h65Fqy3W14p0cyWVXT4hI8vGu3k1iy2BZtJrKgZqgOx0IQ0vH2zphsTq5s_-MTJVz9TepfTrqwtuKfw1fgNCgLG4BDPF4GvldwsQrwSiKPxi81TgjZ-RzPzLB92cLfiEKsqAteyhA" alt="Logo" class="modal-header-logo">
     <h3>Depto ${u.id}${overrides[u.id] ? '<span class="edited-tag">Editado manualmente</span>' : ''}</h3>
     <div class="modal-sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · <span class="status-pill ${u.status}">${u.status}</span></div>
 
@@ -794,12 +875,14 @@ function viewTemplate(u){
     })() : ''}
 
     <div class="modal-actions">
+      <button class="btn" id="btnPrintFicha" data-id="${u.id}">🖨 Exportar ficha a PDF</button>
       <button class="btn primary" id="btnEdit">${hasInfo ? 'Editar información' : 'Registrar comprador'}</button>
     </div>
   `;
 }
 function wireViewButtons(u){
   document.getElementById('btnEdit').addEventListener('click', () => openModal(u.id, 'edit'));
+  document.getElementById('btnPrintFicha').addEventListener('click', (e) => printFicha(e.target.dataset.id));
 }
 
 function renderTimelineEditor(){
@@ -830,6 +913,7 @@ function editTemplate(u){
   editTimeline = (u.timeline || []).map(t => Object.assign({}, t));
   const c = u.contacto || {};
   return `
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMr7AdbMlYnNSexn_iApqukpYDs1-XnjhPgE2Rt8nRRgoeqcVND5vpIxwnJgGohVRrOx-92yNhAvhF44ENbhzKejjitN6uJ3yPwqQys_NyjrSTr2tlJFhtdTZJG4YZFEc6ZlNkS_KcJwe-UPa2i__uMzzcEXuZFPtQBzGnCYjpRknwssX3xBHKB8UyS_rFKLHX-dxQDroq44D82MGgBqcW28CISBQRus3ItrXCdPo6koOKzHGsLq8XnpbFwE0zD6Xwlqc" alt="Logo" class="modal-header-logo">
     <h3>Editar depto ${u.id}</h3>
     <div class="modal-sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es)</div>
 
