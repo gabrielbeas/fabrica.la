@@ -222,10 +222,12 @@
   .comision-status.status-pending{background:var(--yellow-bg);color:var(--yellow); border-color: var(--yellow-bg);}
 
   /* Contenedor usado solo para generar los PDFs (html2pdf.js).
-     Se mantiene oculto con visibility/opacidad —no con left:-9999px— porque
-     html2canvas no captura elementos posicionados fuera del viewport. */
-  .pdf-ficha-container{position:fixed;left:0;top:0;width:760px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35;z-index:-1;opacity:0;pointer-events:none}
-  .pdf-ficha-container.capturing{opacity:1}
+     IMPORTANTE: durante la captura debe quedar en el FLUJO NORMAL de la página
+     (position:static y display:block). Con position:fixed o absolute, html2pdf
+     clona el elemento fuera del flujo, lo mide con altura 0 y el PDF sale en blanco.
+     El resto del tiempo se oculta con display:none. */
+  .pdf-ficha-container{display:none;position:static;width:760px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35}
+  .pdf-ficha-container.capturing{display:block}
   .pdf-ficha-container table{width:100%;border-collapse:collapse;font-size:10.5px;background:#fff;box-shadow:none;border:none}
   .pdf-ficha-container th{background:#f3f4f5;color:#747879;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;padding:7px 8px;text-align:left;border-bottom:1px solid #e1e3e4}
   .pdf-ficha-container td{padding:7px 8px;border-bottom:1px solid #e1e3e4;vertical-align:top}
@@ -503,6 +505,38 @@ function discountInfo(u){
 }
 
 const money = n => (n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+
+// ---------- Logo ----------
+const LOGO_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg';
+
+// Los PDFs se generan con html2canvas, que falla o produce páginas en blanco si una
+// imagen es de otro dominio y no permite CORS. Por eso el logo se convierte una sola
+// vez a data URL (queda incrustado, sin depender de la red al momento de exportar).
+// Si la conversión falla, los PDFs simplemente se generan sin logo.
+let logoDataURL = null;
+function precargarLogo(){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try{
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        logoDataURL = canvas.toDataURL('image/png');
+      }catch(e){
+        console.warn('No se pudo incrustar el logo en los PDFs (CORS).', e);
+      }
+      resolve();
+    };
+    img.onerror = () => { console.warn('No se pudo cargar el logo para los PDFs.'); resolve(); };
+    img.src = LOGO_URL;
+  });
+}
+function logoPDFTag(cls){
+  return logoDataURL ? `<img src="${logoDataURL}" class="${cls}" />` : '';
+}
 
 // Formatea un teléfono a 10 dígitos en el formato nacional de México:
 // "XX XXXX XXXX" para las claves LADA de 2 dígitos (55 CDMX, 33 GDL, 81 MTY),
@@ -894,7 +928,7 @@ function downloadDirectorioPDF(){
 
   const container = document.getElementById('pdfFichaContainer');
   container.innerHTML = `
-    <img crossorigin="anonymous" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" class="pdf-logo" />
+    ${logoPDFTag('pdf-logo')}
     <h3 class="pdf-h3">Directorio de compradores</h3>
     <div class="pdf-sub-line">ROCA 1909 · Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Compradores con contacto registrado (apartados y vendidos)</div>
     <table>
@@ -937,7 +971,7 @@ function downloadFichaPDF(id) {
 
   const container = document.getElementById('pdfFichaContainer');
   container.innerHTML = `
-    <img crossorigin="anonymous" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" class="pdf-logo" />
+    ${logoPDFTag('pdf-logo')}
     <h3 class="pdf-h3">Depto ${u.id}</h3>
     <div class="pdf-sub-line">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · Estatus: ${u.status.toUpperCase()}</div>
 
@@ -1017,30 +1051,42 @@ function generarPDF(container, filename, orientation, btn){
   const originalLabel = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF…'; }
 
+  const scrollPrevio = window.scrollY;
+
+  const restaurar = () => {
+    container.classList.remove('capturing');
+    window.scrollTo(0, scrollPrevio);
+    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+  };
+
+  if(typeof html2pdf === 'undefined'){
+    console.error('html2pdf no está cargado');
+    alert('No se pudo cargar la librería de PDF. Revisa tu conexión y recarga la página.');
+    restaurar();
+    return;
+  }
+
+  // Muestra el contenedor en el flujo normal de la página durante la captura.
+  container.classList.add('capturing');
+  window.scrollTo(0, 0);
+
   const opt = {
-    margin: [14, 14, 14, 14], // mm
+    margin: [12, 12, 12, 12], // mm
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0, windowWidth: container.scrollWidth },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, imageTimeout: 5000 },
     jsPDF: { unit: 'mm', format: 'letter', orientation: orientation || 'portrait' },
     pagebreak: { mode: ['css','legacy'] }
   };
 
-  const restaurar = () => {
-    container.classList.remove('capturing');
-    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
-  };
-
-  // Hace visible el contenedor durante la captura (html2canvas no captura
-  // elementos con opacity:0 ni fuera del viewport) y lo vuelve a ocultar al final.
-  container.classList.add('capturing');
-
+  // Espera a que carguen las imágenes y a un par de frames de render antes de capturar.
   esperarImagenes(container)
+    .then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
     .then(() => html2pdf().set(opt).from(container).save())
     .then(restaurar)
     .catch(err => {
       console.error('Error generando el PDF', err);
-      alert('No se pudo generar el PDF. Intenta de nuevo.');
+      alert('No se pudo generar el PDF: ' + (err && err.message ? err.message : err));
       restaurar();
     });
 }
@@ -1359,5 +1405,6 @@ document.getElementById('btnReset').addEventListener('click', () => {
 
 renderAll(); // primer pintado inmediato con la caché local del navegador
 syncFromServer(); // luego sincroniza con el servidor (todos los navegadores/dispositivos)
+precargarLogo(); // incrusta el logo para que aparezca en los PDFs exportados
 </script>
 </body></html>
