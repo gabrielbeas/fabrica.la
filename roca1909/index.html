@@ -1169,14 +1169,24 @@ modalBody.addEventListener('change', e => {
 
     const newTimeline = (u.timeline || []).map(t => Object.assign({}, t));
     if(newTimeline[pagoIdx]){
-      newTimeline[pagoIdx].estatus = e.target.checked ? 'pagado' : 'pendiente';
-      
+      const item = newTimeline[pagoIdx];
+      item.estatus = e.target.checked ? 'pagado' : 'pendiente';
+
       let newRecibido = 0;
       newTimeline.forEach(t => {
         if(t.estatus === 'pagado') newRecibido += (t.monto || 0);
       });
 
-      saveUnitOverride(unitId, { timeline: newTimeline, recibido: newRecibido });
+      const patch = { timeline: newTimeline, recibido: newRecibido };
+
+      // Si el pago marcado es la "Firma de contrato", el depto pasa a vendido al
+      // activarlo (contrato firmado); si se desactiva por error, regresa a apartado.
+      const esFirmaDeContrato = (item.concepto || '').toLowerCase().includes('firma de contrato');
+      if(esFirmaDeContrato){
+        patch.status = e.target.checked ? 'vendido' : 'apartado';
+      }
+
+      saveUnitOverride(unitId, patch);
       renderAll();
       openModal(unitId, 'view');
     }
