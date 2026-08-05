@@ -32,9 +32,19 @@
   .file-label{margin:0}
   .file-label input{display:none}
   .toolbar-note{font-size:12px;color:var(--muted);width:100%;margin-top:4px; font-weight: 400;}
-  .sync-status{font-size:12px;font-weight:600;margin-left:auto;padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);white-space:nowrap}
+  .sync-status{font-size:12px;font-weight:600;padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);white-space:nowrap}
   .sync-status.sync-ok{color:var(--green);border-color:var(--green-bg)}
   .sync-status.sync-error{color:var(--danger);border-color:rgba(186,26,26,.2)}
+
+  .admin-dropdown{position:relative;margin-left:auto}
+  .admin-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--panel);border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.08);min-width:230px;z-index:60;overflow:hidden}
+  .admin-menu.open{display:block}
+  .admin-menu-item{display:block;width:100%;text-align:left;padding:10px 14px;font-size:12.5px;font-weight:500;color:var(--text);background:none;border:none;cursor:pointer;font-family:inherit;box-shadow:none}
+  .admin-menu-item:hover{background:var(--panel2)}
+  .admin-menu-item.danger{color:var(--danger)}
+  .admin-menu-item + .admin-menu-item{border-top:1px solid var(--border)}
+  .admin-menu-item.file-label{margin:0}
+  .admin-menu-item.file-label input{display:none}
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
   .kpi{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;box-shadow: 0 2px 8px rgba(0,0,0,0.04);}
@@ -291,11 +301,16 @@
 <div class="toolbar">
 <button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
 <button class="btn" id="btnDirectorio">👤 Directorio</button>
-<button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
-<label class="btn file-label">⬆ Importar cambios (JSON)<input accept=".json" id="btnImport" type="file"/></label>
-<button class="btn danger" id="btnReset">↺ Restablecer todo</button>
+<div class="admin-dropdown" id="adminDropdown">
+  <button class="btn" id="btnAdminToggle">⚙ Admin ▾</button>
+  <div class="admin-menu" id="adminMenu">
+    <button class="admin-menu-item" id="btnExport">⬇ Exportar cambios (JSON)</button>
+    <label class="admin-menu-item file-label">⬆ Importar cambios (JSON)<input accept=".json" id="btnImport" type="file"/></label>
+    <button class="admin-menu-item danger" id="btnReset">↺ Restablecer todo</button>
+  </div>
+</div>
 <span class="sync-status" id="syncStatus">☁ Cargando…</span>
-<div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan en el servidor y se sincronizan en cualquier navegador o dispositivo donde inicies sesión. Usa "Exportar" para respaldarlos en un archivo aparte si lo necesitas.</div>
+<div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan en el servidor y se sincronizan en cualquier navegador o dispositivo donde inicies sesión. Usa "Admin → Exportar" para respaldarlos en un archivo aparte si lo necesitas.</div>
 </div>
 <section>
 <h2>Finanzas</h2>
@@ -1386,21 +1401,35 @@ document.getElementById('comisionesModalClose').addEventListener('click', closeC
 comisionesOverlay.addEventListener('click', e => { if(e.target === comisionesOverlay) closeComisionesModal(); });
 document.getElementById('directorioModalClose').addEventListener('click', closeDirectorioModal);
 directorioOverlay.addEventListener('click', e => { if(e.target === directorioOverlay) closeDirectorioModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); } });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); closeAdminMenu(); } });
 
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
 document.getElementById('btnDirectorio').addEventListener('click', openDirectorioModal);
-document.getElementById('btnExport').addEventListener('click', exportData);
+document.getElementById('btnExport').addEventListener('click', () => { exportData(); closeAdminMenu(); });
 document.getElementById('btnImport').addEventListener('change', e => {
   const file = e.target.files[0];
   if(file) importData(file);
   e.target.value = '';
+  closeAdminMenu();
 });
 document.getElementById('btnReset').addEventListener('click', () => {
   if(confirm('¿Restablecer TODOS los cambios guardados en este navegador? Esta acción no se puede deshacer.')){
     resetAllOverrides();
     renderAll();
   }
+  closeAdminMenu();
+});
+
+// ---------- Menú "Admin" (dropdown) ----------
+const adminMenu = document.getElementById('adminMenu');
+function openAdminMenu(){ adminMenu.classList.add('open'); }
+function closeAdminMenu(){ adminMenu.classList.remove('open'); }
+document.getElementById('btnAdminToggle').addEventListener('click', e => {
+  e.stopPropagation();
+  adminMenu.classList.contains('open') ? closeAdminMenu() : openAdminMenu();
+});
+document.addEventListener('click', e => {
+  if(!e.target.closest('#adminDropdown')) closeAdminMenu();
 });
 
 renderAll(); // primer pintado inmediato con la caché local del navegador
