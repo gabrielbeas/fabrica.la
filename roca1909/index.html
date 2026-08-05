@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <title>ROCA 1909 — Panel de Ventas</title>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --bg:#f8f9fa; --panel:#ffffff; --panel2:#f3f4f5; --border:#e1e3e4;
@@ -220,6 +221,28 @@
   .comision-status.status-ok{background:var(--green-bg);color:var(--green); border-color: var(--green-bg);}
   .comision-status.status-pending{background:var(--yellow-bg);color:var(--yellow); border-color: var(--yellow-bg);}
 
+  /* Contenedor oculto usado solo para generar el PDF de la ficha (html2pdf.js) */
+  .pdf-ficha-container{position:fixed;left:-9999px;top:0;width:700px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35}
+  .pdf-logo{height:30px;margin-bottom:10px}
+  .pdf-h3{font-size:17px;margin:0 0 3px;font-weight:600}
+  .pdf-sub-line{font-size:11px;color:#747879;margin-bottom:14px;font-weight:400}
+  .pdf-h4{font-size:9.5px;text-transform:uppercase;color:#747879;border-bottom:1px solid #e1e3e4;padding-bottom:5px;margin:14px 0 8px;font-weight:700;letter-spacing:.04em}
+  .pdf-h4:first-of-type{margin-top:0}
+  .pdf-h4-plain{border:none;margin:10px 0 4px;padding:0}
+  .pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:4px}
+  .pdf-item-k{font-size:9.5px;color:#747879;font-weight:500}
+  .pdf-item-v{font-size:11.5px;font-weight:500;margin-top:1px}
+  .pdf-esquema-text{font-size:11px;line-height:1.5;margin-bottom:4px}
+  .pdf-tl-item{margin-bottom:6px;font-size:11px;display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #e1e3e4;padding-bottom:6px}
+  .pdf-tl-item:last-child{border-bottom:none}
+  .pdf-tl-fecha{color:#747879;font-size:10px;font-weight:500}
+  .pdf-tl-concepto{font-weight:500}
+  .pdf-tl-right{text-align:right;white-space:nowrap}
+  .pdf-tl-monto{font-weight:600}
+  .pdf-tl-estatus{font-size:9px;text-transform:uppercase;color:#747879}
+  .pdf-status-line{font-weight:700;margin-top:6px;font-size:10.5px}
+  .pdf-footer-note{margin-top:16px;font-size:9px;color:#747879;border-top:1px solid #e1e3e4;padding-top:8px}
+
   @media (max-width: 600px) {
     .tl-edit-row {
       grid-template-columns: 1fr;
@@ -259,6 +282,7 @@
 <div class="sub">Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · 20 unidades privativas en 5 niveles · Actualizado al 26 de julio de 2026</div>
 <div class="toolbar">
 <button class="btn primary" id="btnPriceList">📋 Lista de precios y etapas</button>
+<button class="btn" id="btnDirectorio">👤 Directorio</button>
 <button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
 <label class="btn file-label">⬆ Importar cambios (JSON)<input accept=".json" id="btnImport" type="file"/></label>
 <button class="btn danger" id="btnReset">↺ Restablecer todo</button>
@@ -320,6 +344,13 @@
 <div id="comisionesModalBody"></div>
 </div>
 </div>
+<div class="overlay" id="directorioOverlay">
+<div class="modal" style="max-width:900px">
+<button class="modal-close" id="directorioModalClose">✕</button>
+<div id="directorioModalBody"></div>
+</div>
+</div>
+<div class="pdf-ficha-container" id="pdfFichaContainer"></div>
 <script>
 const baseUnits = [
   {id:'101',piso:1,m2:85.14,vista:'FRONTAL',cajones:1,precioLista:3959010,status:'disponible'},
@@ -332,7 +363,8 @@ const baseUnits = [
       telefono:'333 814 8997',
       email:'No proporcionado en el contrato',
       rfc:'NEVS470120BM4',
-      curp:'NEVS470120MDFRLS05'
+      curp:'NEVS470120MDFRLS05',
+      direccion:'Isla Salinas #2011, Guadalajara, Jal., C.P. 44950'
     },
     timeline:[
       {fecha:'20/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
@@ -350,7 +382,8 @@ const baseUnits = [
       telefono:'33 1406 5102',
       email:'pedro.rguez1689@gmail.com',
       rfc:'ROCP890616JD5',
-      curp:'ROCP890616HJCDRD03'
+      curp:'ROCP890616HJCDRD03',
+      direccion:'C. Emiliano Zapata #669 25, Col. Mirador, Guadalajara, Jal., C.P. 44370'
     },
     timeline:[
       {fecha:'10/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
@@ -373,7 +406,8 @@ const baseUnits = [
       telefono:'449 279 9649',
       email:'soto.gustavo.v@gmail.com',
       rfc:'SOVG950114S81',
-      curp:'SOVG950114HASTLS02'
+      curp:'SOVG950114HASTLS02',
+      direccion:'Garibaldi #932 int 7, Centro, Guadalajara, Jal., C.P. 44200'
     },
     timeline:[
       {fecha:'13/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
@@ -584,6 +618,8 @@ const priceOverlay = document.getElementById('priceOverlay');
 const priceModalBody = document.getElementById('priceModalBody');
 const comisionesOverlay = document.getElementById('comisionesOverlay');
 const comisionesModalBody = document.getElementById('comisionesModalBody');
+const directorioOverlay = document.getElementById('directorioOverlay');
+const directorioModalBody = document.getElementById('directorioModalBody');
 
 function renderAll(){
   const units = getUnits();
@@ -785,6 +821,33 @@ kpisComisionesEl.addEventListener('click', e=>{
   if(card) openComisionesModal();
 });
 
+function directorioTemplate(units){
+  const rows = units.filter(u=>u.contacto).sort((a,b)=>a.id.localeCompare(b.id));
+  const rowsHTML = rows.map(u=>{
+    const c = u.contacto;
+    return `<tr>
+      <td><strong>${u.id}</strong></td>
+      <td>${c.nombre || '—'}</td>
+      <td>${c.telefono || '—'}</td>
+      <td>${c.email || '—'}</td>
+      <td>${c.direccion || '—'}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <h3>Directorio de compradores</h3>
+    <div class="price-list-note">Compradores con contacto registrado (apartados y vendidos).</div>
+    <table>
+      <thead><tr><th>Depto</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
+      <tbody>${rowsHTML || '<tr><td colspan="5" class="placeholder">Sin compradores registrados todavía.</td></tr>'}</tbody>
+    </table>
+  `;
+}
+function openDirectorioModal(){
+  directorioModalBody.innerHTML = directorioTemplate(getUnits());
+  directorioOverlay.classList.add('open');
+}
+function closeDirectorioModal(){ directorioOverlay.classList.remove('open'); }
+
 floorsEl.addEventListener('click', e=>{
   const card = e.target.closest('.unit[data-id]');
   if(card) openModal(card.dataset.id, 'view');
@@ -805,7 +868,7 @@ function openModal(id, mode){
 }
 function closeModal(){ overlay.classList.remove('open'); }
 
-function printFicha(id) {
+function downloadFichaPDF(id) {
   const u = getUnits().find(x => x.id === id);
   if (!u) return;
 
@@ -813,101 +876,88 @@ function printFicha(id) {
   const c = u.comision;
   const pendienteComision = c ? (c.exigible - (c.pagado||0)) : 0;
 
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>Ficha Depto ${u.id}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-        <style>
-          @page { size: letter; margin: 14mm 16mm; }
-          *{box-sizing:border-box}
-          html,body { height: 100%; }
-          body { font-family: 'Hanken Grotesk', system-ui, sans-serif; padding: 0; color: #2d3436; background: #fff; font-size: 11px; line-height: 1.35; }
-          .logo { height: 30px; margin-bottom: 10px; }
-          h3 { font-size: 17px; margin: 0 0 3px; font-weight: 600; }
-          .sub { font-size: 11px; color: #747879; margin-bottom: 14px; font-weight: 400; }
-          h4 { font-size: 9.5px; text-transform: uppercase; color: #747879; border-bottom: 1px solid #e1e3e4; padding-bottom: 5px; margin: 14px 0 8px; font-weight: 700; letter-spacing: 0.04em;}
-          h4:first-of-type{ margin-top: 0; }
-          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 4px; }
-          .item-k { font-size: 9.5px; color: #747879; font-weight: 500; }
-          .item-v { font-size: 11.5px; font-weight: 500; margin-top: 1px; }
-          .esquema-text { font-size: 11px; line-height: 1.5; margin-bottom: 4px; }
-          .tl-item { margin-bottom: 6px; font-size: 11px; display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted #e1e3e4; padding-bottom: 6px; }
-          .tl-item:last-child{ border-bottom: none; }
-          .tl-fecha { color: #747879; font-size: 10px; font-weight: 500; }
-          .tl-concepto { font-weight: 500; }
-          .tl-right { text-align: right; white-space: nowrap; }
-          .tl-monto { font-weight: 600; }
-          .tl-estatus { font-size: 9px; text-transform: uppercase; color: #747879; }
-          .status-line { font-weight: 700; margin-top: 6px; font-size: 10.5px; }
-          .footer-note { margin-top: 16px; font-size: 9px; color: #747879; border-top: 1px solid #e1e3e4; padding-top: 8px; }
-        </style>
-      </head>
-      <body>
-        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" class="logo" />
-        <h3>Depto ${u.id}</h3>
-        <div class="sub">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · Estatus: ${u.status.toUpperCase()}</div>
+  const container = document.getElementById('pdfFichaContainer');
+  container.innerHTML = `
+    <img crossorigin="anonymous" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" class="pdf-logo" />
+    <h3 class="pdf-h3">Depto ${u.id}</h3>
+    <div class="pdf-sub-line">${u.m2} m² · ${u.vista} · ${u.cajones} cajón(es) · Estatus: ${u.status.toUpperCase()}</div>
 
-        ${u.contacto ? `
-        <h4>Datos de contacto</h4>
-        <div class="grid">
-          <div><div class="item-k">Nombre</div><div class="item-v">${u.contacto.nombre || '—'}</div></div>
-          <div><div class="item-k">Teléfono</div><div class="item-v">${u.contacto.telefono || '—'}</div></div>
-          <div><div class="item-k">Email</div><div class="item-v">${u.contacto.email || '—'}</div></div>
-          <div><div class="item-k">RFC</div><div class="item-v">${u.contacto.rfc || '—'}</div></div>
-          <div><div class="item-k">CURP</div><div class="item-v">${u.contacto.curp || '—'}</div></div>
-          <div><div class="item-k">Precio pactado</div><div class="item-v">${money(u.precioContrato)}</div></div>
+    ${u.contacto ? `
+    <h4 class="pdf-h4">Datos de contacto</h4>
+    <div class="pdf-grid">
+      <div><div class="pdf-item-k">Nombre</div><div class="pdf-item-v">${u.contacto.nombre || '—'}</div></div>
+      <div><div class="pdf-item-k">Teléfono</div><div class="pdf-item-v">${u.contacto.telefono || '—'}</div></div>
+      <div><div class="pdf-item-k">Email</div><div class="pdf-item-v">${u.contacto.email || '—'}</div></div>
+      <div><div class="pdf-item-k">RFC</div><div class="pdf-item-v">${u.contacto.rfc || '—'}</div></div>
+      <div><div class="pdf-item-k">CURP</div><div class="pdf-item-v">${u.contacto.curp || '—'}</div></div>
+      <div><div class="pdf-item-k">Dirección</div><div class="pdf-item-v">${u.contacto.direccion || '—'}</div></div>
+      <div><div class="pdf-item-k">Precio pactado</div><div class="pdf-item-v">${money(u.precioContrato)}</div></div>
+    </div>
+    ` : ''}
+
+    ${info ? `
+    <h4 class="pdf-h4">Etapa de venta</h4>
+    <div class="pdf-grid">
+      <div><div class="pdf-item-k">Etapa</div><div class="pdf-item-v">${info.etapaLabel}</div></div>
+      <div><div class="pdf-item-k">Descuento autorizado</div><div class="pdf-item-v">${info.pct.toFixed(2)}% (${money(info.base - u.precioContrato)})</div></div>
+      <div><div class="pdf-item-k">Precio de lista (${info.etapaLabel})</div><div class="pdf-item-v">${money(info.base)}</div></div>
+      <div><div class="pdf-item-k">Precio de venta</div><div class="pdf-item-v">${money(u.precioContrato)}</div></div>
+      <div><div class="pdf-item-k">Precio por m²</div><div class="pdf-item-v">${u.m2 ? money(u.precioContrato / u.m2) + '/m²' : '—'}</div></div>
+    </div>
+    <h4 class="pdf-h4 pdf-h4-plain">Esquema de pago</h4>
+    <div class="pdf-esquema-text">${u.esquemaContrato || 'No capturado todavía.'}</div>
+    ` : ''}
+
+    <h4 class="pdf-h4">Calendario de pagos</h4>
+    ${u.timeline && u.timeline.length ? u.timeline.map(t => `
+      <div class="pdf-tl-item">
+        <div>
+          <div class="pdf-tl-fecha">${t.fecha}</div>
+          <div class="pdf-tl-concepto">${t.concepto}</div>
         </div>
-        ` : ''}
-
-        ${info ? `
-        <h4>Etapa de venta</h4>
-        <div class="grid">
-          <div><div class="item-k">Etapa</div><div class="item-v">${info.etapaLabel}</div></div>
-          <div><div class="item-k">Descuento autorizado</div><div class="item-v">${info.pct.toFixed(2)}% (${money(info.base - u.precioContrato)})</div></div>
-          <div><div class="item-k">Precio de lista (${info.etapaLabel})</div><div class="item-v">${money(info.base)}</div></div>
-          <div><div class="item-k">Precio de venta</div><div class="item-v">${money(u.precioContrato)}</div></div>
-          <div><div class="item-k">Precio por m²</div><div class="item-v">${u.m2 ? money(u.precioContrato / u.m2) + '/m²' : '—'}</div></div>
+        <div class="pdf-tl-right">
+          <div class="pdf-tl-monto">${money(t.monto)}</div>
+          <div class="pdf-tl-estatus">${t.estatus}</div>
         </div>
-        <h4 style="border:none;margin:10px 0 4px;padding:0">Esquema de pago</h4>
-        <div class="esquema-text">${u.esquemaContrato || 'No capturado todavía.'}</div>
-        ` : ''}
+      </div>
+    `).join('') : 'Sin pagos registrados.'}
 
-        <h4>Calendario de pagos</h4>
-        ${u.timeline && u.timeline.length ? u.timeline.map(t => `
-          <div class="tl-item">
-            <div>
-              <div class="tl-fecha">${t.fecha}</div>
-              <div class="tl-concepto">${t.concepto}</div>
-            </div>
-            <div class="tl-right">
-              <div class="tl-monto">${money(t.monto)}</div>
-              <div class="tl-estatus">${t.estatus}</div>
-            </div>
-          </div>
-        `).join('') : 'Sin pagos registrados.'}
+    ${c ? `
+    <h4 class="pdf-h4">Comisión al equipo de ventas (sin IVA)</h4>
+    <div class="pdf-grid">
+      <div><div class="pdf-item-k">Comisionista</div><div class="pdf-item-v">${c.comisionista}</div></div>
+      <div><div class="pdf-item-k">% pactado</div><div class="pdf-item-v">${(c.pctPactado*100).toFixed(0)}%</div></div>
+      <div><div class="pdf-item-k">Comisión total</div><div class="pdf-item-v">${money(c.total)}</div></div>
+      <div><div class="pdf-item-k">Exigible a la fecha</div><div class="pdf-item-v">${money(c.exigible)}</div></div>
+      <div><div class="pdf-item-k">Pagado</div><div class="pdf-item-v">${money(c.pagado||0)}</div></div>
+      <div><div class="pdf-item-k">Pendiente por pagar</div><div class="pdf-item-v">${money(pendienteComision)}</div></div>
+    </div>
+    <div class="pdf-status-line">${pendienteComision<=0 && (c.pagado||0)>0 ? '✓ Comisión exigible pagada en su totalidad' : 'Pendiente de pago: ' + money(pendienteComision)}</div>
+    ` : ''}
 
-        ${c ? `
-        <h4>Comisión al equipo de ventas (sin IVA)</h4>
-        <div class="grid">
-          <div><div class="item-k">Comisionista</div><div class="item-v">${c.comisionista}</div></div>
-          <div><div class="item-k">% pactado</div><div class="item-v">${(c.pctPactado*100).toFixed(0)}%</div></div>
-          <div><div class="item-k">Comisión total</div><div class="item-v">${money(c.total)}</div></div>
-          <div><div class="item-k">Exigible a la fecha</div><div class="item-v">${money(c.exigible)}</div></div>
-          <div><div class="item-k">Pagado</div><div class="item-v">${money(c.pagado||0)}</div></div>
-          <div><div class="item-k">Pendiente por pagar</div><div class="item-v">${money(pendienteComision)}</div></div>
-        </div>
-        <div class="status-line">${pendienteComision<=0 && (c.pagado||0)>0 ? '✓ Comisión exigible pagada en su totalidad' : 'Pendiente de pago: ' + money(pendienteComision)}</div>
-        ` : ''}
+    <div class="pdf-footer-note">ROCA 1909 — Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Ficha generada el ${new Date().toLocaleDateString('es-MX')}</div>
+  `;
 
-        <div class="footer-note">ROCA 1909 — Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Ficha generada el ${new Date().toLocaleDateString('es-MX')}</div>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(() => { printWindow.print(); }, 500);
+  const btn = document.getElementById('btnPrintFicha');
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF…'; }
+
+  const opt = {
+    margin: [14, 16, 14, 16], // mm
+    filename: `Ficha_Depto_${u.id}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(container).save()
+    .catch(err => {
+      console.error('Error generando el PDF', err);
+      alert('No se pudo generar el PDF. Intenta de nuevo.');
+    })
+    .finally(() => {
+      if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+    });
 }
 
 function viewTemplate(u){
@@ -927,6 +977,7 @@ function viewTemplate(u){
       <div class="info-item"><div class="k">Email</div><div class="v">${c.email || '—'}</div></div>
       <div class="info-item"><div class="k">RFC</div><div class="v">${c.rfc || '—'}</div></div>
       <div class="info-item"><div class="k">CURP</div><div class="v">${c.curp || '—'}</div></div>
+      <div class="info-item"><div class="k">Dirección</div><div class="v">${c.direccion || '—'}</div></div>
       <div class="info-item"><div class="k">Precio pactado</div><div class="v">${money(u.precioContrato)}</div></div>
     </div>` : `<div class="placeholder">Sin comprador registrado todavía.</div>`}
 
@@ -991,14 +1042,14 @@ function viewTemplate(u){
     })() : ''}
 
     <div class="modal-actions">
-      <button class="btn" id="btnPrintFicha" data-id="${u.id}">🖨 Exportar ficha a PDF</button>
+      <button class="btn" id="btnPrintFicha" data-id="${u.id}">⬇ Descargar PDF</button>
       <button class="btn primary" id="btnEdit">${hasInfo ? 'Editar información' : 'Registrar comprador'}</button>
     </div>
   `;
 }
 function wireViewButtons(u){
   document.getElementById('btnEdit').addEventListener('click', () => openModal(u.id, 'edit'));
-  document.getElementById('btnPrintFicha').addEventListener('click', (e) => printFicha(e.target.dataset.id));
+  document.getElementById('btnPrintFicha').addEventListener('click', (e) => downloadFichaPDF(e.target.dataset.id));
 }
 
 function renderTimelineEditor(){
@@ -1069,6 +1120,7 @@ function editTemplate(u){
       <div class="field"><label>Email</label><input id="f_email" type="text" value="${(c.email||'').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>RFC</label><input id="f_rfc" type="text" value="${(c.rfc||'').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>CURP</label><input id="f_curp" type="text" value="${(c.curp||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field full"><label>Dirección</label><input id="f_direccion" type="text" value="${(c.direccion||'').replace(/"/g,'&quot;')}"></div>
     </div>
 
     <h4>Calendario de pagos</h4>
@@ -1141,7 +1193,8 @@ function wireEditForm(u){
         telefono: document.getElementById('f_telefono').value.trim(),
         email: document.getElementById('f_email').value.trim(),
         rfc: document.getElementById('f_rfc').value.trim(),
-        curp: document.getElementById('f_curp').value.trim()
+        curp: document.getElementById('f_curp').value.trim(),
+        direccion: document.getElementById('f_direccion').value.trim()
       },
       timeline: editTimeline.filter(t => t.fecha || t.concepto || t.monto)
     };
@@ -1200,9 +1253,12 @@ document.getElementById('priceModalClose').addEventListener('click', closePriceL
 priceOverlay.addEventListener('click', e => { if(e.target === priceOverlay) closePriceListModal(); });
 document.getElementById('comisionesModalClose').addEventListener('click', closeComisionesModal);
 comisionesOverlay.addEventListener('click', e => { if(e.target === comisionesOverlay) closeComisionesModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); } });
+document.getElementById('directorioModalClose').addEventListener('click', closeDirectorioModal);
+directorioOverlay.addEventListener('click', e => { if(e.target === directorioOverlay) closeDirectorioModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); } });
 
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
+document.getElementById('btnDirectorio').addEventListener('click', openDirectorioModal);
 document.getElementById('btnExport').addEventListener('click', exportData);
 document.getElementById('btnImport').addEventListener('change', e => {
   const file = e.target.files[0];
