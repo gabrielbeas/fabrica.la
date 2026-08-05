@@ -938,7 +938,7 @@ function downloadDirectorioPDF(){
     <div class="pdf-footer-note">Directorio generado el ${new Date().toLocaleDateString('es-MX')}</div>
   `;
 
-  generarPDF(container, 'ROCA1909_Directorio_compradores.pdf', 'landscape', document.getElementById('btnExportDirectorioPDF'));
+  generarPDF(container, 'ROCA1909_Directorio_compradores.pdf', 'portrait', document.getElementById('btnExportDirectorioPDF'));
 }
 
 floorsEl.addEventListener('click', e=>{
