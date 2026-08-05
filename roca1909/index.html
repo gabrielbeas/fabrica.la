@@ -31,6 +31,9 @@
   .file-label{margin:0}
   .file-label input{display:none}
   .toolbar-note{font-size:12px;color:var(--muted);width:100%;margin-top:4px; font-weight: 400;}
+  .sync-status{font-size:12px;font-weight:600;margin-left:auto;padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);white-space:nowrap}
+  .sync-status.sync-ok{color:var(--green);border-color:var(--green-bg)}
+  .sync-status.sync-error{color:var(--danger);border-color:rgba(186,26,26,.2)}
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
   .kpi{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;box-shadow: 0 2px 8px rgba(0,0,0,0.04);}
@@ -259,7 +262,8 @@
 <button class="btn" id="btnExport">⬇ Exportar cambios (JSON)</button>
 <label class="btn file-label">⬆ Importar cambios (JSON)<input accept=".json" id="btnImport" type="file"/></label>
 <button class="btn danger" id="btnReset">↺ Restablecer todo</button>
-<div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan automáticamente en este navegador. Usa "Exportar" para respaldarlos o compártemelos para incorporarlos de forma permanente al archivo.</div>
+<span class="sync-status" id="syncStatus">☁ Cargando…</span>
+<div class="toolbar-note">Los cambios que hagas (click en un depto → Editar) se guardan en el servidor y se sincronizan en cualquier navegador o dispositivo donde inicies sesión. Usa "Exportar" para respaldarlos en un archivo aparte si lo necesitas.</div>
 </div>
 <section>
 <h2>Finanzas</h2>
@@ -461,12 +465,70 @@ function discountInfo(u){
 const money = n => (n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
 
 const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
-function loadOverrides(){
+// API en el mismo Worker que protege /roca1909/*: guarda y lee los cambios (overrides)
+// desde un KV de Cloudflare, para que se sincronicen entre cualquier navegador/dispositivo
+// donde inicies sesión (en vez de quedar solo en el localStorage de un navegador).
+const API_URL = '/roca1909/api/data';
+
+function loadOverridesFromCache(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
   catch(e){ return {}; }
 }
-let overrides = loadOverrides();
-function persistOverrides(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }
+let overrides = loadOverridesFromCache(); // caché local, para pintar algo de inmediato
+
+function saveCacheOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }
+
+function setSyncStatus(state){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.classList.remove('sync-ok','sync-error');
+  if(state==='ok'){ el.textContent = '☁ Sincronizado'; el.classList.add('sync-ok'); }
+  else if(state==='saving'){ el.textContent = '☁ Guardando…'; }
+  else if(state==='loading'){ el.textContent = '☁ Cargando…'; }
+  else if(state==='error'){ el.textContent = '⚠ Sin conexión — solo en este navegador'; el.classList.add('sync-error'); }
+}
+
+async function persistOverrides(){
+  saveCacheOnly();
+  setSyncStatus('saving');
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(overrides)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    setSyncStatus('ok');
+  }catch(e){
+    console.error('Error guardando en el servidor, se quedó solo en este navegador.', e);
+    setSyncStatus('error');
+  }
+}
+
+async function syncFromServer(){
+  setSyncStatus('loading');
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const serverData = await res.json();
+    const serverEmpty = !serverData || Object.keys(serverData).length === 0;
+    const localHasData = Object.keys(overrides).length > 0;
+    if(serverEmpty && localHasData){
+      // Primera sincronización: sube los cambios que ya tenías guardados en este
+      // navegador (de antes de activar el servidor) para no perderlos.
+      await persistOverrides();
+    } else {
+      overrides = serverData || {};
+      saveCacheOnly();
+      setSyncStatus('ok');
+    }
+    renderAll();
+  }catch(e){
+    console.error('No se pudo sincronizar con el servidor; se muestran los datos de este navegador.', e);
+    setSyncStatus('error');
+  }
+}
+
 function getUnits(){
   return baseUnits.map(u=>{
     const ov = overrides[u.id];
@@ -1094,6 +1156,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   }
 });
 
-renderAll();
+renderAll(); // primer pintado inmediato con la caché local del navegador
+syncFromServer(); // luego sincroniza con el servidor (todos los navegadores/dispositivos)
 </script>
 </body></html>
