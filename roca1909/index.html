@@ -221,8 +221,14 @@
   .comision-status.status-ok{background:var(--green-bg);color:var(--green); border-color: var(--green-bg);}
   .comision-status.status-pending{background:var(--yellow-bg);color:var(--yellow); border-color: var(--yellow-bg);}
 
-  /* Contenedor oculto usado solo para generar el PDF de la ficha (html2pdf.js) */
-  .pdf-ficha-container{position:fixed;left:-9999px;top:0;width:700px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35}
+  /* Contenedor usado solo para generar los PDFs (html2pdf.js).
+     Se mantiene oculto con visibility/opacidad —no con left:-9999px— porque
+     html2canvas no captura elementos posicionados fuera del viewport. */
+  .pdf-ficha-container{position:fixed;left:0;top:0;width:760px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35;z-index:-1;opacity:0;pointer-events:none}
+  .pdf-ficha-container.capturing{opacity:1}
+  .pdf-ficha-container table{width:100%;border-collapse:collapse;font-size:10.5px;background:#fff;box-shadow:none;border:none}
+  .pdf-ficha-container th{background:#f3f4f5;color:#747879;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;padding:7px 8px;text-align:left;border-bottom:1px solid #e1e3e4}
+  .pdf-ficha-container td{padding:7px 8px;border-bottom:1px solid #e1e3e4;vertical-align:top}
   .pdf-logo{height:30px;margin-bottom:10px}
   .pdf-h3{font-size:17px;margin:0 0 3px;font-weight:600}
   .pdf-sub-line{font-size:11px;color:#747879;margin-bottom:14px;font-weight:400}
@@ -898,26 +904,7 @@ function downloadDirectorioPDF(){
     <div class="pdf-footer-note">Directorio generado el ${new Date().toLocaleDateString('es-MX')}</div>
   `;
 
-  const btn = document.getElementById('btnExportDirectorioPDF');
-  const originalLabel = btn ? btn.textContent : '';
-  if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF…'; }
-
-  const opt = {
-    margin: [14, 14, 14, 14], // mm
-    filename: 'ROCA1909_Directorio_compradores.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' }
-  };
-
-  html2pdf().set(opt).from(container).save()
-    .catch(err => {
-      console.error('Error generando el PDF del directorio', err);
-      alert('No se pudo generar el PDF. Intenta de nuevo.');
-    })
-    .finally(() => {
-      if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
-    });
+  generarPDF(container, 'ROCA1909_Directorio_compradores.pdf', 'landscape', document.getElementById('btnExportDirectorioPDF'));
 }
 
 floorsEl.addEventListener('click', e=>{
@@ -1010,25 +997,51 @@ function downloadFichaPDF(id) {
     <div class="pdf-footer-note">ROCA 1909 — Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Ficha generada el ${new Date().toLocaleDateString('es-MX')}</div>
   `;
 
-  const btn = document.getElementById('btnPrintFicha');
+  generarPDF(container, `Ficha_Depto_${u.id}.pdf`, 'portrait', document.getElementById('btnPrintFicha'));
+}
+
+// Espera a que las imágenes del contenedor terminen de cargar (o fallen) antes de
+// capturar; si no, html2canvas puede generar una página en blanco.
+function esperarImagenes(container){
+  const imgs = Array.from(container.querySelectorAll('img'));
+  return Promise.all(imgs.map(img => {
+    if(img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.addEventListener('load', resolve, {once:true});
+      img.addEventListener('error', resolve, {once:true});
+    });
+  }));
+}
+
+function generarPDF(container, filename, orientation, btn){
   const originalLabel = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF…'; }
 
   const opt = {
-    margin: [14, 16, 14, 16], // mm
-    filename: `Ficha_Depto_${u.id}.pdf`,
+    margin: [14, 14, 14, 14], // mm
+    filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0, windowWidth: container.scrollWidth },
+    jsPDF: { unit: 'mm', format: 'letter', orientation: orientation || 'portrait' },
+    pagebreak: { mode: ['css','legacy'] }
   };
 
-  html2pdf().set(opt).from(container).save()
+  const restaurar = () => {
+    container.classList.remove('capturing');
+    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+  };
+
+  // Hace visible el contenedor durante la captura (html2canvas no captura
+  // elementos con opacity:0 ni fuera del viewport) y lo vuelve a ocultar al final.
+  container.classList.add('capturing');
+
+  esperarImagenes(container)
+    .then(() => html2pdf().set(opt).from(container).save())
+    .then(restaurar)
     .catch(err => {
       console.error('Error generando el PDF', err);
       alert('No se pudo generar el PDF. Intenta de nuevo.');
-    })
-    .finally(() => {
-      if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+      restaurar();
     });
 }
 
