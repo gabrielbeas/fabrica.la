@@ -401,7 +401,9 @@ const baseUnits = [
       {fecha:'03/09/2026',concepto:'Pago parcial (10%)',monto:357588,estatus:'pendiente'},
       {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (10% restante)',monto:357588,estatus:'pendiente'}
     ],
-    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:178794,exigible:178794,pagado:0,fechaPago:null}},
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:178794,exigible:178794,pagos:[
+      {fecha:'',concepto:'Comisión por venta',monto:178794,estatus:'pendiente'}
+    ]}},
   {id:'103',piso:1,m2:79.75,vista:'POSTERIOR',cajones:1,precioLista:3283580,status:'vendido',
     comprador:'Pedro Sinuhe Rodríguez Cervantes',precioContrato:3124280,recibido:156214,fechaFirma:'22/07/2026',financia:'Banco Santander (preaprobado $3,067,434)',
     etapaVenta:'etapa1',
@@ -420,7 +422,9 @@ const baseUnits = [
       {fecha:'Fecha de entrega y escrituración (o 06/01/2027 si es posterior)',concepto:'Pago parcial (5%)',monto:156214,estatus:'pendiente'},
       {fecha:'Fecha de entrega y escrituración',concepto:'Finiquito (saldo, vía crédito hipotecario Santander)',monto:2811852,estatus:'pendiente'}
     ],
-    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:156214,exigible:78107,pagado:78107,fechaPago:'27/07/2026'}},
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.05,total:156214,exigible:78107,pagos:[
+      {fecha:'27/07/2026',concepto:'Primer pago (50% exigible)',monto:78107,estatus:'pagado'}
+    ]}},
   {id:'104',piso:1,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2707740,status:'disponible'},
 
   {id:'201',piso:2,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4056895,status:'disponible'},
@@ -443,7 +447,9 @@ const baseUnits = [
       {fecha:'23/07/2026',concepto:'Firma de contrato (anticipo inicial 51.51%)',monto:1180000,estatus:'pagado'},
       {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (saldo, vía crédito INFONAVIT)',monto:1130000,estatus:'pendiente'}
     ],
-    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.04,total:93200,exigible:93200,pagado:93200,fechaPago:'27/07/2026'}},
+    comision:{comisionista:'JGC Bienes Raíces',pctPactado:0.04,total:93200,exigible:93200,pagos:[
+      {fecha:'27/07/2026',concepto:'Comisión por venta',monto:93200,estatus:'pagado'}
+    ]}},
 
   {id:'301',piso:3,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4078180,status:'disponible'},
   {id:'302',piso:3,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4323500,status:'disponible'},
@@ -572,6 +578,20 @@ function formatPhoneMX(phone){
     return `${digits.slice(0,2)} ${digits.slice(2,6)} ${digits.slice(6,10)}`;
   }
   return `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,10)}`;
+}
+
+// La comisión pagada se calcula sumando los pagos individuales marcados como
+// "pagado" (registrados con el interruptor/timeline), en vez de guardar un
+// total suelto — el mismo patrón que usa el Calendario de pagos con "recibido".
+function comisionPagado(comision){
+  if(!comision) return 0;
+  const pagos = comision.pagos || [];
+  return pagos.filter(p=>p.estatus==='pagado').reduce((s,p)=>s+(p.monto||0),0);
+}
+function comisionFechasPago(comision){
+  if(!comision) return '';
+  const pagos = (comision.pagos||[]).filter(p=>p.estatus==='pagado' && p.fecha);
+  return pagos.map(p=>p.fecha).join(', ');
 }
 
 const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
@@ -772,7 +792,7 @@ function renderKPIs(units){
 
   const comisionUnits = units.filter(u=>u.comision);
   const comisionTotal = comisionUnits.reduce((s,u)=>s+u.comision.total,0);
-  const comisionPagada = comisionUnits.reduce((s,u)=>s+(u.comision.pagado||0),0);
+  const comisionPagada = comisionUnits.reduce((s,u)=>s+comisionPagado(u.comision),0);
   const comisionExigible = comisionUnits.reduce((s,u)=>s+u.comision.exigible,0);
   const comisionPendiente = comisionExigible - comisionPagada;
 
@@ -866,14 +886,16 @@ function comisionesListTemplate(units){
   const rows = units.filter(u=>u.comision).sort((a,b)=>a.id.localeCompare(b.id));
   const rowsHTML = rows.map(u=>{
     const c = u.comision;
-    const pendiente = c.exigible - (c.pagado||0);
+    const pagado = comisionPagado(c);
+    const pendiente = c.exigible - pagado;
+    const fechasPago = comisionFechasPago(c);
     return `<tr>
       <td><strong>${u.id}</strong></td>
       <td>${c.comisionista}</td>
       <td class="num">${(c.pctPactado*100).toFixed(0)}%</td>
       <td class="num">${money(c.total)}</td>
-      <td class="num">${money(c.pagado||0)}</td>
-      <td>${c.fechaPago || '<span class="placeholder">Sin pagar</span>'}</td>
+      <td class="num">${money(pagado)}</td>
+      <td>${fechasPago || '<span class="placeholder">Sin pagar</span>'}</td>
       <td class="num">${money(pendiente)}</td>
     </tr>`;
   }).join('');
@@ -972,6 +994,7 @@ tbody.addEventListener('click', e=>{
 });
 
 let editTimeline = [];
+let editComisionPagos = [];
 
 function openModal(id, mode){
   const u = getUnits().find(x=>x.id===id);
@@ -988,7 +1011,8 @@ function downloadFichaPDF(id) {
 
   const info = discountInfo(u);
   const c = u.comision;
-  const pendienteComision = c ? (c.exigible - (c.pagado||0)) : 0;
+  const pagadoComision = c ? comisionPagado(c) : 0;
+  const pendienteComision = c ? (c.exigible - pagadoComision) : 0;
 
   const container = document.getElementById('pdfFichaContainer');
   container.innerHTML = `
@@ -1046,7 +1070,7 @@ function downloadFichaPDF(id) {
       <div><div class="pdf-item-k">Pagado</div><div class="pdf-item-v">${money(c.pagado||0)}</div></div>
       <div><div class="pdf-item-k">Pendiente por pagar</div><div class="pdf-item-v">${money(pendienteComision)}</div></div>
     </div>
-    <div class="pdf-status-line">${pendienteComision<=0 && (c.pagado||0)>0 ? '✓ Comisión exigible pagada en su totalidad' : 'Pendiente de pago: ' + money(pendienteComision)}</div>
+    <div class="pdf-status-line">${pendienteComision<=0 && pagadoComision>0 ? '✓ Comisión exigible pagada en su totalidad' : 'Pendiente de pago: ' + money(pendienteComision)}</div>
     ` : ''}
 
     <div class="pdf-footer-note">ROCA 1909 — Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Ficha generada el ${new Date().toLocaleDateString('es-MX')}</div>
@@ -1174,8 +1198,9 @@ function viewTemplate(u){
     </div>` : `<div class="placeholder">Sin pagos registrados.</div>`}
 
     ${u.comision ? (() => {
-      const pagado = u.comision.pagado||0;
-      const pendiente = u.comision.exigible - pagado;
+      const pagos = u.comision.pagos || [];
+      const pagado = comisionPagado(u.comision);
+      const pendiente = Math.max(0, u.comision.exigible - pagado);
       const pagadoTotal = pendiente <= 0 && pagado > 0;
       return `
     <h4>Comisión al equipo de ventas <span style="font-weight:400;text-transform:none;letter-spacing:0">(cifras sin IVA)</span></h4>
@@ -1184,9 +1209,29 @@ function viewTemplate(u){
       <div class="info-item"><div class="k">% pactado</div><div class="v">${(u.comision.pctPactado*100).toFixed(0)}%</div></div>
       <div class="info-item"><div class="k">Comisión total</div><div class="v">${money(u.comision.total)}</div></div>
       <div class="info-item"><div class="k">Exigible a la fecha</div><div class="v">${money(u.comision.exigible)}</div></div>
-      <div class="info-item"><div class="k">Pagado</div><div class="v ${pagado>0?'v-green':''}">${money(pagado)}</div></div>
-      <div class="info-item"><div class="k">Pendiente por pagar</div><div class="v ${pendiente>0?'v-yellow':'v-green'}">${money(pendiente)}</div></div>
     </div>
+
+    ${pagos.length ? `<div class="tl" style="margin-top:16px">
+      ${pagos.map((p, i)=>`
+        <div class="tl-item ${p.estatus}">
+          <div class="tl-dot"></div>
+          <div class="tl-fecha">
+            ${p.fecha || 'Sin fecha'}
+            <label class="switch-container view-mode" title="Marcar como ${p.estatus==='pagado'?'pendiente':'pagado'}">
+              <div class="switch">
+                <input type="checkbox" class="comision-quick-paid-switch" data-unit-id="${u.id}" data-pago-idx="${i}" ${p.estatus==='pagado'?'checked':''}>
+                <span class="slider"></span>
+              </div>
+            </label>
+          </div>
+          <div class="tl-concepto">
+            ${p.concepto}
+            <span class="tl-pill">${p.estatus}</span>
+          </div>
+          <div class="tl-monto">${money(p.monto)}</div>
+        </div>`).join('')}
+    </div>` : `<div class="placeholder" style="margin-top:12px">Sin pagos de comisión registrados.</div>`}
+
     <div class="comision-status ${pagadoTotal?'status-ok':'status-pending'}">
       ${pagadoTotal ? '✓ Comisión exigible pagada en su totalidad' : (pagado>0 ? `Pago parcial — pendiente ${money(pendiente)}` : `Pendiente de pago: ${money(pendiente)}`)}
     </div>
@@ -1216,7 +1261,7 @@ function renderTimelineEditor(){
 }
 
 function syncTimelineFromDOM(){
-  const rows = modalBody.querySelectorAll('.tl-edit-row');
+  const rows = modalBody.querySelectorAll('#tlEditor .tl-edit-row');
   editTimeline = Array.from(rows).map((row, i)=>{
     const prev = editTimeline[i];
     return {
@@ -1228,8 +1273,33 @@ function syncTimelineFromDOM(){
   });
 }
 
+function renderComisionPagosEditor(){
+  if(!editComisionPagos.length) return `<div class="placeholder">Sin pagos de comisión. Agrega el primero.</div>`;
+  return editComisionPagos.map((p,i)=>`
+    <div class="tl-edit-row" data-idx="${i}">
+      <input type="text" class="cp-fecha-input" placeholder="Fecha" value="${(p.fecha||'').replace(/"/g,'&quot;')}">
+      <input type="text" class="cp-concepto-input" placeholder="Concepto" value="${(p.concepto||'').replace(/"/g,'&quot;')}">
+      <input type="number" class="cp-monto-input" placeholder="Monto" value="${p.monto||0}">
+      <button class="tl-remove" data-remove-cp="${i}" title="Quitar">✕</button>
+    </div>`).join('');
+}
+
+function syncComisionPagosFromDOM(){
+  const rows = modalBody.querySelectorAll('#comisionPagosEditor .tl-edit-row');
+  editComisionPagos = Array.from(rows).map((row, i)=>{
+    const prev = editComisionPagos[i];
+    return {
+      fecha: row.querySelector('.cp-fecha-input').value.trim(),
+      concepto: row.querySelector('.cp-concepto-input').value.trim(),
+      monto: parseFloat(row.querySelector('.cp-monto-input').value) || 0,
+      estatus: prev ? prev.estatus : 'pendiente'
+    };
+  });
+}
+
 function editTemplate(u){
   editTimeline = (u.timeline || []).map(t => Object.assign({}, t));
+  editComisionPagos = (u.comision && u.comision.pagos ? u.comision.pagos : []).map(p => Object.assign({}, p));
   const c = u.contacto || {};
   return `
     <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" alt="Logo" class="modal-header-logo">
@@ -1286,8 +1356,10 @@ function editTemplate(u){
       <div class="field"><label>% pactado</label><input id="f_comisionPct" type="number" step="0.01" value="${(u.comision.pctPactado*100)||0}"></div>
       <div class="field"><label>Comisión total</label><input id="f_comisionTotal" type="number" value="${u.comision.total||0}"></div>
       <div class="field"><label>Exigible a la fecha</label><input id="f_comisionExigible" type="number" value="${u.comision.exigible||0}"></div>
-      <div class="field"><label>Pagado</label><input id="f_comisionPagado" type="number" value="${u.comision.pagado||0}"></div>
     </div>
+    <div class="field" style="margin-top:4px"><label>Pagos de comisión (el estatus se marca con el interruptor en la vista)</label></div>
+    <div id="comisionPagosEditor">${renderComisionPagosEditor()}</div>
+    <button class="btn small" id="btnAddComisionPago">+ Agregar pago</button>
     ` : ''}
 
     <div class="modal-actions">
@@ -1315,6 +1387,24 @@ function wireEditForm(u){
       tlEditor.innerHTML = renderTimelineEditor();
     }
   });
+
+  const comisionPagosEditorEl = document.getElementById('comisionPagosEditor');
+  if(comisionPagosEditorEl){
+    document.getElementById('btnAddComisionPago').addEventListener('click', () => {
+      syncComisionPagosFromDOM();
+      editComisionPagos.push({fecha:'', concepto:'', monto:0, estatus:'pendiente'});
+      comisionPagosEditorEl.innerHTML = renderComisionPagosEditor();
+    });
+
+    comisionPagosEditorEl.addEventListener('click', e => {
+      const idx = e.target.dataset.removeCp;
+      if(idx !== undefined){
+        syncComisionPagosFromDOM();
+        editComisionPagos.splice(Number(idx), 1);
+        comisionPagosEditorEl.innerHTML = renderComisionPagosEditor();
+      }
+    });
+  }
 
   document.getElementById('btnCancel').addEventListener('click', () => openModal(u.id, 'view'));
 
@@ -1351,12 +1441,13 @@ function wireEditForm(u){
       timeline: editTimeline.filter(t => t.fecha || t.concepto || t.monto)
     };
     if(u.comision){
+      syncComisionPagosFromDOM();
       patch.comision = {
         comisionista: document.getElementById('f_comisionista').value.trim(),
         pctPactado: (parseFloat(document.getElementById('f_comisionPct').value) || 0) / 100,
         total: parseFloat(document.getElementById('f_comisionTotal').value) || 0,
         exigible: parseFloat(document.getElementById('f_comisionExigible').value) || 0,
-        pagado: parseFloat(document.getElementById('f_comisionPagado').value) || 0
+        pagos: editComisionPagos.filter(p => p.fecha || p.concepto || p.monto)
       };
     }
     saveUnitOverride(u.id, patch);
@@ -1391,6 +1482,20 @@ modalBody.addEventListener('change', e => {
         patch.status = e.target.checked ? 'vendido' : 'apartado';
       }
 
+      saveUnitOverride(unitId, patch);
+      renderAll();
+      openModal(unitId, 'view');
+    }
+  } else if(e.target.classList.contains('comision-quick-paid-switch')){
+    const unitId = e.target.dataset.unitId;
+    const pagoIdx = parseInt(e.target.dataset.pagoIdx, 10);
+    const u = getUnits().find(x=>x.id===unitId);
+    if(!u || !u.comision) return;
+
+    const newPagos = (u.comision.pagos || []).map(p => Object.assign({}, p));
+    if(newPagos[pagoIdx]){
+      newPagos[pagoIdx].estatus = e.target.checked ? 'pagado' : 'pendiente';
+      const patch = { comision: Object.assign({}, u.comision, { pagos: newPagos }) };
       saveUnitOverride(unitId, patch);
       renderAll();
       openModal(unitId, 'view');
