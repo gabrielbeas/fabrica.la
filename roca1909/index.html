@@ -80,17 +80,23 @@
   .floor-label{font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.04em;font-weight:600;text-transform:uppercase}
   .floor-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 
-  .unit{border-radius:4px;padding:16px;border:1px solid var(--border);position:relative;cursor:pointer;transition:transform .15s, box-shadow .15s;box-shadow: 0 1px 4px rgba(0,0,0,0.02);}
+  .unit{border-radius:4px;padding:18px 16px 16px;border:1px solid var(--border);position:relative;cursor:pointer;transition:transform .15s, box-shadow .15s;box-shadow: 0 1px 4px rgba(0,0,0,0.02);overflow:hidden;}
   .unit:hover{transform:translateY(-2px);box-shadow: 0 4px 12px rgba(0,0,0,0.08);}
   .unit:active{transform:translateY(0);box-shadow: 0 1px 4px rgba(0,0,0,0.04);}
+  .unit::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--outline-variant, var(--border));}
   .unit.disponible{background:var(--panel);}
-  .unit.apartado{background:var(--panel); border-color: var(--yellow);}
-  .unit.vendido{background:var(--panel); border-color: var(--green);}
+  .unit.disponible::before{background:var(--muted);opacity:.3}
+  .unit.apartado{background:#FFFBEB; border-color: var(--yellow); border-width:2px;}
+  .unit.apartado::before{background:var(--yellow);}
+  .unit.vendido{background:#ECFDF5; border-color: var(--green); border-width:2px;}
+  .unit.vendido::before{background:var(--green);}
   .unit .id{font-size:18px;font-weight:600;letter-spacing:-0.01em}
-  .unit .badge{position:absolute;top:14px;right:14px;font-size:10px;padding:3px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.02em;font-weight:600; }
+  .unit.apartado .id{color:#92620a}
+  .unit.vendido .id{color:#047857}
+  .unit .badge{position:absolute;top:14px;right:14px;font-size:10px;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.02em;font-weight:700;}
   .unit.disponible .badge{background:var(--panel2);color:var(--muted)}
-  .unit.apartado .badge{background:var(--yellow-bg);color:var(--yellow)}
-  .unit.vendido .badge{background:var(--green-bg);color:var(--green)}
+  .unit.apartado .badge{background:var(--yellow);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .unit.vendido .badge{background:var(--green);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
   .unit .meta{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;font-weight:400}
   .unit .price{font-size:14px;margin-top:8px;font-weight:600}
   .unit .buyer{font-size:12px;margin-top:6px;color:var(--text);font-weight:500}
