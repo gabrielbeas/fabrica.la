@@ -498,6 +498,21 @@ function discountInfo(u){
 
 const money = n => (n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
 
+// Formatea un teléfono a 10 dígitos en el formato nacional de México:
+// "XX XXXX XXXX" para las claves LADA de 2 dígitos (55 CDMX, 33 GDL, 81 MTY),
+// "XXX XXX XXXX" para el resto (claves LADA de 3 dígitos). Si no son 10 dígitos
+// (formatos internacionales, "no proporcionado", etc.) se deja tal cual.
+function formatPhoneMX(phone){
+  if(!phone) return phone;
+  const digits = phone.replace(/\D/g,'');
+  if(digits.length !== 10) return phone;
+  const ladasDosDigitos = ['55','33','81'];
+  if(ladasDosDigitos.includes(digits.slice(0,2))){
+    return `${digits.slice(0,2)} ${digits.slice(2,6)} ${digits.slice(6,10)}`;
+  }
+  return `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,10)}`;
+}
+
 const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
 // API en el mismo Worker que protege /roca1909/*: guarda y lee los cambios (overrides)
 // desde un KV de Cloudflare, para que se sincronicen entre cualquier navegador/dispositivo
@@ -828,16 +843,22 @@ function directorioTemplate(units){
     return `<tr>
       <td><strong>${u.id}</strong></td>
       <td>${c.nombre || '—'}</td>
-      <td>${c.telefono || '—'}</td>
+      <td class="num" style="white-space:nowrap">${formatPhoneMX(c.telefono) || '—'}</td>
       <td>${c.email || '—'}</td>
       <td>${c.direccion || '—'}</td>
     </tr>`;
   }).join('');
   return `
-    <h3>Directorio de compradores</h3>
-    <div class="price-list-note">Compradores con contacto registrado (apartados y vendidos).</div>
-    <table>
-      <thead><tr><th>Depto</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" alt="Logo" class="modal-header-logo">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h3 style="margin-bottom:2px">Directorio de compradores</h3>
+        <div class="modal-sub" style="margin-bottom:0">Compradores con contacto registrado (apartados y vendidos).</div>
+      </div>
+      <button class="btn small" id="btnExportDirectorioPDF">⬇ Exportar PDF</button>
+    </div>
+    <table style="margin-top:20px">
+      <thead><tr><th>Depto</th><th>Nombre</th><th class="num">Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
       <tbody>${rowsHTML || '<tr><td colspan="5" class="placeholder">Sin compradores registrados todavía.</td></tr>'}</tbody>
     </table>
   `;
@@ -847,6 +868,57 @@ function openDirectorioModal(){
   directorioOverlay.classList.add('open');
 }
 function closeDirectorioModal(){ directorioOverlay.classList.remove('open'); }
+
+directorioModalBody.addEventListener('click', e => {
+  if(e.target.closest('#btnExportDirectorioPDF')) downloadDirectorioPDF();
+});
+
+function downloadDirectorioPDF(){
+  const units = getUnits().filter(u=>u.contacto).sort((a,b)=>a.id.localeCompare(b.id));
+  const rowsHTML = units.map(u=>{
+    const c = u.contacto;
+    return `<tr>
+      <td><strong>${u.id}</strong></td>
+      <td>${c.nombre || '—'}</td>
+      <td class="pdf-item-v" style="white-space:nowrap">${formatPhoneMX(c.telefono) || '—'}</td>
+      <td>${c.email || '—'}</td>
+      <td>${c.direccion || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const container = document.getElementById('pdfFichaContainer');
+  container.innerHTML = `
+    <img crossorigin="anonymous" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" class="pdf-logo" />
+    <h3 class="pdf-h3">Directorio de compradores</h3>
+    <div class="pdf-sub-line">ROCA 1909 · Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · Compradores con contacto registrado (apartados y vendidos)</div>
+    <table>
+      <thead><tr><th>Depto</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
+      <tbody>${rowsHTML || '<tr><td colspan="5">Sin compradores registrados todavía.</td></tr>'}</tbody>
+    </table>
+    <div class="pdf-footer-note">Directorio generado el ${new Date().toLocaleDateString('es-MX')}</div>
+  `;
+
+  const btn = document.getElementById('btnExportDirectorioPDF');
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF…'; }
+
+  const opt = {
+    margin: [14, 14, 14, 14], // mm
+    filename: 'ROCA1909_Directorio_compradores.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' }
+  };
+
+  html2pdf().set(opt).from(container).save()
+    .catch(err => {
+      console.error('Error generando el PDF del directorio', err);
+      alert('No se pudo generar el PDF. Intenta de nuevo.');
+    })
+    .finally(() => {
+      if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+    });
+}
 
 floorsEl.addEventListener('click', e=>{
   const card = e.target.closest('.unit[data-id]');
@@ -886,7 +958,7 @@ function downloadFichaPDF(id) {
     <h4 class="pdf-h4">Datos de contacto</h4>
     <div class="pdf-grid">
       <div><div class="pdf-item-k">Nombre</div><div class="pdf-item-v">${u.contacto.nombre || '—'}</div></div>
-      <div><div class="pdf-item-k">Teléfono</div><div class="pdf-item-v">${u.contacto.telefono || '—'}</div></div>
+      <div><div class="pdf-item-k">Teléfono</div><div class="pdf-item-v">${formatPhoneMX(u.contacto.telefono) || '—'}</div></div>
       <div><div class="pdf-item-k">Email</div><div class="pdf-item-v">${u.contacto.email || '—'}</div></div>
       <div><div class="pdf-item-k">RFC</div><div class="pdf-item-v">${u.contacto.rfc || '—'}</div></div>
       <div><div class="pdf-item-k">CURP</div><div class="pdf-item-v">${u.contacto.curp || '—'}</div></div>
@@ -973,7 +1045,7 @@ function viewTemplate(u){
     ${hasInfo ? `
     <div class="info-grid">
       <div class="info-item"><div class="k">Nombre</div><div class="v">${c.nombre || '—'}</div></div>
-      <div class="info-item"><div class="k">Teléfono</div><div class="v">${c.telefono || '—'}</div></div>
+      <div class="info-item"><div class="k">Teléfono</div><div class="v">${formatPhoneMX(c.telefono) || '—'}</div></div>
       <div class="info-item"><div class="k">Email</div><div class="v">${c.email || '—'}</div></div>
       <div class="info-item"><div class="k">RFC</div><div class="v">${c.rfc || '—'}</div></div>
       <div class="info-item"><div class="k">CURP</div><div class="v">${c.curp || '—'}</div></div>
