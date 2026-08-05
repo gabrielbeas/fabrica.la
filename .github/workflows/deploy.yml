@@ -1,0 +1,62 @@
+name: Deploy to GitHub Pages
+
+# Arma el sitio publicado a partir de las carpetas de cada proyecto:
+#   fabrica/            -> raíz del sitio (fabrica.la/)
+#   dashboard/public/    -> fabrica.la/dashboard/  (el backend en dashboard/src NO se publica)
+#   roca1909/            -> fabrica.la/roca1909/
+#   vlj/                 -> fabrica.la/vlj/
+#
+# Requiere: en GitHub, Settings -> Pages -> Build and deployment -> Source = "GitHub Actions"
+# (en vez de "Deploy from a branch").
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Armar el sitio a publicar
+        run: |
+          mkdir -p dist
+          cp -r fabrica/. dist/
+          mkdir -p dist/dashboard
+          cp -r dashboard/public/. dist/dashboard/
+          mkdir -p dist/roca1909
+          cp -r roca1909/. dist/roca1909/
+          mkdir -p dist/vlj
+          cp -r vlj/. dist/vlj/
+          cp CNAME dist/CNAME
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
