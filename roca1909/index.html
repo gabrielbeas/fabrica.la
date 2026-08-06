@@ -594,6 +594,25 @@ function comisionFechasPago(comision){
   return pagos.map(p=>p.fecha).join(', ');
 }
 
+// Retrocompatibilidad: si un depto tiene guardado en el servidor un override de
+// "comision" de antes de que existiera el arreglo "pagos" (con los campos sueltos
+// "pagado"/"fechaPago" del diseño anterior), aquí se reconstruye un "pagos" a partir
+// de esos campos, para que el interruptor/timeline siempre tenga algo que mostrar.
+function normalizeComision(comision){
+  if(!comision) return comision;
+  if(Array.isArray(comision.pagos)) return comision;
+  const pagado = comision.pagado || 0;
+  const pagos = [];
+  if(pagado > 0){
+    pagos.push({fecha: comision.fechaPago || '', concepto:'Comisión por venta', monto: pagado, estatus:'pagado'});
+  }
+  const restante = (comision.exigible || 0) - pagado;
+  if(restante > 0){
+    pagos.push({fecha:'', concepto:'Comisión por venta', monto: restante, estatus:'pendiente'});
+  }
+  return Object.assign({}, comision, {pagos});
+}
+
 const STORAGE_KEY = 'roca1909_dashboard_overrides_v1';
 // API en el mismo Worker que protege /roca1909/*: guarda y lee los cambios (overrides)
 // desde un KV de Cloudflare, para que se sincronicen entre cualquier navegador/dispositivo
@@ -662,7 +681,9 @@ async function syncFromServer(){
 function getUnits(){
   return baseUnits.map(u=>{
     const ov = overrides[u.id];
-    return ov ? Object.assign({}, u, ov) : u;
+    const merged = Object.assign({}, u, ov || {});
+    if(merged.comision) merged.comision = normalizeComision(merged.comision);
+    return merged;
   });
 }
 function saveUnitOverride(id, patch){
