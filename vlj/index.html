@@ -190,24 +190,25 @@
   .hero-bg {
     position: absolute;
     inset: 0;
-    background: url('img/header.JPEG') center center / cover no-repeat;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #1A202C;
     z-index: 0;
   }
 
-  .hero-img-placeholder {
+  .hero-slide {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1.2s ease;
   }
 
-  .hero-img-placeholder svg {
-    width: 40%;
-    max-width: 500px;
-    opacity: 0.12;
-    fill: white;
+  .hero-slide.active {
+    opacity: 1;
   }
 
   .hero-overlay {
@@ -912,16 +913,7 @@
 
 <!-- HERO -->
 <section class="hero" id="inicio">
-  <div class="hero-bg"></div>
-  <div class="hero-img-placeholder">
-    <!-- Silueta parapente placeholder -->
-    <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="100" cy="30" rx="90" ry="22" />
-      <line x1="100" y1="52" x2="85" y2="80" stroke="white" stroke-width="1.5" fill="none"/>
-      <line x1="100" y1="52" x2="115" y2="80" stroke="white" stroke-width="1.5" fill="none"/>
-      <circle cx="100" cy="84" r="6" />
-    </svg>
-  </div>
+  <div class="hero-bg" id="hero-carousel"></div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <p class="hero-eyebrow">Jalisco, México · Parapente &amp; Ala Delta</p>
@@ -1107,8 +1099,7 @@
 <!-- FOOTER -->
 <footer>
   <div class="footer-legal-row">
-    <a href="#">Aviso de privacidad</a>
-    <a href="#">Términos y condiciones</a>
+    <a href="aviso-privacidad.html">Aviso de privacidad</a>
     <a href="mailto:vuelolibrejalisco@gmail.com">Contacto</a>
   </div>
   <div class="footer-bottom">
@@ -1133,6 +1124,78 @@
     document.getElementById('menu-overlay').style.display = 'none';
     document.getElementById('hamburger').classList.remove('open');
   }
+
+  (function heroCarousel() {
+    const container = document.getElementById('hero-carousel');
+    if (!container) return;
+
+    const files = [
+      { src: 'img/carrusel/1.JPEG', type: 'image' },
+      { src: 'img/carrusel/2.jpg', type: 'image' },
+      { src: 'img/carrusel/3.JPEG', type: 'image' },
+      { src: 'img/carrusel/4.JPEG', type: 'image' },
+      { src: 'img/carrusel/5.JPEG', type: 'image' },
+      { src: 'img/carrusel/6.JPEG', type: 'image' },
+      { src: 'img/carrusel/7.jpg', type: 'image' },
+      { src: 'img/carrusel/juan.mp4', type: 'video' },
+      { src: 'img/carrusel/rodo.mp4', type: 'video' }
+    ];
+
+    const IMAGE_DURATION = 3000;
+    const VIDEO_FALLBACK_DURATION = 20000;
+
+    const slides = files.map(function (f) {
+      const el = f.type === 'video' ? document.createElement('video') : document.createElement('img');
+      el.className = 'hero-slide';
+      el.src = f.src;
+      if (f.type === 'video') {
+        el.muted = true;
+        el.playsInline = true;
+        el.preload = 'auto';
+      } else {
+        el.alt = 'Vuelo libre en Jalisco';
+      }
+      container.appendChild(el);
+      return { el: el, type: f.type };
+    });
+
+    let current = Math.floor(Math.random() * slides.length);
+    let timer = null;
+
+    function scheduleNext() {
+      clearTimeout(timer);
+      const slide = slides[current];
+      if (slide.type === 'video') {
+        slide.el.onended = advance;
+        timer = setTimeout(advance, VIDEO_FALLBACK_DURATION);
+      } else {
+        timer = setTimeout(advance, IMAGE_DURATION);
+      }
+    }
+
+    function goTo(index) {
+      slides.forEach(function (s, i) {
+        const active = i === index;
+        s.el.classList.toggle('active', active);
+        if (s.type === 'video') {
+          if (active) {
+            s.el.currentTime = 0;
+            s.el.play().catch(function () {});
+          } else {
+            s.el.pause();
+          }
+        }
+      });
+      current = index;
+      scheduleNext();
+    }
+
+    function advance() {
+      goTo((current + 1) % slides.length);
+    }
+
+    goTo(current);
+  })();
 </script>
 
 </body>
