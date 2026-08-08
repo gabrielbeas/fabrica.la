@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Condiciones meteorológicas, pronóstico de viento y guía de vuelo en Jalisco — Club de Vuelo Libre de Jalisco">
-<title>Clima — Club de Vuelo Libre de Jalisco</title>
+<meta name="description" content="Cuotas y membresía — Club de Vuelo Libre de Jalisco">
+<title>Cuotas y membresía — Club de Vuelo Libre de Jalisco</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,174 +203,130 @@
   }
 
   /* ── CONTENIDO ── */
-  .page-content {
+  .cuotas-content {
     max-width: 860px;
     margin: 0 auto;
     padding: 4rem 2.5rem;
+    background: var(--gris-claro);
   }
 
-  /* ── BLOQUES DE INFORMACIÓN ── */
-  .info-block {
-    margin-bottom: 2rem;
-  }
-
-  .info-block-title {
-    font-family: 'Roboto Condensed', sans-serif;
+  .cuotas-body {
     font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--gris-oscuro);
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--azul-claro);
-    display: inline-block;
+    color: var(--gris-medio);
+    line-height: 1.8;
   }
 
-  .info-list {
+  .beneficios-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem;
+    margin-top: 1.5rem;
   }
 
-  .info-list li {
+  .beneficios-list li {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
     font-size: 0.9rem;
     color: var(--gris-medio);
-    padding-left: 1.2rem;
-    position: relative;
     line-height: 1.5;
   }
 
-  .info-list li::before {
-    content: '—';
-    position: absolute;
-    left: 0;
+  .beneficios-list li::before {
+    content: '✈';
     color: var(--azul-claro);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
   }
 
-  .aviso-box {
-    background: var(--azul-cielo);
-    border-left: 4px solid var(--amarillo);
-    padding: 1.5rem 1.8rem;
+  .beneficios-list a {
+    color: var(--azul);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .cuotas-tabla {
     margin-top: 3rem;
-  }
-
-  .aviso-box h3 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--gris-oscuro);
-    margin-bottom: 0.6rem;
-  }
-
-  .aviso-box p {
-    font-size: 0.88rem;
-    color: var(--gris-medio);
-    line-height: 1.7;
-  }
-
-  /* ── METEOROLOGÍA ── */
-  .meteo-h2 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: clamp(1.6rem, 3vw, 2.2rem);
-    font-weight: 900;
-    text-transform: uppercase;
-    color: var(--gris-oscuro);
-    margin: 3.5rem 0 1.5rem;
-  }
-
-  .meteo-h2:first-child { margin-top: 0; }
-
-  .meteo-intro {
-    font-size: 0.95rem;
-    color: var(--gris-medio);
-    line-height: 1.75;
-    margin-bottom: 2rem;
-  }
-
-  /* Pronóstico en vivo — widgets incrustados */
-  .meteo-embed-block {
     border: 1px solid var(--borde);
     background: var(--blanco);
-    margin-bottom: 1.5rem;
     overflow: hidden;
   }
 
-  .meteo-embed-title {
+  .cuotas-tabla-header {
+    background: var(--azul);
+    padding: 1rem 1.5rem;
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+
+  .cuota-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--borde);
+    align-items: center;
+    transition: background 0.15s;
+  }
+
+  .cuota-row:last-child { border-bottom: none; }
+  .cuota-row:hover { background: var(--azul-cielo); }
+
+  .cuota-tipo {
+    font-weight: 700;
+    color: var(--gris-oscuro);
+    font-size: 0.95rem;
+  }
+
+  .cuota-nota {
+    font-size: 0.75rem;
+    color: var(--gris-medio);
+    margin-top: 0.15rem;
+  }
+
+  .cuota-precio {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--azul);
+    text-align: right;
+  }
+
+  .cuota-gratis {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #38A169;
+    text-align: right;
+  }
+
+  .cuotas-cta {
+    margin-top: 1.5rem;
+    background: var(--azul);
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 1rem 2rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
-    padding: 0.9rem 1.3rem;
-    background: var(--gris-claro);
-    border-bottom: 1px solid var(--borde);
-  }
-
-  .meteo-embed-title span {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--gris-oscuro);
-  }
-
-  .meteo-embed-title a {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--azul);
-  }
-
-  .meteo-embed-frame {
+    justify-content: center;
+    gap: 0.6rem;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: none;
     width: 100%;
-    overflow-x: auto;
-    padding: 0.5rem;
   }
 
-  .meteo-embed-frame iframe {
-    width: 100%;
-    height: 450px;
-    border: 0;
-    display: block;
-  }
-
-  .meteo-model-label {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--gris-medio);
-    padding: 0.9rem 1rem 0;
-  }
-
-  .meteo-embed-frame-second {
-    border-top: 1px solid var(--borde);
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-  }
-
-  /* Bloque ancho: se sale del contenedor de 860px para dar más espacio horizontal
-     a las tablas de Windguru y evitar el scroll lateral */
-  .meteo-embed-wide {
-    width: 100vw;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
-    padding-left: max(1rem, calc((100vw - 1400px) / 2 + 1rem));
-    padding-right: max(1rem, calc((100vw - 1400px) / 2 + 1rem));
-  }
-
-  .meteo-embed-wide .meteo-embed-frame iframe {
-    height: 480px;
-  }
+  .cuotas-cta:hover { background: #1a5a9a; }
 
   /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
   @media (max-width: 1100px) {
@@ -384,7 +340,7 @@
     nav { padding: 0.9rem 1.5rem; }
     .nav-links { display: none; }
     .hamburger { display: flex; }
-    .page-content { padding: 3rem 1.5rem; }
+    .cuotas-content { padding: 3rem 1.5rem; }
   }
 </style>
 </head>
@@ -416,8 +372,8 @@
   </a>
   <ul class="nav-links">
     <li><a href="index.html#pilotos">Pilotos</a></li>
-    <li><a href="cuotas.html">Cuotas</a></li>
-    <li><a href="clima.html" class="active">Clima</a></li>
+    <li><a href="cuotas.html" class="active">Cuotas</a></li>
+    <li><a href="clima.html">Clima</a></li>
     <li><a href="despegues.html">Despegues</a></li>
     <li><a href="espacio-aereo.html">Espacio Aéreo</a></li>
     <li><a href="eventos.html">Eventos</a></li>
@@ -433,75 +389,72 @@
 
 <!-- HERO -->
 <div class="page-hero">
-  <p class="eyebrow">Clima y viento · Jalisco</p>
-  <h1>Clima</h1>
-  <p>Consulta las condiciones en tiempo real antes de volar. Tapalpa cuenta con estación meteorológica propia.</p>
+  <p class="eyebrow">Membresía</p>
+  <h1>Cuotas y membresía</h1>
+  <p>Sé parte de la comunidad de vuelo libre en Jalisco. Tu membresía te da acceso a los sitios de despegue administrados por la asociación y a todos nuestros proyectos.</p>
 </div>
 
 <!-- CONTENIDO -->
-<div class="page-content">
+<div class="cuotas-content">
 
-  <h2 class="meteo-h2">Pronóstico en vivo</h2>
-  <p class="meteo-intro">La estación de Tapalpa en tiempo real, más Windguru y Windy centrados en el mismo punto, sin salir del sitio. Usa "Ver completo" para el detalle a fondo de cada uno.</p>
+  <ul class="beneficios-list">
+    <li>Voto en asambleas de la asociación</li>
+    <li><a href="eventos.html">Participación en proyectos 2026–2027 →</a></li>
+    <li>Comunidad de pilotos organizada</li>
+    <li>Menores de 18 años sin costo</li>
+  </ul>
 
-  <div class="meteo-embed-block meteo-embed-wide">
-    <div class="meteo-embed-title">
-      <span>🌡️ Estación Tapalpa · ITAPAL5</span>
-      <a href="https://www.wunderground.com/dashboard/pws/ITAPAL5" target="_blank" rel="noopener">Ver completo →</a>
+  <div class="cuotas-tabla">
+    <div class="cuotas-tabla-header">
+      <span>Tipo de membresía</span>
+      <span>Cuota</span>
     </div>
-    <div class="meteo-embed-frame" style="padding:1.6rem;">
-      <p style="font-size:0.85rem;color:var(--gris-medio);line-height:1.7;">Wunderground ya no ofrece un widget embebible confiable para estaciones personales (su sistema anterior era en Flash). Por ahora este es un link directo a las condiciones en tiempo real de la estación ITAPAL5 — temperatura, viento, humedad y presión.</p>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Asociado</div>
+        <div class="cuota-nota">Membresía anual</div>
+      </div>
+      <div class="cuota-precio">$2,800</div>
+    </div>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Alumno</div>
+        <div class="cuota-nota">En formación</div>
+      </div>
+      <div class="cuota-precio">$1,400</div>
+    </div>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Tándem</div>
+        <div class="cuota-nota">Vuelo en pareja</div>
+      </div>
+      <div class="cuota-precio">$5,600</div>
+    </div>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Visitante — por día</div>
+        <div class="cuota-nota">Piloto visitante</div>
+      </div>
+      <div class="cuota-precio">$100</div>
+    </div>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Visitante — 15 días</div>
+        <div class="cuota-nota">Piloto visitante</div>
+      </div>
+      <div class="cuota-precio">$1,000</div>
+    </div>
+    <div class="cuota-row">
+      <div>
+        <div class="cuota-tipo">Menor de 18 años</div>
+        <div class="cuota-nota">Sin costo</div>
+      </div>
+      <div class="cuota-gratis">GRATIS</div>
     </div>
   </div>
-
-  <div class="meteo-embed-block meteo-embed-wide">
-    <div class="meteo-embed-title">
-      <span>📡 Windguru · Tapalpa #73067</span>
-      <a href="https://www.windguru.cz/73067" target="_blank" rel="noopener">Ver completo →</a>
-    </div>
-    <p class="meteo-model-label">Modelo WG</p>
-    <div class="meteo-embed-frame">
-      <script id="wg_fwdg_73067_100_vlj">
-      (function (window, document) {
-        var loader = function () {
-          var arg = ["s=73067","m=100","uid=wg_fwdg_73067_100_vlj","wj=kmh","tj=c","odh=0","doh=24","fhours=168","hrsm=3","vt=forecasts","lng=es",
-          "p=WINDSPD,GUST,SMER,TMP,CDC,HCDC,MCDC,LCDC,APCP1,RATING"];
-          var script = document.createElement("script");
-          var tag = document.getElementsByTagName("script")[0];
-          script.src = "https://www.windguru.cz/js/widget.php?"+(arg.join("&"));
-          tag.parentNode.insertBefore(script, tag);
-        };
-        window.addEventListener ? window.addEventListener("load", loader, false) : window.attachEvent("onload", loader);
-      })(window, document);
-      </script>
-    </div>
-    <p class="meteo-model-label">Modelo GFS 13 km</p>
-    <div class="meteo-embed-frame meteo-embed-frame-second">
-      <script id="wg_fwdg_73067_3_vlj">
-      (function (window, document) {
-        var loader = function () {
-          var arg = ["s=73067","m=3","uid=wg_fwdg_73067_3_vlj","wj=kmh","tj=c","odh=0","doh=24","fhours=168","hrsm=3","vt=forecasts","lng=es",
-          "p=WINDSPD,GUST,SMER,TMP,CDC,HCDC,MCDC,LCDC,APCP1,RATING"];
-          var script = document.createElement("script");
-          var tag = document.getElementsByTagName("script")[0];
-          script.src = "https://www.windguru.cz/js/widget.php?"+(arg.join("&"));
-          tag.parentNode.insertBefore(script, tag);
-        };
-        window.addEventListener ? window.addEventListener("load", loader, false) : window.attachEvent("onload", loader);
-      })(window, document);
-      </script>
-    </div>
-  </div>
-
-  <div class="meteo-embed-block meteo-embed-wide">
-    <div class="meteo-embed-title">
-      <span>🌬️ Windy · viento en altura</span>
-      <a href="https://www.windy.com/19.935/-103.654?19.939,-103.657,12,p:pgspots" target="_blank" rel="noopener">Ver completo →</a>
-    </div>
-    <div class="meteo-embed-frame">
-      <iframe src="https://embed.windy.com/embed2.html?lat=19.935&lon=-103.654&detailLat=19.935&detailLon=-103.654&zoom=10&level=surface&overlay=wind&menu=&message=true&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=true&metricWind=default&metricTemp=default&radarRange=-1" frameborder="0"></iframe>
-    </div>
-  </div>
+  <button class="cuotas-cta" onclick="alert('Integración con MercadoPago — próximamente')">
+    💳 Pagar membresía con MercadoPago
+  </button>
 
 </div>
 
