@@ -209,6 +209,31 @@
     padding: 4rem 2.5rem;
   }
 
+  /* ── ENCABEZADOS DE SECCIÓN ── */
+  .desp-h2 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--gris-oscuro);
+    margin: 0 0 0.5rem;
+  }
+
+  .desp-h2-resto { margin-top: 4rem; }
+
+  .desp-intro {
+    font-size: 0.9rem;
+    color: var(--gris-medio);
+    line-height: 1.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .desp-intro a {
+    color: var(--azul);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
   /* ── GRID DE DESPEGUES ── */
   .despegues-grid {
     display: grid;
@@ -219,6 +244,12 @@
     margin-top: 2rem;
   }
 
+  .despegues-grid-jalisco { grid-template-columns: 1fr; }
+
+  .despegues-grid-simple { grid-template-columns: 1fr; margin-top: 1.5rem; }
+
+  .despegue-card-simple .despegue-body { padding: 1.2rem 1.5rem; }
+
   .despegue-card {
     background: var(--blanco);
     overflow: hidden;
@@ -228,17 +259,37 @@
 
   .despegue-card:hover { background: var(--azul-cielo); }
 
-  .despegue-img {
-    height: 180px;
-    background: linear-gradient(135deg, #4A90D9 0%, #87CEEB 100%);
+  .despegue-body { padding: 1.2rem 1.5rem 1.5rem; }
+
+  /* Ficha homologada con datos del archivo despegues-mexico.xlsx */
+  .despegue-ficha {
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--borde);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 0.3rem;
   }
 
-  .despegue-img-placeholder { font-size: 3rem; opacity: 0.4; }
+  .ficha-row { display: flex; gap: 0.6rem; font-size: 0.78rem; }
 
-  .despegue-body { padding: 1.2rem 1.5rem 1.5rem; }
+  .ficha-label {
+    flex: 0 0 100px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.6rem;
+    color: var(--azul-claro);
+    padding-top: 0.1rem;
+  }
+
+  .ficha-val { color: var(--gris-medio); }
+
+  .ficha-val a {
+    color: var(--azul-claro);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 
   .despegue-tipo {
     font-size: 0.58rem;
@@ -257,46 +308,6 @@
     color: var(--gris-oscuro);
     margin-bottom: 0.5rem;
     line-height: 1.1;
-  }
-
-  .despegue-detalles {
-    font-size: 0.8rem;
-    color: var(--gris-medio);
-    line-height: 1.6;
-    margin-bottom: 0.8rem;
-  }
-
-  .despegue-info { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
-
-  .despegue-tag {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    border: 1px solid var(--borde);
-    padding: 0.2rem 0.6rem;
-    color: var(--gris-medio);
-  }
-
-  .despegue-contacto {
-    margin-top: 0.8rem;
-    font-size: 0.75rem;
-    color: var(--gris-medio);
-    border-top: 1px solid var(--borde);
-    padding-top: 0.8rem;
-  }
-
-  .despegue-contacto a {
-    color: var(--azul-claro);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .despegue-pending {
-    font-size: 0.78rem;
-    color: var(--gris-medio);
-    font-style: italic;
-    margin-top: 0.5rem;
   }
 
   /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
@@ -361,150 +372,272 @@
 
 <!-- HERO -->
 <div class="page-hero">
-  <p class="eyebrow">Sitios de vuelo · Jalisco</p>
+  <p class="eyebrow">Red de despegues · México</p>
   <h1>Despegues</h1>
-  <p>9 sitios de vuelo libre en el estado. Desde laderas de sierra hasta despegues costeros — parapente y ala delta para todos los niveles.</p>
+  <p>10 sitios de vuelo libre en Jalisco, más una red creciente de sitios en el resto del país. Desde laderas de sierra hasta despegues costeros — parapente y ala delta para todos los niveles.</p>
 </div>
 
 <!-- CONTENIDO -->
 <div class="page-content">
 
-  <div class="despegues-grid">
+  <h2 class="desp-h2">Jalisco</h2>
+
+  <div class="despegues-grid despegues-grid-jalisco">
+
+    <!-- Las Antenas, Tapalpa -->
+    <div class="despegue-card">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Tapalpa</div>
+        <div class="despegue-nombre">Las Antenas</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,208 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sin datos</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.93942° O 103.65272° · <a href="https://www.google.com/maps?q=19.939417,-103.652722" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
 
     <!-- La Ceja -->
     <div class="despegue-card">
-      <div class="despegue-img">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Tapalpa · Ladera</div>
         <div class="despegue-nombre">La Ceja</div>
-        <div class="despegue-detalles">
-          2,180 msnm · Sobre aterrizaje: 830 m<br>
-          Viento: Este – Sureste – Sur<br>
-          Distancia al aterrizaje: 4.5 km<br>
-          Coordenadas: N 19.93559° O 103.65375°<br>
-          Acceso: cualquier tipo de vehículo<br>
-          Operado por: Aventuras La Ceja
-        </div>
-        <div class="despegue-info">
-          <span class="despegue-tag">PG Intermedio</span>
-          <span class="despegue-tag">HG Avanzado</span>
-        </div>
-        <div class="despegue-contacto">
-          Juan Carlos Madrigal <a href="tel:+523411089337">+52-341-108-9337</a><br>
-          Diego Vásquez <a href="tel:+523339032373">+52-33-3903-2373</a>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">PG Intermedio, HG Avanzado</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,180 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Este – Sureste – Sur</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.93559° O 103.65375° · <a href="https://www.google.com/maps?q=19.93559,-103.65375" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">Cualquier tipo de vehículo</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">Aventuras La Ceja</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">Juan Carlos Madrigal <a href="tel:+523411089337">+52-341-108-9337</a> · Diego Vásquez <a href="tel:+523339032373">+52-33-3903-2373</a></span></div>
         </div>
       </div>
     </div>
 
     <!-- Topland Los Papalotes -->
     <div class="despegue-card">
-      <div class="despegue-img">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Tapalpa · Ladera</div>
         <div class="despegue-nombre">Topland Los Papalotes</div>
-        <div class="despegue-detalles">
-          2,180 msnm · Sobre aterrizaje: 830 m<br>
-          Viento: Este – Sureste – Sur<br>
-          Distancia al aterrizaje: 4.5 km<br>
-          Coordenadas: N 19.93559° O 103.65375°<br>
-          Acceso: cualquier tipo de vehículo
-        </div>
-        <div class="despegue-info">
-          <span class="despegue-tag">PG Intermedio</span>
-          <span class="despegue-tag">HG Avanzado</span>
-        </div>
-        <div class="despegue-contacto">
-          Juan Carlos Madrigal <a href="tel:+523411089337">+52-341-108-9337</a><br>
-          Diego Vásquez <a href="tel:+523339032373">+52-33-3903-2373</a>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">PG Intermedio, HG Avanzado</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,180 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Este – Sureste – Sur</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.93559° O 103.65375° · <a href="https://www.google.com/maps?q=19.93559,-103.65375" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">Cualquier tipo de vehículo</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">Juan Carlos Madrigal <a href="tel:+523411089337">+52-341-108-9337</a> · Diego Vásquez <a href="tel:+523339032373">+52-33-3903-2373</a></span></div>
         </div>
       </div>
     </div>
 
     <!-- Gravedad Cero -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🪂</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Tapalpa</div>
         <div class="despegue-nombre">Gravedad Cero</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,212 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Noreste – Este (bueno), Sureste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.9422° O 103.654° · <a href="https://www.google.com/maps?q=19.9422,-103.654" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
     <!-- El Chante -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Jalisco</div>
         <div class="despegue-nombre">El Chante</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,043 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sin datos</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 20.3067° O 103.393° · <a href="https://www.google.com/maps?q=20.3067,-103.393" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
     <!-- Tepa-trepa -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Jalisco</div>
         <div class="despegue-nombre">Tepa-trepa</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,369 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Oeste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 20.7615° O 102.61° · <a href="https://www.google.com/maps?q=20.7615,-102.61" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
     <!-- Atotonilco -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Jalisco</div>
         <div class="despegue-nombre">Atotonilco</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,091 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Suroeste (bueno), Sur (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 20.5593° O 102.554° · <a href="https://www.google.com/maps?q=20.5593,-102.554" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Volcán Nevado de Colima -->
+    <div class="despegue-card">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Jalisco</div>
+        <div class="despegue-nombre">Volcán Nevado de Colima</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">4,025 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sin datos</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.5611° O 103.611° · <a href="https://www.google.com/maps?q=19.5611,-103.611" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
     <!-- Mazamitla -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #718096 0%, #A0AEC0 100%);">
-        <span class="despegue-img-placeholder">🏔️</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Jalisco</div>
         <div class="despegue-nombre">Mazamitla</div>
-        <p class="despegue-pending">Información próximamente</p>
-      </div>
-    </div>
-
-    <!-- Yelapa -->
-    <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #2F855A 0%, #48BB78 100%);">
-        <span class="despegue-img-placeholder">🌊</span>
-      </div>
-      <div class="despegue-body">
-        <div class="despegue-tipo">Costa · Puerto Vallarta</div>
-        <div class="despegue-nombre">Yelapa</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sin datos</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
     <!-- Conchas Chinas -->
     <div class="despegue-card">
-      <div class="despegue-img" style="background: linear-gradient(135deg, #2F855A 0%, #48BB78 100%);">
-        <span class="despegue-img-placeholder">🌊</span>
-      </div>
       <div class="despegue-body">
         <div class="despegue-tipo">Costa · Puerto Vallarta</div>
         <div class="despegue-nombre">Conchas Chinas</div>
-        <p class="despegue-pending">Información próximamente</p>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">131 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Suroeste (bueno), Sureste – Sur (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 20.581° O 105.238° · <a href="https://www.google.com/maps?q=20.581,-105.238" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="desp-h2 desp-h2-resto">Resto de México</h2>
+  <p class="desp-intro">Red en construcción — sitios registrados en <a href="https://www.paraglidingearth.com/index.php?country=MX" target="_blank" rel="noopener">ParaglidingEarth</a> fuera de Jalisco. Fichas básicas por ahora; iremos sumando datos de acceso y contacto local.</p>
+
+  <div class="despegues-grid despegues-grid-simple">
+
+    <div class="despegue-card despegue-card-simple">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Estado de México</div>
+        <div class="despegue-nombre">Valle de Bravo · La Torre</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,166 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Oeste (bueno), Suroeste – Noroeste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.1846° O 100.114° · <a href="https://www.google.com/maps?q=19.1846,-100.114" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="despegue-card despegue-card-simple">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Estado de México</div>
+        <div class="despegue-nombre">Valle de Bravo · El Peñón</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,336 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sur – Suroeste – Oeste (bueno), Norte – Sureste – Noroeste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.0616° O 100.091° · <a href="https://www.google.com/maps?q=19.0616,-100.091" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="despegue-card despegue-card-simple">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Aguascalientes</div>
+        <div class="despegue-nombre">Picacho</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,348 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Este (bueno), Noreste – Sureste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 21.8774° O 102.422° · <a href="https://www.google.com/maps?q=21.8774,-102.422" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="despegue-card despegue-card-simple">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Colima</div>
+        <div class="despegue-nombre">La Cumbre</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">772 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Sureste (bueno), Sur – Suroeste (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 19.1813° O 103.692° · <a href="https://www.google.com/maps?q=19.1813,-103.692" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="despegue-card despegue-card-simple">
+      <div class="despegue-body">
+        <div class="despegue-tipo">Oaxaca</div>
+        <div class="despegue-nombre">Zaachila</div>
+        <div class="despegue-ficha">
+          <div class="ficha-row"><span class="ficha-label">Nivel</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Altura</span><span class="ficha-val">2,314 msnm</span></div>
+          <div class="ficha-row"><span class="ficha-label">Viento</span><span class="ficha-val">Noreste – Este – Sureste (bueno), Norte – Sur (posible)</span></div>
+          <div class="ficha-row"><span class="ficha-label">Coordenadas</span><span class="ficha-val">N 16.9328° O 96.8532° · <a href="https://www.google.com/maps?q=16.9328,-96.8532" target="_blank" rel="noopener">Ver en Google Maps →</a></span></div>
+          <div class="ficha-row"><span class="ficha-label">Acceso</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Operado por</span><span class="ficha-val">—</span></div>
+          <div class="ficha-row"><span class="ficha-label">Contactos</span><span class="ficha-val">—</span></div>
+        </div>
       </div>
     </div>
 
