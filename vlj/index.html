@@ -306,35 +306,6 @@
     border-color: white;
   }
 
-  /* Datos rápidos en el hero */
-  .hero-stats {
-    position: absolute;
-    bottom: 2.5rem;
-    right: 2.5rem;
-    z-index: 3;
-    display: flex;
-    gap: 2rem;
-  }
-
-  .hero-stat {
-    text-align: right;
-  }
-
-  .hero-stat .num {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 2rem;
-    font-weight: 900;
-    color: var(--amarillo);
-    line-height: 1;
-  }
-
-  .hero-stat .label {
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
-  }
-
   /* ── SECCIONES ── */
   section { padding: 5rem 2.5rem; }
 
@@ -852,7 +823,6 @@
     section { padding: 3.5rem 1.5rem; }
 
     .hero-content { padding: 4rem 1.5rem 4rem; }
-    .hero-stats { display: none; }
 
     .cuotas-inner,
     .pilotos-inner { grid-template-columns: 1fr; gap: 2rem; }
@@ -928,16 +898,6 @@
     <div class="hero-btns">
       <a href="#cuotas" class="btn-primary">Únete al Club →</a>
       <a href="despegues.html" class="btn-secondary">Ver despegues</a>
-    </div>
-  </div>
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="num">9</div>
-      <div class="label">Sitios de vuelo</div>
-    </div>
-    <div class="hero-stat">
-      <div class="num">46</div>
-      <div class="label">Años volando</div>
     </div>
   </div>
 </section>
