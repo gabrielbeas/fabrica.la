@@ -155,7 +155,7 @@
   /* ── HERO SUBPÁGINA ── */
   .page-hero {
     background: url('img/header.JPEG') center center / cover no-repeat;
-    padding: 7rem 2.5rem 3rem;
+    padding: 14rem 2.5rem 6rem;
     text-align: center;
     position: relative;
   }
@@ -254,14 +254,15 @@
   }
 
   .cuotas-tabla-header {
-    background: var(--azul);
+    background: var(--gris-claro);
+    border-bottom: 1px solid var(--borde);
     padding: 1rem 1.5rem;
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.7);
+    color: var(--gris-oscuro);
     display: grid;
     grid-template-columns: 1fr auto;
   }
@@ -308,8 +309,8 @@
 
   .cuotas-cta {
     margin-top: 1.5rem;
-    background: var(--azul);
-    color: white;
+    background: var(--blanco);
+    color: var(--gris-oscuro);
     font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 0.15em;
@@ -319,13 +320,14 @@
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
     cursor: pointer;
-    border: none;
+    border: 1px solid var(--gris-oscuro);
+    border-radius: var(--radius);
     width: 100%;
   }
 
-  .cuotas-cta:hover { background: #1a5a9a; }
+  .cuotas-cta:hover { background: var(--gris-oscuro); color: var(--blanco); }
 
   /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
   @media (max-width: 1100px) {

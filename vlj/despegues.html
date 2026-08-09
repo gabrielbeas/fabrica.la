@@ -155,7 +155,7 @@
   /* ── HERO SUBPÁGINA ── */
   .page-hero {
     background: url('img/despegue.JPEG') center center / cover no-repeat;
-    padding: 7rem 2.5rem 3rem;
+    padding: 14rem 2.5rem 6rem;
     text-align: center;
     position: relative;
   }
@@ -294,16 +294,18 @@
     display: inline-block;
     margin-top: 1rem;
     padding: 0.55rem 1.1rem;
-    background: var(--azul);
-    color: #ffffff;
+    background: var(--blanco);
+    border: 1px solid var(--gris-oscuro);
+    border-radius: 999px;
+    color: var(--gris-oscuro);
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
   }
 
-  .despegue-btn:hover { background: #1a5a9a; }
+  .despegue-btn:hover { background: var(--gris-oscuro); color: var(--blanco); }
 
   .despegue-tipo {
     font-size: 0.58rem;

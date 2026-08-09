@@ -155,7 +155,7 @@
   /* ── HERO SUBPÁGINA ── */
   .page-hero {
     background: url('img/header.JPEG') center center / cover no-repeat;
-    padding: 7rem 2.5rem 3rem;
+    padding: 14rem 2.5rem 6rem;
     text-align: center;
     position: relative;
   }
@@ -353,8 +353,9 @@
   }
 
   .comp-tabla thead th {
-    background: var(--azul);
-    color: #ffffff;
+    background: var(--gris-claro);
+    border-bottom: 1px solid var(--borde);
+    color: var(--gris-oscuro);
     font-family: 'Inter', sans-serif;
     font-size: 0.68rem;
     font-weight: 700;
@@ -425,7 +426,9 @@
   }
 
   .ev-cta {
-    background: var(--azul);
+    background: var(--gris-claro);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
     padding: 2.2rem 2rem;
     margin-top: 3rem;
     text-align: center;
@@ -436,25 +439,27 @@
     font-size: clamp(1.3rem, 2.5vw, 1.8rem);
     font-weight: 700;
     text-transform: uppercase;
-    color: #ffffff;
+    color: var(--gris-oscuro);
     margin-bottom: 0.6rem;
   }
 
-  .ev-cta p { font-size: 0.9rem; color: rgba(255,255,255,0.75); line-height: 1.7; margin-bottom: 1.5rem; }
+  .ev-cta p { font-size: 0.9rem; color: var(--gris-medio); line-height: 1.7; margin-bottom: 1.5rem; }
 
   .ev-cta a {
     display: inline-block;
-    background: var(--amarillo);
+    background: var(--blanco);
+    border: 1px solid var(--gris-oscuro);
     color: var(--gris-oscuro);
     padding: 0.8rem 2rem;
+    border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
   }
 
-  .ev-cta a:hover { background: #e0b000; }
+  .ev-cta a:hover { background: var(--gris-oscuro); color: var(--blanco); }
 
   /* La nav ya no cabe abajo de 1100px: pasa a hamburguesa */
   @media (max-width: 1100px) {
