@@ -63,29 +63,21 @@
   }
 
   .nav-logo img {
-    height: 2.2rem;
+    height: 2.8rem;
     width: auto;
   }
 
   .nav-logo-text {
     display: flex;
-    flex-direction: column;
-    line-height: 1.15;
+    align-items: center;
   }
 
   .nav-logo-text .l1 {
     font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
+    font-size: 1.3rem;
     font-weight: 700;
     letter-spacing: 0;
     color: var(--gris-oscuro);
-  }
-
-  .nav-logo-text .l2 {
-    font-size: 0.62rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--gris-medio);
   }
 
   .nav-links {
@@ -249,12 +241,12 @@
 
   .hero-title {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(2.6rem, 7vw, 5.2rem);
+    font-size: clamp(3.4rem, 10vw, 7.5rem);
     font-weight: 700;
-    line-height: 1.02;
+    line-height: 1.0;
     color: #ffffff;
     text-transform: uppercase;
-    margin-bottom: 1.2rem;
+    margin-bottom: 0;
     letter-spacing: 0;
   }
 
@@ -672,41 +664,39 @@
   /* ── FOOTER ── */
   footer {
     background: var(--blanco);
-    border-top: 1px solid var(--borde);
     padding: 3rem 2.5rem 2rem;
     color: var(--gris-medio);
   }
 
-  .footer-legal-row {
-    display: flex;
-    gap: 2.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 2.5rem;
+  .footer-bottom {
+    border-top: 1px solid var(--borde);
+    padding-top: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.78rem;
+    color: var(--gris-medio);
   }
 
-  .footer-legal-row a {
-    font-size: 0.8rem;
+  .footer-privacy {
+    justify-self: start;
     font-weight: 500;
-    letter-spacing: 0;
     color: var(--gris-medio);
     transition: color 0.2s;
   }
 
-  .footer-legal-row a:hover { color: var(--azul); }
+  .footer-privacy:hover { color: var(--azul); }
 
-  .footer-bottom {
-    border-top: 1px solid var(--borde);
-    padding-top: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.78rem;
-    color: var(--gris-medio);
+  .footer-bottom > span {
+    justify-self: end;
+    text-align: right;
   }
 
   .footer-social {
     display: flex;
     gap: 1rem;
+    justify-self: center;
   }
 
   .footer-social a {
@@ -743,8 +733,8 @@
     .visitantes-box-grid { grid-template-columns: 1fr; gap: 1rem; }
 
 
-    .footer-legal-row { gap: 1.5rem; }
-    .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+    .footer-bottom { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 1rem; }
+    .footer-privacy, .footer-social, .footer-bottom > span { justify-self: center; }
 
   }
 </style>
@@ -772,7 +762,6 @@
     <img src="img/logovlj.png" alt="Club de Vuelo Libre de Jalisco">
     <div class="nav-logo-text">
       <span class="l1">Club de Vuelo Libre de Jalisco</span>
-      <span class="l2">Desde 1978</span>
     </div>
   </a>
   <ul class="nav-links">
@@ -803,13 +792,6 @@
       <span>Libre</span><br>
       Jalisco
     </h1>
-    <p class="hero-sub">
-      Asociación de pilotos de parapente y ala delta en el estado de Jalisco. Comunidad, sitios de vuelo y cielos abiertos desde 1978.
-    </p>
-    <div class="hero-btns">
-      <a href="cuotas.html" class="btn-primary">Únete al Club →</a>
-      <a href="despegues.html" class="btn-secondary">Ver despegues</a>
-    </div>
   </div>
 </section>
 
@@ -896,16 +878,13 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-legal-row">
-    <a href="aviso-privacidad.html">Aviso de privacidad</a>
-    <a href="mailto:vuelolibrejalisco@gmail.com">Contacto</a>
-  </div>
   <div class="footer-bottom">
-    <span>© 2025 Club de Vuelo Libre de Jalisco. Todos los derechos reservados.</span>
+    <a href="aviso-privacidad.html" class="footer-privacy">Aviso de privacidad</a>
     <div class="footer-social">
       <a href="https://www.facebook.com/vuelolibrejal" target="_blank" rel="noopener">Facebook</a>
       <a href="mailto:vuelolibrejalisco@gmail.com">Email</a>
     </div>
+    <span>© 2026 Club Aerodeportivo Cloudbase A.C. Todos los derechos reservados.</span>
   </div>
 </footer>
 

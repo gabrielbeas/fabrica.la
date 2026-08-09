@@ -58,22 +58,16 @@
     gap: 0.7rem;
   }
 
-  .nav-logo img { height: 2.4rem; width: auto; }
+  .nav-logo img { height: 2.8rem; width: auto; }
 
-  .nav-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .nav-logo-text { display: flex; align-items: center; }
   .nav-logo-text .l1 {
     font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
+    font-size: 1.3rem;
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0;
     color: var(--gris-oscuro);
-  }
-  .nav-logo-text .l2 {
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gris-medio);
   }
 
   .nav-links {
@@ -221,14 +215,14 @@
 
   .info-block-title {
     font-family: 'Inter', sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.02em;
     color: var(--gris-oscuro);
     margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--azul-claro);
+    padding-bottom: 0;
+    border-bottom: none;
     display: inline-block;
   }
 
@@ -248,33 +242,46 @@
   }
 
   .info-list li::before {
-    content: '—';
+    content: '•';
     position: absolute;
     left: 0;
     color: var(--azul-claro);
   }
 
   .aviso-box {
-    background: var(--azul-cielo);
-    border-left: 4px solid var(--amarillo);
-    padding: 1.5rem 1.8rem;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    padding: 2rem;
     margin-top: 3rem;
   }
 
   .aviso-box h3 {
     font-family: 'Inter', sans-serif;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0;
     color: var(--gris-oscuro);
-    margin-bottom: 0.6rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .aviso-box h3::before {
+    content: '';
+    display: inline-block;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--azul-cielo);
   }
 
   .aviso-box p {
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     color: var(--gris-medio);
-    line-height: 1.7;
+    line-height: 1.75;
   }
 
   /* ── METEOROLOGÍA ── */
@@ -416,7 +423,6 @@
     <img src="img/logovlj.png" alt="Club de Vuelo Libre de Jalisco">
     <div class="nav-logo-text">
       <span class="l1">Club de Vuelo Libre de Jalisco</span>
-      <span class="l2">Desde 1978</span>
     </div>
   </a>
   <ul class="nav-links">
