@@ -8,7 +8,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Roboto+Condensed:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -17,10 +17,11 @@
     --azul-cielo: #EBF4FF;
     --amarillo: #F5C518;
     --blanco: #FFFFFF;
-    --gris-oscuro: #1A202C;
-    --gris-medio: #4A5568;
+    --gris-oscuro: #171923;
+    --gris-medio: #6B7280;
     --gris-claro: #F7FAFC;
-    --borde: rgba(0,0,0,0.08);
+    --borde: rgba(0,0,0,0.1);
+    --radius: 10px;
   }
 
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,7 +30,7 @@
   body {
     background: var(--blanco);
     color: var(--gris-oscuro);
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 16px;
     line-height: 1.6;
     overflow-x: hidden;
@@ -61,12 +62,12 @@
 
   .nav-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
   .nav-logo-text .l1 {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    color: var(--azul);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--gris-oscuro);
   }
   .nav-logo-text .l2 {
     font-size: 0.6rem;
@@ -83,10 +84,10 @@
   }
 
   .nav-links a {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--gris-medio);
     transition: color 0.2s;
   }
@@ -98,16 +99,18 @@
   #menu-overlay a.sos-mobile { color: var(--rojo, #C53030); }
   .nav-links a.nav-sos:hover { color: #9B2C2C; }
   .nav-links a.nav-sos.active { color: var(--rojo, #C53030); border-bottom-color: var(--rojo, #C53030); }
-  #menu-overlay a.sos-mobile { color: var(--amarillo); }
+  #menu-overlay a.sos-mobile { color: #F8B4B4; }
 
   .nav-cta {
-    background: var(--amarillo);
+    background: var(--blanco) !important;
+    border: 1px solid var(--gris-oscuro);
     color: var(--gris-oscuro) !important;
-    padding: 0.5rem 1.2rem;
-    font-weight: 700 !important;
-    transition: background 0.2s !important;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    font-weight: 500 !important;
+    transition: background 0.2s, color 0.2s !important;
   }
-  .nav-cta:hover { background: #e0b000 !important; }
+  .nav-cta:hover { background: var(--gris-oscuro) !important; color: var(--blanco) !important; }
 
   .hamburger {
     display: none;
@@ -129,28 +132,30 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(43,108,176,0.95);
+    background: rgba(23,25,35,0.97);
     backdrop-filter: blur(20px);
     z-index: 500;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.8rem;
   }
   #menu-overlay a {
-    font-family: 'Roboto Condensed', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
     color: #ffffff;
   }
   #menu-overlay .cta-mobile {
-    background: var(--amarillo);
+    background: var(--blanco);
+    border: 1px solid var(--blanco);
     color: var(--gris-oscuro) !important;
-    padding: 0.8rem 2rem;
+    padding: 0.7rem 1.8rem;
+    border-radius: 999px;
     margin-top: 0.5rem;
-    font-size: 1.1rem !important;
+    font-size: 1rem !important;
   }
 
   /* ── HERO SUBPÁGINA ── */
@@ -165,7 +170,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(43,108,176,0.6);
+    background: rgba(23,25,35,0.55);
   }
 
   .page-hero .eyebrow,
@@ -176,18 +181,18 @@
   }
 
   .page-hero .eyebrow {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.3em;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--amarillo);
+    color: rgba(255,255,255,0.85);
     margin-bottom: 1rem;
   }
 
   .page-hero h1 {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: clamp(2.5rem, 6vw, 5rem);
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     color: #ffffff;
     line-height: 0.95;
@@ -215,9 +220,9 @@
   }
 
   .info-block-title {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--gris-oscuro);
@@ -257,9 +262,9 @@
   }
 
   .aviso-box h3 {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--gris-oscuro);
@@ -274,9 +279,9 @@
 
   /* ── EVENTOS ── */
   .ev-h2 {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: clamp(1.6rem, 3vw, 2.2rem);
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     color: var(--gris-oscuro);
     margin: 3.5rem 0 1.5rem;
@@ -298,9 +303,9 @@
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 1.05rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--gris-oscuro);
@@ -343,9 +348,9 @@
   .comp-tabla thead th {
     background: var(--azul);
     color: #ffffff;
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.68rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     text-align: left;
@@ -362,9 +367,9 @@
   .comp-tabla td { padding: 1rem; vertical-align: top; font-size: 0.85rem; color: var(--gris-medio); }
 
   .comp-fecha {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
-    font-weight: 900;
+    font-weight: 700;
     color: var(--gris-oscuro);
     white-space: nowrap;
   }
@@ -372,9 +377,9 @@
   .comp-fecha.tbd { color: var(--gris-medio); font-weight: 700; }
 
   .comp-nombre {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 1.05rem;
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     color: var(--azul);
     line-height: 1.15;
@@ -420,9 +425,9 @@
   }
 
   .ev-cta h3 {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: clamp(1.3rem, 2.5vw, 1.8rem);
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     color: #ffffff;
     margin-bottom: 0.6rem;
