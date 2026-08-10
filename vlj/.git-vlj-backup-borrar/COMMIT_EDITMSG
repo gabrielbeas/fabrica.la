@@ -1,6 +1,0 @@
-Pilotos vuelve a ser la landing page (index.html)
-
-- index.html: se reintegra el contenido de Pilotos (bienvenida, responsabilidad, visitantes, SOS) despues del hero, con id="pilotos" para scroll directo
-- pilotos.html pasa a ser una redireccion a index.html#pilotos (no se pudo eliminar el archivo por permisos del mount de Drive)
-- Nav "Pilotos" en todas las paginas apunta a index.html#pilotos; el logo ya apuntaba a index.html en todas
-- cuotas.html se mantiene como pagina separada, sin cambios de contenido
