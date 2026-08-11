@@ -4,6 +4,7 @@ name: Deploy to GitHub Pages
 #   fabrica/            -> raíz del sitio (fabrica.la/)
 #   dashboard/public/    -> fabrica.la/dashboard/  (el backend en dashboard/src NO se publica)
 #
+#
 # Requiere: en GitHub, Settings -> Pages -> Build and deployment -> Source = "GitHub Actions"
 # (en vez de "Deploy from a branch").
 
