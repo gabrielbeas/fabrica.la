@@ -163,6 +163,12 @@
   .tl-remove{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:4px; font-weight: 400; transition: all 0.2s;}
   .tl-remove:hover{background:var(--danger); color: var(--panel); border-color: var(--danger);}
 
+  .date-field-wrap{position:relative;display:flex;align-items:center;gap:6px}
+  .date-field-wrap input[type="text"]{flex:1;min-width:0}
+  .date-pick-btn{flex-shrink:0;width:34px;height:34px;padding:0;border:1px solid var(--border);border-radius:4px;background:var(--panel);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+  .date-pick-btn:hover{background:var(--panel2)}
+  .date-shadow-input{position:absolute;opacity:0;width:1px;height:1px;padding:0;border:0;pointer-events:none;left:0;bottom:0}
+
   /* Modern Switch styles */
   .switch-container {
     display: flex;
@@ -383,8 +389,8 @@
 <script>
 const baseUnits = [
   {id:'101',piso:1,m2:85.14,vista:'FRONTAL',cajones:1,precioLista:3959010,status:'disponible'},
-  {id:'102',piso:1,m2:90.30,vista:'FRONTAL',cajones:1,precioLista:4198950,status:'apartado',
-    comprador:'Susana Neri Valdes',precioContrato:3575880,recibido:20000,fechaFirma:'03/08/2026 (pendiente)',financia:'Recurso propio',
+  {id:'102',piso:1,m2:90.30,vista:'FRONTAL',cajones:1,precioLista:4198950,status:'vendido',
+    comprador:'Susana Neri Valdes',precioContrato:3575880,recibido:2860704,fechaFirma:'03/08/2026',financia:'Recurso propio',
     etapaVenta:'etapa1',
     esquemaContrato:'Anticipo inicial 80% en dos exhibiciones: $20,000 (apartado) + $2,840,704 (a la firma). 10% de pago parcial antes de la entrega. 10% de finiquito contra entrega. Pago con recurso propio, sin financiamiento.',
     contacto:{
@@ -393,11 +399,11 @@ const baseUnits = [
       email:'No proporcionado en el contrato',
       rfc:'NEVS470120BM4',
       curp:'NEVS470120MDFRLS05',
-      direccion:'Isla Salinas #2011, Guadalajara, Jal., C.P. 44950'
+      direccion:'Isla Salinas #2011, Colonia Jardines del Sur, Guadalajara, Jalisco, C.P. 44950'
     },
     timeline:[
       {fecha:'20/07/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
-      {fecha:'03/08/2026',concepto:'Firma de contrato (anticipo inicial 80%)',monto:2840704,estatus:'pendiente'},
+      {fecha:'03/08/2026',concepto:'Firma de contrato (anticipo inicial 80%)',monto:2840704,estatus:'pagado'},
       {fecha:'03/09/2026',concepto:'Pago parcial (10%)',monto:357588,estatus:'pendiente'},
       {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Finiquito (10% restante)',monto:357588,estatus:'pendiente'}
     ],
@@ -453,7 +459,23 @@ const baseUnits = [
 
   {id:'301',piso:3,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4078180,status:'disponible'},
   {id:'302',piso:3,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4323500,status:'disponible'},
-  {id:'303',piso:3,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3029440,status:'disponible'},
+  {id:'303',piso:3,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3029440,status:'apartado',
+    comprador:'Meztli Mariana Martínez Cuevas',precioContrato:2938556.80,recibido:20000,fechaFirma:'Por definir (pendiente)',financia:'No especificado en la oferta',
+    etapaVenta:'etapa2',
+    esquemaContrato:'Apartado $20,000 + enganche a la firma de contrato $1,180,000 (enganche total 40.84%). Saldo de $1,738,556.80 (59.16%) a la entrega y escrituración. Precio con 3% de descuento sobre lista.',
+    contacto:{
+      nombre:'Meztli Mariana Martínez Cuevas',
+      telefono:'',
+      email:'',
+      rfc:'',
+      curp:'',
+      direccion:''
+    },
+    timeline:[
+      {fecha:'16/08/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
+      {fecha:'Fecha de firma (pendiente)',concepto:'Enganche a la firma de contrato',monto:1180000,estatus:'pendiente'},
+      {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Saldo a la entrega y escrituración',monto:1738556.80,estatus:'pendiente'}
+    ]},
   {id:'304',piso:3,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2737800,status:'disponible'},
 
   {id:'401',piso:4,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4099465,status:'disponible'},
@@ -463,7 +485,23 @@ const baseUnits = [
 
   {id:'501',piso:5,m2:88.97,vista:'FRONTAL',cajones:1,precioLista:4120750,status:'disponible'},
   {id:'502',piso:5,m2:94.27,vista:'FRONTAL',cajones:1,precioLista:4368650,status:'disponible'},
-  {id:'503',piso:5,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3061300,status:'disponible'},
+  {id:'503',piso:5,m2:65.45,vista:'POSTERIOR',cajones:1,precioLista:3061300,status:'apartado',
+    comprador:'Monserrat González Galicia',precioContrato:2969461,recibido:20000,fechaFirma:'Solicitó 15 días desde el 13/08/2026 (pendiente)',financia:'30% enganche recursos propios + 70% crédito hipotecario a la firma de escritura',
+    etapaVenta:'etapa2',
+    esquemaContrato:'Apartado $20,000 + resto de enganche (30% del precio) a la firma de contrato, con recursos propios. 70% restante mediante crédito hipotecario a la firma de escritura. Precio con 3% de descuento por escrituración estimada en diciembre 2026 (bajaría a 2% si se prolonga a febrero 2027).',
+    contacto:{
+      nombre:'Monserrat González Galicia',
+      telefono:'',
+      email:'',
+      rfc:'',
+      curp:'',
+      direccion:''
+    },
+    timeline:[
+      {fecha:'13/08/2026',concepto:'Apartado',monto:20000,estatus:'pagado'},
+      {fecha:'Fecha de firma (pendiente)',concepto:'Resto de enganche a la firma de contrato (30% total)',monto:870838,estatus:'pendiente'},
+      {fecha:'Fecha de entrega y escrituración (sin definir)',concepto:'Saldo vía crédito hipotecario (70%)',monto:2078623,estatus:'pendiente'}
+    ]},
   {id:'504',piso:5,m2:61.74,vista:'POSTERIOR',cajones:0,precioLista:2767860,status:'disponible'},
 ];
 
@@ -908,7 +946,9 @@ function comisionesListTemplate(units){
   const rowsHTML = rows.map(u=>{
     const c = u.comision;
     const pagado = comisionPagado(c);
-    const pendiente = c.exigible - pagado;
+    // % pendiente sobre el TOTAL de la comisión (no solo lo ya exigible), para reflejar
+    // cuánto falta por cobrar en general aunque una parte todavía no sea exigible.
+    const pendientePct = c.total > 0 ? ((c.total - pagado) / c.total * 100) : 0;
     const fechasPago = comisionFechasPago(c);
     return `<tr>
       <td><strong>${u.id}</strong></td>
@@ -917,14 +957,14 @@ function comisionesListTemplate(units){
       <td class="num">${money(c.total)}</td>
       <td class="num">${money(pagado)}</td>
       <td>${fechasPago || '<span class="placeholder">Sin pagar</span>'}</td>
-      <td class="num">${money(pendiente)}</td>
+      <td class="num">${pendientePct.toFixed(0)}%</td>
     </tr>`;
   }).join('');
   return `
     <h3>Comisiones al equipo de ventas</h3>
     <div class="price-list-note">Cifras sin IVA. Fuente: "ROCA1909_VENTAS.xlsx" y los pagos que se registren en cada depto.</div>
     <table class="table-center">
-      <thead><tr><th>Depto</th><th>Comisionista</th><th>% pactado</th><th>Comisión total</th><th>Pagado</th><th>Fecha de pago</th><th>Pendiente</th></tr></thead>
+      <thead><tr><th>Depto</th><th>Comisionista</th><th>% pactado</th><th>Comisión total</th><th>Pagado</th><th>Fecha de pago</th><th>% Pendiente</th></tr></thead>
       <tbody>${rowsHTML}</tbody>
     </table>
   `;
@@ -1270,11 +1310,25 @@ function wireViewButtons(u){
   document.getElementById('btnPrintFicha').addEventListener('click', (e) => downloadFichaPDF(e.target.dataset.id));
 }
 
+// Genera un campo de fecha en texto libre (para poder guardar cosas como "sin
+// definir" o "pendiente") acompañado de un botoncito de calendario que, con un
+// clic, abre el selector nativo de fecha del navegador y llena el texto en
+// formato DD/MM/AAAA. Se usa con class= (inputAttr="class") o con id= (para
+// campos únicos como Fecha de firma).
+function dateFieldHTML(inputAttr, name, value){
+  const safe = (value||'').replace(/"/g,'&quot;');
+  return `<div class="date-field-wrap">
+      <input type="text" ${inputAttr}="${name}" placeholder="Fecha" value="${safe}">
+      <input type="date" class="date-shadow-input" tabindex="-1" aria-hidden="true">
+      <button type="button" class="date-pick-btn" title="Elegir fecha en calendario">📅</button>
+    </div>`;
+}
+
 function renderTimelineEditor(){
   if(!editTimeline.length) return `<div class="placeholder">Sin pagos. Agrega el primero.</div>`;
   return editTimeline.map((t,i)=>`
     <div class="tl-edit-row" data-idx="${i}">
-      <input type="text" class="tl-fecha-input" placeholder="Fecha" value="${(t.fecha||'').replace(/"/g,'&quot;')}">
+      ${dateFieldHTML('class', 'tl-fecha-input', t.fecha)}
       <input type="text" class="tl-concepto-input" placeholder="Concepto" value="${(t.concepto||'').replace(/"/g,'&quot;')}">
       <input type="number" class="tl-monto-input" placeholder="Monto" value="${t.monto||0}">
       <button class="tl-remove" data-remove="${i}" title="Quitar">✕</button>
@@ -1298,7 +1352,7 @@ function renderComisionPagosEditor(){
   if(!editComisionPagos.length) return `<div class="placeholder">Sin pagos de comisión. Agrega el primero.</div>`;
   return editComisionPagos.map((p,i)=>`
     <div class="tl-edit-row" data-idx="${i}">
-      <input type="text" class="cp-fecha-input" placeholder="Fecha" value="${(p.fecha||'').replace(/"/g,'&quot;')}">
+      ${dateFieldHTML('class', 'cp-fecha-input', p.fecha)}
       <input type="text" class="cp-concepto-input" placeholder="Concepto" value="${(p.concepto||'').replace(/"/g,'&quot;')}">
       <input type="number" class="cp-monto-input" placeholder="Monto" value="${p.monto||0}">
       <button class="tl-remove" data-remove-cp="${i}" title="Quitar">✕</button>
@@ -1339,7 +1393,7 @@ function editTemplate(u){
       <div class="field"><label>Precio pactado</label><input id="f_precio" type="number" value="${u.precioContrato||''}"></div>
       <div class="field"><label>Recibido a la fecha</label><input id="f_recibido" type="number" value="${u.recibido||''}"></div>
       <div class="field"><label>Financiamiento</label><input id="f_financia" type="text" value="${(u.financia||'').replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Fecha de firma</label><input id="f_fechaFirma" type="text" value="${(u.fechaFirma||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Fecha de firma</label>${dateFieldHTML('id', 'f_fechaFirma', u.fechaFirma)}</div>
     </div>
 
     <h4>Etapa de venta</h4>
@@ -1521,6 +1575,31 @@ modalBody.addEventListener('change', e => {
       renderAll();
       openModal(unitId, 'view');
     }
+  } else if(e.target.classList.contains('date-shadow-input')){
+    // El input de fecha oculto (tipo "date") solo sirve para elegir con el
+    // calendario nativo; al cambiar, formatea DD/MM/AAAA y lo copia al campo
+    // de texto visible, que es el que realmente se guarda.
+    const val = e.target.value; // yyyy-mm-dd
+    const wrap = e.target.closest('.date-field-wrap');
+    const textInput = wrap ? wrap.querySelector('input[type="text"]') : null;
+    if(val && textInput){
+      const [y, m, d] = val.split('-');
+      textInput.value = `${d}/${m}/${y}`;
+    }
+  }
+});
+
+modalBody.addEventListener('click', e => {
+  const btn = e.target.closest('.date-pick-btn');
+  if(!btn) return;
+  const wrap = btn.closest('.date-field-wrap');
+  const shadow = wrap ? wrap.querySelector('.date-shadow-input') : null;
+  if(!shadow) return;
+  if(typeof shadow.showPicker === 'function'){
+    try{ shadow.showPicker(); } catch(err){ shadow.focus(); shadow.click(); }
+  } else {
+    shadow.focus();
+    shadow.click();
   }
 });
 
