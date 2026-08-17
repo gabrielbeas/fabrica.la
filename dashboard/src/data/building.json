@@ -36,11 +36,11 @@
   },
   "operationalStatus": "Óptimo",
   "alerts": {
-    "contractsExpiringIn3Months": 0,
+    "contractsExpiringIn3Months": 1,
     "maintenanceIssues": 0,
     "urgentTasks": 0
   },
-  "notes": "Datos de locales, área y renta tomados de LFdC_CONTROL ADMIN 2026.xlsx (hoja RENTAS X LOCAL), verificados contra dashboard/public/agua/data.json el 2026-08-17. El Excel también lista 4 oficinas (locales 23-26) que aún no están incorporadas aquí. Dirección, propietario (persona), RFC y folio siguen pendientes de confirmar con Gabriel.",
+  "notes": "Datos de locales, área y renta tomados de LFdC_CONTROL ADMIN 2026.xlsx (hoja RENTAS X LOCAL), verificados contra dashboard/public/agua/data.json el 2026-08-17. Local 2 (MEXA DISEÑO) vence 30/09/2026, sin renovación registrada a la fecha. El Excel también lista 4 oficinas (locales 23-26) que aún no están incorporadas aquí. Dirección, propietario (persona), RFC y folio siguen pendientes de confirmar con Gabriel.",
   "createdAt": "2026-01-15T00:00:00Z",
   "updatedAt": "2026-08-17T00:00:00Z"
 }
