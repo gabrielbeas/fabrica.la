@@ -124,7 +124,7 @@ class AdminPanel {
         <div class="tabs">
           <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
           <button class="tab-btn" data-tab="building">Edificio Completo</button>
-          <button class="tab-btn" data-tab="contracts">Contratos (12)</button>
+          <button class="tab-btn" data-tab="contracts">Contratos (<span id="contractsCount">${this.contracts.length}</span>)</button>
         </div>
 
         <!-- DASHBOARD TAB -->
@@ -183,6 +183,9 @@ class AdminPanel {
       this.contracts = contractsRes.data || [];
       this.building = buildingRes.data || {};
 
+      const countBadge = document.getElementById('contractsCount');
+      if (countBadge) countBadge.textContent = this.contracts.length;
+
       this.renderDashboard();
       this.renderBuilding();
       this.renderContracts();
@@ -202,8 +205,8 @@ class AdminPanel {
     const stats = [
       { label: 'Contratos Activos', value: activeContracts },
       { label: 'Superficie Total', value: `${totalArea} m²` },
-      { label: 'Ingresos Mensuales', value: '$45,000' },
-      { label: 'Ocupación', value: '92%' }
+      { label: 'Ingresos Mensuales', value: this.building.status?.monthlyIncome || 'N/D' },
+      { label: 'Ocupación', value: `${this.building.status?.occupancyPercentage ?? 'N/D'}%` }
     ];
 
     const statsGrid = document.getElementById('statsGrid');
@@ -244,7 +247,7 @@ class AdminPanel {
         <h3>💰 Finanzas</h3>
         <div class="info-item">
           <div class="info-label">Ingreso Total Mensual</div>
-          <div class="info-value">$45,000 USD</div>
+          <div class="info-value">${this.building.status?.monthlyIncome || 'N/D'}</div>
         </div>
         <div class="info-item">
           <div class="info-label">Próximo Vencimiento</div>
@@ -304,7 +307,7 @@ class AdminPanel {
           </div>
           <div class="info-item">
             <div class="info-label">Número de Locales</div>
-            <div class="info-value">${building.numberOfLocals || 12}</div>
+            <div class="info-value">${building.numberOfLocals ?? '[No especificado]'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Niveles</div>
@@ -348,11 +351,11 @@ class AdminPanel {
           <h3>📊 Estado Operacional</h3>
           <div class="info-item">
             <div class="info-label">Ocupación Actual</div>
-            <div class="info-value">${building.status?.occupancyPercentage || 92}%</div>
+            <div class="info-value">${building.status?.occupancyPercentage ?? 'N/D'}%</div>
           </div>
           <div class="info-item">
             <div class="info-label">Ingresos Mensuales</div>
-            <div class="info-value">${building.status?.monthlyIncome || '$45,000 USD'}</div>
+            <div class="info-value">${building.status?.monthlyIncome || 'N/D'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Estado General</div>

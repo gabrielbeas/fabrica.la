@@ -1,24 +1,24 @@
 {
   "id": 1,
   "name": "La Fábrica de Chocolate",
-  "description": "Centro comercial multifuncional con 12 locales",
-  "address": "[Dirección completa]",
-  "city": "[Ciudad/Municipio]",
-  "state": "[Estado]",
+  "description": "Centro comercial multifuncional",
+  "address": "[Dirección completa - pendiente, no encontrada en LFdC_CONTROL ADMIN 2026.xlsx]",
+  "city": "[Ciudad/Municipio - pendiente]",
+  "state": "[Estado - pendiente]",
   "country": "México",
-  "postalCode": "[Código Postal]",
-  "totalArea": "1,250 m²",
-  "numberOfLocals": 12,
+  "postalCode": "[Código Postal - pendiente]",
+  "totalArea": "1,553 m²",
+  "numberOfLocals": 13,
   "numberOfFloors": 3,
   "yearBuilt": 2015,
   "owner": {
-    "name": "[Nombre del propietario]",
-    "email": "[Email del propietario]",
-    "phone": "[Teléfono]"
+    "name": "LAFABDECHOC S DE RL DE CV",
+    "email": "[Email del propietario - pendiente]",
+    "phone": "[Teléfono - pendiente]"
   },
   "documentation": {
-    "propertyRegistry": "[Número de folio]",
-    "rfc": "[RFC del propietario]",
+    "propertyRegistry": "[Número de folio - pendiente]",
+    "rfc": "[RFC del propietario - pendiente]",
     "certificateOfInhabitability": "Disponible"
   },
   "services": {
@@ -29,17 +29,18 @@
     "security": "24/7 con cámaras"
   },
   "status": {
-    "occupancyPercentage": 92,
-    "occupiedLocals": 11,
-    "availableLocals": 1,
-    "monthlyIncome": "$45,000 USD"
+    "occupancyPercentage": 100,
+    "occupiedLocals": 13,
+    "availableLocals": 0,
+    "monthlyIncome": "$402,022.17 MXN"
   },
   "operationalStatus": "Óptimo",
   "alerts": {
-    "contractsExpiringIn3Months": 2,
+    "contractsExpiringIn3Months": 0,
     "maintenanceIssues": 0,
     "urgentTasks": 0
   },
+  "notes": "Datos de locales, área y renta tomados de LFdC_CONTROL ADMIN 2026.xlsx (hoja RENTAS X LOCAL), verificados contra dashboard/public/agua/data.json el 2026-08-17. El Excel también lista 4 oficinas (locales 23-26) que aún no están incorporadas aquí. Dirección, propietario (persona), RFC y folio siguen pendientes de confirmar con Gabriel.",
   "createdAt": "2026-01-15T00:00:00Z",
-  "updatedAt": "2026-07-28T00:00:00Z"
+  "updatedAt": "2026-08-17T00:00:00Z"
 }
