@@ -77,6 +77,48 @@
             transform: translateY(-2px);
         }
 
+        .lfdc-global-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .lfdc-global-nav .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.1));
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .lfdc-global-nav .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .lfdc-global-nav .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .lfdc-global-nav {
+                width: 100%;
+            }
+            .lfdc-global-nav .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
         .content {
             background: white;
             padding: 40px;
@@ -158,11 +200,15 @@
                 <h1 id="contractName">Detalles del Contrato</h1>
                 <p class="header-subtitle" id="contractNumber">Local</p>
             </div>
-            <div class="nav-buttons">
-                <a href="index.html?activeTab=dashboard" class="nav-btn">DASHBOARD</a>
-                <a href="index.html?activeTab=building" class="nav-btn">EDIFICIO COMPLETO</a>
-                <a href="index.html?activeTab=contracts" class="nav-btn">LOCALES</a>
-            </div>
+        </div>
+
+        <div class="lfdc-global-nav">
+            <a href="index.html?activeTab=dashboard" class="tab-btn">DASHBOARD</a>
+            <a href="index.html?activeTab=building" class="tab-btn">EDIFICIO COMPLETO</a>
+            <a href="index.html?activeTab=contracts" class="tab-btn active">LOCALES</a>
+            <a href="hidraulico.html" class="tab-btn">HIDRAULICO</a>
+            <a href="lecturas-agua.html" class="tab-btn">LECTURAS</a>
+            <a href="agua-cobros.html" class="tab-btn">AGUA Y COBROS</a>
         </div>
 
         <div class="content" id="detailContent">
