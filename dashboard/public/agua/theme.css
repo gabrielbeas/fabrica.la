@@ -1,0 +1,417 @@
+/**
+ * LFdC - Sistema de diseño compartido del panel de Agua
+ * ------------------------------------------------------
+ * Estética minimalista tipo "ficha" (inspirada en ROCA.1909): fondo
+ * blanco/gris muy claro, secciones con etiqueta gris en mayúsculas y
+ * línea divisoria, grids de 2 columnas para pares label/valor, pills
+ * de estado, y un acento morado (el color histórico de LFdC) usado
+ * con moderación en vez de bloques degradados grandes.
+ *
+ * Usado por: index.html, detail.html, hidraulico.html,
+ * agua-cobros.html, lecturas-agua.html.
+ */
+
+:root {
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --ink: #111827;
+    --muted: #8a8f98;
+    --border: #ececec;
+    --good-bg: #d1fae5;
+    --good-fg: #065f46;
+    --warn-bg: #fef3c7;
+    --warn-fg: #92400e;
+    --bad-bg: #fee2e2;
+    --bad-fg: #991b1b;
+    --neutral-bg: #f1f1f3;
+    --neutral-fg: #4b5563;
+    --page-bg: #fafafa;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.lfdc {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--page-bg);
+    color: var(--ink);
+}
+
+.lfdc .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.lfdc .container.narrow {
+    max-width: 820px;
+}
+
+/* ---- Barra superior / navegación global ---- */
+
+.lfdc .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.lfdc .brand {
+    font-weight: 800;
+    font-size: 1.05em;
+    letter-spacing: 0.5px;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.lfdc .brand span {
+    color: var(--primary);
+}
+
+.lfdc .nav-links {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.lfdc .nav-links a {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.lfdc .nav-links a:hover {
+    color: var(--primary);
+}
+
+.lfdc .nav-links a.active {
+    color: var(--primary);
+}
+
+/* ---- Encabezado de página ---- */
+
+.lfdc .page-header,
+.lfdc .title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.lfdc h1 {
+    font-size: 1.9em;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.lfdc .page-subtitle,
+.lfdc .subtitle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 0.95em;
+    margin-bottom: 32px;
+}
+
+.lfdc .subtitle-row .dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+/* ---- Pills / badges ---- */
+
+.lfdc .pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.lfdc .pill-active,
+.lfdc .pill-good { background: var(--good-bg); color: var(--good-fg); }
+.lfdc .pill-expiring,
+.lfdc .pill-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.lfdc .pill-expired,
+.lfdc .pill-bad { background: var(--bad-bg); color: var(--bad-fg); }
+.lfdc .pill-available,
+.lfdc .pill-neutral { background: var(--neutral-bg); color: var(--neutral-fg); }
+
+/* ---- Secciones tipo "ficha" ---- */
+
+.lfdc section.block,
+.lfdc .block {
+    margin-bottom: 34px;
+}
+
+.lfdc .block-title {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.lfdc .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 32px;
+}
+
+.lfdc .field-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.lfdc .field-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.lfdc .field-grid.single { grid-template-columns: 1fr; }
+
+.lfdc .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.lfdc .field-label {
+    font-size: 0.78em;
+    color: var(--muted);
+}
+
+.lfdc .field-value {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--ink);
+    word-break: break-word;
+}
+
+.lfdc .field-value.muted { color: var(--muted); font-weight: 500; }
+.lfdc .field-value.accent { color: var(--primary); }
+.lfdc .field-value.big { font-size: 1.3em; font-weight: 800; }
+
+/* ---- Timeline (renta por año, calendario de pagos, etc.) ---- */
+
+.lfdc .timeline {
+    position: relative;
+    padding-left: 22px;
+}
+
+.lfdc .timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: var(--border);
+}
+
+.lfdc .timeline-item {
+    position: relative;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lfdc .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.lfdc .timeline-item.ti-good::before { background: var(--good-fg); box-shadow: 0 0 0 1px var(--good-fg); }
+.lfdc .timeline-item.ti-warn::before { background: var(--warn-fg); box-shadow: 0 0 0 1px var(--warn-fg); }
+
+.lfdc .ty-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lfdc .timeline-year {
+    font-weight: 700;
+    font-size: 1.02em;
+}
+
+.lfdc .timeline-amount {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+/* ---- Tiles de estadísticas (reemplaza los stat-card degradados) ---- */
+
+.lfdc .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 34px;
+}
+
+.lfdc .stat-tile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: #fff;
+}
+
+.lfdc .stat-tile .stat-number {
+    font-size: 1.7em;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.15;
+}
+
+.lfdc .stat-tile .stat-label {
+    font-size: 0.78em;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.2px;
+}
+
+.lfdc .stat-tile.accent-good .stat-number { color: var(--good-fg); }
+.lfdc .stat-tile.accent-warn .stat-number { color: var(--warn-fg); }
+.lfdc .stat-tile.accent-bad .stat-number { color: var(--bad-fg); }
+.lfdc .stat-tile.accent-primary .stat-number { color: var(--primary); }
+
+/* ---- Tablas ---- */
+
+.lfdc table.clean {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lfdc table.clean thead th {
+    text-align: left;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 12px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.lfdc table.clean tbody td {
+    padding: 12px;
+    font-size: 0.92em;
+    border-bottom: 1px solid var(--border);
+}
+
+.lfdc table.clean tbody tr:hover {
+    background: #fafafa;
+}
+
+.lfdc table.clean tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.lfdc .table-wrapper {
+    overflow-x: auto;
+}
+
+/* ---- Controles: inputs, selects, botones ---- */
+
+.lfdc .control-input,
+.lfdc select.control-input {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.92em;
+    background: #fff;
+    color: var(--ink);
+}
+
+.lfdc .control-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.lfdc .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.lfdc .btn:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.lfdc .btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.lfdc .btn-primary:hover {
+    background: #5a6fd6;
+}
+
+.lfdc .btn-danger {
+    color: var(--bad-fg);
+    border-color: var(--bad-bg);
+}
+
+.lfdc .empty-note {
+    color: var(--muted);
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+@media (max-width: 640px) {
+    .lfdc .field-grid,
+    .lfdc .field-grid.cols-3,
+    .lfdc .field-grid.cols-4 {
+        grid-template-columns: 1fr;
+    }
+
+    .lfdc .container {
+        padding: 28px 18px 60px;
+    }
+
+    .lfdc h1 {
+        font-size: 1.5em;
+    }
+}
