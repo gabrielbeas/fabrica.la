@@ -8,11 +8,17 @@
         :root {
             --primary: #667eea;
             --secondary: #764ba2;
-            --dark: #333;
-            --light: #f8f9fa;
-            --border: #eee;
-            --text-muted: #666;
-            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --ink: #111827;
+            --muted: #8a8f98;
+            --border: #ececec;
+            --good-bg: #d1fae5;
+            --good-fg: #065f46;
+            --warn-bg: #fef3c7;
+            --warn-fg: #92400e;
+            --bad-bg: #fee2e2;
+            --bad-fg: #991b1b;
+            --neutral-bg: #f1f1f3;
+            --neutral-fg: #4b5563;
         }
 
         * {
@@ -23,379 +29,384 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            color: var(--dark);
-            padding: 20px;
+            background: #fafafa;
+            color: var(--ink);
         }
 
         .container {
-            max-width: 900px;
+            max-width: 820px;
             margin: 0 auto;
+            padding: 40px 24px 80px;
         }
 
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-md);
+        .top-bar {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
         }
 
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .header-subtitle {
-            color: var(--text-muted);
-            font-size: 1.1em;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .nav-btn {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: transform 0.2s ease;
+        .brand {
+            font-weight: 800;
+            font-size: 1.05em;
+            letter-spacing: 0.5px;
+            color: var(--ink);
             text-decoration: none;
-            display: inline-block;
         }
 
-        .nav-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .lfdc-global-nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .lfdc-global-nav .tab-btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            background: white;
+        .brand span {
             color: var(--primary);
-            cursor: pointer;
-            font-size: 1em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 18px;
+        }
+
+        .nav-links a {
+            font-size: 0.85em;
             font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.1));
+            color: var(--muted);
             text-decoration: none;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        h1 {
+            font-size: 1.9em;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .pill {
             display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.72em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
         }
 
-        .lfdc-global-nav .tab-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+        .pill-active { background: var(--good-bg); color: var(--good-fg); }
+        .pill-expiring { background: var(--warn-bg); color: var(--warn-fg); }
+        .pill-expired { background: var(--bad-bg); color: var(--bad-fg); }
+        .pill-available { background: var(--neutral-bg); color: var(--neutral-fg); }
+
+        .subtitle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.95em;
+            margin-bottom: 36px;
         }
 
-        .lfdc-global-nav .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+        .subtitle-row .dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--muted);
         }
 
-        @media (max-width: 768px) {
-            .lfdc-global-nav {
-                width: 100%;
-            }
-            .lfdc-global-nav .tab-btn {
-                width: 100%;
-                text-align: center;
-            }
+        section.block {
+            margin-bottom: 34px;
         }
 
-        .content {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
+        .block-title {
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
         }
 
-        .detail-grid {
+        .field-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
+            gap: 20px 32px;
         }
 
-        .detail-item {
+        .field-grid.single {
+            grid-template-columns: 1fr;
+        }
+
+        .field {
             display: flex;
             flex-direction: column;
+            gap: 4px;
+            min-width: 0;
         }
 
-        .detail-label {
-            font-size: 0.85em;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+        .field-label {
+            font-size: 0.78em;
+            color: var(--muted);
+        }
+
+        .field-value {
+            font-size: 1.05em;
             font-weight: 600;
+            color: var(--ink);
+            word-break: break-word;
         }
 
-        .detail-value {
-            font-size: 1.2em;
-            color: var(--dark);
+        .field-value.muted {
+            color: var(--muted);
             font-weight: 500;
         }
 
-        .detail-value.highlight {
+        .field-value.accent {
             color: var(--primary);
+        }
+
+        .field-value.big {
+            font-size: 1.3em;
+            font-weight: 800;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 22px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .timeline-item .ty-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timeline-year {
             font-weight: 700;
-            font-size: 1.4em;
+            font-size: 1.02em;
         }
 
-        .detail-section {
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 2px solid var(--border);
+        .timeline-amount {
+            font-weight: 700;
+            font-size: 1.05em;
         }
 
-        .detail-section h3 {
-            color: var(--primary);
-            font-size: 1.4em;
-            margin-bottom: 20px;
+        .empty-note {
+            color: var(--muted);
+            font-size: 0.9em;
+            font-style: italic;
         }
 
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 20px;
-            }
-
-            .detail-grid {
+        @media (max-width: 640px) {
+            .field-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
             }
 
-            .content {
-                padding: 20px;
+            .container {
+                padding: 28px 18px 60px;
             }
 
-            .back-btn {
-                width: 100%;
+            h1 {
+                font-size: 1.5em;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div>
-                <h1 id="contractName">Detalles del Contrato</h1>
-                <p class="header-subtitle" id="contractNumber">Local</p>
+        <div class="top-bar">
+            <a href="index.html?activeTab=dashboard" class="brand">LA FÁBRICA<span>.</span>DE CHOCOLATE</a>
+            <div class="nav-links">
+                <a href="index.html?activeTab=dashboard">DASHBOARD</a>
+                <a href="index.html?activeTab=building">EDIFICIO</a>
+                <a href="index.html?activeTab=contracts">LOCALES</a>
+                <a href="hidraulico.html">HIDRÁULICO</a>
+                <a href="lecturas-agua.html">LECTURAS</a>
+                <a href="agua-cobros.html">AGUA Y COBROS</a>
             </div>
         </div>
 
-        <div class="lfdc-global-nav">
-            <a href="index.html?activeTab=dashboard" class="tab-btn">DASHBOARD</a>
-            <a href="index.html?activeTab=building" class="tab-btn">EDIFICIO COMPLETO</a>
-            <a href="index.html?activeTab=contracts" class="tab-btn">LOCALES</a>
-            <a href="hidraulico.html" class="tab-btn">HIDRAULICO</a>
-            <a href="lecturas-agua.html" class="tab-btn">LECTURAS</a>
-            <a href="agua-cobros.html" class="tab-btn">AGUA Y COBROS</a>
+        <div class="title-row">
+            <h1 id="contractName">Detalles del Contrato</h1>
+            <span class="pill pill-available" id="statusPill" style="display:none;"></span>
+        </div>
+        <div class="subtitle-row" id="subtitleRow">
+            <span id="contractNumber">Local</span>
         </div>
 
-        <div class="content" id="detailContent">
-            <p>Cargando detalles...</p>
+        <div id="detailContent">
+            <p class="empty-note">Cargando detalles...</p>
         </div>
     </div>
 
     <script>
+        function esc(v) {
+            if (v === null || v === undefined || v === '') return '<span class="field-value muted">No disponible</span>';
+            return '<span class="field-value">' + v + '</span>';
+        }
+
+        function field(label, value, opts) {
+            opts = opts || {};
+            var cls = 'field-value' + (opts.big ? ' big' : '') + (opts.accent ? ' accent' : '');
+            var v = (value === null || value === undefined || value === '')
+                ? '<span class="' + cls + ' muted">No disponible</span>'
+                : '<span class="' + cls + '">' + value + '</span>';
+            return '<div class="field"><span class="field-label">' + label + '</span>' + v + '</div>';
+        }
+
+        var STATUS_TEXT = { active: 'Activo', expiring: 'Por vencer', expired: 'Vencido', available: 'Disponible' };
+        var STATUS_CLASS = { active: 'pill-active', expiring: 'pill-expiring', expired: 'pill-expired', available: 'pill-available' };
+
         // Obtener datos de la URL
-        const params = new URLSearchParams(window.location.search);
-        const contractId = params.get('id');
-        const encodedData = params.get('data');
+        var params = new URLSearchParams(window.location.search);
+        var encodedData = params.get('data');
 
         if (encodedData) {
             try {
                 // Debe coincidir con la codificación UTF-8-safe usada en
                 // index.html (btoa/atob normal rompe con acentos/ñ).
-                const contractJson = decodeURIComponent(escape(atob(encodedData)));
-                const contract = JSON.parse(contractJson);
+                var contractJson = decodeURIComponent(escape(atob(encodedData)));
+                var contract = JSON.parse(contractJson);
+                var d = contract.detail || {};
 
-                // Actualizar encabezado
-                document.getElementById('contractName').textContent = contract.name;
+                document.getElementById('contractName').textContent = contract.name || contract.number;
                 document.getElementById('contractNumber').textContent = contract.number;
 
-                // Renderizar detalles
-                const content = document.getElementById('detailContent');
-
-                if (contract.detail) {
-                    content.innerHTML = `
-                        <div class="detail-section">
-                            <h3>Información General</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Inquilino</span>
-                                    <span class="detail-value">${contract.tenant}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Superficie</span>
-                                    <span class="detail-value">${contract.area}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Contacto</span>
-                                    <span class="detail-value">${contract.contact}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Email</span>
-                                    <span class="detail-value">${contract.email}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="detail-section">
-                            <h3>Datos del Contrato</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Firma de Contrato</span>
-                                    <span class="detail-value">${contract.detail.firmaContrato}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Plazo</span>
-                                    <span class="detail-value">${contract.detail.plazo}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Inicio del Contrato</span>
-                                    <span class="detail-value">${contract.detail.inicioContrato}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Fin del Contrato</span>
-                                    <span class="detail-value">${contract.detail.finContrato}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="detail-section">
-                            <h3>Incremento de Renta</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Fecha de Incremento</span>
-                                    <span class="detail-value">${contract.detail.incrementoRenta}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Tipo</span>
-                                    <span class="detail-value highlight">${contract.detail.incrementoTipo}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Fecha Límite</span>
-                                    <span class="detail-value">${contract.detail.fechaLimite}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="detail-section">
-                            <h3>Depósito y Pagos</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Depósito</span>
-                                    <span class="detail-value highlight">${contract.detail.deposito}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Fecha Depósito</span>
-                                    <span class="detail-value">${contract.detail.fechaDeposito}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Meses</span>
-                                    <span class="detail-value">${contract.detail.meses}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Por Pagar</span>
-                                    <span class="detail-value">${contract.detail.porPagar}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="detail-section">
-                            <h3>Renta Mensual por Año</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">2024</span>
-                                    <span class="detail-value">${contract.detail.renta2024}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">2025 (${contract.detail.incremento2025})</span>
-                                    <span class="detail-value">${contract.detail.renta2025}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">2026 (${contract.detail.incremento2026})</span>
-                                    <span class="detail-value">${contract.detail.renta2026}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="detail-section">
-                            <h3>Resumen Financiero</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Mantenimiento (${contract.detail.porcentajeMantenimiento})</span>
-                                    <span class="detail-value">${contract.detail.mantenimiento}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Total</span>
-                                    <span class="detail-value highlight">${contract.detail.total}</span>
-                                </div>
-                                <div class="detail-item" style="grid-column: 1 / -1;">
-                                    <span class="detail-label">Total + IVA</span>
-                                    <span class="detail-value highlight">${contract.detail.totalIVA}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    content.innerHTML = `
-                        <div class="detail-section">
-                            <h3>Información General</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <span class="detail-label">Inquilino</span>
-                                    <span class="detail-value">${contract.tenant}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Superficie</span>
-                                    <span class="detail-value">${contract.area}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Renta Mensual</span>
-                                    <span class="detail-value highlight">${contract.rent}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Contacto</span>
-                                    <span class="detail-value">${contract.contact}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Email</span>
-                                    <span class="detail-value">${contract.email}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Período</span>
-                                    <span class="detail-value">${contract.startDate} - ${contract.endDate}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                if (contract.status && STATUS_TEXT[contract.status]) {
+                    var pillEl = document.getElementById('statusPill');
+                    pillEl.textContent = STATUS_TEXT[contract.status];
+                    pillEl.className = 'pill ' + STATUS_CLASS[contract.status];
+                    pillEl.style.display = 'inline-block';
                 }
+
+                var subtitleBits = [];
+                if (contract.area) subtitleBits.push(contract.area);
+                if (d.plazo) subtitleBits.push(d.plazo);
+                document.getElementById('subtitleRow').innerHTML =
+                    subtitleBits.map(function (b) { return '<span>' + b + '</span>'; }).join('<span class="dot"></span>');
+
+                var content = document.getElementById('detailContent');
+                var html = '';
+
+                // ---- Información General ----
+                html += '<section class="block"><div class="block-title">Información General</div><div class="field-grid">';
+                html += field('Inquilino', contract.tenant);
+                if (d.rfc) html += field('RFC', d.rfc);
+                html += field('Contacto', contract.contact);
+                html += field('Email', contract.email);
+                html += field('Superficie', contract.area);
+                html += field('Renta Mensual', contract.rent, { accent: true });
+                if (d.direccion) html += field('Domicilio', d.direccion);
+                html += '</div></section>';
+
+                var inicio = d.inicioContrato || contract.startDate;
+                var fin = d.finContrato || contract.endDate;
+                if (d.firmaContrato || d.plazo || inicio || fin || d.fechaLimite) {
+                    html += '<section class="block"><div class="block-title">Términos del Contrato</div><div class="field-grid">';
+                    html += field('Firma de Contrato', d.firmaContrato);
+                    html += field('Plazo', d.plazo);
+                    html += field('Fecha de Entrega / Inicio', inicio);
+                    html += field('Fin del Contrato', fin);
+                    html += field('Fecha Límite de Pago Mensual', d.fechaLimite);
+                    html += '</div></section>';
+                }
+
+                if (d.incrementoRenta || d.incrementoTipo) {
+                    html += '<section class="block"><div class="block-title">Incremento de Renta</div><div class="field-grid">';
+                    html += field('Fecha de Incremento', d.incrementoRenta);
+                    html += field('Tipo de Incremento', d.incrementoTipo);
+                    html += '</div></section>';
+                }
+
+                if (d.deposito || d.fechaDeposito || d.meses || d.porPagar) {
+                    html += '<section class="block"><div class="block-title">Depósito en Garantía</div><div class="field-grid">';
+                    html += field('Depósito', d.deposito, { big: true });
+                    html += field('Fecha de Depósito', d.fechaDeposito);
+                    html += field('Banco', d.depositoBanco);
+                    html += field('Meses de Garantía', d.meses);
+                    html += field('Por Pagar', d.porPagar);
+                    html += '</div></section>';
+                }
+
+                // ---- Renta mensual por año (timeline) ----
+                var years = d.rentasPorAnio ? Object.keys(d.rentasPorAnio).sort() : [];
+                if (years.length) {
+                    html += '<section class="block"><div class="block-title">Renta Mensual por Año</div><div class="timeline">';
+                    years.forEach(function (y) {
+                        var yr = d.rentasPorAnio[y];
+                        html += '<div class="timeline-item">' +
+                            '<div class="ty-left"><span class="timeline-year">' + y + '</span>' +
+                            (yr.incremento ? '<span class="pill pill-active">' + yr.incremento + '</span>' : '') +
+                            '</div>' +
+                            '<span class="timeline-amount">' + (yr.monto || 'No disponible') + '</span>' +
+                            '</div>';
+                    });
+                    html += '</div></section>';
+                }
+
+                if (d.porcentajeMantenimiento || d.mantenimiento || d.total || d.totalIVA) {
+                    html += '<section class="block"><div class="block-title">Resumen Financiero</div><div class="field-grid">';
+                    html += field('Mantenimiento (' + (d.porcentajeMantenimiento || '—') + ')', d.mantenimiento);
+                    html += field('Total', d.total, { big: true });
+                    html += field('Total + IVA', d.totalIVA, { big: true, accent: true });
+                    html += '</div></section>';
+                }
+
+                if (!Object.keys(d).length) {
+                    html += '<p class="empty-note">Este local no tiene datos de contrato detallados en la hoja de INQUILINOS todavía.</p>';
+                }
+
+                content.innerHTML = html;
             } catch (e) {
-                document.getElementById('detailContent').innerHTML = '<p>Error al cargar los detalles.</p>';
+                document.getElementById('detailContent').innerHTML = '<p class="empty-note">Error al cargar los detalles.</p>';
             }
         } else {
-            document.getElementById('detailContent').innerHTML = '<p>No se encontraron datos del contrato.</p>';
+            document.getElementById('detailContent').innerHTML = '<p class="empty-note">No se encontraron datos del contrato.</p>';
         }
     </script>
 </body>

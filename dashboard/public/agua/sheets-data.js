@@ -198,6 +198,54 @@
     return result;
   }
 
+  // DEPÓSITOS: tabla plana FECHA / CONCEPTO / LOCAL / BANCO / INGRESOS
+  // con el registro real de cada depósito cobrado. Es la fuente de
+  // verdad para "fecha de depósito" (INQUILINOS casi nunca trae esa
+  // fecha junto al monto). La hoja tiene, más abajo, un resumen por
+  // empresa y luego una sección de otro proyecto (no de este
+  // edificio) reutilizando las mismas columnas — por eso nos
+  // detenemos en la primera fila totalmente vacía después de haber
+  // leído al menos un depósito real.
+  function parseDepositos(tab) {
+    var out = []; // [{ fecha, concepto, localRaw, banco, ingresos }]
+    if (!tab) return out;
+    var vals = tab.values;
+    var headerIdx = -1, col = null;
+    for (var i = 0; i < vals.length && headerIdx === -1; i++) {
+      var row = vals[i];
+      for (var c = 0; c < row.length; c++) {
+        if ((row[c] || '').toString().trim().toUpperCase() === 'FECHA' &&
+            (row[c + 1] || '').toString().trim().toUpperCase() === 'CONCEPTO') {
+          headerIdx = i;
+          col = { fecha: c, concepto: c + 1, local: c + 2, banco: c + 3, ingresos: c + 4 };
+          break;
+        }
+      }
+    }
+    if (headerIdx === -1) return out;
+
+    for (var r = headerIdx + 1; r < vals.length; r++) {
+      var row2 = vals[r];
+      var fecha = row2[col.fecha], concepto = row2[col.concepto], local = row2[col.local],
+        banco = row2[col.banco], ingresos = row2[col.ingresos];
+      var allEmpty = !fecha && !concepto && !local && !banco &&
+        (ingresos === '' || ingresos === undefined || ingresos === null);
+      if (allEmpty) {
+        if (out.length > 0) break; // fin de la lista real de depósitos
+        continue; // fila vacía antes de que arranquen los datos
+      }
+      if (!looksLikeIsoDate(fecha)) continue; // fila corrupta / no es un depósito
+      out.push({
+        fecha: fecha,
+        concepto: (concepto || '').toString().trim(),
+        localRaw: local,
+        banco: (banco || '').toString().trim() || null,
+        ingresos: typeof ingresos === 'number' ? ingresos : null
+      });
+    }
+    return out;
+  }
+
   // INQUILINOS: bloques irregulares "clave/valor" por contrato. La
   // fila que marca el inicio de bloque es la que trae
   // col[4] === 'FIRMA DE CONTRATO'. Dentro del bloque se escanean
@@ -294,6 +342,30 @@
     var rentas = parseRentasXLocal(findTab(adminBook, 'RENTAS X LOCAL'));
     var directorio = parseDirectorio(findTab(adminBook, 'DIRECTORIO'));
     var inquilinos = parseInquilinos(findTab(adminBook, 'INQUILINOS'));
+    var depositos = parseDepositos(findTab(adminBook, 'DEPÓSITOS'));
+
+    // Índice de depósitos por número de local: SOLO renglones cuyo
+    // campo LOCAL es un número suelto (ej. "2"), no listas como
+    // "6,7,15". Esas listas son de una etapa anterior del edificio
+    // (antes de subdividir el espacio en locales individuales) y
+    // "repartirlas" entre los locales 6, 7 y 15 por igual terminaba
+    // asignando depósitos de una empresa distinta a la que hoy ocupa
+    // cada local (se detectó con COCKTAILS AND DIAMONDS, que heredaba
+    // por error la fecha de un depósito de "A MI ME GUSTA LA GASOLINA").
+    var depositosByLocalStrict = {};
+    var depositosByNombre = {};
+    depositos.forEach(function (dep) {
+      var raw = dep.localRaw;
+      if (typeof raw === 'number' || (typeof raw === 'string' && /^\d+$/.test(raw.trim()))) {
+        var key = String(raw).trim();
+        (depositosByLocalStrict[key] = depositosByLocalStrict[key] || []).push(dep);
+      }
+      var nameKey = normalizeName(dep.concepto);
+      if (nameKey) (depositosByNombre[nameKey] = depositosByNombre[nameKey] || []).push(dep);
+    });
+    function sortByFechaAsc(list) {
+      return list.slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0); });
+    }
 
     // Índice de inquilinos por local (usando localesRaw si es un
     // número/lista de números válida) y por nombre normalizado como
@@ -338,6 +410,27 @@
           (d.localLabel && r.localLabel && d.localLabel.toUpperCase() === r.localLabel.toUpperCase());
       })[0];
 
+      // Depósito: la fecha real de cobro vive en la pestaña DEPÓSITOS,
+      // no en INQUILINOS (que casi siempre trae el monto sin fecha).
+      // Prioridad: (1) match exacto por número de local suelto, (2)
+      // si no hay, match por nombre de empresa normalizado (cubre los
+      // renglones "6,7,15" que sí traen el nombre correcto aunque el
+      // campo LOCAL sea una lista histórica), (3) nada — se deja que
+      // el llamador use el respaldo de INQUILINOS. Con varios
+      // candidatos válidos se toma el más antiguo (el depósito
+      // original, no una renovación posterior).
+      var depositoMatch = null;
+      var depCandidates = (firstLocalNum && depositosByLocalStrict[firstLocalNum]) || [];
+      if (!depCandidates.length) {
+        depCandidates = depositosByNombre[normalizeName(r.empresa)] || [];
+        if (depCandidates.length > 1) {
+          console.warn('[lfdc-sheets] "' + r.empresa + '" (' + r.localLabel + ') tiene ' + depCandidates.length + ' depósitos por coincidencia de nombre (sin match exacto de local); se usa el más antiguo.');
+        }
+      }
+      if (depCandidates.length) {
+        depositoMatch = sortByFechaAsc(depCandidates)[0];
+      }
+
       var detail = null;
       if (blk) {
         var years = Object.keys(blk.rentasPorAnio).sort();
@@ -362,13 +455,16 @@
           incrementoTipo: pickDetailExtra(blk, 'INCREMENTO DE RENTA'),
           fechaLimite: pickDetailValue(blk, 'FECHA LÍMITE'),
           deposito: money(pickDetailValue(blk, 'DEPÓSITO') !== null ? pickDetailValue(blk, 'DEPÓSITO') : pickDetailValue(blk, 'DEPÓSITO (PAGADO)')),
-          fechaDeposito: isoDateOnly(pickDetailExtra(blk, 'DEPÓSITO') || pickDetailExtra(blk, 'DEPÓSITO (PAGADO)')),
+          fechaDeposito: isoDateOnly(depositoMatch ? depositoMatch.fecha : (pickDetailExtra(blk, 'DEPÓSITO') || pickDetailExtra(blk, 'DEPÓSITO (PAGADO)'))),
+          depositoBanco: depositoMatch ? depositoMatch.banco : null,
           meses: pickDetailValue(blk, 'MESES') || pickDetailValue(blk, 'MESES DEPÓSITO'),
           porPagar: money(pickDetailValue(blk, 'POR PAGAR')),
           mantenimiento: mantenimientoMonto !== null ? money(mantenimientoMonto) : null,
           porcentajeMantenimiento: pct(porcentajeMantRaw),
           total: money(totalRaw),
           totalIVA: money(pickDetailValue(blk, 'TOTAL + IVA')),
+          direccion: blk.direccion || null,
+          rfc: blk.rfc || null,
           rentasPorAnio: {}
         };
         years.forEach(function (y) {
