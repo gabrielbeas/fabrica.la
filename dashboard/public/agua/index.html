@@ -547,9 +547,12 @@
         </div>
     </div>
 
+    <script src="sheets-data.js"></script>
     <script>
         // ===== DATOS =====
-        const building = {
+        // (fallback: si la conexión en vivo a Google Sheets falla,
+        // el panel sigue funcionando con estos valores fijos)
+        let building = {
             name: "La Fábrica de Chocolate",
             description: "Centro comercial multifuncional con 12 locales",
             address: "[Dirección completa]",
@@ -577,7 +580,7 @@
             }
         };
 
-        const contracts = [
+        let contracts = [
             {
                 id: 1,
                 number: "LOCAL 1",
@@ -864,12 +867,13 @@
 
         function renderDashboard() {
             const activeContracts = contracts.filter(c => c.status === 'active').length;
+            const occupancyPct = building.status?.occupancyPercentage ?? Math.round(100 * activeContracts / (contracts.length || 1));
 
             const stats = [
                 { label: 'Contratos Activos', value: activeContracts },
-                { label: 'Superficie Total', value: '1,250 m²' },
-                { label: 'Ingresos Mensuales', value: '$45,000' },
-                { label: 'Ocupación', value: '92%' }
+                { label: 'Superficie Total', value: building.totalArea || '[No especificado]' },
+                { label: 'Ingresos Mensuales', value: building.status?.monthlyIncome || '[No especificado]' },
+                { label: 'Ocupación', value: occupancyPct + '%' }
             ];
 
             document.getElementById('statsGrid').innerHTML = stats.map(stat => `
@@ -908,7 +912,7 @@
                     <h3>💰 Finanzas</h3>
                     <div class="info-item">
                         <div class="info-label">Ingreso Total Mensual</div>
-                        <div class="info-value">$45,000 USD</div>
+                        <div class="info-value">${building.status?.monthlyIncome || '[No especificado]'}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Estado General</div>
@@ -1045,7 +1049,9 @@
 
                 // Guardar contrato en localStorage para la página de detalles
                 const contractJson = JSON.stringify(contract);
-                const encodedData = btoa(contractJson);
+                // btoa() solo soporta Latin1; los nombres con acentos/ñ
+                // (muy comunes aquí) lo rompían. Se codifica a UTF-8 primero.
+                const encodedData = btoa(unescape(encodeURIComponent(contractJson)));
 
                 let cardClass = 'contract-card compact';
                 let alarmIcon = '';
@@ -1107,10 +1113,38 @@
         document.getElementById('searchInput').addEventListener('input', filterContracts);
         document.getElementById('filterStatus').addEventListener('change', filterContracts);
 
+        function refreshUI() {
+            renderDashboard();
+            renderBuilding();
+            renderContracts();
+        }
+
         // ===== INICIALIZAR =====
-        renderDashboard();
-        renderBuilding();
-        renderContracts();
+        // Primero se pinta con los datos fijos (fallback) para que la
+        // página nunca aparezca vacía; si la conexión en vivo a
+        // Google Sheets responde, se vuelve a pintar con esos datos.
+        refreshUI();
+
+        (async function loadLiveData() {
+            if (!window.LFdCSheets) return;
+            LFdCSheets.configure({
+                endpoint: 'https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec',
+                token: '7b8f6d4c35ec17952822b19c9c1d3c304dc24875'
+            });
+            try {
+                const live = await LFdCSheets.loadLiveData();
+                if (live && live.contractsUI && live.contractsUI.length) {
+                    contracts = live.contractsUI;
+                    if (live.building) Object.assign(building, live.building);
+                    refreshUI();
+                    console.info('[LFdC] Datos en vivo cargados desde Google Sheets (' + contracts.length + ' locales).');
+                } else {
+                    console.warn('[LFdC] Sin datos en vivo utilizables; se mantienen los datos locales.');
+                }
+            } catch (err) {
+                console.warn('[LFdC] No se pudo cargar datos en vivo, se mantienen los datos locales.', err);
+            }
+        })();
 
         // Leer parámetro de URL para activar pestaña
         const params = new URLSearchParams(window.location.search);

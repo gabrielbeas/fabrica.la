@@ -86,48 +86,6 @@
             box-shadow: var(--shadow-md);
         }
 
-        .lfdc-global-nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .lfdc-global-nav .tab-btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            background: white;
-            color: var(--primary);
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.1));
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .lfdc-global-nav .tab-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .lfdc-global-nav .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .lfdc-global-nav {
-                width: 100%;
-            }
-            .lfdc-global-nav .tab-btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -429,16 +387,12 @@
                 <h1>💧 Agua y Cobros</h1>
                 <p class="header-subtitle">Control de consumo de agua y estado de cobros por local</p>
             </div>
+            <div class="nav-buttons">
+                <a href="index.html?activeTab=dashboard" class="nav-btn">DASHBOARD</a>
+                <a href="index.html?activeTab=building" class="nav-btn">EDIFICIO COMPLETO</a>
+                <a href="index.html?activeTab=contracts" class="nav-btn">LOCALES</a>
+            </div>
         </header>
-
-        <div class="lfdc-global-nav">
-            <a href="index.html?activeTab=dashboard" class="tab-btn">DASHBOARD</a>
-            <a href="index.html?activeTab=building" class="tab-btn">EDIFICIO COMPLETO</a>
-            <a href="index.html?activeTab=contracts" class="tab-btn">LOCALES</a>
-            <a href="hidraulico.html" class="tab-btn">HIDRAULICO</a>
-            <a href="lecturas-agua.html" class="tab-btn">LECTURAS</a>
-            <a href="agua-cobros.html" class="tab-btn active">AGUA Y COBROS</a>
-        </div>
 
         <!-- ESTADÍSTICAS -->
         <div class="stats-grid">
@@ -569,9 +523,12 @@
         </div>
     </div>
 
+    <script src="sheets-data.js"></script>
     <script>
         // Datos de consumo vigente (últimas lecturas)
-        const consumoData = [
+        // (fallback: si la conexión en vivo a Google Sheets falla,
+        // la página sigue funcionando con estos valores fijos)
+        let consumoData = [
             { local: "1", empresa: "8 SAMURAIS", consumo: 17.406, costo_m3: 78.64, monto: 2095.44 },
             { local: "2", empresa: "MEXA DISEÑO SA DE CV", consumo: 0.630, costo_m3: 78.64, monto: 75.81 },
             { local: "3", empresa: "ALQUIMISTA DE VINOS", consumo: 4.916, costo_m3: 78.64, monto: 817.23 },
@@ -598,7 +555,10 @@
         ];
 
         // Datos de resumen maestro
-        const maestroData = {
+        // (nota: cobrosData -- estado de pago -- NO se conecta en vivo:
+        // el "pagado/pendiente/vencido" es criterio humano, no viene
+        // de las hojas, así que se mantiene editado manualmente aquí)
+        let maestroData = {
             consumoLocales: 139.525,
             consumoServicios: 17.185,
             maestro: 219.273,
@@ -736,6 +696,35 @@
         renderConsumoTable();
         renderCobrosTable();
         calculateStats();
+
+        (async function loadLiveData() {
+            if (!window.LFdCSheets) return;
+            LFdCSheets.configure({
+                endpoint: 'https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec',
+                token: '7b8f6d4c35ec17952822b19c9c1d3c304dc24875'
+            });
+            try {
+                const live = await LFdCSheets.loadLiveData();
+                if (live && live.consumoActual && live.consumoActual.length) {
+                    consumoData = live.consumoActual.map(function (i) {
+                        return { local: i.local, empresa: i.empresa, consumo: i.consumo || 0, costo_m3: i.costoM3 || 0, monto: i.monto || 0 };
+                    });
+                    if (live.maestro) {
+                        maestroData = {
+                            consumoLocales: live.maestro.consumoLocales,
+                            consumoServicios: live.maestro.consumoServicios,
+                            maestro: live.maestro.maestro,
+                            diferencia: live.maestro.diferencia
+                        };
+                    }
+                    renderConsumoTable();
+                    calculateStats();
+                    console.info('[LFdC] Consumo de agua en vivo cargado desde Google Sheets (' + consumoData.length + ' locales).');
+                }
+            } catch (err) {
+                console.warn('[LFdC] No se pudo cargar consumo en vivo, se mantienen los datos locales.', err);
+            }
+        })();
     </script>
 </body>
 </html>
