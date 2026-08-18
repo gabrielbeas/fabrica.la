@@ -62,6 +62,8 @@ body.lfdc {
 }
 
 .lfdc .brand {
+    display: flex;
+    align-items: center;
     font-weight: 800;
     font-size: 1.05em;
     letter-spacing: 0.5px;
@@ -72,6 +74,12 @@ body.lfdc {
 
 .lfdc .brand span {
     color: var(--primary);
+}
+
+.lfdc .brand img {
+    display: block;
+    height: 34px;
+    width: auto;
 }
 
 .lfdc .nav-links {
