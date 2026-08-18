@@ -67,6 +67,21 @@
   .chart-progress-bar-fill{height:100%;border-radius:4px;position:absolute;left:0;top:0;transition:width 0.5s ease; }
   .chart-progress-bar-fill.accent{background:var(--accent)}
   .chart-progress-bar-fill.green{background:var(--green)}
+  .chart-progress-bar-fill.yellow{background:var(--yellow)}
+
+  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:32px;margin-top:-16px}
+  .chart-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:24px;box-shadow: 0 2px 8px rgba(0,0,0,0.04)}
+  .chart-sub{font-size:11.5px;color:var(--muted);margin-top:-14px;margin-bottom:18px;font-weight:400;line-height:1.4}
+  .chart-empty{font-size:12px;color:var(--muted);padding:4px 0}
+  .floor-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .floor-row:last-child{margin-bottom:0}
+  .floor-label{width:48px;flex-shrink:0;font-size:12px;color:var(--muted);font-weight:600}
+  .floor-stack{flex:1;height:16px;border-radius:3px;overflow:hidden;display:flex;background:var(--panel2)}
+  .floor-seg{height:100%}
+  .floor-count{width:44px;flex-shrink:0;font-size:11.5px;color:var(--muted);text-align:right;font-weight:500}
+  .chart-legend-mini{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:14px}
+  .chart-legend-mini span{display:flex;align-items:center;gap:5px}
+  .chart-legend-mini i{width:9px;height:9px;border-radius:2px;display:inline-block}
 
   section{margin-bottom:40px}
   h2{font-size:16px;font-weight:600;margin:0 0 16px;color:var(--text);display:flex;align-items:center;gap:12px;letter-spacing:0.01em;}
@@ -248,11 +263,14 @@
      (position:static y display:block). Con position:fixed o absolute, html2pdf
      clona el elemento fuera del flujo, lo mide con altura 0 y el PDF sale en blanco.
      El resto del tiempo se oculta con display:none. */
-  .pdf-ficha-container{display:none;position:static;width:760px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35}
+  /* Ancho calculado para caber en el área imprimible de una hoja carta: 215.9mm
+     de ancho, menos 12mm de margen a cada lado (margin del opt de html2pdf) =
+     191.9mm ≈ 725px a 96dpi. Se deja margen de sobra para evitar cortes. */
+  .pdf-ficha-container{display:none;position:static;width:700px;background:#fff;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2d3436;padding:24px;box-sizing:border-box;font-size:11px;line-height:1.35}
   .pdf-ficha-container.capturing{display:block}
-  .pdf-ficha-container table{width:100%;border-collapse:collapse;font-size:10.5px;background:#fff;box-shadow:none;border:none}
-  .pdf-ficha-container th{background:#f3f4f5;color:#747879;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;padding:7px 8px;text-align:left;border-bottom:1px solid #e1e3e4}
-  .pdf-ficha-container td{padding:7px 8px;border-bottom:1px solid #e1e3e4;vertical-align:top}
+  .pdf-ficha-container table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:10.5px;background:#fff;box-shadow:none;border:none}
+  .pdf-ficha-container th{background:#f3f4f5;color:#747879;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;padding:7px 8px;text-align:left;border-bottom:1px solid #e1e3e4;word-wrap:break-word;overflow-wrap:break-word}
+  .pdf-ficha-container td{padding:7px 8px;border-bottom:1px solid #e1e3e4;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word}
   .pdf-logo{height:30px;margin-bottom:10px}
   .pdf-h3{font-size:17px;margin:0 0 3px;font-weight:600}
   .pdf-sub-line{font-size:11px;color:#747879;margin-bottom:14px;font-weight:400}
@@ -383,6 +401,12 @@
 <div class="modal" style="max-width:900px">
 <button class="modal-close" id="directorioModalClose">✕</button>
 <div id="directorioModalBody"></div>
+</div>
+</div>
+<div class="overlay" id="cobranzaOverlay">
+<div class="modal" style="max-width:900px">
+<button class="modal-close" id="cobranzaModalClose">✕</button>
+<div id="cobranzaModalBody"></div>
 </div>
 </div>
 <div class="pdf-ficha-container" id="pdfFichaContainer"></div>
@@ -775,6 +799,8 @@ const comisionesOverlay = document.getElementById('comisionesOverlay');
 const comisionesModalBody = document.getElementById('comisionesModalBody');
 const directorioOverlay = document.getElementById('directorioOverlay');
 const directorioModalBody = document.getElementById('directorioModalBody');
+const cobranzaOverlay = document.getElementById('cobranzaOverlay');
+const cobranzaModalBody = document.getElementById('cobranzaModalBody');
 
 function renderAll(){
   const units = getUnits();
@@ -797,6 +823,185 @@ function referencePriceForUnit(u){
   return historico || u.precioLista;
 }
 
+const MES_LABEL = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+
+// Panel de 4 gráficas con cruces de información más accionables que un simple
+// avance de cobranza: flujo de caja por mes, avance de ventas por piso,
+// colocación por orientación (vista) y descuento promedio otorgado por etapa
+// de venta. Todas hechas con barras HTML/CSS (sin librerías) para mantener el
+// archivo autocontenido y compatible con la exportación a PDF.
+function chartsFinanzasTemplate(units){
+  // ---- 1. Flujo de caja mensual ----
+  const mesesMap = {};
+  units.filter(u=>u.status==='vendido'||u.status==='apartado').forEach(u=>{
+    (u.timeline||[]).forEach(t=>{
+      if(t.estatus === 'pagado'){
+        const ts = parseFechaMX(t.fecha);
+        if(ts === Infinity) return;
+        const d = new Date(ts);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        mesesMap[key] = (mesesMap[key] || 0) + (t.monto || 0);
+      }
+    });
+  });
+  const mesesKeys = Object.keys(mesesMap).sort();
+  const maxMes = Math.max(1, ...mesesKeys.map(k=>mesesMap[k]));
+  const flujoHTML = mesesKeys.length ? mesesKeys.map(k=>{
+    const [y,m] = k.split('-');
+    const val = mesesMap[k];
+    return `<div class="chart-progress-group">
+      <div class="chart-progress-label">
+        <span>${MES_LABEL[+m]} ${y}</span>
+        <span class="chart-progress-sub">${money(val)}</span>
+      </div>
+      <div class="chart-progress-bar-bg">
+        <div class="chart-progress-bar-fill accent" style="width:${(val/maxMes*100).toFixed(1)}%"></div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="chart-empty">Aún no hay pagos registrados.</div>`;
+
+  // ---- 2. Avance de ventas por piso ----
+  const pisos = [...new Set(units.map(u=>u.piso))].sort((a,b)=>b-a);
+  const floorHTML = pisos.map(p=>{
+    const us = units.filter(u=>u.piso===p);
+    const v = us.filter(u=>u.status==='vendido').length;
+    const a = us.filter(u=>u.status==='apartado').length;
+    const d = us.filter(u=>u.status==='disponible').length;
+    const total = us.length || 1;
+    return `<div class="floor-row">
+      <div class="floor-label">Piso ${p}</div>
+      <div class="floor-stack">
+        ${v?`<div class="floor-seg" style="width:${(v/total*100).toFixed(1)}%;background:var(--green)" title="${v} vendido(s)"></div>`:''}
+        ${a?`<div class="floor-seg" style="width:${(a/total*100).toFixed(1)}%;background:var(--yellow)" title="${a} apartado(s)"></div>`:''}
+        ${d?`<div class="floor-seg" style="width:${(d/total*100).toFixed(1)}%;background:var(--border)" title="${d} disponible(s)"></div>`:''}
+      </div>
+      <div class="floor-count">${v+a}/${us.length}</div>
+    </div>`;
+  }).join('');
+
+  // ---- 3. Ritmo de absorción de unidades ----
+  // Para cada depto vendido/apartado se toma como "fecha de absorción" la más
+  // antigua entre sus pagos ya realizados (normalmente el apartado, que es el
+  // primer compromiso del comprador). Se agrupan por mes para ver el ritmo de
+  // ventas real y se proyecta, con el promedio mensual, en cuántos meses se
+  // colocaría el inventario disponible restante.
+  const absorbidos = units
+    .filter(u=>u.status==='vendido'||u.status==='apartado')
+    .map(u=>{
+      const fechas = (u.timeline||[])
+        .filter(t=>t.estatus==='pagado')
+        .map(t=>parseFechaMX(t.fecha))
+        .filter(ts=>ts!==Infinity);
+      return fechas.length ? Math.min(...fechas) : null;
+    })
+    .filter(ts=>ts!==null);
+
+  const mesesAbsMap = {};
+  absorbidos.forEach(ts=>{
+    const d = new Date(ts);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    mesesAbsMap[key] = (mesesAbsMap[key] || 0) + 1;
+  });
+  const mesesAbsKeys = Object.keys(mesesAbsMap).sort();
+  const maxAbs = Math.max(1, ...mesesAbsKeys.map(k=>mesesAbsMap[k]));
+
+  const absHTML = mesesAbsKeys.length ? mesesAbsKeys.map(k=>{
+    const [y,mm] = k.split('-');
+    const val = mesesAbsMap[k];
+    return `<div class="chart-progress-group">
+      <div class="chart-progress-label">
+        <span>${MES_LABEL[+mm]} ${y}</span>
+        <span class="chart-progress-sub">${val} depto${val>1?'s':''}</span>
+      </div>
+      <div class="chart-progress-bar-bg">
+        <div class="chart-progress-bar-fill accent" style="width:${(val/maxAbs*100).toFixed(1)}%"></div>
+      </div>
+    </div>` ;
+  }).join('') : `<div class="chart-empty">Aún no hay unidades apartadas o vendidas.</div>`;
+
+  const disponiblesN = units.filter(u=>u.status==='disponible').length;
+  let absProyeccion = '';
+  if(mesesAbsKeys.length){
+    const promedioMes = absorbidos.length / mesesAbsKeys.length;
+    absProyeccion = `<div class="chart-sub" style="margin-top:16px;margin-bottom:0">Promedio: <strong style="color:var(--text)">${promedioMes.toFixed(1)} unidad(es)/mes</strong>`;
+    if(disponiblesN === 0){
+      absProyeccion += ` · inventario disponible agotado.`;
+    } else if(promedioMes > 0){
+      const mesesRestantes = Math.ceil(disponiblesN / promedioMes);
+      absProyeccion += ` · a este ritmo, las ${disponiblesN} unidades disponibles se colocarían en <strong style="color:var(--text)">~${mesesRestantes} mes(es)</strong>.`;
+    }
+    absProyeccion += `</div>`;
+  }
+
+  // ---- 4. Descuento promedio otorgado por etapa de venta ----
+  // u.etapaVenta usa los valores 'etapa1' / 'etapa2', igual que el selector del
+  // formulario de edición (ver <option value="etapa1">Etapa 1</option> etc.).
+  // etapaPrices solo guarda el precio histórico de "etapa1"; para "etapa2"
+  // (vigente) el precio de referencia es directamente u.precioLista.
+  const etapaDefs = [
+    {key:'etapa1', label:'Etapa 1', base:u => etapaPrices[u.id] ? etapaPrices[u.id].etapa1 : null},
+    {key:'etapa2', label:'Etapa 2 (vigente)', base:u => u.precioLista}
+  ];
+  const descuentos = etapaDefs.map(def=>{
+    const candidatos = units
+      .filter(u=>u.etapaVenta===def.key && (u.status==='vendido'||u.status==='apartado'))
+      .map(u=>({u, base: def.base(u)}))
+      .filter(x=>x.base);
+    if(!candidatos.length) return {label:def.label, avg:null, n:0};
+    const pcts = candidatos.map(({u,base})=>(base - u.precioContrato) / base * 100);
+    return {label:def.label, avg: pcts.reduce((s,x)=>s+x,0)/pcts.length, n:candidatos.length};
+  });
+  const maxDesc = Math.max(1, ...descuentos.map(d=>d.avg||0));
+  const descHTML = descuentos.map(d=>{
+    if(!d.n){
+      return `<div class="chart-progress-group">
+        <div class="chart-progress-label"><span>${d.label}</span></div>
+        <div class="chart-empty">Sin ventas registradas todavía.</div>
+      </div>`;
+    }
+    return `<div class="chart-progress-group">
+      <div class="chart-progress-label">
+        <span>${d.label}</span>
+        <span class="chart-progress-sub">${d.avg.toFixed(1)}% prom. (${d.n} depto${d.n>1?'s':''})</span>
+      </div>
+      <div class="chart-progress-bar-bg">
+        <div class="chart-progress-bar-fill yellow" style="width:${(d.avg/maxDesc*100).toFixed(1)}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Flujo de caja mensual</div>
+        <div class="chart-sub">Suma de pagos recibidos (apartados + firmas) agrupados por mes de cobro.</div>
+        ${flujoHTML}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Avance de ventas por piso</div>
+        <div class="chart-sub">Proporción vendido / apartado / disponible en cada nivel del edificio.</div>
+        ${floorHTML}
+        <div class="chart-legend-mini">
+          <span><i style="background:var(--green)"></i>Vendido</span>
+          <span><i style="background:var(--yellow)"></i>Apartado</span>
+          <span><i style="background:var(--border)"></i>Disponible</span>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Ritmo de absorción de unidades</div>
+        <div class="chart-sub">Deptos apartados o vendidos por mes (fecha del primer pago) y proyección de venta.</div>
+        ${absHTML}
+        ${absProyeccion}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Descuento promedio por etapa de venta</div>
+        <div class="chart-sub">% de descuento otorgado vs. el precio de lista vigente en la etapa de cada venta.</div>
+        ${descHTML}
+      </div>
+    </div>
+  `;
+}
+
 function renderKPIs(units){
   const vendidos = units.filter(u=>u.status==='vendido');
   const apartados = units.filter(u=>u.status==='apartado');
@@ -807,40 +1012,12 @@ function renderKPIs(units){
   const cobranza = [...vendidos,...apartados].reduce((s,u)=>s+(u.recibido||0),0);
   const valorDisponible = disponibles.reduce((s,u)=>s+u.precioLista,0);
 
-  const valorContratado = valorVendido + valorApartado;
-  const pctCobradoContratado = valorContratado > 0 ? (cobranza / valorContratado * 100) : 0;
-  const pctCobradoTotal = valorTotalProyecto > 0 ? (cobranza / valorTotalProyecto * 100) : 0;
-
   renderKpiRow(kpisFinanzasEl, [
     {label:'Valor total del proyecto', value: money(valorTotalProyecto), cls:'accent', sub:'suma por etapa real de venta de cada depto · 20 unidades'},
-    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato'}
+    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato · click para ver detalle', clickable:true, action:'openCobranza'}
   ]);
 
-  chartFinanzasEl.innerHTML = `
-    <div class="chart-area">
-      <div class="chart-title">Progreso de Cobranza</div>
-      
-      <div class="chart-progress-group">
-        <div class="chart-progress-label">
-          <span>Cobrado vs. Lo Contratado</span>
-          <span class="chart-progress-sub">${pctCobradoContratado.toFixed(1)}% (${money(cobranza)} de ${money(valorContratado)})</span>
-        </div>
-        <div class="chart-progress-bar-bg">
-          <div class="chart-progress-bar-fill green" style="width: ${pctCobradoContratado}%"></div>
-        </div>
-      </div>
-
-      <div class="chart-progress-group">
-        <div class="chart-progress-label">
-          <span>Cobrado vs. Total del Proyecto</span>
-          <span class="chart-progress-sub">${pctCobradoTotal.toFixed(1)}% (${money(cobranza)} de ${money(valorTotalProyecto)})</span>
-        </div>
-        <div class="chart-progress-bar-bg">
-          <div class="chart-progress-bar-fill accent" style="width: ${pctCobradoTotal}%"></div>
-        </div>
-      </div>
-    </div>
-  `;
+  chartFinanzasEl.innerHTML = chartsFinanzasTemplate(units);
 
   renderKpiRow(kpisInventarioEl, [
     {label:'Unidades totales', value: units.length, sub:'5 niveles · 4 deptos por nivel'},
@@ -979,6 +1156,170 @@ kpisComisionesEl.addEventListener('click', e=>{
   const card = e.target.closest('.kpi-clickable[data-action="openComisiones"]');
   if(card) openComisionesModal();
 });
+
+// Convierte una fecha en formato DD/MM/AAAA a timestamp para poder ordenar
+// cronológicamente. Si no se reconoce el formato (texto libre), se manda al
+// final del orden ascendente.
+function parseFechaMX(str){
+  if(!str) return Infinity;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str).trim());
+  if(!m) return Infinity;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+let cobranzaSort = {field:'fecha', dir:'desc'};
+
+function cobranzaListTemplate(units, sortField, sortDir){
+  const rows = [];
+  units.filter(u=>u.status==='vendido'||u.status==='apartado').forEach(u=>{
+    (u.timeline||[]).forEach(t=>{
+      if(t.estatus==='pagado'){
+        rows.push({
+          depto: u.id,
+          comprador: u.comprador || '',
+          fecha: t.fecha || '',
+          fechaSort: parseFechaMX(t.fecha),
+          concepto: t.concepto || '',
+          monto: t.monto || 0
+        });
+      }
+    });
+  });
+
+  rows.sort((a,b)=>{
+    let cmp = 0;
+    if(sortField === 'fecha') cmp = a.fechaSort - b.fechaSort;
+    else if(sortField === 'depto') cmp = a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    if(cmp === 0) cmp = a.fechaSort - b.fechaSort || a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    return sortDir === 'desc' ? -cmp : cmp;
+  });
+
+  const total = rows.reduce((s,r)=>s+r.monto, 0);
+  const arrow = field => field === sortField ? (sortDir === 'desc' ? ' ↓' : ' ↑') : '';
+  const logoImg = `<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" alt="Logo" class="modal-header-logo">`;
+
+  if(!rows.length){
+    return `${logoImg}<h3>Cobranza recibida a la fecha</h3><div class="placeholder">Aún no hay pagos registrados.</div>`;
+  }
+
+  const rowsHTML = rows.map(r=>`
+    <tr>
+      <td><strong>${r.depto}</strong></td>
+      <td>${r.comprador || '—'}</td>
+      <td style="white-space:nowrap">${r.fecha || '—'}</td>
+      <td>${r.concepto || '—'}</td>
+      <td class="num">${money(r.monto)}</td>
+    </tr>`).join('');
+
+  return `
+    ${logoImg}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h3 style="margin-bottom:2px">Cobranza recibida a la fecha</h3>
+        <div class="modal-sub" style="margin-bottom:0">${rows.length} pago(s) registrado(s) de los deptos con contrato. Click en un encabezado para ordenar.</div>
+      </div>
+      <button class="btn small" id="btnExportCobranzaPDF">⬇ Exportar PDF</button>
+    </div>
+    <table class="table-center" style="margin-top:20px">
+      <thead><tr>
+        <th class="cz-sort" data-sort="depto" style="cursor:pointer">Depto${arrow('depto')}</th>
+        <th>Comprador</th>
+        <th class="cz-sort" data-sort="fecha" style="cursor:pointer">Fecha${arrow('fecha')}</th>
+        <th>Concepto</th>
+        <th class="num">Monto</th>
+      </tr></thead>
+      <tbody>${rowsHTML}</tbody>
+      <tfoot><tr>
+        <td colspan="4" style="text-align:right"><strong>Total</strong></td>
+        <td class="num"><strong>${money(total)}</strong></td>
+      </tr></tfoot>
+    </table>
+  `;
+}
+
+function renderCobranzaModal(){
+  cobranzaModalBody.innerHTML = cobranzaListTemplate(getUnits(), cobranzaSort.field, cobranzaSort.dir);
+}
+function openCobranzaModal(){
+  cobranzaSort = {field:'fecha', dir:'desc'};
+  renderCobranzaModal();
+  cobranzaOverlay.classList.add('open');
+}
+function closeCobranzaModal(){ cobranzaOverlay.classList.remove('open'); }
+
+kpisFinanzasEl.addEventListener('click', e=>{
+  const card = e.target.closest('.kpi-clickable[data-action="openCobranza"]');
+  if(card) openCobranzaModal();
+});
+
+cobranzaModalBody.addEventListener('click', e=>{
+  if(e.target.closest('#btnExportCobranzaPDF')){ downloadCobranzaPDF(); return; }
+  const th = e.target.closest('.cz-sort');
+  if(!th) return;
+  const field = th.dataset.sort;
+  if(cobranzaSort.field === field){
+    cobranzaSort.dir = cobranzaSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    cobranzaSort = {field, dir: field === 'fecha' ? 'desc' : 'asc'};
+  }
+  renderCobranzaModal();
+});
+
+function downloadCobranzaPDF(){
+  const units = getUnits();
+  const rows = [];
+  units.filter(u=>u.status==='vendido'||u.status==='apartado').forEach(u=>{
+    (u.timeline || []).forEach(t=>{
+      if(t.estatus === 'pagado'){
+        rows.push({
+          depto: u.id,
+          comprador: u.comprador || '',
+          fecha: t.fecha || '',
+          fechaSort: parseFechaMX(t.fecha),
+          concepto: t.concepto || '',
+          monto: t.monto || 0
+        });
+      }
+    });
+  });
+  rows.sort((a,b)=>{
+    let cmp = 0;
+    if(cobranzaSort.field === 'fecha') cmp = a.fechaSort - b.fechaSort;
+    else if(cobranzaSort.field === 'depto') cmp = a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    if(cmp === 0) cmp = a.fechaSort - b.fechaSort || a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    return cobranzaSort.dir === 'desc' ? -cmp : cmp;
+  });
+  const total = rows.reduce((s,r)=>s+r.monto, 0);
+
+  const rowsHTML = rows.map(r=>`
+    <tr>
+      <td><strong>${r.depto}</strong></td>
+      <td>${r.comprador || '—'}</td>
+      <td class="pdf-item-v" style="white-space:nowrap">${r.fecha || '—'}</td>
+      <td>${r.concepto || '—'}</td>
+      <td style="text-align:right">${money(r.monto)}</td>
+    </tr>`).join('');
+
+  const container = document.getElementById('pdfFichaContainer');
+  container.innerHTML = `
+    ${logoPDFTag('pdf-logo')}
+    <h3 class="pdf-h3">Cobranza recibida a la fecha</h3>
+    <div class="pdf-sub-line">ROCA 1909 · Rosario Castellanos 1909, Col. Jardines del Sur, Guadalajara, Jal. · ${rows.length} pago(s) de los deptos con contrato · Total: ${money(total)}</div>
+    <table>
+      <thead><tr>
+        <th style="width:9%">Depto</th>
+        <th style="width:25%">Comprador</th>
+        <th style="width:14%">Fecha</th>
+        <th style="width:33%">Concepto</th>
+        <th style="width:19%;text-align:right">Monto</th>
+      </tr></thead>
+      <tbody>${rowsHTML || '<tr><td colspan="5">Sin pagos registrados todavía.</td></tr>'}</tbody>
+    </table>
+    <div class="pdf-footer-note">Reporte generado el ${new Date().toLocaleDateString('es-MX')} · Total cobrado: ${money(total)}</div>
+  `;
+
+  generarPDF(container, 'ROCA1909_Cobranza.pdf', 'portrait', document.getElementById('btnExportCobranzaPDF'));
+}
 
 function directorioTemplate(units){
   const rows = units.filter(u=>u.contacto).sort((a,b)=>a.id.localeCompare(b.id));
@@ -1612,7 +1953,9 @@ document.getElementById('comisionesModalClose').addEventListener('click', closeC
 comisionesOverlay.addEventListener('click', e => { if(e.target === comisionesOverlay) closeComisionesModal(); });
 document.getElementById('directorioModalClose').addEventListener('click', closeDirectorioModal);
 directorioOverlay.addEventListener('click', e => { if(e.target === directorioOverlay) closeDirectorioModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); closeAdminMenu(); } });
+document.getElementById('cobranzaModalClose').addEventListener('click', closeCobranzaModal);
+cobranzaOverlay.addEventListener('click', e => { if(e.target === cobranzaOverlay) closeCobranzaModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); closeCobranzaModal(); closeAdminMenu(); } });
 
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
 document.getElementById('btnDirectorio').addEventListener('click', openDirectorioModal);
