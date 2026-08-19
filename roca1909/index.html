@@ -348,10 +348,6 @@
 <div id="chartFinanzas"></div>
 </section>
 <section>
-<h2>Comisiones <span class="count">equipo de ventas</span></h2>
-<div class="kpis" id="kpisComisiones"></div>
-</section>
-<section>
 <h2>Inventario <span class="count">20 unidades — click en cualquier depto para ver o editar su información</span></h2>
 <div class="kpis" id="kpisInventario"></div>
 <div class="legend">
@@ -407,6 +403,12 @@
 <div class="modal" style="max-width:900px">
 <button class="modal-close" id="cobranzaModalClose">✕</button>
 <div id="cobranzaModalBody"></div>
+</div>
+</div>
+<div class="overlay" id="balanceOverlay">
+<div class="modal" style="max-width:900px">
+<button class="modal-close" id="balanceModalClose">✕</button>
+<div id="balanceModalBody"></div>
 </div>
 </div>
 <div class="pdf-ficha-container" id="pdfFichaContainer"></div>
@@ -787,7 +789,6 @@ function importData(file){
 
 const kpisFinanzasEl = document.getElementById('kpisFinanzas');
 const chartFinanzasEl = document.getElementById('chartFinanzas');
-const kpisComisionesEl = document.getElementById('kpisComisiones');
 const kpisInventarioEl = document.getElementById('kpisInventario');
 const floorsEl = document.getElementById('floors');
 const tbody = document.querySelector('#cobranzaTable tbody');
@@ -801,6 +802,8 @@ const directorioOverlay = document.getElementById('directorioOverlay');
 const directorioModalBody = document.getElementById('directorioModalBody');
 const cobranzaOverlay = document.getElementById('cobranzaOverlay');
 const cobranzaModalBody = document.getElementById('cobranzaModalBody');
+const balanceOverlay = document.getElementById('balanceOverlay');
+const balanceModalBody = document.getElementById('balanceModalBody');
 
 function renderAll(){
   const units = getUnits();
@@ -1012,9 +1015,15 @@ function renderKPIs(units){
   const cobranza = [...vendidos,...apartados].reduce((s,u)=>s+(u.recibido||0),0);
   const valorDisponible = disponibles.reduce((s,u)=>s+u.precioLista,0);
 
+  const comisionUnits = units.filter(u=>u.comision);
+  const comisionPagada = comisionUnits.reduce((s,u)=>s+comisionPagado(u.comision),0);
+  const balance = cobranza - comisionPagada;
+
   renderKpiRow(kpisFinanzasEl, [
     {label:'Valor total del proyecto', value: money(valorTotalProyecto), cls:'accent', sub:'suma por etapa real de venta de cada depto · 20 unidades'},
-    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato · click para ver detalle', clickable:true, action:'openCobranza'}
+    {label:'Cobranza recibida a la fecha', value: money(cobranza), cls:'green', sub:'de los deptos con contrato · click para ver detalle', clickable:true, action:'openCobranza'},
+    {label:'Comisiones pagadas al equipo de ventas', value: money(comisionPagada), cls: comisionPagada>0?'green':'yellow', sub: comisionUnits.length+' operación(es) con comisión pactada · sin IVA · click para ver detalle', clickable:true, action:'openComisiones'},
+    {label:'Balance', value: money(balance), cls:'accent', sub:'cobranza recibida menos comisiones pagadas · click para ver detalle', clickable:true, action:'openBalance'},
   ]);
 
   chartFinanzasEl.innerHTML = chartsFinanzasTemplate(units);
@@ -1024,18 +1033,6 @@ function renderKPIs(units){
     {label:'Vendidos (firmados)', value: vendidos.length, cls:'green', sub: money(valorVendido)},
     {label:'Apartados', value: apartados.length, cls:'yellow', sub: money(valorApartado)+' (contrato pendiente)'},
     {label:'Disponibles', value: disponibles.length, sub: money(valorDisponible)+' en inventario (lista vigente)'},
-  ]);
-
-  const comisionUnits = units.filter(u=>u.comision);
-  const comisionTotal = comisionUnits.reduce((s,u)=>s+u.comision.total,0);
-  const comisionPagada = comisionUnits.reduce((s,u)=>s+comisionPagado(u.comision),0);
-  const comisionExigible = comisionUnits.reduce((s,u)=>s+u.comision.exigible,0);
-  const comisionPendiente = comisionExigible - comisionPagada;
-
-  renderKpiRow(kpisComisionesEl, [
-    {label:'Comisiones pagadas al equipo de ventas', value: money(comisionPagada), cls: comisionPagada>0?'green':'yellow', sub: comisionUnits.length+' operación(es) con comisión pactada · sin IVA · click para ver detalle', clickable:true, action:'openComisiones'},
-    {label:'Comisión exigible pendiente de pago', value: money(comisionPendiente), cls:'yellow', sub:'ya exigible según % de enganche cobrado · sin IVA'},
-    {label:'Comisión total pactada', value: money(comisionTotal), cls:'accent', sub:'incluye lo aún no exigible · sin IVA'},
   ]);
 }
 
@@ -1137,12 +1134,27 @@ function comisionesListTemplate(units){
       <td class="num">${pendientePct.toFixed(0)}%</td>
     </tr>`;
   }).join('');
+  const totalComisionSum = rows.reduce((s,u)=>s+u.comision.total,0);
+  const totalPagadoSum = rows.reduce((s,u)=>s+comisionPagado(u.comision),0);
   return `
-    <h3>Comisiones al equipo de ventas</h3>
-    <div class="price-list-note">Cifras sin IVA. Fuente: "ROCA1909_VENTAS.xlsx" y los pagos que se registren en cada depto.</div>
-    <table class="table-center">
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" alt="Logo" class="modal-header-logo">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h3 style="margin-bottom:2px">Comisiones al equipo de ventas</h3>
+        <div class="modal-sub" style="margin-bottom:0">Cifras sin IVA. Fuente: "ROCA1909_VENTAS.xlsx" y los pagos que se registren en cada depto.</div>
+      </div>
+      <button class="btn small" id="btnExportComisionesPDF">⬇ Exportar PDF</button>
+    </div>
+    <table class="table-center" style="margin-top:20px">
       <thead><tr><th>Depto</th><th>Comisionista</th><th>% pactado</th><th>Comisión total</th><th>Pagado</th><th>Fecha de pago</th><th>% Pendiente</th></tr></thead>
       <tbody>${rowsHTML}</tbody>
+      <tfoot><tr>
+        <td colspan="3" style="text-align:right"><strong>Total</strong></td>
+        <td class="num"><strong>${money(totalComisionSum)}</strong></td>
+        <td class="num"><strong>${money(totalPagadoSum)}</strong></td>
+        <td></td>
+        <td></td>
+      </tr></tfoot>
     </table>
   `;
 }
@@ -1152,10 +1164,51 @@ function openComisionesModal(){
 }
 function closeComisionesModal(){ comisionesOverlay.classList.remove('open'); }
 
-kpisComisionesEl.addEventListener('click', e=>{
-  const card = e.target.closest('.kpi-clickable[data-action="openComisiones"]');
-  if(card) openComisionesModal();
+comisionesModalBody.addEventListener('click', e=>{
+  if(e.target.closest('#btnExportComisionesPDF')) downloadComisionesPDF();
 });
+
+function downloadComisionesPDF(){
+  const units = getUnits().filter(u=>u.comision).sort((a,b)=>a.id.localeCompare(b.id));
+  const rowsHTML = units.map(u=>{
+    const c = u.comision;
+    const pagado = comisionPagado(c);
+    const pendientePct = c.total > 0 ? ((c.total - pagado) / c.total * 100) : 0;
+    const fechasPago = comisionFechasPago(c);
+    return `<tr>
+      <td><strong>${u.id}</strong></td>
+      <td>${c.comisionista}</td>
+      <td style="text-align:right">${(c.pctPactado*100).toFixed(0)}%</td>
+      <td style="text-align:right">${money(c.total)}</td>
+      <td style="text-align:right">${money(pagado)}</td>
+      <td class="pdf-item-v">${fechasPago || 'Sin pagar'}</td>
+      <td style="text-align:right">${pendientePct.toFixed(0)}%</td>
+    </tr>`;
+  }).join('');
+  const totalComisionSum = units.reduce((s,u)=>s+u.comision.total,0);
+  const totalPagadoSum = units.reduce((s,u)=>s+comisionPagado(u.comision),0);
+
+  const container = document.getElementById('pdfFichaContainer');
+  container.innerHTML = `
+    ${logoPDFTag('pdf-logo')}
+    <h3 class="pdf-h3">Comisiones al equipo de ventas</h3>
+    <div class="pdf-sub-line">ROCA 1909 · Cifras sin IVA · Fuente: "ROCA1909_VENTAS.xlsx" y los pagos registrados en cada depto.</div>
+    <table>
+      <thead><tr><th>Depto</th><th>Comisionista</th><th style="text-align:right">% pactado</th><th style="text-align:right">Comisión total</th><th style="text-align:right">Pagado</th><th>Fecha de pago</th><th style="text-align:right">% Pendiente</th></tr></thead>
+      <tbody>${rowsHTML || '<tr><td colspan="7">Sin comisiones registradas todavía.</td></tr>'}</tbody>
+      ${units.length ? `<tfoot><tr>
+        <td colspan="3" style="text-align:right"><strong>Total</strong></td>
+        <td style="text-align:right"><strong>${money(totalComisionSum)}</strong></td>
+        <td style="text-align:right"><strong>${money(totalPagadoSum)}</strong></td>
+        <td></td>
+        <td></td>
+      </tr></tfoot>` : ''}
+    </table>
+    <div class="pdf-footer-note">Reporte generado el ${new Date().toLocaleDateString('es-MX')}</div>
+  `;
+
+  generarPDF(container, 'ROCA1909_Comisiones.pdf', 'portrait', document.getElementById('btnExportComisionesPDF'));
+}
 
 // Convierte una fecha en formato DD/MM/AAAA a timestamp para poder ordenar
 // cronológicamente. Si no se reconoce el formato (texto libre), se manda al
@@ -1248,8 +1301,9 @@ function openCobranzaModal(){
 function closeCobranzaModal(){ cobranzaOverlay.classList.remove('open'); }
 
 kpisFinanzasEl.addEventListener('click', e=>{
-  const card = e.target.closest('.kpi-clickable[data-action="openCobranza"]');
-  if(card) openCobranzaModal();
+  if(e.target.closest('.kpi-clickable[data-action="openCobranza"]')){ openCobranzaModal(); return; }
+  if(e.target.closest('.kpi-clickable[data-action="openComisiones"]')){ openComisionesModal(); return; }
+  if(e.target.closest('.kpi-clickable[data-action="openBalance"]')){ openBalanceModal(); return; }
 });
 
 cobranzaModalBody.addEventListener('click', e=>{
@@ -1314,11 +1368,177 @@ function downloadCobranzaPDF(){
         <th style="width:19%;text-align:right">Monto</th>
       </tr></thead>
       <tbody>${rowsHTML || '<tr><td colspan="5">Sin pagos registrados todavía.</td></tr>'}</tbody>
+      ${rows.length ? `<tfoot><tr>
+        <td colspan="4" style="text-align:right"><strong>Total</strong></td>
+        <td style="text-align:right"><strong>${money(total)}</strong></td>
+      </tr></tfoot>` : ''}
     </table>
     <div class="pdf-footer-note">Reporte generado el ${new Date().toLocaleDateString('es-MX')} · Total cobrado: ${money(total)}</div>
   `;
 
   generarPDF(container, 'ROCA1909_Cobranza.pdf', 'portrait', document.getElementById('btnExportCobranzaPDF'));
+}
+
+// Junta en un solo listado los movimientos que explican el Balance: cada pago
+// de cobranza (ingreso, +) y cada pago de comisión (egreso, -), para poder
+// auditar de dónde sale el número mostrado en la tarjeta "Balance".
+function balanceMovimientos(units){
+  const rows = [];
+  units.filter(u=>u.status==='vendido'||u.status==='apartado').forEach(u=>{
+    (u.timeline || []).forEach(t=>{
+      if(t.estatus === 'pagado'){
+        rows.push({
+          depto: u.id,
+          quien: u.comprador || '',
+          fecha: t.fecha || '',
+          fechaSort: parseFechaMX(t.fecha),
+          concepto: t.concepto || '',
+          tipo: 'Ingreso',
+          monto: t.monto || 0
+        });
+      }
+    });
+    if(u.comision){
+      (u.comision.pagos || []).forEach(p=>{
+        if(p.estatus === 'pagado'){
+          rows.push({
+            depto: u.id,
+            quien: u.comision.comisionista || '',
+            fecha: p.fecha || '',
+            fechaSort: parseFechaMX(p.fecha),
+            concepto: p.concepto || 'Comisión por venta',
+            tipo: 'Egreso',
+            monto: -(p.monto || 0)
+          });
+        }
+      });
+    }
+  });
+  return rows;
+}
+
+let balanceSort = {field:'fecha', dir:'desc'};
+
+function balanceListTemplate(units, sortField, sortDir){
+  const rows = balanceMovimientos(units);
+
+  rows.sort((a,b)=>{
+    let cmp = 0;
+    if(sortField === 'fecha') cmp = a.fechaSort - b.fechaSort;
+    else if(sortField === 'depto') cmp = a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    else if(sortField === 'tipo') cmp = a.tipo.localeCompare(b.tipo);
+    if(cmp === 0) cmp = a.fechaSort - b.fechaSort || a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    return sortDir === 'desc' ? -cmp : cmp;
+  });
+
+  const total = rows.reduce((s,r)=>s+r.monto, 0);
+  const arrow = field => field === sortField ? (sortDir === 'desc' ? ' ↓' : ' ↑') : '';
+  const logoImg = `<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdtF9qBZj5p-hUrh-_VKIbvr5FbbCYlTy122ScPoDwGCEgwXLRvr4VUn_qBJnTzi_gFI2oCrUHc0nb-uQoN2-29xd6Oy2zhjVRAbyHQbNvemxcAvQJHfPS5ldoqzglLkrOaGiKJNOsjTAuOL8Ax1kw_6V8PNxw1OX6ns12f69CfeanI-J4Q0taYR0xPhLQjPe0m3vU0MSJeNMVRyf0mauK8ZJbwZIBRAKF41NUNMHJCCOXiPXFgroEvcpuqa2d9wgiytg" alt="Logo" class="modal-header-logo">`;
+
+  if(!rows.length){
+    return `${logoImg}<h3>Balance</h3><div class="placeholder">Aún no hay movimientos registrados.</div>`;
+  }
+
+  const rowsHTML = rows.map(r=>`
+    <tr>
+      <td><strong>${r.depto}</strong></td>
+      <td>${r.quien || '—'}</td>
+      <td style="white-space:nowrap">${r.fecha || '—'}</td>
+      <td>${r.concepto || '—'}</td>
+      <td>${r.tipo}</td>
+      <td class="num" style="color:${r.monto<0?'var(--danger)':'var(--green)'}">${r.monto<0?'-':''}${money(Math.abs(r.monto))}</td>
+    </tr>`).join('');
+
+  return `
+    ${logoImg}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h3 style="margin-bottom:2px">Balance</h3>
+        <div class="modal-sub" style="margin-bottom:0">${rows.length} movimiento(s): cobranza (ingreso) menos comisiones pagadas (egreso). Click en un encabezado para ordenar.</div>
+      </div>
+      <button class="btn small" id="btnExportBalancePDF">⬇ Exportar PDF</button>
+    </div>
+    <table class="table-center" style="margin-top:20px">
+      <thead><tr>
+        <th class="cz-sort" data-sort="depto" style="cursor:pointer">Depto${arrow('depto')}</th>
+        <th>Comprador / Comisionista</th>
+        <th class="cz-sort" data-sort="fecha" style="cursor:pointer">Fecha${arrow('fecha')}</th>
+        <th>Concepto</th>
+        <th class="cz-sort" data-sort="tipo" style="cursor:pointer">Tipo${arrow('tipo')}</th>
+        <th class="num">Monto</th>
+      </tr></thead>
+      <tbody>${rowsHTML}</tbody>
+      <tfoot><tr>
+        <td colspan="5" style="text-align:right"><strong>Balance</strong></td>
+        <td class="num"><strong>${money(total)}</strong></td>
+      </tr></tfoot>
+    </table>
+  `;
+}
+
+function renderBalanceModal(){
+  balanceModalBody.innerHTML = balanceListTemplate(getUnits(), balanceSort.field, balanceSort.dir);
+}
+function openBalanceModal(){
+  balanceSort = {field:'fecha', dir:'desc'};
+  renderBalanceModal();
+  balanceOverlay.classList.add('open');
+}
+function closeBalanceModal(){ balanceOverlay.classList.remove('open'); }
+
+balanceModalBody.addEventListener('click', e=>{
+  if(e.target.closest('#btnExportBalancePDF')){ downloadBalancePDF(); return; }
+  const th = e.target.closest('.cz-sort');
+  if(!th) return;
+  const field = th.dataset.sort;
+  if(balanceSort.field === field){
+    balanceSort.dir = balanceSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    balanceSort = {field, dir: field === 'tipo' ? 'asc' : 'desc'};
+  }
+  renderBalanceModal();
+});
+
+function downloadBalancePDF(){
+  const units = getUnits();
+  const rows = balanceMovimientos(units);
+  rows.sort((a,b)=>{
+    let cmp = 0;
+    if(balanceSort.field === 'fecha') cmp = a.fechaSort - b.fechaSort;
+    else if(balanceSort.field === 'depto') cmp = a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    else if(balanceSort.field === 'tipo') cmp = a.tipo.localeCompare(b.tipo);
+    if(cmp === 0) cmp = a.fechaSort - b.fechaSort || a.depto.localeCompare(b.depto, undefined, {numeric:true});
+    return balanceSort.dir === 'desc' ? -cmp : cmp;
+  });
+  const total = rows.reduce((s,r)=>s+r.monto, 0);
+
+  const rowsHTML = rows.map(r=>`
+    <tr>
+      <td><strong>${r.depto}</strong></td>
+      <td>${r.quien || '—'}</td>
+      <td class="pdf-item-v" style="white-space:nowrap">${r.fecha || '—'}</td>
+      <td>${r.concepto || '—'}</td>
+      <td>${r.tipo}</td>
+      <td style="text-align:right;color:${r.monto<0?'#ba1a1a':'#10B981'}">${r.monto<0?'-':''}${money(Math.abs(r.monto))}</td>
+    </tr>`).join('');
+
+  const container = document.getElementById('pdfFichaContainer');
+  container.innerHTML = `
+    ${logoPDFTag('pdf-logo')}
+    <h3 class="pdf-h3">Balance</h3>
+    <div class="pdf-sub-line">ROCA 1909 · Cobranza (ingreso) menos comisiones pagadas (egreso) · ${rows.length} movimiento(s) · Balance: ${money(total)}</div>
+    <table>
+      <thead><tr><th>Depto</th><th>Comprador / Comisionista</th><th>Fecha</th><th>Concepto</th><th>Tipo</th><th style="text-align:right">Monto</th></tr></thead>
+      <tbody>${rowsHTML || '<tr><td colspan="6">Sin movimientos registrados todavía.</td></tr>'}</tbody>
+      ${rows.length ? `<tfoot><tr>
+        <td colspan="5" style="text-align:right"><strong>Balance</strong></td>
+        <td style="text-align:right"><strong>${money(total)}</strong></td>
+      </tr></tfoot>` : ''}
+    </table>
+    <div class="pdf-footer-note">Reporte generado el ${new Date().toLocaleDateString('es-MX')} · Balance: ${money(total)}</div>
+  `;
+
+  generarPDF(container, 'ROCA1909_Balance.pdf', 'portrait', document.getElementById('btnExportBalancePDF'));
 }
 
 function directorioTemplate(units){
@@ -1955,7 +2175,9 @@ document.getElementById('directorioModalClose').addEventListener('click', closeD
 directorioOverlay.addEventListener('click', e => { if(e.target === directorioOverlay) closeDirectorioModal(); });
 document.getElementById('cobranzaModalClose').addEventListener('click', closeCobranzaModal);
 cobranzaOverlay.addEventListener('click', e => { if(e.target === cobranzaOverlay) closeCobranzaModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); closeCobranzaModal(); closeAdminMenu(); } });
+document.getElementById('balanceModalClose').addEventListener('click', closeBalanceModal);
+balanceOverlay.addEventListener('click', e => { if(e.target === balanceOverlay) closeBalanceModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closePriceListModal(); closeComisionesModal(); closeDirectorioModal(); closeCobranzaModal(); closeBalanceModal(); closeAdminMenu(); } });
 
 document.getElementById('btnPriceList').addEventListener('click', openPriceListModal);
 document.getElementById('btnDirectorio').addEventListener('click', openDirectorioModal);
