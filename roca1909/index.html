@@ -847,18 +847,34 @@ function chartsFinanzasTemplate(units){
       }
     });
   });
-  const mesesKeys = Object.keys(mesesMap).sort();
-  const maxMes = Math.max(1, ...mesesKeys.map(k=>mesesMap[k]));
+  // Se muestra cada mes desde el arranque del proyecto (mayo 2026) hasta el
+  // último mes con pagos registrados, incluyendo en $0 los meses sin cobranza
+  // para ver el flujo completo (no solo los meses con actividad).
+  const mesesConDatos = Object.keys(mesesMap).sort();
+  const START_Y = 2026, START_M = 5;
+  let endY = START_Y, endM = START_M;
+  if(mesesConDatos.length){
+    const [ly, lm] = mesesConDatos[mesesConDatos.length-1].split('-').map(Number);
+    if(ly > endY || (ly === endY && lm > endM)){ endY = ly; endM = lm; }
+  }
+  const mesesKeys = [];
+  let y = START_Y, m = START_M;
+  while(y < endY || (y === endY && m <= endM)){
+    mesesKeys.push(`${y}-${String(m).padStart(2,'0')}`);
+    m++;
+    if(m > 12){ m = 1; y++; }
+  }
+  const maxMes = Math.max(1, ...mesesKeys.map(k=>mesesMap[k]||0));
   const flujoHTML = mesesKeys.length ? mesesKeys.map(k=>{
     const [y,m] = k.split('-');
-    const val = mesesMap[k];
+    const val = mesesMap[k] || 0;
     return `<div class="chart-progress-group">
       <div class="chart-progress-label">
         <span>${MES_LABEL[+m]} ${y}</span>
         <span class="chart-progress-sub">${money(val)}</span>
       </div>
       <div class="chart-progress-bar-bg">
-        <div class="chart-progress-bar-fill accent" style="width:${(val/maxMes*100).toFixed(1)}%"></div>
+        <div class="chart-progress-bar-fill accent" style="width:${val?(val/maxMes*100).toFixed(1):0}%"></div>
       </div>
     </div>`;
   }).join('') : `<div class="chart-empty">Aún no hay pagos registrados.</div>`;
