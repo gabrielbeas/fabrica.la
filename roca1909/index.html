@@ -921,19 +921,34 @@ function chartsFinanzasTemplate(units){
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     mesesAbsMap[key] = (mesesAbsMap[key] || 0) + 1;
   });
-  const mesesAbsKeys = Object.keys(mesesAbsMap).sort();
-  const maxAbs = Math.max(1, ...mesesAbsKeys.map(k=>mesesAbsMap[k]));
+  // Igual que en flujo de caja: se listan todos los meses desde mayo 2026
+  // hasta el último mes con absorción registrada, con 0 deptos en los meses
+  // sin actividad, para no "saltarse" meses en la gráfica.
+  const mesesAbsConDatos = Object.keys(mesesAbsMap).sort();
+  let absEndY = START_Y, absEndM = START_M;
+  if(mesesAbsConDatos.length){
+    const [aly, alm] = mesesAbsConDatos[mesesAbsConDatos.length-1].split('-').map(Number);
+    if(aly > absEndY || (aly === absEndY && alm > absEndM)){ absEndY = aly; absEndM = alm; }
+  }
+  const mesesAbsKeys = [];
+  let ay = START_Y, am = START_M;
+  while(ay < absEndY || (ay === absEndY && am <= absEndM)){
+    mesesAbsKeys.push(`${ay}-${String(am).padStart(2,'0')}`);
+    am++;
+    if(am > 12){ am = 1; ay++; }
+  }
+  const maxAbs = Math.max(1, ...mesesAbsKeys.map(k=>mesesAbsMap[k]||0));
 
   const absHTML = mesesAbsKeys.length ? mesesAbsKeys.map(k=>{
     const [y,mm] = k.split('-');
-    const val = mesesAbsMap[k];
+    const val = mesesAbsMap[k] || 0;
     return `<div class="chart-progress-group">
       <div class="chart-progress-label">
         <span>${MES_LABEL[+mm]} ${y}</span>
-        <span class="chart-progress-sub">${val} depto${val>1?'s':''}</span>
+        <span class="chart-progress-sub">${val} depto${val!==1?'s':''}</span>
       </div>
       <div class="chart-progress-bar-bg">
-        <div class="chart-progress-bar-fill accent" style="width:${(val/maxAbs*100).toFixed(1)}%"></div>
+        <div class="chart-progress-bar-fill accent" style="width:${val?(val/maxAbs*100).toFixed(1):0}%"></div>
       </div>
     </div>` ;
   }).join('') : `<div class="chart-empty">Aún no hay unidades apartadas o vendidas.</div>`;
@@ -997,6 +1012,12 @@ function chartsFinanzasTemplate(units){
         ${flujoHTML}
       </div>
       <div class="chart-card">
+        <div class="chart-title">Ritmo de absorción de unidades</div>
+        <div class="chart-sub">Deptos apartados o vendidos por mes (fecha del primer pago) y proyección de venta.</div>
+        ${absHTML}
+        ${absProyeccion}
+      </div>
+      <div class="chart-card">
         <div class="chart-title">Avance de ventas por piso</div>
         <div class="chart-sub">Proporción vendido / apartado / disponible en cada nivel del edificio.</div>
         ${floorHTML}
@@ -1005,12 +1026,6 @@ function chartsFinanzasTemplate(units){
           <span><i style="background:var(--yellow)"></i>Apartado</span>
           <span><i style="background:var(--border)"></i>Disponible</span>
         </div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Ritmo de absorción de unidades</div>
-        <div class="chart-sub">Deptos apartados o vendidos por mes (fecha del primer pago) y proyección de venta.</div>
-        ${absHTML}
-        ${absProyeccion}
       </div>
       <div class="chart-card">
         <div class="chart-title">Descuento promedio por etapa de venta</div>
