@@ -39,6 +39,8 @@ jobs:
           cp -r dashboard/public/. dist/dashboard/
           mkdir -p dist/roca1909
           cp -r roca1909/. dist/roca1909/
+                    mkdir -p dist/magnolias
+                    cp -r magnolias/. dist/magnolias/
           cp CNAME dist/CNAME
 
       - name: Setup Pages
