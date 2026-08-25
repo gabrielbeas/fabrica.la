@@ -35,6 +35,8 @@ jobs:
           cp -r fabrica/. dist/
           mkdir -p dist/dashboard
           cp -r dashboard/public/. dist/dashboard/
+                    mkdir -p dist/magnolias
+                    cp -r magnolias/. dist/magnolias/
           cp CNAME dist/CNAME
 
       - name: Setup Pages
