@@ -1,9 +1,10 @@
 name: Deploy to GitHub Pages
 
 # Arma el sitio publicado a partir de las carpetas de cada proyecto:
-#   fabrica/            -> raíz del sitio (fabrica.la/)
-#   dashboard/public/    -> fabrica.la/dashboard/  (el backend en dashboard/src NO se publica)
+# fabrica/ -> raíz del sitio (fabrica.la/)
+# dashboard/public/ -> fabrica.la/dashboard/ (el backend en dashboard/src NO se publica)
 #
+# magnolias/ se retiró de este repo: ahora vive en su propio repo (gbd.mx), en gbd.mx/magnolias/.
 #
 # Requiere: en GitHub, Settings -> Pages -> Build and deployment -> Source = "GitHub Actions"
 # (en vez de "Deploy from a branch").
@@ -35,10 +36,7 @@ jobs:
           cp -r fabrica/. dist/
           mkdir -p dist/dashboard
           cp -r dashboard/public/. dist/dashboard/
-                    mkdir -p dist/magnolias
-                    cp -r magnolias/. dist/magnolias/
           cp CNAME dist/CNAME
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
