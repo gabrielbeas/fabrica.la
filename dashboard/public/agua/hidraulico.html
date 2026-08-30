@@ -60,7 +60,9 @@
     </div>
 
     <script src="sheets-data.js"></script>
+    <script src="security.js"></script>
     <script>
+        const escapeHTML = LFdCSecurity.escapeHTML;
         // Datos de medidores hidráulicos
         // (fallback: si la conexión en vivo a Google Sheets falla,
         // la página sigue funcionando con estos valores fijos)
@@ -109,13 +111,13 @@
                                      medidor.medidor === 'X' ? '<span class="pill pill-bad">INACTIVO</span>' : '-';
 
                 row.innerHTML = `
-                    <td><strong>${medidor.local || '-'}</strong></td>
-                    <td>${medidor.tubo}</td>
+                    <td><strong>${escapeHTML(medidor.local || '-')}</strong></td>
+                    <td>${escapeHTML(medidor.tubo)}</td>
                     <td>${medidorStatus}</td>
-                    <td>${medidor.empresa || '-'}</td>
-                    <td><span class="diametro">${medidor.diametro}</span></td>
-                    <td>${medidor.fecha || '-'}</td>
-                    <td>${medidor.notas || '-'}</td>
+                    <td>${escapeHTML(medidor.empresa || '-')}</td>
+                    <td><span class="diametro">${escapeHTML(medidor.diametro)}</span></td>
+                    <td>${escapeHTML(medidor.fecha || '-')}</td>
+                    <td>${escapeHTML(medidor.notas || '-')}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -170,8 +172,7 @@
         (async function loadLiveData() {
             if (!window.LFdCSheets) return;
             LFdCSheets.configure({
-                endpoint: 'https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec',
-                token: '7b8f6d4c35ec17952822b19c9c1d3c304dc24875'
+                endpoint: '/admin/api/sheets'
             });
             try {
                 const operacionBook = await LFdCSheets.fetchBook('operacion');

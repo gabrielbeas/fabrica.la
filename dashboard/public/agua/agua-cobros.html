@@ -207,7 +207,9 @@
     </div>
 
     <script src="sheets-data.js"></script>
+    <script src="security.js"></script>
     <script>
+        const escapeHTML = LFdCSecurity.escapeHTML;
         // Datos de consumo vigente (últimas lecturas)
         // (fallback: si la conexión en vivo a Google Sheets falla,
         // la página sigue funcionando con estos valores fijos)
@@ -257,8 +259,8 @@
                 const row = document.createElement('tr');
                 const consumoClass = item.consumo > 20 ? 'highlight-high' : 'highlight-normal';
                 row.innerHTML = `
-                    <td><strong>${item.local}</strong></td>
-                    <td>${item.empresa}</td>
+                    <td><strong>${escapeHTML(item.local)}</strong></td>
+                    <td>${escapeHTML(item.empresa)}</td>
                     <td class="${consumoClass}">${item.consumo.toFixed(3)} M³</td>
                     <td>$${item.costo_m3.toFixed(2)}</td>
                     <td><span class="currency">$${item.monto.toFixed(2)}</span></td>
@@ -284,7 +286,7 @@
                 barDiv.innerHTML = `
                     <div class="bar-value">${item.consumo.toFixed(2)}</div>
                     <div class="bar-fill" style="height: ${height || 2}%;"></div>
-                    <div class="bar-label">Local ${item.local.split(',')[0]}</div>
+                    <div class="bar-label">Local ${escapeHTML(item.local.split(',')[0])}</div>
                 `;
                 chart.appendChild(barDiv);
             });
@@ -303,12 +305,12 @@
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><strong>${item.local}</strong></td>
-                    <td>${item.empresa}</td>
-                    <td><span class="currency">${item.deposito}</span></td>
-                    <td>${item.fecha}</td>
+                    <td><strong>${escapeHTML(item.local)}</strong></td>
+                    <td>${escapeHTML(item.empresa)}</td>
+                    <td><span class="currency">${escapeHTML(item.deposito)}</span></td>
+                    <td>${escapeHTML(item.fecha)}</td>
                     <td><span class="pill ${statusClass}">${statusText}</span></td>
-                    <td>${item.notas}</td>
+                    <td>${escapeHTML(item.notas)}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -383,8 +385,7 @@
         (async function loadLiveData() {
             if (!window.LFdCSheets) return;
             LFdCSheets.configure({
-                endpoint: 'https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec',
-                token: '7b8f6d4c35ec17952822b19c9c1d3c304dc24875'
+                endpoint: '/admin/api/sheets'
             });
             try {
                 const live = await LFdCSheets.loadLiveData();

@@ -18,14 +18,14 @@
 
   // ---- Configuración: rellenar con los valores reales del deploy ----
   var CONFIG = {
-    endpoint: '', // ej. 'https://script.google.com/macros/s/AKfycb.../exec'
-    token: '',    // el mismo ACCESS_TOKEN configurado en Apps Script
+    endpoint: '', // en producción: proxy autenticado /admin/api/sheets
+    token: '',    // solo para desarrollo local; nunca se publica
     cacheMinutes: 5
   };
 
   function configure(opts) {
     if (opts.endpoint) CONFIG.endpoint = opts.endpoint;
-    if (opts.token) CONFIG.token = opts.token;
+    if (Object.prototype.hasOwnProperty.call(opts, 'token')) CONFIG.token = opts.token || '';
     if (opts.cacheMinutes) CONFIG.cacheMinutes = opts.cacheMinutes;
   }
 
@@ -100,11 +100,14 @@
    * { spreadsheetName, tabs: [...] } o null si falla.
    */
   function fetchBook(book) {
-    if (!CONFIG.endpoint || !CONFIG.token) {
-      console.warn('[lfdc-sheets] No configurado (endpoint/token vacío).');
+    if (!CONFIG.endpoint) {
+      console.warn('[lfdc-sheets] No configurado (endpoint vacío).');
       return Promise.resolve(null);
     }
-    var url = CONFIG.endpoint + '?token=' + encodeURIComponent(CONFIG.token) + '&book=' + encodeURIComponent(book);
+    var separator = CONFIG.endpoint.indexOf('?') === -1 ? '?' : '&';
+    var query = 'book=' + encodeURIComponent(book);
+    if (CONFIG.token) query = 'token=' + encodeURIComponent(CONFIG.token) + '&' + query;
+    var url = CONFIG.endpoint + separator + query;
     return fetch(url)
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);

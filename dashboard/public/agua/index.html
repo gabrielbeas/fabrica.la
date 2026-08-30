@@ -191,7 +191,9 @@
     </div>
 
     <script src="sheets-data.js"></script>
+    <script src="security.js"></script>
     <script>
+        const escapeHTML = LFdCSecurity.escapeHTML;
         // ===== DATOS =====
         // (fallback: si la conexión en vivo a Google Sheets falla,
         // el panel sigue funcionando con estos valores fijos)
@@ -522,8 +524,8 @@
             const statAccents = ['accent-primary', '', 'accent-good', ''];
             document.getElementById('statsGrid').innerHTML = stats.map((stat, i) => `
                 <div class="stat-tile ${statAccents[i] || ''}">
-                    <div class="stat-number">${stat.value}</div>
-                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-number">${escapeHTML(stat.value)}</div>
+                    <div class="stat-label">${escapeHTML(stat.label)}</div>
                 </div>
             `).join('');
 
@@ -547,7 +549,7 @@
                 <section class="block">
                     <div class="block-title">Finanzas</div>
                     <div class="field-grid">
-                        <div class="field"><span class="field-label">Ingreso Total Mensual</span><span class="field-value accent">${building.status?.monthlyIncome || '[No especificado]'}</span></div>
+                        <div class="field"><span class="field-label">Ingreso Total Mensual</span><span class="field-value accent">${escapeHTML(building.status?.monthlyIncome || '[No especificado]')}</span></div>
                         <div class="field"><span class="field-label">Estado General</span><span class="field-value">Óptimo</span></div>
                     </div>
                 </section>
@@ -557,51 +559,51 @@
         function renderBuilding() {
             document.getElementById('buildingCard').innerHTML = `
                 <div class="page-header">
-                    <h1 style="font-size:1.4em;">${building.name}</h1>
+                    <h1 style="font-size:1.4em;">${escapeHTML(building.name)}</h1>
                 </div>
-                <div class="page-subtitle">${building.description}</div>
+                <div class="page-subtitle">${escapeHTML(building.description)}</div>
 
                 <section class="block">
                     <div class="block-title">Ubicación</div>
                     <div class="field-grid cols-3">
-                        <div class="field"><span class="field-label">Dirección</span><span class="field-value">${building.address}</span></div>
-                        <div class="field"><span class="field-label">Ciudad</span><span class="field-value">${building.city}</span></div>
-                        <div class="field"><span class="field-label">País</span><span class="field-value">${building.country}</span></div>
+                        <div class="field"><span class="field-label">Dirección</span><span class="field-value">${escapeHTML(building.address)}</span></div>
+                        <div class="field"><span class="field-label">Ciudad</span><span class="field-value">${escapeHTML(building.city)}</span></div>
+                        <div class="field"><span class="field-label">País</span><span class="field-value">${escapeHTML(building.country)}</span></div>
                     </div>
                 </section>
 
                 <section class="block">
                     <div class="block-title">Características</div>
                     <div class="field-grid cols-3">
-                        <div class="field"><span class="field-label">Superficie Total</span><span class="field-value">${building.totalArea}</span></div>
-                        <div class="field"><span class="field-label">Número de Locales</span><span class="field-value">${building.numberOfLocals}</span></div>
-                        <div class="field"><span class="field-label">Niveles</span><span class="field-value">${building.numberOfFloors}</span></div>
+                        <div class="field"><span class="field-label">Superficie Total</span><span class="field-value">${escapeHTML(building.totalArea)}</span></div>
+                        <div class="field"><span class="field-label">Número de Locales</span><span class="field-value">${escapeHTML(building.numberOfLocals)}</span></div>
+                        <div class="field"><span class="field-label">Niveles</span><span class="field-value">${escapeHTML(building.numberOfFloors)}</span></div>
                     </div>
                 </section>
 
                 <section class="block">
                     <div class="block-title">Propietario</div>
                     <div class="field-grid cols-3">
-                        <div class="field"><span class="field-label">Nombre</span><span class="field-value">${building.owner.name}</span></div>
-                        <div class="field"><span class="field-label">Teléfono</span><span class="field-value">${building.owner.phone}</span></div>
-                        <div class="field"><span class="field-label">Email</span><span class="field-value">${building.owner.email}</span></div>
+                        <div class="field"><span class="field-label">Nombre</span><span class="field-value">${escapeHTML(building.owner.name)}</span></div>
+                        <div class="field"><span class="field-label">Teléfono</span><span class="field-value">${escapeHTML(building.owner.phone)}</span></div>
+                        <div class="field"><span class="field-label">Email</span><span class="field-value">${escapeHTML(building.owner.email)}</span></div>
                     </div>
                 </section>
 
                 <section class="block">
                     <div class="block-title">Servicios</div>
                     <div class="field-grid cols-3">
-                        <div class="field"><span class="field-label">Electricidad</span><span class="field-value">${building.services.electricity}</span></div>
-                        <div class="field"><span class="field-label">Agua</span><span class="field-value">${building.services.water}</span></div>
-                        <div class="field"><span class="field-label">Internet/WiFi</span><span class="field-value">${building.services.internet}</span></div>
+                        <div class="field"><span class="field-label">Electricidad</span><span class="field-value">${escapeHTML(building.services.electricity)}</span></div>
+                        <div class="field"><span class="field-label">Agua</span><span class="field-value">${escapeHTML(building.services.water)}</span></div>
+                        <div class="field"><span class="field-label">Internet/WiFi</span><span class="field-value">${escapeHTML(building.services.internet)}</span></div>
                     </div>
                 </section>
 
                 <section class="block">
                     <div class="block-title">Estado</div>
                     <div class="field-grid cols-3">
-                        <div class="field"><span class="field-label">Ocupación</span><span class="field-value">${building.status.occupancyPercentage}%</span></div>
-                        <div class="field"><span class="field-label">Ingresos Mensuales</span><span class="field-value accent">${building.status.monthlyIncome}</span></div>
+                        <div class="field"><span class="field-label">Ocupación</span><span class="field-value">${escapeHTML(building.status.occupancyPercentage)}%</span></div>
+                        <div class="field"><span class="field-label">Ingresos Mensuales</span><span class="field-value accent">${escapeHTML(building.status.monthlyIncome)}</span></div>
                         <div class="field"><span class="field-label">Estado General</span><span class="field-value">Óptimo</span></div>
                     </div>
                 </section>
@@ -636,12 +638,6 @@
                     headerClass = 'card-header alert';
                 }
 
-                // Guardar contrato en localStorage para la página de detalles
-                const contractJson = JSON.stringify(contract);
-                // btoa() solo soporta Latin1; los nombres con acentos/ñ
-                // (muy comunes aquí) lo rompían. Se codifica a UTF-8 primero.
-                const encodedData = btoa(unescape(encodeURIComponent(contractJson)));
-
                 let cardClass = 'contract-card';
                 let alarmIcon = '';
 
@@ -657,11 +653,11 @@
                 }
 
                 return `
-                <a href="detail.html?id=${contract.id}&data=${encodedData}" style="text-decoration: none; color: inherit;">
+                <a href="detail.html?id=${encodeURIComponent(contract.id)}" style="text-decoration: none; color: inherit;">
                 <div class="${cardClass}">
                     ${alarmIcon}
-                    <div class="card-number">${contract.number}</div>
-                    <div class="card-title">${contract.name}</div>
+                    <div class="card-number">${escapeHTML(contract.number)}</div>
+                    <div class="card-title">${escapeHTML(contract.name)}</div>
                 </div>
                 </a>
             `;
@@ -717,8 +713,7 @@
         (async function loadLiveData() {
             if (!window.LFdCSheets) return;
             LFdCSheets.configure({
-                endpoint: 'https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec',
-                token: '7b8f6d4c35ec17952822b19c9c1d3c304dc24875'
+                endpoint: '/admin/api/sheets'
             });
             try {
                 const live = await LFdCSheets.loadLiveData();

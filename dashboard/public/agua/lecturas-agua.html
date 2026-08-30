@@ -366,9 +366,10 @@
         </div>
     </div>
 
+    <script src="security.js"></script>
     <script>
-        // URL DEL GOOGLE APPS SCRIPT
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIWNu75m-y9fn2gaudWYGRbz0bHFd4FAr8aKEM6yxcJEIj-5in-KGmw0VQpHo_J5-NPg/exec";
+        const escapeHTML = LFdCSecurity.escapeHTML;
+        const APPS_SCRIPT_URL = "/admin/api/readings";
 
         // DATOS LOCALES
         const locales = [
@@ -560,9 +561,9 @@
             datos.forEach((item, idx) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${item.fecha}</td>
-                    <td><strong>${item.numero}</strong></td>
-                    <td>${item.empresa}</td>
+                    <td>${escapeHTML(item.fecha)}</td>
+                    <td><strong>${escapeHTML(item.numero)}</strong></td>
+                    <td>${escapeHTML(item.empresa)}</td>
                     <td>${item.lecturaAnterior.toFixed(3)}</td>
                     <td>${item.lecturaActual.toFixed(3)}</td>
                     <td>${item.consumo.toFixed(3)}</td>
