@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 # Arma el sitio publicado a partir de las carpetas de cada proyecto:
 # fabrica/ -> raíz del sitio (fabrica.la/)
-# dashboard/public/ -> fabrica.la/dashboard/ (el backend en dashboard/src NO se publica)
+# dashboard/public/agua/ -> fabrica.la/admin/ (el backend en dashboard/src NO se publica)
 # roca1909/ -> fabrica.la/roca1909/
 #
 # magnolias/ se retiró de este repo: ahora vive en su propio repo (gbd.mx), en gbd.mx/magnolias/.
@@ -36,8 +36,25 @@ jobs:
         run: |
           mkdir -p dist
           cp -r fabrica/. dist/
-          mkdir -p dist/dashboard
-          cp -r dashboard/public/. dist/dashboard/
+          mkdir -p dist/admin
+          cp -r dashboard/public/agua/. dist/admin/
+
+          # Compatibilidad temporal: las rutas antiguas redirigen al panel nuevo.
+          mkdir -p dist/dashboard/agua
+          cat > dist/dashboard/index.html <<'EOF'
+          <!doctype html>
+          <html lang="es">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta http-equiv="refresh" content="0; url=/admin/">
+            <link rel="canonical" href="https://fabrica.la/admin/">
+            <title>Panel de administración</title>
+          </head>
+          <body><p>El panel se movió a <a href="/admin/">fabrica.la/admin/</a>.</p></body>
+          </html>
+          EOF
+          cp dist/dashboard/index.html dist/dashboard/agua/index.html
           mkdir -p dist/roca1909
           cp -r roca1909/. dist/roca1909/
           cp CNAME dist/CNAME
