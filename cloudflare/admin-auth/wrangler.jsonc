@@ -15,10 +15,11 @@
     }
   ],
   "vars": {
-    "BASIC_USER": "admin"
+    "BASIC_USER": "admin",
+    "SHEETS_ENDPOINT": "https://script.google.com/macros/s/AKfycbxDpFEO82dbxRVdS1fS-cSoYdAGC2mAby-6SdVipmG1QjCInBLVgD25k0XZRo7kGMVZ/exec"
   },
   "secrets": {
-    "required": ["BASIC_PASSWORD"]
+    "required": ["BASIC_PASSWORD", "SHEETS_ACCESS_TOKEN", "READINGS_ENDPOINT"]
   },
   "observability": {
     "enabled": true,
