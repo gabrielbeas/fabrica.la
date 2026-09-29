@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturas de Agua - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
+
+        .controles { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 20px; }
+        .campo label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: 500; }
+        .campo input { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+        .campo input:focus { outline: none; border-color: #667eea; }
+        .costo-fijo { font-size: 18px; font-weight: 600; padding: 9px 0; }
+
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: #fafafa; border-bottom: 1px solid #eee; }
+        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .tubo { font-weight: 600; }
+        .fecha-ant { display: block; font-size: 12px; color: #aaa; }
+        td input { width: 130px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; text-align: right; }
+        td input:focus { outline: none; border-color: #667eea; }
+        tr.alerta td { background: #fff8e1; }
+        tr.alerta .consumo { color: #b26a00; font-weight: 600; }
+        tr.capturado td { background: #f1f8f4; }
+        .etiqueta { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e8f5e9; color: #2e7d32; margin-left: 6px; }
+        .btn-borrar { margin-left: 8px; font-size: 11px; padding: 2px 8px; border: 1px solid #f3c1c1; background: white; color: #c62828; border-radius: 10px; cursor: pointer; }
+        .btn-borrar:hover { background: #c62828; color: white; }
+        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
+
+        .acciones { display: flex; gap: 12px; align-items: center; margin-top: 20px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .mensaje { font-size: 14px; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        .cargando { color: #999; padding: 40px 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando lecturas...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, auth } from '../../../js/auth.js';
+        import {
+            collection, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch, serverTimestamp
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const COSTO_M3_INICIAL = 78.64;
+        // URL del Apps Script "Historial.gs" (Web app). Vacío = no se envía historial a Sheets.
+        const HISTORIAL_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzPuQl_iSzL7IuZGqakNUr8lzS3YD3A6mc5uplW9fNzVpkaKAOAtsXz6Jmez65FTljn/exec';
+
+        // Agrega filas en la pestaña HISTORIAL PANEL del Sheet de operación.
+        // Nunca bloquea: si falla, la lectura ya quedó en Firestore.
+        async function enviarHistorial(filas) {
+            if (!HISTORIAL_SHEETS_URL || !filas.length) return { ok: true, omitido: true };
+            try {
+                await auth.authStateReady();
+                if (!auth.currentUser) return { ok: false, error: 'sesión de Firebase no disponible' };
+                const idToken = await auth.currentUser.getIdToken();
+                const res = await fetch(HISTORIAL_SHEETS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ idToken, lecturas: filas })
+                });
+                return await res.json();
+            } catch (err) {
+                return { ok: false, error: err.message };
+            }
+        }
+        const empresaDe = (tubo) => (medidores.find(m => m.id === tubo) || {}).empresa || '';
+        const app = document.getElementById('app');
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            iniciar().catch(err => {
+                console.error(err);
+                app.innerHTML = `<h1>Lecturas de Agua</h1><p class="err">No se pudieron cargar los datos: ${err.message}</p>`;
+            });
+        }
+
+        // ---------- Estado ----------
+        let medidores = [];     // [{id, tubo, empresa}]
+        let lecturas = [];      // todas las lecturas [{id, tubo, fecha, lectura, ...}]
+        let costoM3 = COSTO_M3_INICIAL;
+
+        const fmt = (n, d = 3) => (n === null || n === undefined || isNaN(n)) ? '-' :
+            Number(n).toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const dinero = (n) => (n === null || n === undefined || isNaN(n)) ? '-' :
+            '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const hoy = () => {
+            const d = new Date();
+            return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        };
+        const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        // Orden: tubos numéricos primero, luego SG, MTO
+        const ordenTubo = (a, b) => {
+            const na = parseInt(a.id, 10), nb = parseInt(b.id, 10);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            if (!isNaN(na)) return -1;
+            if (!isNaN(nb)) return 1;
+            return a.id.localeCompare(b.id);
+        };
+
+        async function cargarDatos() {
+            const [snapMed, snapLec, snapCfg] = await Promise.all([
+                getDocs(collection(db, 'agua_medidores')),
+                getDocs(collection(db, 'agua_lecturas')),
+                getDoc(doc(db, 'agua_config', 'general'))
+            ]);
+            medidores = snapMed.docs.map(d => ({ id: d.id, ...d.data() }))
+                .filter(m => m.activo !== false).sort(ordenTubo);
+            lecturas = snapLec.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (snapCfg.exists() && typeof snapCfg.data().costoM3 === 'number') costoM3 = snapCfg.data().costoM3;
+        }
+
+        // Última lectura válida de un tubo ANTES de la fecha dada
+        function lecturaAnterior(tubo, fecha) {
+            return lecturas
+                .filter(l => l.tubo === tubo && l.fecha < fecha && typeof l.lectura === 'number')
+                .sort((a, b) => a.fecha < b.fecha ? 1 : -1)[0] || null;
+        }
+        const lecturaEnFecha = (tubo, fecha) => lecturas.find(l => l.tubo === tubo && l.fecha === fecha) || null;
+
+        async function iniciar() {
+            await cargarDatos();
+            const admin = esAdmin();
+
+            app.innerHTML = `
+                <h1>Lecturas de Agua</h1>
+                <p class="sub">Captura la lectura de cada medidor. El consumo y el importe se calculan solos.</p>
+
+                <div class="controles">
+                    <div class="campo">
+                        <label for="fecha">Fecha de lectura</label>
+                        <input type="date" id="fecha" value="${hoy()}" max="${hoy()}">
+                    </div>
+                    <div class="campo">
+                        <label for="costo">Costo por m³</label>
+                        ${admin
+                            ? `<input type="number" id="costo" step="0.01" min="0" value="${costoM3}" style="width:120px">`
+                            : `<div class="costo-fijo">${dinero(costoM3)}</div>`}
+                    </div>
+                    ${admin ? `<button class="btn-sec" id="guardarCosto">Guardar costo</button>` : ''}
+                </div>
+
+                <div class="tabla-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tubo</th>
+                                <th>Empresa</th>
+                                <th class="num">Lectura anterior (m³)</th>
+                                <th class="num">Lectura actual (m³)</th>
+                                <th class="num">Consumo (m³)</th>
+                                <th class="num">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filas"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">Total</td>
+                                <td class="num" id="totalConsumo">-</td>
+                                <td class="num" id="totalImporte">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="acciones">
+                    <button class="btn" id="guardar">Guardar lecturas</button>
+                    <span class="mensaje" id="mensaje"></span>
+                </div>
+            `;
+
+            document.getElementById('fecha').addEventListener('change', dibujarFilas);
+            if (admin) {
+                document.getElementById('costo').addEventListener('input', recalcularTodo);
+                document.getElementById('guardarCosto').addEventListener('click', guardarCosto);
+            }
+            document.getElementById('guardar').addEventListener('click', guardarLecturas);
+            dibujarFilas();
+        }
+
+        function costoActual() {
+            const input = document.getElementById('costo');
+            const v = input ? parseFloat(input.value) : costoM3;
+            return isNaN(v) ? 0 : v;
+        }
+
+        function dibujarFilas() {
+            const fecha = document.getElementById('fecha').value;
+            const tbody = document.getElementById('filas');
+            tbody.innerHTML = medidores.map(m => {
+                const ant = lecturaAnterior(m.id, fecha);
+                const existente = lecturaEnFecha(m.id, fecha);
+                return `
+                    <tr id="fila-${m.id}" class="${existente ? 'capturado' : ''}">
+                        <td class="tubo">${escape(m.tubo)}</td>
+                        <td>${escape(m.empresa)}${existente ? '<span class="etiqueta">Capturada</span>' : ''}${existente && esAdmin() ? `<button class="btn-borrar" data-borrar="${existente.id}">Eliminar</button>` : ''}</td>
+                        <td class="num">${ant ? fmt(ant.lectura) : '-'}<span class="fecha-ant">${ant ? ant.fecha : 'sin lecturas previas'}</span></td>
+                        <td class="num"><input type="number" step="0.001" min="0" inputmode="decimal"
+                            data-tubo="${m.id}" value="${existente && typeof existente.lectura === 'number' ? existente.lectura : ''}" placeholder="0.000"></td>
+                        <td class="num consumo" id="consumo-${m.id}">-</td>
+                        <td class="num" id="importe-${m.id}">-</td>
+                    </tr>`;
+            }).join('');
+            tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
+            tbody.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => eliminarLectura(b.dataset.borrar)));
+            recalcularTodo();
+        }
+
+        let eliminando = false;
+        async function eliminarLectura(id) {
+            if (eliminando) return; // evita doble clic
+            const l = lecturas.find(x => x.id === id);
+            if (!l) return;
+            if (!confirm(`¿Eliminar la lectura del tubo ${l.tubo} del ${l.fecha} (${fmt(l.lectura)} m³)?\n\nNo se puede deshacer.`)) return;
+            eliminando = true;
+            document.querySelectorAll('[data-borrar]').forEach(b => b.disabled = true);
+            try {
+                await deleteDoc(doc(db, 'agua_lecturas', id));
+                await enviarHistorial([{
+                    accion: 'eliminada', id, fecha: l.fecha, tubo: l.tubo, empresa: empresaDe(l.tubo),
+                    lecturaAnterior: l.lecturaAnterior ?? null, fechaAnterior: l.fechaAnterior ?? null,
+                    lectura: l.lectura, consumo: l.consumo ?? null, costoM3: l.costoM3 ?? null, importe: l.importe ?? null
+                }]);
+                await cargarDatos();
+                dibujarFilas();
+                mensaje(`Lectura del tubo ${l.tubo} del ${l.fecha} eliminada.`, 'ok');
+            } catch (err) {
+                mensaje('No se pudo eliminar: ' + err.message, 'err');
+                document.querySelectorAll('[data-borrar]').forEach(b => b.disabled = false);
+            } finally {
+                eliminando = false;
+            }
+        }
+
+        function calcular(tubo) {
+            const fecha = document.getElementById('fecha').value;
+            const input = document.querySelector(`input[data-tubo="${tubo}"]`);
+            const valor = input.value.trim() === '' ? null : parseFloat(input.value);
+            const ant = lecturaAnterior(tubo, fecha);
+            if (valor === null || isNaN(valor)) return { tubo, valor: null, ant };
+            const consumo = ant ? Math.round((valor - ant.lectura) * 1000) / 1000 : null;
+            const importe = consumo === null ? null : Math.round(consumo * costoActual() * 100) / 100;
+            return { tubo, valor, ant, consumo, importe };
+        }
+
+        function recalcular(tubo) {
+            const r = calcular(tubo);
+            const fila = document.getElementById(`fila-${tubo}`);
+            document.getElementById(`consumo-${tubo}`).textContent = r.valor === null ? '-' : (r.consumo === null ? 'primera' : fmt(r.consumo));
+            document.getElementById(`importe-${tubo}`).textContent = r.valor === null || r.importe === null ? '-' : dinero(r.importe);
+            fila.classList.toggle('alerta', r.consumo !== null && r.consumo !== undefined && r.consumo < 0);
+            totales();
+        }
+
+        function recalcularTodo() {
+            medidores.forEach(m => recalcular(m.id));
+        }
+
+        function totales() {
+            let c = 0, i = 0;
+            medidores.forEach(m => {
+                const r = calcular(m.id);
+                if (typeof r.consumo === 'number') c += r.consumo;
+                if (typeof r.importe === 'number') i += r.importe;
+            });
+            document.getElementById('totalConsumo').textContent = fmt(c);
+            document.getElementById('totalImporte').textContent = dinero(i);
+        }
+
+        function mensaje(texto, cls) {
+            const el = document.getElementById('mensaje');
+            el.className = 'mensaje ' + (cls || '');
+            el.textContent = texto;
+        }
+
+        async function guardarCosto() {
+            const v = costoActual();
+            if (!(v > 0)) { mensaje('Escribe un costo por m³ válido.', 'err'); return; }
+            try {
+                await setDoc(doc(db, 'agua_config', 'general'), {
+                    costoM3: v, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp()
+                }, { merge: true });
+                costoM3 = v;
+                mensaje(`Costo por m³ guardado: ${dinero(v)}`, 'ok');
+            } catch (err) {
+                mensaje('No se pudo guardar el costo: ' + err.message, 'err');
+            }
+        }
+
+        async function guardarLecturas() {
+            const fecha = document.getElementById('fecha').value;
+            if (!fecha) { mensaje('Selecciona la fecha de lectura.', 'err'); return; }
+            if (fecha > hoy()) { mensaje('La fecha no puede ser futura.', 'err'); return; }
+
+            const capturas = medidores.map(m => calcular(m.id)).filter(r => r.valor !== null && !isNaN(r.valor));
+            if (!capturas.length) { mensaje('No hay lecturas capturadas.', 'err'); return; }
+
+            const negativas = capturas.filter(r => typeof r.consumo === 'number' && r.consumo < 0);
+            if (negativas.length) {
+                const lista = negativas.map(r => `Tubo ${r.tubo}: ${fmt(r.valor)} es menor que la anterior (${fmt(r.ant.lectura)})`).join('\n');
+                if (!confirm(`Estas lecturas son MENORES que la anterior:\n\n${lista}\n\nRevisa que estén bien escritas. ¿Guardar de todos modos?`)) return;
+            }
+            const sobrescribe = capturas.filter(r => lecturaEnFecha(r.tubo, fecha));
+            if (sobrescribe.length) {
+                if (!confirm(`Ya hay lecturas del ${fecha} para: ${sobrescribe.map(r => 'tubo ' + r.tubo).join(', ')}.\n\n¿Reemplazarlas?`)) return;
+            }
+
+            const btn = document.getElementById('guardar');
+            btn.disabled = true;
+            mensaje('Guardando...');
+            const user = getCurrentUser();
+            const costo = costoActual();
+
+            try {
+                const batch = writeBatch(db);
+                capturas.forEach(r => {
+                    batch.set(doc(db, 'agua_lecturas', `${r.tubo}_${fecha}`), {
+                        tubo: r.tubo,
+                        fecha,
+                        periodo: fecha.slice(0, 7),
+                        lectura: r.valor,
+                        lecturaAnterior: r.ant ? r.ant.lectura : null,
+                        fechaAnterior: r.ant ? r.ant.fecha : null,
+                        consumo: typeof r.consumo === 'number' ? r.consumo : null,
+                        costoM3: costo,
+                        importe: typeof r.importe === 'number' ? r.importe : null,
+                        observaciones: '',
+                        revisar: (typeof r.consumo === 'number' && r.consumo < 0) ? ['consumo negativo'] : [],
+                        origen: 'panel',
+                        capturadoPor: user.email,
+                        capturadoPorUid: user.uid,
+                        capturadoEn: serverTimestamp()
+                    });
+                });
+                await batch.commit();
+
+                const hist = await enviarHistorial(capturas.map(r => ({
+                    accion: 'guardada', id: `${r.tubo}_${fecha}`, fecha, tubo: r.tubo, empresa: empresaDe(r.tubo),
+                    lecturaAnterior: r.ant ? r.ant.lectura : null, fechaAnterior: r.ant ? r.ant.fecha : null,
+                    lectura: r.valor, consumo: r.consumo ?? null, costoM3: costo, importe: r.importe ?? null
+                })));
+
+                await cargarDatos();
+                dibujarFilas();
+                if (hist.ok) {
+                    mensaje(`Se guardaron ${capturas.length} lecturas del ${fecha}.`, 'ok');
+                } else {
+                    mensaje(`Se guardaron ${capturas.length} lecturas del ${fecha}, pero no se registraron en el historial de Sheets (${hist.error}).`, 'err');
+                }
+            } catch (err) {
+                console.error(err);
+                mensaje('No se pudo guardar: ' + err.message, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

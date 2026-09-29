@@ -28,12 +28,27 @@ service cloud.firestore {
       allow list, create, update, delete: if isAdmin();
     }
 
-    // Resto de colecciones (lecturas, locales, calendarios...): usuarios registrados
+    // Agua: catálogo y costo solo los cambia el admin
+    match /agua_medidores/{id} {
+      allow read: if isRegistered();
+      allow write: if isAdmin();
+    }
+    match /agua_config/{id} {
+      allow read: if isRegistered();
+      allow write: if isAdmin();
+    }
+    // Lecturas: cualquier usuario registrado captura; solo el admin borra
+    match /agua_lecturas/{id} {
+      allow read, create, update: if isRegistered();
+      allow delete: if isAdmin();
+    }
+
+    // Resto de colecciones (locales, calendarios...): usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if collection != 'users' && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if collection != 'users' && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas']) && isRegistered();
     }
   }
 }

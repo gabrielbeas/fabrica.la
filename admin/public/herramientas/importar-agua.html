@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar historial de agua - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+        h1 { font-size: 24px; margin-bottom: 6px; }
+        .sub { color: #999; font-size: 14px; margin-bottom: 30px; }
+        .card { border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 600; }
+        .ok { color: #2e7d32; } .err { color: #c62828; } .warn { color: #b26a00; }
+        #log { font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #f8f9fa; padding: 12px; border-radius: 6px; min-height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app">Verificando acceso...</div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { getCurrentUser, isAuthenticated, esAdmin, db } from '../../../js/auth.js';
+        import { writeBatch, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else if (!esAdmin()) {
+            crearNavbar();
+            app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta herramienta es solo para el administrador.</p>';
+        } else {
+            crearNavbar();
+            render();
+        }
+
+        const idTubo = (t) => String(t).replace(/\s+/g, '').toUpperCase();
+
+        function render() {
+            app.innerHTML = `
+                <h1>Importar historial de agua</h1>
+                <p class="sub">Carga única del historial de Google Sheets (pestaña HIDRÁULICO) a Firestore.</p>
+
+                <div class="card">
+                    <p><strong>1.</strong> Selecciona el archivo <code>_privado/agua-historial.json</code> de tu carpeta fabrica.la.</p>
+                    <input type="file" id="archivo" accept=".json">
+                </div>
+
+                <div class="card" id="resumen" style="display:none"></div>
+
+                <div class="card">
+                    <p><strong>2.</strong> Importar a Firestore. Si lo corres dos veces no se duplica: sobrescribe los mismos registros.</p>
+                    <button class="btn" id="btnImportar" disabled>Importar</button>
+                    <div id="log" style="margin-top:15px"></div>
+                </div>
+            `;
+
+            let datos = null;
+            const log = (msg, cls = '') => {
+                document.getElementById('log').innerHTML += `<span class="${cls}">${msg}</span>\n`;
+            };
+
+            document.getElementById('archivo').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    datos = JSON.parse(await file.text());
+                    if (!Array.isArray(datos.medidores) || !Array.isArray(datos.lecturas)) throw new Error('Formato inesperado');
+                } catch (err) {
+                    datos = null;
+                    log('No se pudo leer el archivo: ' + err.message, 'err');
+                    return;
+                }
+                const porTubo = {};
+                datos.lecturas.forEach(l => {
+                    const k = idTubo(l.tubo);
+                    porTubo[k] = porTubo[k] || { n: 0, revisar: 0, min: l.fecha, max: l.fecha };
+                    const p = porTubo[k];
+                    p.n++; if (l.revisar && l.revisar.length) p.revisar++;
+                    if (l.fecha < p.min) p.min = l.fecha;
+                    if (l.fecha > p.max) p.max = l.fecha;
+                });
+                const filas = datos.medidores.map(m => {
+                    const p = porTubo[idTubo(m.tubo)] || { n: 0, revisar: 0, min: '-', max: '-' };
+                    return `<tr><td>${m.tubo}</td><td>${m.empresa}</td><td>${p.n}</td><td>${p.min} a ${p.max}</td><td class="${p.revisar ? 'warn' : ''}">${p.revisar}</td></tr>`;
+                }).join('');
+                const res = document.getElementById('resumen');
+                res.style.display = 'block';
+                res.innerHTML = `
+                    <p><strong>${datos.medidores.length}</strong> medidores y <strong>${datos.lecturas.length}</strong> lecturas.</p>
+                    <table><thead><tr><th>Tubo</th><th>Empresa</th><th>Lecturas</th><th>Periodo</th><th>Por revisar</th></tr></thead>
+                    <tbody>${filas}</tbody></table>`;
+                document.getElementById('btnImportar').disabled = false;
+            });
+
+            document.getElementById('btnImportar').addEventListener('click', async () => {
+                if (!datos) return;
+                if (!confirm(`¿Importar ${datos.medidores.length} medidores y ${datos.lecturas.length} lecturas a Firestore?`)) return;
+                const btn = document.getElementById('btnImportar');
+                btn.disabled = true;
+                const user = getCurrentUser();
+
+                const ops = [];
+                datos.medidores.forEach(m => ops.push([
+                    doc(db, 'agua_medidores', idTubo(m.tubo)),
+                    { tubo: m.tubo, empresa: m.empresa, activo: true, importadoEn: serverTimestamp() }
+                ]));
+                datos.lecturas.forEach(l => ops.push([
+                    doc(db, 'agua_lecturas', `${idTubo(l.tubo)}_${l.fecha}`),
+                    {
+                        tubo: idTubo(l.tubo),
+                        fecha: l.fecha,
+                        periodo: l.fecha.slice(0, 7),
+                        mesEtiqueta: l.mesEtiqueta,
+                        lectura: l.lectura,
+                        consumo: l.consumo,
+                        costoM3: l.costoM3,
+                        importe: l.importe,
+                        observaciones: l.observaciones || '',
+                        revisar: l.revisar || [],
+                        origen: 'sheets',
+                        filaSheet: l.filaSheet,
+                        capturadoPor: user.email,
+                        importadoEn: serverTimestamp()
+                    }
+                ]));
+
+                try {
+                    for (let i = 0; i < ops.length; i += 400) {
+                        const batch = writeBatch(db);
+                        ops.slice(i, i + 400).forEach(([ref, data]) => batch.set(ref, data));
+                        await batch.commit();
+                        log(`Guardados ${Math.min(i + 400, ops.length)} de ${ops.length}`);
+                    }
+                    log('Importación completa.', 'ok');
+                } catch (err) {
+                    log('Error al guardar: ' + err.message, 'err');
+                    btn.disabled = false;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

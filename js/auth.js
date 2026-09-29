@@ -202,25 +202,35 @@ export function esOperario() {
 /**
  * Obtener secciones permitidas según rol
  */
+/**
+ * Ruta base del panel.
+ * Local (python http.server en la raíz del repo): /admin/public/
+ * Publicado (GitHub Pages): /admin/
+ */
+export function basePath() {
+  const p = window.location.pathname;
+  const i = p.indexOf('/admin/public/');
+  return i >= 0 ? p.slice(0, i) + '/admin/public/' : '/admin/';
+}
+
 export function getSeccionesPermitidas() {
   const role = getCurrentUserRole();
+  const b = basePath();
 
-  const secciones = {
-    admin: [
-      { id: 'inicio', nombre: 'Dashboard Inicio', url: '/admin/public/', icon: '' },
-      { id: 'locales', nombre: 'Locales', url: '/admin/locales/', icon: '' },
-      { id: 'agua', nombre: 'Lecturas de Agua', url: '/admin/agua/', icon: '' },
-      { id: 'calendarios', nombre: 'Calendarios', url: '/admin/calendarios/', icon: '' },
-      { id: 'config', nombre: 'Configuración', url: '/admin/config/', icon: '' }
-    ],
-    operario: [
-      { id: 'inicio', nombre: 'Dashboard Inicio', url: '/admin/public/', icon: '' },
-      { id: 'agua', nombre: 'Lecturas de Agua', url: '/admin/agua/', icon: '' },
-      { id: 'calendarios', nombre: 'Calendarios', url: '/admin/calendarios/', icon: '' }
-    ]
+  const todas = {
+    inicio:      { id: 'inicio',      nombre: 'Dashboard Inicio', url: b },
+    locales:     { id: 'locales',     nombre: 'Locales',          url: b + 'locales/' },
+    agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },
+    calendarios: { id: 'calendarios', nombre: 'Calendarios',      url: b + 'calendarios/' },
+    config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' }
   };
 
-  return secciones[role] || [];
+  const porRol = {
+    admin: ['inicio', 'locales', 'agua', 'calendarios', 'config'],
+    operario: ['inicio', 'agua', 'calendarios']
+  };
+
+  return (porRol[role] || []).map(id => todas[id]);
 }
 
 // ============================================
