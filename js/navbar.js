@@ -5,7 +5,8 @@ import {
   getCurrentUser,
   logout,
   getSeccionesPermitidas,
-  isAuthenticated
+  isAuthenticated,
+  basePath
 } from './auth.js';
 
 /**
@@ -26,7 +27,7 @@ export function crearNavbar() {
     <nav class="navbar">
       <div class="navbar-container">
         <div class="navbar-brand">
-          <a href="/admin/public/">
+          <a href="${basePath()}">
             <span class="logo">F</span>
             <span class="title">La Fábrica</span>
           </a>
@@ -34,8 +35,7 @@ export function crearNavbar() {
 
         <div class="navbar-menu" id="navbarMenu">
           ${secciones.map(seccion => `
-            <a href="${seccion.url}" class="nav-link">
-              <span class="icon">${seccion.icon}</span>
+            <a href="${seccion.url}" class="nav-link" data-id="${seccion.id}">
               <span class="text">${seccion.nombre}</span>
             </a>
           `).join('')}
@@ -115,14 +115,14 @@ function getRoleLabel(rol) {
  * Marcar sección activa
  */
 function marcarSeccionActiva(secciones) {
-  const currentPath = window.location.pathname;
-  const navLinks = document.querySelectorAll('.nav-link');
+  // Sección = primera carpeta después de la base (agua/, locales/...). Sin carpeta = inicio.
+  const resto = window.location.pathname.slice(basePath().length);
+  const carpeta = resto.includes('/') ? resto.split('/')[0] : '';
+  const activa = secciones.find(s => s.id !== 'inicio' && s.url.slice(basePath().length).split('/')[0] === carpeta);
+  const id = activa ? activa.id : (carpeta === '' ? 'inicio' : null);
 
-  navLinks.forEach(link => {
-    const href = link.getAttribute('href');
-    if (currentPath.includes(href.replace('/', ''))) {
-      link.classList.add('active');
-    }
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.id === id);
   });
 }
 

@@ -11,3 +11,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Datos privados (no subir: el repo es público)
+_privado/
