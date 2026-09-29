@@ -3,21 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - La Fábrica de Chocolate</title>
+    <title>Dashboard - La Fábrica de Chocolate</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/responsive.css">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        body {
+            background: white;
+        }
+
+        .main-content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+        }
+
+        .dashboard-header {
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card-label {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .quick-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-link:hover {
+            transform: translateY(-5px);
+        }
+
+        .quick-link-icon {
+            font-size: 32px;
+        }
+
+        .quick-link-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
-        <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-            <div style="text-align: center; color: white;">
-                <div style="font-size: 4em; margin-bottom: 20px;">⏳</div>
-                <h2>Cargando...</h2>
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f8f9fa;">
+            <div style="text-align: center; color: #667eea;">
+                <div style="font-size: 3em; margin-bottom: 20px; animation: spin 1s linear infinite;">⟳</div>
+                <h2>Cargando panel...</h2>
             </div>
+            <style>
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            </style>
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module">
+        import { crearNavbar } from '../../js/navbar.js';
+        import { getCurrentUser, isAuthenticated } from '../../js/auth.js';
+
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            // Crear navbar
+            crearNavbar();
+
+            // Cargar contenido del dashboard
+            const user = getCurrentUser();
+            const app = document.getElementById('app');
+
+            app.innerHTML = `
+                <div class="main-content">
+                    <div class="dashboard-header">
+                        <h1>¡Bienvenido, ${user.nombre || user.email}!</h1>
+                        <p>Panel de Control - La Fábrica de Chocolate</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-value">12</div>
+                            <div class="stat-card-label">Locales Activos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-value">850</div>
+                            <div class="stat-card-label">M³ Consumidos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-value">$45.2K</div>
+                            <div class="stat-card-label">Ingresos Totales</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-value">95%</div>
+                            <div class="stat-card-label">Ocupación</div>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-top: 40px; color: #333;">Accesos Rápidos</h2>
+                    <div class="quick-links">
+                        <a href="agua/" class="quick-link">
+                            <span class="quick-link-text">Lecturas de Agua</span>
+                        </a>
+                        <a href="agua/" class="quick-link">
+                            <span class="quick-link-text">Consumo</span>
+                        </a>
+                        <a href="agua/" class="quick-link">
+                            <span class="quick-link-text">Cobros</span>
+                        </a>
+                        ${user.rol === 'admin' ? `
+                            <a href="#usuarios" class="quick-link">
+                                <span class="quick-link-text">Usuarios</span>
+                            </a>
+                        ` : ''}
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 10px; color: #666; text-align: center;">
+                        <p>Sistema de Autenticación y Roles implementado exitosamente</p>
+                        <p style="font-size: 12px; margin-top: 10px;">Rol actual: <strong>${user.rol === 'admin' ? 'Administrador' : 'Operario'}</strong></p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
 </body>
 </html>

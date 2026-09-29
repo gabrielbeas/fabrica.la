@@ -1,5 +1,6 @@
 import api from './api.js';
 import { tokenManager, userManager, formatters, statusHelpers } from './utils.js';
+import { isAuthenticated, getCurrentUser, logout } from '../../js/auth.js';
 
 class AdminPanel {
   constructor() {
@@ -9,22 +10,21 @@ class AdminPanel {
   }
 
   async init() {
-    // Verificar autenticación
-    if (!tokenManager.hasToken()) {
-      this.showLoginPage();
+    // Verificar autenticación con Firebase
+    if (!isAuthenticated()) {
+      window.location.href = '/login.html';
       return;
     }
 
-    // Intentar verificar token
+    // Usuario autenticado con Firebase
+    const user = getCurrentUser();
+    console.log('✅ Usuario autenticado:', user.email, 'Rol:', user.rol);
+
     try {
-      await api.verifyAuth();
       this.showAdminPanel();
       await this.loadData();
     } catch (error) {
-      console.error('Auth verification failed:', error);
-      tokenManager.removeToken();
-      userManager.removeUser();
-      this.showLoginPage();
+      console.error('Error iniciando panel:', error);
     }
   }
 
@@ -489,10 +489,14 @@ class AdminPanel {
   }
 
   // ===== LOGOUT =====
-  handleLogout() {
-    tokenManager.removeToken();
-    userManager.removeUser();
-    this.showLoginPage();
+  async handleLogout() {
+    const confirm = window.confirm('¿Deseas cerrar sesión?');
+    if (confirm) {
+      const result = await logout();
+      if (result.success) {
+        window.location.href = '/login.html';
+      }
+    }
   }
 }
 
