@@ -32,7 +32,7 @@ export const firebaseConfig = {
 1. Ve a https://console.firebase.google.com/project/fabrica-399f2/authentication/users
 2. Haz click en **"Add user"**
 3. Email: `admin@fabrica.la`
-4. Password: `admin123456`
+4. Password: una contraseña segura (no la escribas en este repositorio, es público)
 5. Crea el usuario
 
 #### Opción B: Crear usuarios programáticamente
@@ -66,7 +66,7 @@ Necesitas crear colección "users" en Firestore con documentos como este:
 1. Ve a `https://fabrica.la/login.html`
 2. Usa las credenciales de prueba:
    - **Email:** `admin@fabrica.la`
-   - **Contraseña:** `admin123456`
+   - **Contraseña:** la definida en Firebase Authentication
 
 ---
 

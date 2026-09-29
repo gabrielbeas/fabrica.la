@@ -120,16 +120,8 @@
 
 ## 🧪 Testing
 
-### Datos de Prueba (login.html)
-```
-Admin:
-  Email: admin@fabrica.la
-  Password: admin123456
-
-Operario:
-  Email: operario@fabrica.la  
-  Password: operario123
-```
+### Usuarios
+Las contraseñas no se guardan en el repositorio (es público). Se administran en Firebase Authentication.
 
 ### URLs Importantes
 - Login: `https://fabrica.la/login.html`
@@ -171,7 +163,7 @@ Operario:
 
 2. **Crear Usuario Admin**
    - Email: `admin@fabrica.la`
-   - Password: `admin123456`
+   - Password: (definida en Firebase Authentication)
    - Rol: `admin`
 
 3. **Crear Documento en Firestore**

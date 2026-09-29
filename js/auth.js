@@ -39,7 +39,14 @@ export async function login(email, password) {
     const user = userCredential.user;
 
     // Obtener datos del usuario (rol, permisos)
-    const userData = await getUserData(user.uid, user.email);
+    const userData = await getUserData(user.uid);
+
+    // Solo entran usuarios dados de alta en Firestore y activos
+    if (!userData || userData.activo === false) {
+      await signOut(auth);
+      localStorage.removeItem('currentUser');
+      return { success: false, error: 'Usuario no autorizado. Contacta al administrador.' };
+    }
 
     // Guardar en localStorage
     localStorage.setItem('currentUser', JSON.stringify({
@@ -50,8 +57,15 @@ export async function login(email, password) {
 
     return { success: true, user };
   } catch (error) {
-    console.error('Error en login:', error.message);
-    return { success: false, error: error.message };
+    console.error('Error en login:', error.code, error.message);
+    const mensajes = {
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/invalid-email': 'El correo no es válido.',
+      'auth/user-disabled': 'Esta cuenta está deshabilitada.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
+      'auth/network-request-failed': 'Sin conexión. Revisa tu internet.'
+    };
+    return { success: false, error: mensajes[error.code] || 'No se pudo iniciar sesión.' };
   }
 }
 
@@ -99,40 +113,14 @@ export function getCurrentUserRole() {
 /**
  * Obtener datos del usuario desde Firestore
  */
-export async function getUserData(uid, email = null) {
+export async function getUserData(uid) {
   try {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists()) {
-      return userSnap.data();
-    }
-
-    // Respaldo: buscar el usuario por email si el ID del documento no coincide con el UID
-    if (email) {
-      const q = query(collection(db, 'users'), where('email', '==', email));
-      const results = await getDocs(q);
-      if (!results.empty) {
-        const data = results.docs[0].data();
-        // Copiar al documento con el UID correcto para futuras lecturas
-        await setDoc(userRef, data);
-        return data;
-      }
-    }
-
-    // Usuario no existe, retornar datos por defecto (operario)
-    return {
-      rol: 'operario',
-      nombre: 'Operario',
-      permisos: ['ver_lecturas', 'crear_lecturas']
-    };
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    // Si no hay perfil en Firestore, el usuario no tiene acceso
+    return userSnap.exists() ? userSnap.data() : null;
   } catch (error) {
     console.error('Error obteniendo datos de usuario:', error);
-    return {
-      rol: 'operario',
-      nombre: 'Operario',
-      permisos: []
-    };
+    return null;
   }
 }
 
@@ -246,7 +234,13 @@ export function onAuthChange(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       // Usuario autenticado
-      const userData = await getUserData(user.uid, user.email);
+      const userData = await getUserData(user.uid);
+      if (!userData || userData.activo === false) {
+        await signOut(auth);
+        localStorage.removeItem('currentUser');
+        callback(null);
+        return;
+      }
       const currentUser = {
         uid: user.uid,
         email: user.email,
