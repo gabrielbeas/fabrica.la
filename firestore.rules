@@ -43,12 +43,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Resto de colecciones (locales, calendarios...): usuarios registrados
+    // Contratos de locales: datos sensibles (RFC, rentas) -> solo admin
+    match /contratos/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Resto de colecciones (calendarios...): usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos']) && isRegistered();
     }
   }
 }

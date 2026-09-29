@@ -46,11 +46,12 @@ jobs:
           cp login.html firebase-config.js dist/
           cp -r js dist/js
           # Panel (solo archivos nuevos)
-          mkdir -p dist/admin/agua dist/admin/herramientas
+          mkdir -p dist/admin/agua dist/admin/herramientas dist/admin/locales
           cp admin/public/index.html dist/admin/
           cp -r admin/public/css dist/admin/css
           cp admin/public/agua/lecturas.html dist/admin/agua/
-          cp admin/public/herramientas/importar-agua.html dist/admin/herramientas/
+          cp admin/public/locales/index.html admin/public/locales/caratula.html dist/admin/locales/
+          cp admin/public/herramientas/importar-agua.html admin/public/herramientas/importar-contratos.html dist/admin/herramientas/
           # Verificación: nada privado debe quedar publicado
           if find dist -name 'data.json' -o -path '*_privado*' -o -name '*.gs' | grep -q .; then
             echo "ERROR: archivos privados en dist"; exit 1
