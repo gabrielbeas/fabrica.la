@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Contrato</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+</head>
+<body class="lfdc">
+    <div class="container narrow">
+        <div class="top-bar">
+            <a href="index.html?activeTab=dashboard" class="brand"><img src="assets/logo.png" alt="La Fábrica de Chocolate"></a>
+            <nav class="nav-links" aria-label="Navegación principal">
+                <a href="index.html?activeTab=dashboard">DASHBOARD</a>
+                <a href="index.html?activeTab=building">EDIFICIO</a>
+                <a href="index.html?activeTab=contracts">LOCALES</a>
+                <a href="hidraulico.html">HIDRÁULICO</a>
+                <a href="lecturas-agua.html">LECTURAS</a>
+                <a href="agua-cobros.html">AGUA Y COBROS</a>
+            </nav>
+        </div>
+
+        <div class="title-row">
+            <h1 id="contractName">Detalles del Contrato</h1>
+            <span class="pill pill-available" id="statusPill" hidden></span>
+        </div>
+        <div class="subtitle-row" id="subtitleRow">
+            <span id="contractNumber">Local</span>
+        </div>
+
+        <div id="detailContent" aria-live="polite">
+            <p class="empty-note">Cargando detalles...</p>
+        </div>
+    </div>
+
+    <script src="sheets-data.js"></script>
+    <script>
+        const STATUS_TEXT = { active: 'Activo', expiring: 'Por vencer', expired: 'Vencido', available: 'Disponible' };
+        const STATUS_CLASS = { active: 'pill-active', expiring: 'pill-expiring', expired: 'pill-expired', available: 'pill-available' };
+
+        function element(tag, className, text) {
+            const node = document.createElement(tag);
+            if (className) node.className = className;
+            if (text !== undefined && text !== null) node.textContent = String(text);
+            return node;
+        }
+
+        function field(label, value, options = {}) {
+            const wrapper = element('div', 'field');
+            wrapper.appendChild(element('span', 'field-label', label));
+            const classes = ['field-value'];
+            if (options.big) classes.push('big');
+            if (options.accent) classes.push('accent');
+            if (value === null || value === undefined || value === '') classes.push('muted');
+            wrapper.appendChild(element('span', classes.join(' '), value || 'No disponible'));
+            return wrapper;
+        }
+
+        function section(title, fields) {
+            const block = element('section', 'block');
+            block.appendChild(element('div', 'block-title', title));
+            const grid = element('div', 'field-grid');
+            fields.forEach(item => grid.appendChild(field(item[0], item[1], item[2])));
+            block.appendChild(grid);
+            return block;
+        }
+
+        function showMessage(message) {
+            const content = document.getElementById('detailContent');
+            content.replaceChildren(element('p', 'empty-note', message));
+        }
+
+        function renderContract(contract) {
+            const detail = contract.detail || {};
+            document.getElementById('contractName').textContent = contract.name || contract.number || 'Contrato';
+            document.getElementById('contractNumber').textContent = contract.number || 'Local';
+
+            const pill = document.getElementById('statusPill');
+            if (contract.status && STATUS_TEXT[contract.status]) {
+                pill.textContent = STATUS_TEXT[contract.status];
+                pill.className = 'pill ' + STATUS_CLASS[contract.status];
+                pill.hidden = false;
+            }
+
+            const subtitle = document.getElementById('subtitleRow');
+            subtitle.replaceChildren();
+            const subtitleValues = [contract.number, contract.area, detail.plazo].filter(Boolean);
+            subtitleValues.forEach((value, index) => {
+                if (index) subtitle.appendChild(element('span', 'dot'));
+                subtitle.appendChild(element('span', '', value));
+            });
+
+            const content = document.getElementById('detailContent');
+            content.replaceChildren();
+            const general = [
+                ['Inquilino', contract.tenant || contract.name],
+                ['Contacto', contract.contact],
+                ['Email', contract.email],
+                ['Superficie', contract.area],
+                ['Renta Mensual', contract.rent, { accent: true }],
+            ];
+            if (detail.rfc) general.splice(1, 0, ['RFC', detail.rfc]);
+            if (detail.direccion) general.push(['Domicilio', detail.direccion]);
+            content.appendChild(section('Información General', general));
+
+            const start = detail.inicioContrato || contract.startDate;
+            const end = detail.finContrato || contract.endDate;
+            if (detail.firmaContrato || detail.plazo || start || end || detail.fechaLimite) {
+                content.appendChild(section('Términos del Contrato', [
+                    ['Firma de Contrato', detail.firmaContrato],
+                    ['Plazo', detail.plazo],
+                    ['Fecha de Entrega / Inicio', start],
+                    ['Fin del Contrato', end],
+                    ['Fecha Límite de Pago Mensual', detail.fechaLimite],
+                ]));
+            }
+
+            if (detail.incrementoRenta || detail.incrementoTipo) {
+                content.appendChild(section('Incremento de Renta', [
+                    ['Fecha de Incremento', detail.incrementoRenta],
+                    ['Tipo de Incremento', detail.incrementoTipo],
+                ]));
+            }
+
+            if (detail.deposito || detail.fechaDeposito || detail.meses || detail.porPagar) {
+                content.appendChild(section('Depósito en Garantía', [
+                    ['Depósito', detail.deposito, { big: true }],
+                    ['Fecha de Depósito', detail.fechaDeposito],
+                    ['Banco', detail.depositoBanco],
+                    ['Meses de Garantía', detail.meses],
+                    ['Por Pagar', detail.porPagar],
+                ]));
+            }
+
+            const years = detail.rentasPorAnio ? Object.keys(detail.rentasPorAnio).sort() : [];
+            if (years.length) {
+                const block = element('section', 'block');
+                block.appendChild(element('div', 'block-title', 'Renta Mensual por Año'));
+                const timeline = element('div', 'timeline');
+                years.forEach(year => {
+                    const row = element('div', 'timeline-item');
+                    const left = element('div', 'ty-left');
+                    left.appendChild(element('span', 'timeline-year', year));
+                    if (detail.rentasPorAnio[year].incremento) {
+                        left.appendChild(element('span', 'pill pill-active', detail.rentasPorAnio[year].incremento));
+                    }
+                    row.appendChild(left);
+                    row.appendChild(element('span', 'timeline-amount', detail.rentasPorAnio[year].monto || 'No disponible'));
+                    timeline.appendChild(row);
+                });
+                block.appendChild(timeline);
+                content.appendChild(block);
+            }
+
+            if (detail.porcentajeMantenimiento || detail.mantenimiento || detail.total || detail.totalIVA) {
+                content.appendChild(section('Resumen Financiero', [
+                    ['Mantenimiento (' + (detail.porcentajeMantenimiento || '—') + ')', detail.mantenimiento],
+                    ['Total', detail.total, { big: true }],
+                    ['Total + IVA', detail.totalIVA, { big: true, accent: true }],
+                ]));
+            }
+
+            if (!Object.keys(detail).length) {
+                content.appendChild(element('p', 'empty-note', 'Este local sólo tiene información resumida disponible.'));
+            }
+        }
+
+        async function loadContract() {
+            const contractId = Number.parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+            if (!Number.isInteger(contractId) || contractId < 1) {
+                showMessage('No se encontró un identificador de contrato válido.');
+                return;
+            }
+
+            try {
+                LFdCSheets.configure({ endpoint: '/admin/api/sheets' });
+                const adminBook = await LFdCSheets.fetchBook('admin');
+                if (adminBook) {
+                    const raw = LFdCSheets._internal.buildContractsFromAdmin(adminBook);
+                    const contracts = LFdCSheets.adaptContractsForUI(raw);
+                    const contract = contracts.find(item => Number(item.id) === contractId);
+                    if (contract) {
+                        renderContract(contract);
+                        return;
+                    }
+                }
+
+                const fallbackResponse = await fetch('data.json', { cache: 'no-store' });
+                if (!fallbackResponse.ok) throw new Error('No se pudo cargar el respaldo');
+                const fallback = await fallbackResponse.json();
+                const summary = (fallback.locales || []).find(item => Number(item.id) === contractId);
+                if (summary) {
+                    renderContract({ ...summary, tenant: summary.name, detail: {} });
+                    return;
+                }
+                showMessage('No se encontraron datos del contrato.');
+            } catch (error) {
+                console.warn('[LFdC] No se pudo cargar el contrato.', error);
+                showMessage('Error al cargar los detalles del contrato.');
+            }
+        }
+
+        loadContract();
+    </script>
+</body>
+</html>

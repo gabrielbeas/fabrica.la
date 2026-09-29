@@ -1,0 +1,13 @@
+# Dependencias / cachés de paquetes (no deben vivir en Drive ni en git)
+node_modules/
+.pnpm-store/
+.npm/
+
+# Variables de entorno / secretos
+.env
+.env.local
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.vscode/
