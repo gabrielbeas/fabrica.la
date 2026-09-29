@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore - La Fábrica de Chocolate
+// Copia de referencia: las reglas activas se publican en Firebase Console -> Firestore -> Rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Usuario con perfil en /users y no desactivado
+    function isRegistered() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('activo', true) != false;
+    }
+
+    function isAdmin() {
+      return isRegistered()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+    }
+
+    // Perfiles: cada quien lee el suyo; solo el admin ve y modifica todos
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    // Resto de colecciones (lecturas, locales, calendarios...): usuarios registrados
+    match /{collection}/{docId} {
+      allow read, write: if collection != 'users' && isRegistered();
+    }
+    match /{collection}/{docId}/{rest=**} {
+      allow read, write: if collection != 'users' && isRegistered();
+    }
+  }
+}
