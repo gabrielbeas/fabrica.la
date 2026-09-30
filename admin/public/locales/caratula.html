@@ -15,6 +15,30 @@
         .btn:disabled { opacity: .5; cursor: not-allowed; }
         .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
         .btn-sec:hover { background: #ebebeb; }
+        .btn-mini { margin-top: 12px; padding: 7px 14px; font-size: 13px; }
+
+        /* Ventana de historial de depósitos */
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 1000; overflow-y: auto; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 820px; padding: 26px 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid #333; padding-bottom: 14px; margin-bottom: 18px; }
+        .modal-cab .emp { font-size: 12px; color: #777; letter-spacing: .05em; text-transform: uppercase; }
+        .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
+        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 20px 0 8px; }
+        .tabla-dep th { background: #fafafa; }
+        .tabla-dep tr.comp td { color: #777; }
+        .tabla-dep tr.sub td { font-weight: 600; border-top: 1px solid #ddd; color: #555; }
+        .nota-p { font-size: 12px; color: #999; }
+        .resumen-dep { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .resumen-dep div { border: 1px solid #eee; border-radius: 8px; padding: 12px 14px; }
+        .resumen-dep span { display: block; font-size: 12px; color: #888; }
+        .resumen-dep strong { display: block; font-size: 18px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        tr.total.pagado td { border-top: none; color: #2e7d32; }
+        tr.total.pagado .nota-p { font-weight: 400; }
+        .tabla-dep tr.tarde td { background: #fdecea; color: #c62828; }
+        .tabla-dep tr.tarde .nota-p { color: #d9534f; }
+        .tarde-txt { display: inline; font-size: 12px; font-weight: 600; color: #c62828; }
+        .nota-dep { font-size: 13px; color: #666; margin: 16px 0 0; line-height: 1.5; }
+        .aviso-dep { font-size: 13px; color: #c62828; margin: 14px 0 0; }
 
         .hoja { border: 1px solid #eee; border-radius: 10px; padding: 36px 40px; }
         .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
@@ -24,10 +48,23 @@
         .estado { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 10px; }
         .e-vigente { background: #e8f5e9; color: #2e7d32; } .e-vencido { background: #fdecea; color: #c62828; } .e-termina { background: #fff3e0; color: #ef6c00; }
 
-        .secciones { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 40px; }
+        .secciones { display: grid; grid-template-columns: 1fr; gap: 26px; }
+        .seccion h2 { border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        /* Numeración automática de secciones (1. Arrendatario, 2. Garantías...) */
+        .secciones { counter-reset: sec; }
+        .secciones > .seccion > h2::before { counter-increment: sec; content: counter(sec) ". "; }
+        .sin-dato { color: #bbb; font-weight: 400; }
+        .vig-wrap { display: flex; flex-direction: row-reverse; gap: 30px; align-items: flex-start; }
+        .vig-wrap dl { flex: 1; }
+        .vig-cajas { flex: none; width: 280px; display: flex; flex-direction: column; gap: 10px; }
+        .vig-alerta { width: 100%; display: flex; gap: 12px; align-items: center; border: 1px solid; border-radius: 10px; padding: 14px 16px; }
+        .vig-punto { flex: none; width: 16px; height: 16px; border-radius: 50%; }
+        .vig-titulo { font-weight: 700; font-size: 15px; }
+        .vig-det { font-size: 12px; color: #777; margin-top: 2px; }
+        @media (max-width: 700px) { .vig-wrap { flex-direction: column; } .vig-cajas { width: 100%; } }
         .seccion h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 10px; }
         .seccion.ancha { grid-column: 1 / -1; }
-        dl { margin: 0; display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; font-size: 14px; }
+        dl { margin: 0; display: grid; grid-template-columns: 220px 1fr; gap: 7px 16px; font-size: 14px; }
         dt { color: #888; }
         dd { margin: 0; font-weight: 500; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -40,9 +77,20 @@
         .pie { margin-top: 28px; font-size: 11px; color: #aaa; }
         .err { color: #c62828; }
 
+        /* Alertas del contrato */
+        .alertas-caja { border: 1px solid #eee; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+        .alertas-caja h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #c62828; margin: 0 0 12px; }
+        .alerta-fila { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid #f5f5f5; font-size: 14px; }
+        .alerta-fila:first-of-type { border-top: none; padding-top: 0; }
+        .alerta-fila .punto { flex: none; width: 10px; height: 10px; border-radius: 50%; position: relative; top: 1px; }
+        .alerta-fila .que { flex: 1; }
+        .alerta-fila .que strong { font-weight: 600; }
+        .alerta-fila .que span { color: #888; font-size: 13px; }
+        .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
+
         @media (max-width: 700px) { .secciones { grid-template-columns: 1fr; } .hoja { padding: 22px; } dl { grid-template-columns: 120px 1fr; } }
         @media print {
-            nav, .navbar, .barra, #aviso { display: none !important; }
+            nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
             .hoja { border: none; padding: 0; }
             body { font-size: 12px; }
@@ -56,6 +104,7 @@
         import { crearNavbar } from '../../../js/navbar.js';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
         import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -63,6 +112,7 @@
         const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         const fechaTxt = f => { if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return f || '-'; const [y, m, d] = f.split('-'); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const filaSiempre = (k, v) => `<dt>${k}</dt><dd>${(v === undefined || v === null || v === '' || v === '-') ? '<span class="sin-dato">Sin registrar</span>' : v}</dd>`;
         const fila = (k, v) => (v === undefined || v === null || v === '' || v === '-') ? '' : `<dt>${k}</dt><dd>${v}</dd>`;
 
         if (!isAuthenticated()) {
@@ -89,6 +139,53 @@
 
         let contratoId = null;
 
+        // Alerta de vigencia (columna derecha de la sección Vigencia)
+        // Más de 90 días: círculo verde. 90 días o menos: color según urgencia y días que faltan.
+        const plural = n => `${n.toLocaleString('es-MX')} día${n === 1 ? '' : 's'}`;
+        function cajaFecha(fecha, t) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return '';
+            const d = diasHasta(fecha);
+            let color, titulo, detalle;
+            if (d > VENTANA_DIAS) {
+                color = '#2e7d32'; titulo = t.ok;
+                detalle = `Faltan ${plural(d)} ${t.para}`;
+            } else {
+                color = COLOR_NIVEL[nivelDe(d)];
+                titulo = d < 0 ? t.pasado : d === 0 ? `${t.verbo} hoy` : `${t.verbo} en ${plural(d)}`;
+                detalle = d < 0 ? `${t.hace} hace ${plural(-d)} (${fechaTxt(fecha)})` : `${t.etiqueta}: ${fechaTxt(fecha)}`;
+            }
+            return `<div class="vig-alerta" style="border-color:${color}">
+                <span class="vig-punto" style="background:${color}"></span>
+                <div><div class="vig-titulo" style="color:${color}">${titulo}</div><div class="vig-det">${detalle}</div></div>
+            </div>`;
+        }
+        function alertaVigencia(c) {
+            const cajas = [
+                cajaFecha(c.fin, { ok: 'Vigente', para: 'para el vencimiento', verbo: 'Vence', pasado: 'Contrato vencido', hace: 'Venció', etiqueta: 'Fin del contrato' }),
+                cajaFecha(c.incremento, { ok: 'Sin incremento próximo', para: 'para el incremento de renta', verbo: 'Incremento', pasado: 'Incremento pendiente', hace: 'Tocaba', etiqueta: 'Incremento de renta' + (c.incrementoTipo ? ` (${esc(c.incrementoTipo)})` : '') })
+            ].filter(Boolean);
+            return cajas.length ? `<div class="vig-cajas">${cajas.join('')}</div>` : '';
+        }
+
+        // Detalle de alertas (en la lista de Locales solo se ve un punto)
+        function cajaAlertas(c) {
+            const a = alertasContrato(c);
+            if (!a.total) return '';
+            const filas = a.lista.map(e => `
+                <div class="alerta-fila">
+                    <span class="punto" style="background:${COLOR_NIVEL[e.nivel]}" title="${TEXTO_NIVEL[e.nivel]}"></span>
+                    <div class="que"><strong>${esc(e.tipo)}</strong> · ${fechaTxt(e.fecha)}${e.det ? `<br><span>${esc(e.det)}</span>` : ''}</div>
+                    <div class="cuando" style="color:${COLOR_NIVEL[e.nivel]}">${e.dias < 0 ? 'Vencido ' : ''}${cuandoTxt(e.dias)}</div>
+                </div>`);
+            if (a.saldo) filas.push(`
+                <div class="alerta-fila">
+                    <span class="punto" style="background:${COLOR_NIVEL['60']}"></span>
+                    <div class="que"><strong>Saldo por pagar</strong>${c.porPagarNota ? `<br><span>${esc(c.porPagarNota)}</span>` : ''}</div>
+                    <div class="cuando">${dinero(a.saldo)}</div>
+                </div>`);
+            return `<div class="alertas-caja"><h2>Alertas (${a.total})</h2>${filas.join('')}</div>`;
+        }
+
         function vista(c) {
             contratoActual = c;
             const estado = c.estado === 'terminacion_anticipada' ? ['e-termina', 'Terminación anticipada']
@@ -109,6 +206,7 @@
                     </div>
                 </div>
                 <div id="aviso"></div>
+                ${cajaAlertas(c)}
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
@@ -126,6 +224,8 @@
                                 ${fila('Razón social', esc(c.razonSocial))}
                                 ${fila('RFC', esc(c.rfc))}
                                 ${fila('Nombre comercial', esc(c.nombreComercial))}
+                                ${fila((c.locales || []).length > 1 ? 'Locales' : 'Local', esc((c.locales || []).join(', ')))}
+                                ${fila('Superficie', c.m2 ? `${esc(c.m2)} m²` : '')}
                                 ${fila('Giro', esc(c.giro))}
                                 ${fila('Representante', esc(c.representante))}
                                 ${fila('Dirección', (c.direccion || []).map(esc).join('<br>'))}
@@ -153,6 +253,8 @@
                         </div>
                         <div class="seccion">
                             <h2>Vigencia</h2>
+                            <div class="vig-wrap">
+                            ${alertaVigencia(c)}
                             <dl>
                                 ${fila('Firma', c.firma ? fechaTxt(c.firma) : (c.firmaOk ? 'Firmado (sin fecha registrada)' : ''))}
                                 ${fila('Plazo', esc(c.plazo))}
@@ -162,6 +264,7 @@
                                 ${fila('', esc(c.incrementoNota))}
                                 ${fila('Fecha límite de pago', esc(c.fechaLimite))}
                             </dl>
+                            </div>
                         </div>
                         <div class="seccion">
                             <h2>Renta actual</h2>
@@ -180,6 +283,7 @@
                                 ${fila('Meses de gracia', c.mesesGracia)}
                                 ${fila('Por pagar', typeof c.porPagar === 'number' ? dinero(c.porPagar) + (c.porPagarNota ? ` · ${esc(c.porPagarNota)}` : '') : '')}
                             </dl>
+                            ${Array.isArray(c.historialDepositos) ? `<button class="btn-sec btn-mini no-print" id="btnDepositos">Ver historial de pagos de depósito</button>` : ''}
                         </div>
                         ${(c.rentas || []).length ? `
                         <div class="seccion ancha">
@@ -187,25 +291,33 @@
                             <table>
                                 <thead><tr><th>Concepto</th><th>Periodo</th><th>Incremento / nota</th><th class="num">Monto mensual</th></tr></thead>
                                 <tbody>
-                                    ${c.rentas.map(r => `<tr><td>${esc(r.concepto)}</td><td>${esc(r.periodo)}</td><td>${esc(r.nota)}</td><td class="num">${dinero(r.monto)}</td></tr>`).join('')}
+                                    ${c.rentas.map(r => `<tr><td>${esc(r.concepto)}</td><td>${esc(r.periodo)}</td><td>${esc(String(r.nota ?? '').replace(/[☀-➿️]/g, '').trim())}</td><td class="num">${dinero(r.monto)}</td></tr>`).join('')}
                                     <tr class="total"><td colspan="3">Renta mensual vigente</td><td class="num">${dinero(c.total)}</td></tr>
+                                    ${filaTotalPagado(c)}
                                 </tbody>
                             </table>
+                            ${(c.pagosRenta || []).length ? `<button class="btn-sec btn-mini no-print" id="btnPagosRenta">Ver historial de pagos de renta</button>` : ''}
                         </div>` : ''}
-                        ${(c.seguro || c.telmex || c.cfe) ? `
                         <div class="seccion">
-                            <h2>Seguro</h2>
+                            <h2>CFE</h2>
                             <dl>
-                                ${c.seguro ? fila('Aseguradora', esc(c.seguro.aseguradora)) + fila('Póliza', esc(c.seguro.poliza)) + fila('A nombre de', esc(c.seguro.nombre)) + fila('Vigencia', fechaTxt(c.seguro.vigencia)) : '<dt>—</dt><dd>Sin seguro registrado</dd>'}
+                                ${filaSiempre('Titular del servicio', esc(c.cfeTitular))}
+                                ${filaSiempre('Dirección del servicio', esc(c.cfe))}
+                                ${filaSiempre('No. de servicio', esc(c.cfeServicio))}
+                                ${filaSiempre('RMU', esc(c.cfeRmu))}
+                                ${filaSiempre('Cuenta', esc(c.cfeCuenta))}
                             </dl>
                         </div>
                         <div class="seccion">
-                            <h2>Servicios</h2>
+                            <h2>Seguro y servicios</h2>
                             <dl>
-                                ${fila('Telmex', esc(c.telmex))}
-                                ${fila('CFE', esc(c.cfe))}
+                                ${filaSiempre('Aseguradora', esc(c.seguro?.aseguradora))}
+                                ${filaSiempre('Póliza', esc(c.seguro?.poliza))}
+                                ${filaSiempre('A nombre de', esc(c.seguro?.nombre))}
+                                ${filaSiempre('Vigencia del seguro', c.seguro?.vigencia ? fechaTxt(c.seguro.vigencia) : '')}
+                                ${filaSiempre('Telmex', esc(c.telmex))}
                             </dl>
-                        </div>` : ''}
+                        </div>
                         ${c.notas ? `
                         <div class="seccion ancha">
                             <h2>Notas</h2>
@@ -223,11 +335,127 @@
                     <div class="pie">Generado el ${fechaTxt(hoyISO())} desde el panel de administración.${c.editadoPor ? ` Última edición: ${esc(c.editadoPor)}.` : ''}</div>
                 </div>`;
             document.getElementById('btnEditar').addEventListener('click', () => edicion(c));
+            document.getElementById('btnDepositos')?.addEventListener('click', () => ventanaDepositos(c));
+            document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
             if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
         }
 
         let contratoActual = null;
         let avisoPendiente = '';
+
+        // Total pagado de renta (pagos reales de Simplifi; no incluye depósitos en garantía)
+        function filaTotalPagado(c) {
+            const p = c.pagosRenta || [];
+            if (!p.length) return '';
+            const total = p.reduce((s, x) => s + (x.monto || 0), 0);
+            const fechas = p.map(x => x.fecha).sort();
+            const conServicios = p.filter(x => /AGUA|BASURA/i.test(x.nota + ' ' + x.tags)).length;
+            return `<tr class="total pagado"><td colspan="3">Total pagado de renta
+                <div class="nota-p">${p.length} pagos, del ${fechaTxt(fechas[0])} al ${fechaTxt(fechas[fechas.length - 1])}. Montos con IVA, sin depósitos en garantía.${conServicios ? ` ${conServicios} pago${conServicios > 1 ? 's incluyen' : ' incluye'} agua o basura.` : ''}</div></td>
+                <td class="num">${dinero(total)}</td></tr>`;
+        }
+
+        // Abre una ventana (modal) con el HTML dado; se cierra con el botón, Esc o clic fuera.
+        function abrirVentana(html, etiqueta) {
+            const fondo = document.createElement('div');
+            fondo.className = 'modal-fondo';
+            fondo.innerHTML = `<div class="modal" role="dialog" aria-label="${esc(etiqueta)}">${html}</div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+        }
+
+        // Historial de pagos de renta (c.pagosRenta: [{ fecha, monto, pago, nota, tags }]), agrupado por año
+        function ventanaPagosRenta(c) {
+            const fechaCorta = f => f.split('-').reverse().join('/');
+            const pagos = [...(c.pagosRenta || [])].sort((a, b) => a.fecha.localeCompare(b.fecha));
+            const total = pagos.reduce((s, p) => s + (p.monto || 0), 0);
+            const esTarde = p => +p.fecha.slice(8, 10) >= 11; // pagos del día 11 en adelante
+            const tardes = pagos.filter(esTarde).length;
+            const anios =[...new Set(pagos.map(p => p.fecha.slice(0, 4)))];
+            const limpiar = t => String(t || '').replace(/;?\s*(LOCAL [\d, ]+|OFICINAS)\s*;?/gi, ' ').replace(/\s+/g, ' ').trim();
+            const bloques = anios.map(a => {
+                const del = pagos.filter(p => p.fecha.startsWith(a));
+                const sub = del.reduce((s, p) => s + (p.monto || 0), 0);
+                return `${del.map(p => {
+                    const extra = [p.nota, limpiar(p.tags) !== limpiar(p.pago) ? limpiar(p.tags) : ''].filter(Boolean).join(' · ');
+                    return `<tr${esTarde(p) ? ' class="tarde" title="Pagado del día 11 en adelante"' : ''}><td>${fechaCorta(p.fecha)}</td><td>${esc(p.pago)}${extra ? `<div class="nota-p">${esc(extra)}</div>` : ''}</td><td class="num">${dinero(p.monto)}</td></tr>`;
+                }).join('')}
+                <tr class="sub"><td colspan="2">Total ${a} (${del.length} pago${del.length > 1 ? 's' : ''})</td><td class="num">${dinero(sub)}</td></tr>`;
+            }).join('');
+            abrirVentana(`
+                <div class="modal-cab">
+                    <div><div class="emp">Historial de pagos de renta</div><h3>${esc(c.razonSocial)} · Local ${esc((c.locales || []).join(', '))}</h3></div>
+                    <button class="btn-sec" data-cerrar>Cerrar</button>
+                </div>
+                <table class="tabla-dep">
+                    <thead><tr><th>Fecha</th><th>Pagó / nota</th><th class="num">Monto</th></tr></thead>
+                    <tbody>${bloques}</tbody>
+                </table>
+                <div class="resumen-dep">
+                    <div><span>Total pagado</span><strong>${dinero(total)}</strong></div>
+                    <div><span>Pagos</span><strong>${pagos.length}${tardes ? ` <span class="tarde-txt">(${tardes} después del día 10)</span>` : ''}</strong></div>
+                    <div><span>Periodo</span><strong style="font-size:14px">${fechaCorta(pagos[0].fecha)} – ${fechaCorta(pagos[pagos.length - 1].fecha)}</strong></div>
+                </div>
+                <p class="nota-dep">Montos con IVA. No incluye depósitos en garantía. Algunos pagos incluyen agua o basura cuando se cobraron junto con la renta.${c.pagosRentaFuente ? ' Fuente: ' + esc(c.pagosRentaFuente) : ''}</p>`,
+                'Historial de pagos de renta');
+        }
+
+        // ---------------- HISTORIAL DE PAGOS DE DEPÓSITO ----------------
+        // c.historialDepositos: [{ fecha, pago, locales, banco, monto, tipo }]
+        //   tipo 'directo'    → pago del inquilino a este contrato (suma)
+        //   tipo 'compartido' → pago hecho para varios locales (se muestra, no suma)
+        //   tipo 'asignado'   → parte de los pagos compartidos que corresponde a este contrato (suma)
+        function ventanaDepositos(c) {
+            const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f.split('-').reverse().join('/') : esc(f || '');
+            const pagos = [...(c.historialDepositos || [])].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+            const compartidos = pagos.filter(p => p.tipo === 'compartido');
+            const cuentan = pagos.filter(p => p.tipo !== 'compartido');
+            const pagado = cuentan.reduce((s, p) => s + (p.monto || 0), 0);
+            const totalComp = compartidos.reduce((s, p) => s + (p.monto || 0), 0);
+            const requerido = (c.deposito || 0) + (c.porPagar || 0);
+            const saldo = requerido - pagado;
+            const filaPago = p => `<tr class="${p.tipo === 'compartido' ? 'comp' : ''}">
+                <td>${fechaCorta(p.fecha)}</td><td>${esc(p.pago)}${p.nota ? `<div class="nota-p">${esc(p.nota)}</div>` : ''}</td>
+                <td>${esc(p.locales)}</td><td>${esc(p.banco)}</td><td class="num">${dinero(p.monto)}</td></tr>`;
+
+            const fondo = document.createElement('div');
+            fondo.className = 'modal-fondo';
+            fondo.innerHTML = `
+                <div class="modal" role="dialog" aria-label="Historial de pagos de depósito">
+                    <div class="modal-cab">
+                        <div><div class="emp">Historial de pagos de depósito</div><h3>${esc(c.razonSocial)} · Local ${esc((c.locales || []).join(', '))}</h3></div>
+                        <button class="btn-sec" data-cerrar>Cerrar</button>
+                    </div>
+                    ${compartidos.length ? `
+                    <h4>Pagos compartidos (locales ${esc([...new Set(compartidos.map(p => p.locales))].join(' / '))})</h4>
+                    <table class="tabla-dep">
+                        <thead><tr><th>Fecha</th><th>Pagó</th><th>Locales</th><th>Banco</th><th class="num">Monto</th></tr></thead>
+                        <tbody>${compartidos.map(filaPago).join('')}
+                            <tr class="sub"><td colspan="4">Total pagado entre los locales</td><td class="num">${dinero(totalComp)}</td></tr>
+                        </tbody>
+                    </table>` : ''}
+                    <h4>Pagos que cuentan para este contrato</h4>
+                    <table class="tabla-dep">
+                        <thead><tr><th>Fecha</th><th>Concepto</th><th>Locales</th><th>Banco</th><th class="num">Monto</th></tr></thead>
+                        <tbody>${cuentan.length ? cuentan.map(filaPago).join('') : '<tr><td colspan="5" style="text-align:center;color:#999;padding:16px">Sin pagos de depósito registrados.</td></tr>'}</tbody>
+                    </table>
+                    <div class="resumen-dep">
+                        <div><span>Pagado</span><strong>${dinero(pagado)}</strong></div>
+                        <div><span>Depósito requerido</span><strong>${dinero(requerido)}</strong></div>
+                        <div><span>${saldo > 0 ? 'Debe' : saldo < 0 ? 'Saldo a favor' : 'Saldo'}</span><strong style="color:${saldo > 0 ? '#c62828' : '#2e7d32'}">${dinero(Math.abs(saldo))}</strong></div>
+                    </div>
+                    ${Math.abs(pagado - (c.deposito || 0)) > 0.01 ? `<p class="aviso-dep">El total pagado (${dinero(pagado)}) no coincide con el depósito registrado en la carátula (${dinero(c.deposito)}).</p>` : ''}
+                    ${c.historialDepositosNota ? `<p class="nota-dep">${esc(c.historialDepositosNota)}</p>` : ''}
+                </div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', esc_); };
+            const esc_ = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', esc_);
+            document.body.appendChild(fondo);
+        }
 
         // ---------------- EDICIÓN ----------------
         // [campo, etiqueta, tipo, sección]
@@ -273,7 +501,11 @@
             ['seguro.nombre', 'A nombre de', 'texto', 'Seguro y servicios'],
             ['seguro.vigencia', 'Vigencia del seguro', 'fecha', 'Seguro y servicios'],
             ['telmex', 'Telmex', 'texto', 'Seguro y servicios'],
-            ['cfe', 'CFE', 'texto', 'Seguro y servicios'],
+            ['cfeTitular', 'Titular del servicio', 'texto', 'CFE'],
+            ['cfe', 'Dirección del servicio', 'texto', 'CFE'],
+            ['cfeServicio', 'No. de servicio', 'texto', 'CFE'],
+            ['cfeRmu', 'RMU', 'texto', 'CFE'],
+            ['cfeCuenta', 'Cuenta', 'texto', 'CFE'],
             ['notas', 'Notas', 'textarea', 'Notas']
         ];
         const leer = (c, k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), c);
