@@ -8,44 +8,51 @@
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
-        .main { max-width: 1150px; margin: 0 auto; padding: 30px 20px 60px; }
+        .main { max-width: 1250px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
         .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
 
-        .tabs { display: flex; gap: 4px; border-bottom: 1px solid #eee; margin-bottom: 25px; }
-        .tab { background: none; border: none; padding: 12px 18px; font-size: 15px; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
-        .tab.activa { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
-        .contador { display: inline-block; min-width: 20px; padding: 1px 7px; margin-left: 6px; border-radius: 10px; background: #fdecea; color: #c62828; font-size: 12px; font-weight: 600; }
+        /* Tarjetas de resumen */
+        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
+        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; }
+        .tarjeta.roja .val { color: #c62828; }
+        .tarjeta.naranja .val { color: #ef6c00; }
+        @media (max-width: 800px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
 
-        .grupo { margin-bottom: 28px; }
-        .grupo h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; }
-        .alerta { display: flex; gap: 16px; align-items: center; border: 1px solid #eee; border-left: 4px solid #ccc; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
-        .alerta .dias { min-width: 90px; font-weight: 700; font-size: 15px; }
-        .alerta .txt { flex: 1; }
-        .alerta .txt strong { display: block; margin-bottom: 3px; }
-        .alerta .txt span { color: #777; font-size: 13px; }
-        .alerta a { color: #667eea; text-decoration: none; font-size: 13px; white-space: nowrap; }
-        .n-vencido { border-left-color: #c62828; } .n-vencido .dias { color: #c62828; }
-        .n-30 { border-left-color: #ef6c00; } .n-30 .dias { color: #ef6c00; }
-        .n-60 { border-left-color: #f9a825; } .n-60 .dias { color: #b28704; }
-        .n-90 { border-left-color: #667eea; } .n-90 .dias { color: #667eea; }
-        .vacio { color: #999; font-size: 14px; padding: 10px 0; }
+        /* Filtros */
+        .filtros { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
+        .chip { background: white; border: 1px solid #ddd; border-radius: 16px; padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; }
+        .chip.activa { background: #667eea; border-color: #667eea; color: white; }
+        .leyenda { margin-left: auto; font-size: 12px; color: #999; display: flex; gap: 12px; align-items: center; }
+        .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 
+        /* Tabla */
         .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; }
-        tr:last-child td { border-bottom: none; }
+        td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+        tbody tr:last-child td { border-bottom: none; }
         tbody tr { cursor: pointer; }
         tbody tr:hover td { background: #f8f9ff; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .nw { white-space: nowrap; }
         .estado { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
         .e-vigente { background: #e8f5e9; color: #2e7d32; }
         .e-vencido { background: #fdecea; color: #c62828; }
         .e-termina { background: #fff3e0; color: #ef6c00; }
+        .gris { color: #999; }
+
+        /* Punto de alerta (el detalle está en la carátula) */
+        .col-alerta { width: 36px; text-align: center; padding-left: 8px; padding-right: 0; }
+        .punto { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
+
         tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
         .cargando { color: #999; padding: 40px 0; text-align: center; }
         .err { color: #c62828; }
+        .vacio td { text-align: center; color: #999; padding: 30px; cursor: default; }
     </style>
 </head>
 <body>
@@ -55,14 +62,13 @@
         import { crearNavbar } from '../../../js/navbar.js';
         import { isAuthenticated, esAdmin, db } from '../../../js/auth.js';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, TEXTO_NIVEL } from '../../../js/alertas-contrato.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const dinero = n => typeof n === 'number' ? '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
         const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const fechaTxt = f => { if (!f) return '-'; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
-        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
-        const diasHasta = f => Math.round((new Date(f + 'T00:00:00') - new Date(hoyISO() + 'T00:00:00')) / 86400000);
 
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
@@ -81,98 +87,110 @@
             return { clase: 'e-vigente', txt: 'Vigente' };
         }
 
-        // Eventos con fecha que hay que vigilar
-        function eventos(contratos) {
-            const ev = [];
-            contratos.forEach(c => {
-                const quien = `${c.razonSocial} · Local ${(c.locales || []).join(', ')}`;
-                if (c.fin) ev.push({ c, fecha: c.fin, tipo: 'Fin de contrato', detalle: `Plazo ${c.plazo || '-'}, inició el ${fechaTxt(c.inicio)}`, quien });
-                if (c.incremento) ev.push({ c, fecha: c.incremento, tipo: 'Incremento de renta', detalle: `Tipo: ${c.incrementoTipo || '-'} · Renta actual ${dinero(c.total)}`, quien });
-                if (c.seguro && /^\d{4}-\d{2}-\d{2}$/.test(c.seguro.vigencia || '')) ev.push({ c, fecha: c.seguro.vigencia, tipo: 'Vencimiento de seguro', detalle: `${c.seguro.aseguradora || ''} · Póliza ${c.seguro.poliza || '-'}`, quien });
-            });
-            return ev.map(e => ({ ...e, dias: diasHasta(e.fecha) })).sort((a, b) => a.dias - b.dias);
+        // Solo un punto de color; el detalle se ve en la carátula
+        function punto(a) {
+            if (!a.peor) return '';
+            const tip = `${a.total} alerta${a.total > 1 ? 's' : ''} · ${TEXTO_NIVEL[a.peor]} · ver detalle en la carátula`;
+            return `<span class="punto" style="background:${COLOR_NIVEL[a.peor]}" title="${esc(tip)}"></span>`;
         }
 
         async function iniciar() {
             const snap = await getDocs(collection(db, 'contratos'));
             const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-                .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999));
+                .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
+                .map(c => ({ ...c, _e: estadoDe(c), _a: alertasContrato(c) }));
 
             if (!contratos.length) {
                 app.innerHTML = `<h1>Locales</h1><p class="sub">Todavía no hay contratos en el panel. Impórtalos desde <a href="../herramientas/importar-contratos.html">Importar contratos</a>.</p>`;
                 return;
             }
 
-            const ev = eventos(contratos).filter(e => e.dias <= 90);
-            const grupos = [
-                { clase: 'n-vencido', titulo: 'Vencidos', lista: ev.filter(e => e.dias < 0) },
-                { clase: 'n-30', titulo: 'Próximos 30 días', lista: ev.filter(e => e.dias >= 0 && e.dias <= 30) },
-                { clase: 'n-60', titulo: '31 a 60 días', lista: ev.filter(e => e.dias > 30 && e.dias <= 60) },
-                { clase: 'n-90', titulo: '61 a 90 días', lista: ev.filter(e => e.dias > 60) }
-            ];
-            const urgentes = ev.filter(e => e.dias <= 30).length;
-            const pendientes = contratos.filter(c => typeof c.porPagar === 'number' && c.porPagar > 0);
+            const activos = contratos.filter(c => c._e.txt !== 'Vencido');
+            const vencidos = contratos.length - activos.length;
+            const todasAlertas = contratos.flatMap(c => c._a.lista);
+            const urgentes = todasAlertas.filter(e => e.dias <= 30).length;
+            const atrasadas = todasAlertas.filter(e => e.dias < 0).length;
+            const conAlertas = contratos.filter(c => c._a.peor).length;
+            const saldoTotal = contratos.reduce((s, c) => s + c._a.saldo, 0);
+            const conSaldo = contratos.filter(c => c._a.saldo).length;
 
             app.innerHTML = `
                 <h1>Locales</h1>
-                <p class="sub">${contratos.length} contratos · Renta mensual total ${dinero(contratos.filter(c => estadoDe(c).txt !== 'Vencido').reduce((s, c) => s + (c.total || 0), 0))} (sin IVA, contratos no vencidos)</p>
-                <div class="tabs">
-                    <button class="tab activa" data-tab="alertas">Alertas${urgentes ? `<span class="contador">${urgentes}</span>` : ''}</button>
-                    <button class="tab" data-tab="contratos">Contratos</button>
-                </div>
-                <div id="tab-alertas">
-                    ${grupos.map(g => `
-                        <div class="grupo">
-                            <h2>${g.titulo}</h2>
-                            ${g.lista.length ? g.lista.map(e => `
-                                <div class="alerta ${g.clase}">
-                                    <div class="dias">${e.dias < 0 ? `Hace ${-e.dias} d` : e.dias === 0 ? 'Hoy' : `En ${e.dias} d`}</div>
-                                    <div class="txt"><strong>${esc(e.tipo)}: ${fechaTxt(e.fecha)}</strong><span>${esc(e.quien)} · ${esc(e.detalle)}</span></div>
-                                    <a href="caratula.html?id=${encodeURIComponent(e.c.id)}">Ver carátula →</a>
-                                </div>`).join('') : '<div class="vacio">Nada en este periodo.</div>'}
-                        </div>`).join('')}
-                    <div class="grupo">
-                        <h2>Saldos por pagar</h2>
-                        ${pendientes.length ? pendientes.map(c => `
-                            <div class="alerta n-60">
-                                <div class="dias">${dinero(c.porPagar)}</div>
-                                <div class="txt"><strong>${esc(c.razonSocial)}</strong><span>Local ${esc((c.locales || []).join(', '))}${c.porPagarNota ? ' · ' + esc(c.porPagarNota) : ''}</span></div>
-                                <a href="caratula.html?id=${encodeURIComponent(c.id)}">Ver carátula →</a>
-                            </div>`).join('') : '<div class="vacio">Sin saldos pendientes.</div>'}
+                <p class="sub">Contratos, vencimientos y saldos. Haz clic en un renglón para abrir la carátula.</p>
+
+                <div class="tarjetas">
+                    <div class="tarjeta">
+                        <div class="et">Contratos activos</div>
+                        <div class="val">${activos.length}</div>
+                        <div class="det">${vencidos ? `${vencidos} vencido${vencidos > 1 ? 's' : ''} · ` : ''}${contratos.length} en total</div>
+                    </div>
+                    <div class="tarjeta">
+                        <div class="et">Renta mensual</div>
+                        <div class="val">${dinero(activos.reduce((s, c) => s + (c.total || 0), 0))}</div>
+                        <div class="det">Sin IVA, contratos activos</div>
+                    </div>
+                    <div class="tarjeta ${atrasadas ? 'roja' : urgentes ? 'naranja' : ''}">
+                        <div class="et">Atención próximos 30 días</div>
+                        <div class="val">${urgentes}</div>
+                        <div class="det">${atrasadas ? `${atrasadas} ya vencida${atrasadas > 1 ? 's' : ''} · ` : ''}${todasAlertas.length} alertas en ${VENTANA} días</div>
+                    </div>
+                    <div class="tarjeta ${saldoTotal ? 'naranja' : ''}">
+                        <div class="et">Saldos por pagar</div>
+                        <div class="val">${dinero(saldoTotal)}</div>
+                        <div class="det">${conSaldo ? `${conSaldo} locatario${conSaldo > 1 ? 's' : ''}` : 'Sin saldos pendientes'}</div>
                     </div>
                 </div>
-                <div id="tab-contratos" style="display:none">
-                    <div class="tabla-wrap">
-                        <table>
-                            <thead><tr><th>Locales</th><th>Inquilino</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Incremento</th><th class="num">Renta mensual</th><th class="num">Con IVA</th></tr></thead>
-                            <tbody>
-                                ${contratos.map(c => { const e = estadoDe(c); return `
-                                    <tr data-id="${esc(c.id)}">
-                                        <td><strong>${esc((c.locales || []).join(', '))}</strong></td>
-                                        <td>${esc(c.razonSocial)}</td>
-                                        <td><span class="estado ${e.clase}">${e.txt}</span></td>
-                                        <td>${fechaTxt(c.inicio)}</td>
-                                        <td>${fechaTxt(c.fin)}</td>
-                                        <td>${fechaTxt(c.incremento)}${c.incrementoTipo ? ` <span style="color:#999">(${esc(c.incrementoTipo)})</span>` : ''}</td>
-                                        <td class="num">${dinero(c.total)}</td>
-                                        <td class="num">${dinero(c.totalIva)}</td>
-                                    </tr>`; }).join('')}
-                            </tbody>
-                            <tfoot><tr><td colspan="6">Total</td>
-                                <td class="num">${dinero(contratos.reduce((s, c) => s + (c.total || 0), 0))}</td>
-                                <td class="num">${dinero(contratos.reduce((s, c) => s + (c.totalIva || 0), 0))}</td></tr></tfoot>
-                        </table>
+
+                <div class="filtros">
+                    <button class="chip activa" data-f="todos">Todos (${contratos.length})</button>
+                    <button class="chip" data-f="alertas">Con alertas (${conAlertas})</button>
+                    <div class="leyenda">
+                        <span><i style="background:#c62828"></i>Vencido</span>
+                        <span><i style="background:#ef6c00"></i>30 días</span>
+                        <span><i style="background:#f9a825"></i>60 días</span>
+                        <span><i style="background:#667eea"></i>90 días</span>
                     </div>
+                </div>
+
+                <div class="tabla-wrap">
+                    <table>
+                        <thead><tr><th class="col-alerta"></th><th>Locales</th><th>Inquilino</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Incremento</th><th class="num">Renta mensual</th><th class="num">Con IVA</th></tr></thead>
+                        <tbody id="cuerpo"></tbody>
+                        <tfoot><tr><td></td><td colspan="6">Total</td>
+                            <td class="num">${dinero(contratos.reduce((s, c) => s + (c.total || 0), 0))}</td>
+                            <td class="num">${dinero(contratos.reduce((s, c) => s + (c.totalIva || 0), 0))}</td></tr></tfoot>
+                    </table>
                 </div>`;
 
-            app.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-                app.querySelectorAll('.tab').forEach(x => x.classList.toggle('activa', x === t));
-                document.getElementById('tab-alertas').style.display = t.dataset.tab === 'alertas' ? '' : 'none';
-                document.getElementById('tab-contratos').style.display = t.dataset.tab === 'contratos' ? '' : 'none';
+            const cuerpo = document.getElementById('cuerpo');
+            function pintar(filtro) {
+                let lista = contratos;
+                if (filtro === 'alertas') {
+                    lista = contratos.filter(c => c._a.peor)
+                        .sort((a, b) => PESO[a._a.peor] - PESO[b._a.peor] || (a._a.lista[0]?.dias ?? 999) - (b._a.lista[0]?.dias ?? 999));
+                }
+                cuerpo.innerHTML = lista.length ? lista.map(c => `
+                    <tr data-id="${esc(c.id)}">
+                        <td class="col-alerta">${punto(c._a)}</td>
+                        <td><strong>${esc((c.locales || []).join(', '))}</strong></td>
+                        <td>${esc(c.razonSocial)}${c.nombreComercial ? `<div class="gris" style="font-size:12px">${esc(c.nombreComercial)}</div>` : ''}</td>
+                        <td><span class="estado ${c._e.clase}">${c._e.txt}</span></td>
+                        <td class="nw">${fechaTxt(c.inicio)}</td>
+                        <td class="nw">${fechaTxt(c.fin)}</td>
+                        <td class="nw">${fechaTxt(c.incremento)}${c.incrementoTipo ? `<div class="gris" style="font-size:12px">${esc(c.incrementoTipo)}</div>` : ''}</td>
+                        <td class="num">${dinero(c.total)}</td>
+                        <td class="num">${dinero(c.totalIva)}</td>
+                    </tr>`).join('') : '<tr class="vacio"><td colspan="9">Ningún contrato tiene alertas.</td></tr>';
+                cuerpo.querySelectorAll('tr[data-id]').forEach(tr => tr.addEventListener('click', () => {
+                    window.location.href = 'caratula.html?id=' + encodeURIComponent(tr.dataset.id);
+                }));
+            }
+
+            app.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
+                app.querySelectorAll('.chip').forEach(x => x.classList.toggle('activa', x === ch));
+                pintar(ch.dataset.f);
             }));
-            app.querySelectorAll('tbody tr[data-id]').forEach(tr => tr.addEventListener('click', () => {
-                window.location.href = 'caratula.html?id=' + encodeURIComponent(tr.dataset.id);
-            }));
+            pintar('todos');
         }
     </script>
 </body>
