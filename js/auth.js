@@ -220,13 +220,14 @@ export function getSeccionesPermitidas() {
   const todas = {
     inicio:      { id: 'inicio',      nombre: 'Dashboard Inicio', url: b },
     locales:     { id: 'locales',     nombre: 'Locales',          url: b + 'locales/' },
+    facturacion: { id: 'facturacion', nombre: 'Facturación',      url: b + 'facturacion/' },
     agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },
     calendarios: { id: 'calendarios', nombre: 'Calendarios',      url: b + 'calendarios/' },
     config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'locales', 'agua', 'calendarios', 'config'],
+    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config'],
     operario: ['inicio', 'agua', 'calendarios']
   };
 

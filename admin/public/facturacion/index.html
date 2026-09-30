@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1150px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
+        .controles { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 22px; }
+        .controles label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+        .controles input { padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+
+        .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+        .tarjeta .k { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
+        td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        a.ver { color: #667eea; text-decoration: none; white-space: nowrap; }
+        select.estado { padding: 5px 8px; border-radius: 12px; border: 1px solid transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .e-pendiente { background: #f1f1f1; color: #555; } .e-proceso { background: #fff8e1; color: #b26a00; }
+        .e-pagado { background: #e8f5e9; color: #2e7d32; } .e-tarde { background: #fdecea; color: #c62828; }
+        .aviso { color: #b26a00; font-size: 12px; display: block; margin-top: 3px; }
+        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
+        .vacio { border: 1px dashed #ddd; border-radius: 10px; padding: 30px; text-align: center; color: #777; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
+        import { collection, getDocs, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import {
+            ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, generarFactura, contratosFacturables,
+            cargarConfigGeneral, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
+            documentoContadores, imprimirHojas
+        } from '../../../js/facturacion.js';
+
+        const app = document.getElementById('app');
+        let mes = new URLSearchParams(location.search).get('mes') || mesActual();
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else cargar();
+        }
+
+        async function cargar(msg = '') {
+            app.innerHTML = '<p style="color:#999">Cargando...</p>';
+            try {
+                const [snapC, facturas] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes)]);
+                const contratos = snapC.docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
+                render(contratos, facturas, msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<h1>Facturación</h1><p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        function render(contratos, facturas, msg) {
+            const facturables = contratosFacturables(contratos);
+            const porContrato = Object.fromEntries(facturas.map(f => [f.contratoId, f]));
+            const faltan = facturables.filter(c => !porContrato[c.id]);
+            const filas = [...facturas].sort((a, b) => ordenLocales(
+                contratos.find(c => c.id === a.contratoId) || a, contratos.find(c => c.id === b.contratoId) || b));
+
+            const total = facturas.reduce((s, f) => s + (f.total || 0), 0);
+            const cobrado = facturas.filter(f => f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde').reduce((s, f) => s + (f.total || 0), 0);
+
+            app.innerHTML = `
+                <h1>Facturación</h1>
+                <p class="sub">Facturas mensuales de LAFABDECHOC a cada locatario. <span style="color:#ccc">· v3 (agua y basura del mes)</span></p>
+                <div class="controles">
+                    <div><label for="mes">Mes de facturación</label><input type="month" id="mes" value="${mes}"></div>
+                    ${faltan.length ? `<button class="btn" id="generar">Generar ${facturas.length ? `faltantes (${faltan.length})` : `facturas de ${mesTxt(mes)}`}</button>` : ''}
+                    ${facturas.length ? `
+                        <button class="btn-sec" id="actAgua" title="Toma las lecturas de agua capturadas y pone el periodo correcto al agua y a la basura en todas las facturas del mes">Actualizar agua y periodos</button>
+                        <button class="btn-sec" id="exportar">Exportar PDF (<span id="nSel">${facturas.length}</span>)</button>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555;margin:0 0 10px">
+                            <input type="checkbox" id="conResumen" checked> Incluir resumen</label>` : ''}
+                    <span id="msg">${msg}</span>
+                </div>
+                ${!facturables.length ? `<div class="vacio">Ningún contrato tiene datos de facturación todavía. Impórtalos en <a href="../herramientas/importar-facturas.html">Importar facturación</a>.</div>` :
+                  !facturas.length ? `<div class="vacio">No hay facturas de <strong>${mesTxt(mes)}</strong>.<br><br>"Generar" las prellena con la renta de cada contrato, el agua de las lecturas y la recolección de basura. Después revisas y ajustas cada una.</div>` : `
+                <div class="resumen">
+                    <div class="tarjeta"><div class="k">Facturado ${mesTxt(mes)}</div><div class="v">${dinero(total)}</div></div>
+                    <div class="tarjeta"><div class="k">Cobrado</div><div class="v" style="color:#2e7d32">${dinero(cobrado)}</div></div>
+                    <div class="tarjeta"><div class="k">Por cobrar</div><div class="v" style="color:#b26a00">${dinero(total - cobrado)}</div></div>
+                </div>
+                <div class="tabla-wrap">
+                    <table>
+                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th><th></th></tr></thead>
+                        <tbody>
+                            ${filas.map(f => `
+                                <tr>
+                                    <td><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked></td>
+                                    <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
+                                    <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
+                                    <td class="num">${dinero(f.subtotal)}</td>
+                                    <td class="num">${dinero(f.iva)}</td>
+                                    <td class="num"><strong>${dinero(f.total)}</strong></td>
+                                    <td><select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" data-id="${esc(f.id)}">
+                                        ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}
+                                    </select></td>
+                                    <td><a class="ver" href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}">Ver factura →</a></td>
+                                </tr>`).join('')}
+                        </tbody>
+                        <tfoot><tr><td colspan="3">Total</td>
+                            <td class="num">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
+                            <td class="num">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
+                            <td class="num">${dinero(total)}</td><td colspan="2"></td></tr></tfoot>
+                    </table>
+                </div>`}`;
+
+            document.getElementById('mes').addEventListener('change', e => {
+                mes = e.target.value || mesActual();
+                history.replaceState(null, '', '?mes=' + mes);
+                cargar();
+            });
+            document.getElementById('generar')?.addEventListener('click', () => generar(faltan, contratos));
+            document.getElementById('actAgua')?.addEventListener('click', () => actualizarAgua(facturas, contratos));
+            const seleccion = () => [...app.querySelectorAll('input.sel:checked')].map(x => x.dataset.id);
+            const actualizarSel = () => {
+                const n = seleccion().length;
+                const nSel = document.getElementById('nSel');
+                if (nSel) nSel.textContent = n;
+                const todas = document.getElementById('selTodas');
+                if (todas) { todas.checked = n === filas.length; todas.indeterminate = n > 0 && n < filas.length; }
+            };
+            app.querySelectorAll('input.sel').forEach(x => x.addEventListener('change', actualizarSel));
+            document.getElementById('selTodas')?.addEventListener('change', e => {
+                app.querySelectorAll('input.sel').forEach(x => { x.checked = e.target.checked; });
+                actualizarSel();
+            });
+            document.getElementById('exportar')?.addEventListener('click', () => {
+                const ids = new Set(seleccion());
+                const elegidas = filas.filter(f => ids.has(f.id));
+                if (!elegidas.length) { alert('Selecciona al menos una factura.'); return; }
+                const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
+                const conResumen = document.getElementById('conResumen').checked;
+                imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen }),
+                    `Facturas LAFABDECHOC ${mesTxt(mes)}${elegidas.length < filas.length ? ` (${elegidas.length})` : ''}`);
+            });
+            app.querySelectorAll('select.estado').forEach(s => s.addEventListener('change', () => cambiarEstado(s)));
+        }
+
+        async function generar(faltan, contratos) {
+            if (!confirm(`¿Generar ${faltan.length} factura(s) de ${mesTxt(mes)}?\n\nQuedan como "Pendiente" para que las revises.`)) return;
+            const btn = document.getElementById('generar');
+            btn.disabled = true;
+            try {
+                const [lecturas, general, todas] = await Promise.all([cargarLecturas(), cargarConfigGeneral(), cargarTodasLasFacturas()]);
+                const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
+                                const user = getCurrentUser().email;
+                const batch = writeBatch(db);
+                faltan.forEach(c => {
+                    batch.set(doc(db, 'facturas', facturaId(c.id, mes)), {
+                        ...generarFactura(c, mes, lecturas, general, lecturasFacturadas(todas, c, lecturas, facturaId(c.id, mes))),
+                        creadoPor: user, creadoEn: serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                cargar(`<span class="ok">Se generaron ${faltan.length} facturas. Revisa cada una antes de enviarla.</span>`);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudo generar: ${esc(err.message)}</span>`;
+                btn.disabled = false;
+            }
+        }
+
+        async function actualizarAgua(facturas, contratos) {
+            const pagadas = facturas.filter(f => f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde').length;
+            if (!confirm(`¿Actualizar el agua de ${facturas.length} facturas de ${mesTxt(mes)} con las lecturas capturadas?` +
+                (pagadas ? `\n\nOjo: ${pagadas} ya están marcadas como pagadas.` : '') +
+                '\n\nActualiza el agua y el periodo de la basura; renta, extraordinarios, moratorios y notas se conservan.')) return;
+            const btn = document.getElementById('actAgua');
+            btn.disabled = true;
+            try {
+                const [lecturas, todas] = await Promise.all([cargarLecturas(), cargarTodasLasFacturas()]);
+                const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
+                const batch = writeBatch(db);
+                let cambiadas = 0;
+                facturas.forEach(f => {
+                    const c = porId[f.contratoId];
+                    if (!c) return;
+                    const nuevo = actualizarAguaEnFactura(f, c, lecturas, lecturasFacturadas(todas, c, lecturas, f.id));
+                    if (JSON.stringify(f.conceptos || []) === JSON.stringify(nuevo.conceptos)) return;
+                    cambiadas++;
+                    batch.update(doc(db, 'facturas', f.id), { ...nuevo, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                });
+                if (cambiadas) await batch.commit();
+                cargar(`<span class="ok">Agua y periodos actualizados en ${cambiadas} factura(s).</span>`);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudo actualizar: ${esc(err.message)}</span>`;
+                btn.disabled = false;
+            }
+        }
+
+        async function cambiarEstado(sel) {
+            const prev = [...sel.classList].find(c => c.startsWith('e-'));
+            sel.disabled = true;
+            try {
+                await updateDoc(doc(db, 'facturas', sel.dataset.id), {
+                    estadoPago: sel.value, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp()
+                });
+                sel.classList.remove(prev);
+                sel.classList.add(ESTADOS[sel.value].clase);
+                cargar(`<span class="ok">Estado actualizado.</span>`);
+            } catch (err) {
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudo actualizar: ${esc(err.message)}</span>`;
+                sel.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

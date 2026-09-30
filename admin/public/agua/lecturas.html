@@ -147,7 +147,7 @@
                         <input type="date" id="fecha" value="${hoy()}" max="${hoy()}">
                     </div>
                     <div class="campo">
-                        <label for="costo">Costo por m³</label>
+                        <label for="costo">Costo por m³ (IVA incluido)</label>
                         ${admin
                             ? `<input type="number" id="costo" step="0.01" min="0" value="${costoM3}" style="width:120px">`
                             : `<div class="costo-fijo">${dinero(costoM3)}</div>`}
