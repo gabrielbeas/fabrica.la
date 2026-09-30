@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizar carátulas - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 24px; margin-bottom: 6px; }
+        .sub { color: #999; font-size: 14px; margin-bottom: 24px; }
+        .card { border: 1px solid #eee; border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; }
+        .card h2 { font-size: 16px; margin: 0 0 10px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        th { color: #666; font-weight: 600; font-size: 12px; }
+        .antes { color: #999; } .nuevo { color: #1b5e20; font-weight: 500; }
+        .igual { color: #bbb; font-size: 12px; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        #log { font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #f8f9fa; padding: 12px; border-radius: 6px; min-height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app">Verificando acceso...</div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { getCurrentUser, isAuthenticated, esAdmin, db } from '../../../js/auth.js';
+        import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const txt = v => v === undefined || v === null || v === '' ? '—' : Array.isArray(v) ? v.join(' · ') : typeof v === 'number' && v < 1 && v > 0 ? `${+(v * 100).toFixed(2)}%` : String(v);
+        const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+        if (!isAuthenticated()) window.location.href = '/login.html';
+        else { crearNavbar(); esAdmin() ? render() : app.innerHTML = '<h1>Acceso restringido</h1>'; }
+
+        function render() {
+            app.innerHTML = `
+                <h1>Actualizar carátulas desde los contratos</h1>
+                <p class="sub">Compara lo que hay en el panel con lo que dice cada contrato. Solo se guardan los campos que dejes marcados.</p>
+                <div class="card">
+                    <p><strong>1.</strong> Selecciona <code>_privado/caratulas.json</code>.</p>
+                    <input type="file" id="archivo" accept=".json">
+                </div>
+                <div id="comparacion"></div>
+                <div class="card">
+                    <button class="btn" id="aplicar" disabled>Guardar cambios marcados</button>
+                    <div id="log" style="margin-top:15px"></div>
+                </div>`;
+
+            let propuestas = {};
+            const log = (m, cls = '') => { document.getElementById('log').innerHTML += `<span class="${cls}">${m}</span>\n`; };
+
+            document.getElementById('archivo').addEventListener('change', async e => {
+                const f = e.target.files[0];
+                if (!f) return;
+                try { propuestas = JSON.parse(await f.text()).contratos || {}; }
+                catch (err) { log('No se pudo leer: ' + err.message, 'err'); return; }
+                const cont = document.getElementById('comparacion');
+                cont.innerHTML = '';
+                let total = 0;
+                for (const [id, campos] of Object.entries(propuestas)) {
+                    const snap = await getDoc(doc(db, 'contratos', id));
+                    if (!snap.exists()) { cont.innerHTML += `<div class="card"><p class="err">No existe el contrato ${esc(id)} en el panel.</p></div>`; continue; }
+                    const actual = snap.data();
+                    const filas = Object.entries(campos).map(([k, v]) => {
+                        const same = igual(actual[k], v);
+                        if (!same) total++;
+                        return `<tr>
+                            <td>${same ? '' : `<input type="checkbox" class="campo" data-id="${esc(id)}" data-k="${esc(k)}" checked>`}</td>
+                            <td><strong>${esc(k)}</strong></td>
+                            <td class="antes">${esc(txt(actual[k]))}</td>
+                            <td class="${same ? 'igual' : 'nuevo'}">${same ? 'sin cambio' : esc(txt(v))}</td></tr>`;
+                    }).join('');
+                    cont.innerHTML += `<div class="card"><h2>${esc(actual.razonSocial)} · Local ${esc((actual.locales || []).join(', '))}</h2>
+                        <table><thead><tr><th></th><th>Campo</th><th>En el panel</th><th>Según el contrato</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+                }
+                document.getElementById('aplicar').disabled = total === 0;
+                log(`${total} campo(s) con diferencias.`);
+            });
+
+            document.getElementById('aplicar').addEventListener('click', async () => {
+                const marcados = [...document.querySelectorAll('input.campo:checked')];
+                if (!marcados.length || !confirm(`¿Guardar ${marcados.length} campo(s)?`)) return;
+                const porId = {};
+                marcados.forEach(m => { (porId[m.dataset.id] ||= {})[m.dataset.k] = propuestas[m.dataset.id][m.dataset.k]; });
+                const btn = document.getElementById('aplicar');
+                btn.disabled = true;
+                const user = getCurrentUser().email;
+                for (const [id, cambios] of Object.entries(porId)) {
+                    try {
+                        const antes = (await getDoc(doc(db, 'contratos', id))).data();
+                        await updateDoc(doc(db, 'contratos', id), { ...cambios, editadoPor: user, editadoEn: serverTimestamp() });
+                        await addDoc(collection(db, 'contratos', id, 'historial'), {
+                            antes: JSON.parse(JSON.stringify(Object.fromEntries(Object.keys(cambios).map(k => [k, antes[k] ?? null])))),
+                            despues: JSON.parse(JSON.stringify(cambios)), por: user, en: serverTimestamp(), origen: 'contrato PDF'
+                        });
+                        log(`${id}: ${Object.keys(cambios).length} campo(s) guardados.`, 'ok');
+                    } catch (err) { log(`${id}: error ${err.message}`, 'err'); }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -12,6 +12,9 @@
         .barra { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .barra a { color: #667eea; text-decoration: none; font-size: 14px; }
         .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+        .btn-sec:hover { background: #ebebeb; }
 
         .hoja { border: 1px solid #eee; border-radius: 10px; padding: 36px 40px; }
         .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
@@ -39,7 +42,7 @@
 
         @media (max-width: 700px) { .secciones { grid-template-columns: 1fr; } .hoja { padding: 22px; } dl { grid-template-columns: 120px 1fr; } }
         @media print {
-            nav, .navbar, .barra { display: none !important; }
+            nav, .navbar, .barra, #aviso { display: none !important; }
             .main { max-width: none; padding: 0; }
             .hoja { border: none; padding: 0; }
             body { font-size: 12px; }
@@ -51,8 +54,8 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js';
-        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js';
-        import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
+        import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -80,7 +83,14 @@
                 app.innerHTML = `<div class="barra"><a href="./">← Locales</a></div><p class="err">No se encontró el contrato.</p>`;
                 return;
             }
-            const c = snap.data();
+            contratoId = id;
+            vista(snap.data());
+        }
+
+        let contratoId = null;
+
+        function vista(c) {
+            contratoActual = c;
             const estado = c.estado === 'terminacion_anticipada' ? ['e-termina', 'Terminación anticipada']
                 : (c.fin && c.fin < hoyISO()) ? ['e-vencido', 'Vencido'] : ['e-vigente', 'Vigente'];
             document.title = `Carátula · ${c.razonSocial}`;
@@ -93,8 +103,12 @@
             app.innerHTML = `
                 <div class="barra">
                     <a href="./">← Locales</a>
-                    <button class="btn" onclick="window.print()">Imprimir / PDF</button>
+                    <div style="display:flex;gap:10px">
+                        <button class="btn-sec" id="btnEditar">Editar</button>
+                        <button class="btn" onclick="window.print()">Imprimir / PDF</button>
+                    </div>
                 </div>
+                <div id="aviso"></div>
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
@@ -111,8 +125,30 @@
                             <dl>
                                 ${fila('Razón social', esc(c.razonSocial))}
                                 ${fila('RFC', esc(c.rfc))}
-                                ${fila('Garantía', esc(c.garantia))}
+                                ${fila('Nombre comercial', esc(c.nombreComercial))}
+                                ${fila('Giro', esc(c.giro))}
+                                ${fila('Representante', esc(c.representante))}
                                 ${fila('Dirección', (c.direccion || []).map(esc).join('<br>'))}
+                                ${fila('Acceso al local', esc(c.acceso))}
+                            </dl>
+                        </div>
+                        <div class="seccion">
+                            <h2>Garantías</h2>
+                            <dl>
+                                ${fila('Garantía', esc(c.garantia))}
+                                ${fila('Obligado solidario', (c.obligadosSolidarios || []).map(esc).join('<br>'))}
+                                ${fila('Detalle', esc(c.garantiaDetalle))}
+                                ${fila('Seguros requeridos', esc(c.segurosRequeridos))}
+                            </dl>
+                        </div>
+                        <div class="seccion ancha">
+                            <h2>Condiciones del contrato</h2>
+                            <dl>
+                                ${fila('Periodo de gracia', esc(c.periodoGracia))}
+                                ${fila('Moratorios', esc(c.moratoriosContrato))}
+                                ${fila('Terminación anticipada', esc(c.terminacionAnticipada))}
+                                ${fila('Notificaciones', (c.correosNotificacion || []).map(esc).join(' · '))}
+                                ${fila('Documento', esc(c.documento))}
                             </dl>
                         </div>
                         <div class="seccion">
@@ -170,6 +206,11 @@
                                 ${fila('CFE', esc(c.cfe))}
                             </dl>
                         </div>` : ''}
+                        ${c.notas ? `
+                        <div class="seccion ancha">
+                            <h2>Notas</h2>
+                            <div class="notas" style="white-space:pre-wrap">${esc(c.notas)}</div>
+                        </div>` : ''}
                         ${(c.extras || []).length || c.totalNota ? `
                         <div class="seccion ancha">
                             <h2>Notas de la hoja original</h2>
@@ -179,8 +220,219 @@
                             </ul>
                         </div>` : ''}
                     </div>
-                    <div class="pie">Generado el ${fechaTxt(hoyISO())} desde el panel de administración.</div>
+                    <div class="pie">Generado el ${fechaTxt(hoyISO())} desde el panel de administración.${c.editadoPor ? ` Última edición: ${esc(c.editadoPor)}.` : ''}</div>
                 </div>`;
+            document.getElementById('btnEditar').addEventListener('click', () => edicion(c));
+            if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
+        }
+
+        let contratoActual = null;
+        let avisoPendiente = '';
+
+        // ---------------- EDICIÓN ----------------
+        // [campo, etiqueta, tipo, sección]
+        const CAMPOS = [
+            ['razonSocial', 'Razón social', 'texto', 'Arrendatario'],
+            ['rfc', 'RFC', 'texto', 'Arrendatario'],
+            ['locales', 'Locales (separados por coma)', 'lista', 'Arrendatario'],
+            ['m2', 'm²', 'numero', 'Arrendatario'],
+            ['nombreComercial', 'Nombre comercial', 'texto', 'Arrendatario'],
+            ['giro', 'Giro', 'texto', 'Arrendatario'],
+            ['representante', 'Representante legal', 'texto', 'Arrendatario'],
+            ['acceso', 'Acceso al local', 'texto', 'Arrendatario'],
+            ['direccion', 'Dirección (una línea por renglón)', 'lineas', 'Arrendatario'],
+            ['garantia', 'Garantía', 'texto', 'Garantías'],
+            ['obligadosSolidarios', 'Obligados solidarios (uno por renglón)', 'lineas', 'Garantías'],
+            ['garantiaDetalle', 'Detalle de la garantía', 'textarea', 'Garantías'],
+            ['segurosRequeridos', 'Seguros requeridos por contrato', 'textarea', 'Garantías'],
+            ['periodoGracia', 'Periodo de gracia', 'texto', 'Condiciones'],
+            ['moratoriosContrato', 'Intereses moratorios (contrato)', 'texto', 'Condiciones'],
+            ['terminacionAnticipada', 'Terminación anticipada', 'textarea', 'Condiciones'],
+            ['correosNotificacion', 'Correos de notificación (uno por renglón)', 'lineas', 'Condiciones'],
+            ['documento', 'Archivo del contrato', 'texto', 'Condiciones'],
+            ['estado', 'Estado', 'estado', 'Vigencia'],
+            ['firma', 'Fecha de firma', 'fecha', 'Vigencia'],
+            ['plazo', 'Plazo', 'texto', 'Vigencia'],
+            ['inicio', 'Inicio', 'fecha', 'Vigencia'],
+            ['fin', 'Fin', 'fecha', 'Vigencia'],
+            ['incremento', 'Incremento de renta', 'fecha', 'Vigencia'],
+            ['incrementoTipo', 'Tipo de incremento', 'texto', 'Vigencia'],
+            ['fechaLimite', 'Fecha límite de pago', 'texto', 'Vigencia'],
+            ['total', 'Renta mensual (sin IVA)', 'numero', 'Renta'],
+            ['totalIva', 'Renta con IVA', 'numero', 'Renta'],
+            ['mantenimientoPct', 'Mantenimiento (%)', 'porcentaje', 'Renta'],
+            ['mantenimientoMonto', 'Mantenimiento ($)', 'numero', 'Renta'],
+            ['deposito', 'Depósito', 'numero', 'Depósito'],
+            ['depositoFecha', 'Fecha de depósito', 'fecha', 'Depósito'],
+            ['mesesDeposito', 'Meses de depósito', 'numero', 'Depósito'],
+            ['mesesGracia', 'Meses de gracia', 'numero', 'Depósito'],
+            ['porPagar', 'Por pagar', 'numero', 'Depósito'],
+            ['porPagarNota', 'Nota de por pagar', 'texto', 'Depósito'],
+            ['seguro.aseguradora', 'Aseguradora', 'texto', 'Seguro y servicios'],
+            ['seguro.poliza', 'Póliza', 'texto', 'Seguro y servicios'],
+            ['seguro.nombre', 'A nombre de', 'texto', 'Seguro y servicios'],
+            ['seguro.vigencia', 'Vigencia del seguro', 'fecha', 'Seguro y servicios'],
+            ['telmex', 'Telmex', 'texto', 'Seguro y servicios'],
+            ['cfe', 'CFE', 'texto', 'Seguro y servicios'],
+            ['notas', 'Notas', 'textarea', 'Notas']
+        ];
+        const leer = (c, k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), c);
+
+        function valorInput(c, [k, , tipo]) {
+            const v = leer(c, k);
+            if (v === undefined || v === null) return '';
+            if (tipo === 'lista') return v.join(', ');
+            if (tipo === 'lineas') return v.join('\n');
+            if (tipo === 'porcentaje') return typeof v === 'number' ? +(v * 100).toFixed(4) : '';
+            if (tipo === 'fecha') return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+            return v;
+        }
+
+        function control(c, campo) {
+            const [k, , tipo] = campo;
+            const val = esc(valorInput(c, campo));
+            const id = 'f_' + k.replace('.', '_');
+            if (tipo === 'estado') return `<select id="${id}">
+                <option value="vigente" ${c.estado !== 'terminacion_anticipada' ? 'selected' : ''}>Vigente (vencido si ya pasó la fecha de fin)</option>
+                <option value="terminacion_anticipada" ${c.estado === 'terminacion_anticipada' ? 'selected' : ''}>Terminación anticipada</option></select>`;
+            if (tipo === 'lineas' || tipo === 'textarea') return `<textarea id="${id}" rows="${tipo === 'textarea' ? 4 : 3}">${val}</textarea>`;
+            const t = tipo === 'fecha' ? 'date' : (tipo === 'numero' || tipo === 'porcentaje') ? 'number' : 'text';
+            return `<input id="${id}" type="${t}" ${t === 'number' ? 'step="any"' : ''} value="${val}">`;
+        }
+
+        function edicion(c) {
+            const secciones = [...new Set(CAMPOS.map(x => x[3]))];
+            app.innerHTML = `
+                <style>
+                    .form-sec { border: 1px solid #eee; border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+                    .form-sec h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 14px; }
+                    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+                    .form-grid label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
+                    .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font: inherit; font-size: 14px; }
+                    .form-grid .ancho { grid-column: 1 / -1; }
+                    .extra { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+                    .extra.quitado span { text-decoration: line-through; color: #bbb; }
+                    .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer; }
+                    @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+                </style>
+                <div class="barra">
+                    <a href="#" id="cancelar1">← Cancelar</a>
+                    <div style="display:flex;gap:10px;align-items:center">
+                        <span id="msg" style="font-size:14px"></span>
+                        <button class="btn" id="guardar1">Guardar cambios</button>
+                    </div>
+                </div>
+                <h1 style="font-size:22px;margin:0 0 20px">Editar: ${esc(c.razonSocial)}</h1>
+                ${secciones.map(s => `
+                    <div class="form-sec"><h2>${s}</h2><div class="form-grid">
+                        ${CAMPOS.filter(x => x[3] === s).map(x => `
+                            <div class="${['lineas', 'textarea'].includes(x[2]) ? 'ancho' : ''}">
+                                <label for="f_${x[0].replace('.', '_')}">${x[1]}</label>${control(c, x)}
+                            </div>`).join('')}
+                    </div></div>`).join('')}
+                ${(c.extras || []).length ? `
+                <div class="form-sec"><h2>Notas de la hoja original</h2>
+                    <p style="font-size:13px;color:#888;margin:0 0 10px">Marca las que ya no necesitas; se quitan al guardar.</p>
+                    ${(c.extras || []).map((x, i) => `
+                        <div class="extra" id="extra_${i}"><span>${esc(x.valor)} <span style="color:#bbb">(fila ${x.fila}, col ${x.col})</span></span>
+                        <button class="btn-mini" data-extra="${i}">Quitar</button></div>`).join('')}
+                    <button class="btn-mini" id="quitarTodas" style="margin-top:10px">Quitar todas</button>
+                </div>` : ''}
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px">
+                    <button class="btn-sec" id="cancelar2">Cancelar</button>
+                    <button class="btn" id="guardar2">Guardar cambios</button>
+                </div>`;
+
+            const quitar = new Set();
+            const marcar = (i, on) => {
+                on ? quitar.add(i) : quitar.delete(i);
+                const el = document.getElementById('extra_' + i);
+                el.classList.toggle('quitado', on);
+                el.querySelector('button').textContent = on ? 'Deshacer' : 'Quitar';
+            };
+            app.querySelectorAll('[data-extra]').forEach(b => b.addEventListener('click', () => marcar(+b.dataset.extra, !quitar.has(+b.dataset.extra))));
+            document.getElementById('quitarTodas')?.addEventListener('click', () => (c.extras || []).forEach((_, i) => marcar(i, true)));
+
+            // "Con IVA" se calcula solo: renta mensual + 16%
+            const IVA = 0.16;
+            const fTotal = document.getElementById('f_total');
+            const fIva = document.getElementById('f_totalIva');
+            fIva.readOnly = true;
+            fIva.style.background = '#f7f7f7';
+            fIva.title = 'Se calcula automáticamente: renta mensual + 16% de IVA';
+            fIva.previousElementSibling.textContent = 'Renta con IVA (automático, +16%)';
+            fTotal.addEventListener('input', () => {
+                const v = parseFloat(fTotal.value);
+                fIva.value = isNaN(v) ? '' : (Math.round(v * (1 + IVA) * 100) / 100).toFixed(2);
+            });
+
+            const cancelar = e => { e.preventDefault(); vista(c); };
+            document.getElementById('cancelar1').addEventListener('click', cancelar);
+            document.getElementById('cancelar2').addEventListener('click', cancelar);
+            document.getElementById('guardar1').addEventListener('click', () => guardar(c, quitar));
+            document.getElementById('guardar2').addEventListener('click', () => guardar(c, quitar));
+        }
+
+        function leerFormulario() {
+            const nuevo = {};
+            for (const [k, , tipo] of CAMPOS) {
+                const el = document.getElementById('f_' + k.replace('.', '_'));
+                const raw = el.value.trim();
+                let v;
+                if (tipo === 'lista') v = raw ? raw.split(/[,;]+/).map(s => s.trim()).filter(Boolean) : [];
+                else if (tipo === 'lineas') v = raw ? raw.split('\n').map(s => s.trim()).filter(Boolean) : [];
+                else if (tipo === 'numero') v = raw === '' ? null : Number(raw);
+                else if (tipo === 'porcentaje') v = raw === '' ? null : Number(raw) / 100;
+                else v = raw === '' ? null : raw;
+                if (typeof v === 'number' && isNaN(v)) throw new Error(`"${CAMPOS.find(x => x[0] === k)[1]}" no es un número válido`);
+                nuevo[k] = v;
+            }
+            return nuevo;
+        }
+
+        async function guardar(c, quitar) {
+            const msg = document.getElementById('msg');
+            let nuevo;
+            try { nuevo = leerFormulario(); } catch (err) { msg.className = 'err'; msg.textContent = err.message; return; }
+            if (!nuevo.razonSocial) { msg.className = 'err'; msg.textContent = 'La razón social no puede quedar vacía.'; return; }
+
+            // Solo los campos que cambiaron
+            const cambios = {}, antes = {}, despues = {};
+            for (const [k, , tipo] of CAMPOS) {
+                const previo = leer(c, k);
+                const norm = v => (v === undefined || v === '' || (Array.isArray(v) && !v.length)) ? null : v;
+                const a = tipo === 'fecha' && previo && !/^\d{4}-\d{2}-\d{2}$/.test(previo) ? previo : norm(previo);
+                const b = norm(nuevo[k]);
+                if (tipo === 'fecha' && a && !/^\d{4}-\d{2}-\d{2}$/.test(a) && b === null) continue; // fecha en texto libre sin tocar
+                if (JSON.stringify(a) !== JSON.stringify(b)) { cambios[k] = b; antes[k] = a; despues[k] = b; }
+            }
+            if (quitar.size) {
+                const restantes = (c.extras || []).filter((_, i) => !quitar.has(i));
+                cambios.extras = restantes;
+                antes.extras = (c.extras || []).filter((_, i) => quitar.has(i)).map(x => x.valor);
+                despues.extras = `${quitar.size} nota(s) quitada(s)`;
+            }
+            if (!Object.keys(cambios).length) { msg.className = ''; msg.textContent = 'No hay cambios.'; return; }
+
+            document.getElementById('guardar1').disabled = document.getElementById('guardar2').disabled = true;
+            msg.className = ''; msg.textContent = 'Guardando...';
+            const user = getCurrentUser();
+            try {
+                await updateDoc(doc(db, 'contratos', contratoId), {
+                    ...cambios, editadoPor: user.email, editadoEn: serverTimestamp()
+                });
+                await addDoc(collection(db, 'contratos', contratoId, 'historial'), {
+                    antes: JSON.parse(JSON.stringify(antes)), despues: JSON.parse(JSON.stringify(despues)),
+                    por: user.email, en: serverTimestamp()
+                });
+                const snap = await getDoc(doc(db, 'contratos', contratoId));
+                avisoPendiente = `<p class="ok" style="background:#e8f5e9;color:#2e7d32;padding:10px 14px;border-radius:6px;font-size:14px">Cambios guardados (${Object.keys(cambios).length} campo(s)).</p>`;
+                vista(snap.data());
+            } catch (err) {
+                console.error(err);
+                msg.className = 'err'; msg.textContent = 'No se pudo guardar: ' + err.message;
+                document.getElementById('guardar1').disabled = document.getElementById('guardar2').disabled = false;
+            }
         }
     </script>
 </body>

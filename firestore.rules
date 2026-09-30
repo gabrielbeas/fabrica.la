@@ -47,13 +47,25 @@ service cloud.firestore {
     match /contratos/{id} {
       allow read, write: if isAdmin();
     }
+    // Historial de cambios de cada contrato: el admin lo lee y agrega; nadie lo edita ni borra
+    match /contratos/{id}/historial/{h} {
+      allow read, create: if isAdmin();
+    }
+
+    // Facturación: solo admin
+    match /facturas/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /facturacion_config/{id} {
+      allow read, write: if isAdmin();
+    }
 
     // Resto de colecciones (calendarios...): usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config']) && isRegistered();
     }
   }
 }

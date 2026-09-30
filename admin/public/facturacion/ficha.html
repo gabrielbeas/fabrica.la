@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de facturación - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
+        .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .barra a { color: #667eea; text-decoration: none; font-size: 14px; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: #888; font-size: 14px; margin: 0 0 22px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .btn-mini { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer; }
+
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+        .panel { border: 1px solid #eee; border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; }
+        .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
+        dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 14px; }
+        dt { color: #888; } dd { margin: 0; word-break: break-word; }
+
+        .mes-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .mes-bar input { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #888; font-size: 12px; padding: 8px; border-bottom: 1px solid #eee; }
+        td { padding: 8px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        td input[type=number] { width: 120px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; text-align: right; font-size: 14px; }
+        td input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; }
+        .det { display: block; font-size: 12px; color: #999; margin-top: 2px; }
+        .tot td { font-weight: 700; border-top: 1px solid #ddd; border-bottom: none; }
+        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 16px; }
+        .campos label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
+        .campos input, .campos select, .campos textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font: inherit; font-size: 14px; }
+        .campos .ancho { grid-column: 1 / -1; }
+        .avisos { background: #fff8e1; color: #8a5a00; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+        .hist a { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid #f5f5f5; color: #333; text-decoration: none; font-size: 14px; }
+        .hist a.act { background: #f3f4ff; border-radius: 6px; }
+        .pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+        .e-pendiente { background: #f1f1f1; color: #555; } .e-proceso { background: #fff8e1; color: #b26a00; }
+        .e-pagado { background: #e8f5e9; color: #2e7d32; } .e-tarde { background: #fdecea; color: #c62828; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        #msg { font-size: 14px; }
+
+        .impresion { display: none; }
+        @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .campos { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
+        import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import {
+            IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
+            cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
+            documentoContadores, imprimirHojas
+        } from '../../../js/facturacion.js';
+
+        const app = document.getElementById('app');
+        const params = new URLSearchParams(location.search);
+        const contratoId = params.get('id');
+        let mes = params.get('mes') || mesActual();
+        let contrato = null, factura = null, historial = [];
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        async function cargar(msg = '') {
+            try {
+                const [snapC, snapF, hist] = await Promise.all([
+                    getDoc(doc(db, 'contratos', contratoId)),
+                    getDoc(doc(db, 'facturas', facturaId(contratoId, mes))),
+                    cargarFacturasContrato(contratoId)
+                ]);
+                if (!snapC.exists()) { app.innerHTML = '<p class="err">No se encontró el locatario.</p>'; return; }
+                contrato = { id: snapC.id, ...snapC.data() };
+                factura = snapF.exists() ? { id: snapF.id, ...snapF.data() } : null;
+                historial = hist;
+                render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        // ---------- Render ----------
+        function render(msg) {
+            const cfg = contrato.facturacion || {};
+            app.innerHTML = `
+                <div class="barra">
+                    <a href="./?mes=${mes}">← Facturación ${mesTxt(mes)}</a>
+                    <a href="../locales/caratula.html?id=${encodeURIComponent(contrato.id)}">Ver carátula del contrato →</a>
+                </div>
+                <h1>${esc(cfg.razonSocialFactura || contrato.razonSocial)}</h1>
+                <p class="sub">Local ${esc((contrato.locales || []).join(', '))}${contrato.rfc ? ` · RFC ${esc(contrato.rfc)}` : ''}</p>
+
+                <div class="layout">
+                    <div>
+                        <div class="panel">
+                            <h2>Factura</h2>
+                            <div class="mes-bar">
+                                <input type="month" id="mes" value="${mes}">
+                                ${factura ? `<span class="pill ${ESTADOS[factura.estadoPago]?.clase}">${ESTADOS[factura.estadoPago]?.txt}</span>` : ''}
+                            </div>
+                            <div id="factura"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="panel" id="datos"></div>
+                        <div class="panel">
+                            <h2>Historial</h2>
+                            <div class="hist">
+                                ${historial.length ? historial.map(h => `
+                                    <a href="?id=${encodeURIComponent(contrato.id)}&mes=${h.mes}" class="${h.mes === mes ? 'act' : ''}">
+                                        <span>${mesTxt(h.mes)}</span>
+                                        <span><span class="pill ${ESTADOS[h.estadoPago]?.clase}">${ESTADOS[h.estadoPago]?.txt}</span> ${dinero(h.total)}</span>
+                                    </a>`).join('') : '<p style="color:#999;font-size:14px">Sin facturas registradas.</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="impresion" id="impresion"></div>`;
+
+            document.getElementById('mes').addEventListener('change', e => {
+                mes = e.target.value || mesActual();
+                history.replaceState(null, '', `?id=${encodeURIComponent(contrato.id)}&mes=${mes}`);
+                cargar();
+            });
+            renderDatos(false);
+            renderFactura(msg);
+        }
+
+        // ---------- Datos de facturación del locatario ----------
+        function renderDatos(editando) {
+            const cfg = contrato.facturacion || {};
+            const el = document.getElementById('datos');
+            const tubosTxt = (cfg.tubos || []).map(t => `${t.tubo}${t.proporcion !== 1 ? ` (${Math.round(t.proporcion * 100)}%)` : ''}`).join(', ');
+            if (!editando) {
+                el.innerHTML = `
+                    <h2>Datos de facturación <button class="btn-mini" id="editDatos">Editar</button></h2>
+                    <dl>
+                        <dt>Factura a</dt><dd>${esc(cfg.razonSocialFactura || contrato.razonSocial)}</dd>
+                        <dt>Enviar a</dt><dd>${(cfg.correos || []).map(esc).join('<br>') || '-'}</dd>
+                        <dt>Método</dt><dd>${esc(cfg.metodoPago || 'PUE')}</dd>
+                        <dt>Concepto</dt><dd>${esc(cfg.conceptoRenta || 'RENTA')}</dd>
+                        <dt>Basura</dt><dd>${cfg.basura ? 'Sí' : 'No'}</dd>
+                        <dt>Agua</dt><dd>${tubosTxt ? 'Tubo ' + esc(tubosTxt) : 'No'}</dd>
+                        <dt>Fin contrato</dt><dd>${esc(contrato.fin || '-')}</dd>
+                        ${cfg.notas ? `<dt>Notas</dt><dd style="white-space:pre-wrap">${esc(cfg.notas)}</dd>` : ''}
+                    </dl>`;
+                document.getElementById('editDatos').addEventListener('click', () => renderDatos(true));
+                return;
+            }
+            el.innerHTML = `
+                <h2>Datos de facturación</h2>
+                <div class="campos" style="grid-template-columns:1fr;margin-top:0">
+                    <div><label>Factura a (razón social)</label><input id="d_rs" value="${esc(cfg.razonSocialFactura || contrato.razonSocial)}"></div>
+                    <div><label>Correos (uno por renglón)</label><textarea id="d_correos" rows="4">${esc((cfg.correos || []).join('\n'))}</textarea></div>
+                    <div><label>Método de pago</label><input id="d_metodo" value="${esc(cfg.metodoPago || 'PUE')}"></div>
+                    <div><label>Nombre del concepto de renta</label><input id="d_concepto" value="${esc(cfg.conceptoRenta || 'RENTA')}"></div>
+                    <div><label><input type="checkbox" id="d_basura" ${cfg.basura ? 'checked' : ''} style="width:auto"> Cobra recolección de basura</label></div>
+                    <div><label>Tubos de agua (ej. "21 50%" o "9"; separados por coma)</label><input id="d_tubos" value="${esc(tubosTxt.replace(/[()]/g, ''))}"></div>
+                    <div><label>Notas</label><textarea id="d_notas" rows="3">${esc(cfg.notas || '')}</textarea></div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                    <button class="btn-sec" id="d_cancel">Cancelar</button>
+                    <button class="btn" id="d_save">Guardar</button>
+                </div>`;
+            document.getElementById('d_cancel').addEventListener('click', () => renderDatos(false));
+            document.getElementById('d_save').addEventListener('click', guardarDatos);
+        }
+
+        async function guardarDatos() {
+            const tubos = document.getElementById('d_tubos').value.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+                const [tubo, pct] = s.split(/\s+/);
+                return { tubo: tubo.toUpperCase(), proporcion: pct ? parseFloat(pct) / 100 : 1 };
+            });
+            if (tubos.some(t => isNaN(t.proporcion) || t.proporcion <= 0 || t.proporcion > 1)) { alert('Revisa los porcentajes de los tubos (entre 1% y 100%).'); return; }
+            const facturacion = {
+                ...(contrato.facturacion || {}),
+                razonSocialFactura: document.getElementById('d_rs').value.trim(),
+                correos: document.getElementById('d_correos').value.split('\n').map(s => s.trim()).filter(Boolean),
+                metodoPago: document.getElementById('d_metodo').value.trim() || 'PUE',
+                conceptoRenta: document.getElementById('d_concepto').value.trim() || 'RENTA',
+                basura: document.getElementById('d_basura').checked,
+                tubos,
+                notas: document.getElementById('d_notas').value.trim()
+            };
+            try {
+                await updateDoc(doc(db, 'contratos', contrato.id), { facturacion, editadoPor: getCurrentUser().email, editadoEn: serverTimestamp() });
+                contrato.facturacion = facturacion;
+                renderDatos(false);
+            } catch (err) { alert('No se pudo guardar: ' + err.message); }
+        }
+
+        // ---------- Factura del mes ----------
+        let borrador = null;
+
+        function renderFactura(msg = '') {
+            const el = document.getElementById('factura');
+            if (!factura) {
+                el.innerHTML = `
+                    <p style="color:#777">No hay factura de <strong>${mesTxt(mes)}</strong> para este locatario.</p>
+                    <button class="btn" id="generar">Generar factura de ${mesTxt(mes)}</button>
+                    <span id="msg">${msg}</span>`;
+                document.getElementById('generar').addEventListener('click', generarUna);
+                return;
+            }
+            borrador = JSON.parse(JSON.stringify(factura));
+            el.innerHTML = `
+                ${(factura.avisos || []).length ? `<div class="avisos">${factura.avisos.map(a => '⚠ ' + esc(a)).join('<br>')}</div>` : ''}
+                <table>
+                    <thead><tr><th>Concepto</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th></th></tr></thead>
+                    <tbody id="filas"></tbody>
+                    <tbody><tr class="tot"><td>TOTAL</td><td class="num" id="t_sub"></td><td class="num" id="t_iva"></td><td class="num" id="t_tot"></td><td></td></tr></tbody>
+                </table>
+                <button class="btn-mini" id="agregar" style="margin-top:10px">+ Agregar concepto</button>
+                <div class="campos">
+                    <div><label>Estado de pago</label><select id="f_estado">${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === factura.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}</select></div>
+                    <div><label>Fecha de pago</label><input type="date" id="f_fechaPago" value="${esc(factura.fechaPago || '')}"></div>
+                    <div class="ancho"><label>Notas de esta factura</label><textarea id="f_notas" rows="2">${esc(factura.notas || '')}</textarea></div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;flex-wrap:wrap">
+                    <span id="msg">${msg}</span>
+                    <button class="btn-sec" id="regenerar" title="Vuelve a prellenar con la renta del contrato y las lecturas de agua">Recalcular desde contrato</button>
+                    <button class="btn-sec" id="imprimir">Exportar PDF</button>
+                    <button class="btn" id="guardar">Guardar factura</button>
+                </div>`;
+            dibujarFilas();
+            document.getElementById('agregar').addEventListener('click', () => {
+                borrador.conceptos.push({ concepto: 'OTRO', subtotal: 0, iva: 0, total: 0, tipo: 'otro', editable: true });
+                dibujarFilas();
+            });
+            document.getElementById('guardar').addEventListener('click', guardarFactura);
+            document.getElementById('regenerar').addEventListener('click', regenerar);
+            document.getElementById('imprimir').addEventListener('click', imprimir);
+        }
+
+        function rentaSubtotal() {
+            const r = borrador.conceptos.find(c => c.tipo === 'renta') || borrador.conceptos[0];
+            return r ? Number(r.subtotal) || 0 : 0;
+        }
+
+        function dibujarFilas() {
+            const tbody = document.getElementById('filas');
+            tbody.innerHTML = borrador.conceptos.map((c, i) => {
+                const esMor = c.tipo === 'moratorios' || /MORATORIO/.test(c.concepto);
+                const nombre = c.editable
+                    ? `<input type="text" data-nombre="${i}" value="${esc(c.concepto)}">`
+                    : `<strong>${esc(c.concepto)}</strong>`;
+                const detalle = [
+                    c.periodo ? `Periodo: ${mesTxt(c.periodo)}` : '',
+                    c.lecturas ? esc(c.lecturas) : ''
+                ].filter(Boolean).join(' · ');
+                const extraDesc = c.tipo === 'extraordinario' || /EXTRAORDINARIO/.test(c.concepto)
+                    ? `<input type="text" data-desc="${i}" placeholder="Descripción (opcional)" value="${esc(c.descripcion || '')}" style="margin-top:4px">` : '';
+                const subtotalCell = esMor
+                    ? `<input type="number" step="0.01" min="0" data-pct="${i}" value="${r2((borrador.moratoriosPct || 0) * 100)}" style="width:70px"> %<span class="det">${dinero(c.subtotal)}</span>`
+                    : `<input type="number" step="0.01" data-sub="${i}" value="${c.subtotal ?? 0}">`;
+                return `<tr>
+                    <td>${nombre}${detalle ? `<span class="det">${detalle}</span>` : ''}${extraDesc}</td>
+                    <td class="num">${subtotalCell}</td>
+                    <td class="num">${dinero(c.iva)}</td>
+                    <td class="num">${dinero(c.total)}</td>
+                    <td>${c.editable ? `<button class="btn-mini" data-quitar="${i}">✕</button>` : ''}</td>
+                </tr>`;
+            }).join('');
+            tbody.querySelectorAll('[data-sub]').forEach(inp => inp.addEventListener('change', () => {
+                const c = borrador.conceptos[+inp.dataset.sub];
+                const s = r2(parseFloat(inp.value) || 0);
+                Object.assign(c, { subtotal: s, iva: r2(s * IVA), total: r2(s * (1 + IVA)) });
+                recalcularMoratorios(); dibujarFilas();
+            }));
+            tbody.querySelectorAll('[data-pct]').forEach(inp => inp.addEventListener('change', () => {
+                borrador.moratoriosPct = (parseFloat(inp.value) || 0) / 100;
+                recalcularMoratorios(); dibujarFilas();
+            }));
+            tbody.querySelectorAll('[data-nombre]').forEach(inp => inp.addEventListener('input', () => { borrador.conceptos[+inp.dataset.nombre].concepto = inp.value; }));
+            tbody.querySelectorAll('[data-desc]').forEach(inp => inp.addEventListener('input', () => { borrador.conceptos[+inp.dataset.desc].descripcion = inp.value; }));
+            tbody.querySelectorAll('[data-quitar]').forEach(b => b.addEventListener('click', () => { borrador.conceptos.splice(+b.dataset.quitar, 1); dibujarFilas(); }));
+            const t = totales(borrador.conceptos);
+            document.getElementById('t_sub').textContent = dinero(t.subtotal);
+            document.getElementById('t_iva').textContent = dinero(t.iva);
+            document.getElementById('t_tot').textContent = dinero(t.total);
+        }
+
+        // Intereses moratorios = % × renta (sin IVA)
+        function recalcularMoratorios() {
+            const c = borrador.conceptos.find(x => x.tipo === 'moratorios' || /MORATORIO/.test(x.concepto));
+            if (!c) return;
+            const s = r2(rentaSubtotal() * (borrador.moratoriosPct || 0));
+            Object.assign(c, { subtotal: s, iva: r2(s * IVA), total: r2(s * (1 + IVA)) });
+        }
+
+        async function guardarFactura() {
+            const msg = document.getElementById('msg');
+            const btn = document.getElementById('guardar');
+            btn.disabled = true; msg.className = ''; msg.textContent = 'Guardando...';
+            const datos = {
+                ...borrador,
+                ...totales(borrador.conceptos),
+                estadoPago: document.getElementById('f_estado').value,
+                fechaPago: document.getElementById('f_fechaPago').value || null,
+                notas: document.getElementById('f_notas').value.trim(),
+                actualizadoPor: getCurrentUser().email,
+                actualizadoEn: serverTimestamp()
+            };
+            delete datos.id;
+            try {
+                await setDoc(doc(db, 'facturas', facturaId(contrato.id, mes)), datos);
+                await cargar('<span class="ok">Factura guardada.</span>');
+            } catch (err) {
+                msg.className = 'err'; msg.textContent = 'No se pudo guardar: ' + err.message;
+                btn.disabled = false;
+            }
+        }
+
+        async function generarUna() {
+            const btn = document.getElementById('generar');
+            btn.disabled = true;
+            try {
+                const [lecturas, general, hist] = await Promise.all([cargarLecturas(), cargarConfigGeneral(), cargarFacturasContrato(contrato.id)]);
+                const facturadas = lecturasFacturadas(hist, contrato, lecturas, facturaId(contrato.id, mes));
+                await setDoc(doc(db, 'facturas', facturaId(contrato.id, mes)), {
+                    ...generarFactura(contrato, mes, lecturas, general, facturadas),
+                    creadoPor: getCurrentUser().email, creadoEn: serverTimestamp()
+                });
+                await cargar('<span class="ok">Factura generada. Revísala y guarda los ajustes.</span>');
+            } catch (err) {
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudo generar: ${esc(err.message)}</span>`;
+                btn.disabled = false;
+            }
+        }
+
+        async function regenerar() {
+            if (!confirm('Esto reemplaza los conceptos con la renta actual del contrato y las lecturas de agua. Se conservan el estado de pago y las notas. ¿Continuar?')) return;
+            const [lecturas, general, hist] = await Promise.all([cargarLecturas(), cargarConfigGeneral(), cargarFacturasContrato(contrato.id)]);
+            const facturadas = lecturasFacturadas(hist, contrato, lecturas, facturaId(contrato.id, mes));
+            const nueva = generarFactura(contrato, mes, lecturas, general, facturadas);
+            borrador.conceptos = nueva.conceptos;
+            borrador.avisos = nueva.avisos;
+            borrador.moratoriosPct = 0;
+            dibujarFilas();
+            document.getElementById('msg').innerHTML = '<span>Recalculada. Revisa y da clic en <strong>Guardar factura</strong>.</span>';
+        }
+
+        function imprimir() {
+            // Toma lo que está en pantalla (aunque no se haya guardado)
+            const f = { ...borrador, notas: document.getElementById('f_notas').value.trim(),
+                        correos: borrador.correos || (contrato.facturacion || {}).correos || [] };
+            imprimirHojas(documentoContadores(mes, [f], { [contrato.id]: contrato }), `Factura ${mesTxt(mes)} - ${f.razonSocial}`);
+        }
+    </script>
+</body>
+</html>

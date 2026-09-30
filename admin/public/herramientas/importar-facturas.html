@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar facturación - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1000px; margin: 0 auto; padding: 30px 20px; }
+        h1 { font-size: 24px; margin-bottom: 6px; }
+        .sub { color: #999; font-size: 14px; margin-bottom: 30px; }
+        .card { border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 600; }
+        .num { text-align: right; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        #log { font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #f8f9fa; padding: 12px; border-radius: 6px; min-height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app">Verificando acceso...</div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { getCurrentUser, isAuthenticated, esAdmin, db } from '../../../js/auth.js';
+        import { writeBatch, doc, getDocs, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { dinero, mesTxt, facturaId } from '../../../js/facturacion.js';
+
+        const app = document.getElementById('app');
+        if (!isAuthenticated()) window.location.href = '/login.html';
+        else { crearNavbar(); esAdmin() ? render() : app.innerHTML = '<h1>Acceso restringido</h1>'; }
+
+        const tipoDe = (c, i) => i === 0 || /ARRENDAMIENTO|^RENTA/.test(c.concepto) ? 'renta'
+            : /EXTRAORDINARIO/.test(c.concepto) ? 'extraordinario'
+            : /MORATORIO/.test(c.concepto) ? 'moratorios'
+            : /BASURA/.test(c.concepto) ? 'basura'
+            : /AGUA/.test(c.concepto) ? 'agua' : 'otro';
+
+        function render() {
+            app.innerHTML = `
+                <h1>Importar facturación</h1>
+                <p class="sub">Carga la pestaña EMISION FACTURAS: datos de facturación de cada locatario y las facturas del mes.</p>
+                <div class="card">
+                    <p><strong>1.</strong> Selecciona <code>_privado/facturas.json</code>. Antes tienen que estar importados los contratos.</p>
+                    <input type="file" id="archivo" accept=".json">
+                </div>
+                <div class="card" id="resumen" style="display:none"></div>
+                <div class="card">
+                    <p><strong>2.</strong> Importar. Si lo corres otra vez, reemplaza las mismas facturas de ese mes (no duplica).</p>
+                    <button class="btn" id="btnImportar" disabled>Importar</button>
+                    <div id="log" style="margin-top:15px"></div>
+                </div>`;
+
+            let datos = null, contratos = {};
+            const log = (m, cls = '') => { document.getElementById('log').innerHTML += `<span class="${cls}">${m}</span>\n`; };
+
+            document.getElementById('archivo').addEventListener('change', async e => {
+                const f = e.target.files[0];
+                if (!f) return;
+                try {
+                    datos = JSON.parse(await f.text());
+                    if (!Array.isArray(datos.facturas) || !datos.config) throw new Error('Formato inesperado');
+                    const snap = await getDocs(collection(db, 'contratos'));
+                    contratos = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+                } catch (err) { datos = null; log('No se pudo leer: ' + err.message, 'err'); return; }
+                const faltan = datos.facturas.filter(x => !contratos[x.contratoId]);
+                const res = document.getElementById('resumen');
+                res.style.display = 'block';
+                res.innerHTML = `<p><strong>${datos.facturas.length}</strong> facturas de <strong>${mesTxt(datos.mes)}</strong>.</p>
+                    ${faltan.length ? `<p class="err">Faltan contratos en el panel: ${faltan.map(x => x.contratoId).join(', ')}. Importa primero los contratos.</p>` : ''}
+                    <table><thead><tr><th>Locatario</th><th>Locales</th><th class="num">Total</th><th>Estado</th></tr></thead><tbody>
+                    ${datos.facturas.map(x => `<tr><td>${x.razonSocial}</td><td>${x.localesTexto}</td><td class="num">${dinero(x.total)}</td><td>${x.estadoPago}</td></tr>`).join('')}
+                    </tbody></table>`;
+                document.getElementById('btnImportar').disabled = !!faltan.length;
+            });
+
+            document.getElementById('btnImportar').addEventListener('click', async () => {
+                if (!datos || !confirm(`¿Importar ${datos.facturas.length} facturas de ${mesTxt(datos.mes)} y los datos de facturación?`)) return;
+                const btn = document.getElementById('btnImportar');
+                btn.disabled = true;
+                const user = getCurrentUser().email;
+                try {
+                    const batch = writeBatch(db);
+                    batch.set(doc(db, 'facturacion_config', 'general'), { basura: datos.basura, actualizadoPor: user, actualizadoEn: serverTimestamp() }, { merge: true });
+                    Object.entries(datos.config).forEach(([cid, cfg]) => {
+                        batch.update(doc(db, 'contratos', cid), { facturacion: { ...cfg, activo: true } });
+                    });
+                    datos.facturas.forEach(x => {
+                        const c = contratos[x.contratoId] || {};
+                        batch.set(doc(db, 'facturas', facturaId(x.contratoId, x.mes)), {
+                            contratoId: x.contratoId, mes: x.mes,
+                            razonSocial: x.razonSocial, locales: c.locales || [], rfc: c.rfc || null,
+                            correos: x.correos, metodoPago: x.metodoPago || 'PUE',
+                            moratoriosPct: x.moratoriosPct || 0,
+                            conceptos: x.conceptos.map((k, i) => ({ ...k, tipo: tipoDe(k, i) })),
+                            subtotal: x.subtotal, iva: x.iva, total: x.total,
+                            estadoPago: x.estadoPago, fechaPago: null, notas: x.notas || '', avisos: [],
+                            origen: 'sheets', filaSheet: x.filaSheet, creadoPor: user, creadoEn: serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                    log(`Importadas ${datos.facturas.length} facturas y ${Object.keys(datos.config).length} fichas de facturación.`, 'ok');
+                } catch (err) {
+                    log('Error al guardar: ' + err.message, 'err');
+                    btn.disabled = false;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
