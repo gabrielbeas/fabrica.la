@@ -65,4 +65,10 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - Facturas de septiembre 2026: correr "Actualizar agua y periodos" (siguen ligadas a lecturas del 29/09, que se borraron).
 - Tubo 10: lectura anómala del 29/02/2024 (99,998.222 m³) importada del Sheet; confirmar el valor real.
 - Depósitos de los locales 6, 7 y 15: hay $6,300 de 2022 sin asignar; el ajuste de Setter Bistro del 15/08/2025 difiere por $6 entre Simplifi y la tabla de Gabriel.
-- Seguridad (auditoría 01/10/2026), pasos manuales de Gabriel (el despliegue viejo de `Code.gs` y el Worker `fabrica-admin-auth` de Cloudflare ya se quitaron el 01/10/2026): en Firebase Auth desactivar el alta de usuarios desde el cliente y restringir la API key por dominio (fabrica.la, localhost). (`admin123456` ya se había cambiado; `operario@fabrica.la` no existe.)
+- Cloudflare: el Worker `solitary-bar-15bb` tiene la ruta `fabrica.la/roca1909` (y otra más); confirmar con Gabriel si se usa o se borra.
+
+## Seguridad (auditoría 01/10/2026)
+
+- Firebase Auth: el alta de usuarios desde el cliente está **desactivada** (Authentication → Settings → User actions). Los usuarios nuevos se crean en la consola (Authentication → Users → Add user) y luego su perfil en `users/{uid}`.
+- La API key del navegador está restringida por HTTP referrer a `fabrica.la`, `www.fabrica.la`, `fabrica-399f2.firebaseapp.com`, `localhost:8000` y `127.0.0.1:8000`. Si se prueba en local con otro puerto o se agrega un dominio, hay que añadirlo en Google Cloud → APIs y servicios → Credenciales.
+- Ya no existen: el despliegue viejo de `Code.gs` (archivado), el Worker `fabrica-admin-auth` (borrado), la cuenta `operario@fabrica.la`. La contraseña de `admin@fabrica.la` se cambió.
