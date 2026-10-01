@@ -8,7 +8,7 @@
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
-        .main { max-width: 1150px; margin: 0 auto; padding: 30px 20px 60px; }
+        .main { max-width: 1300px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
         .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
         .controles { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 22px; }
@@ -37,6 +37,19 @@
         tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
         .vacio { border: 1px dashed #ddd; border-radius: 10px; padding: 30px; text-align: center; color: #777; }
         .ok { color: #2e7d32; } .err { color: #c62828; }
+
+        /* Moratorios: interruptor + monto */
+        th.mor-th { text-align: left; }
+        td.mor-td { white-space: nowrap; }
+        .switch { position: relative; display: inline-block; width: 38px; height: 22px; vertical-align: middle; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; transition: .2s; }
+        .switch .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+        .switch input:checked + .slider { background: #c62828; }
+        .switch input:checked + .slider::before { transform: translateX(16px); }
+        .switch input:disabled + .slider { opacity: .5; }
+        .mor-monto { display: inline-block; margin-left: 8px; color: #c62828; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: middle; }
+        .mor-n { display: block; font-size: 11px; color: #c62828; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -47,7 +60,7 @@
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
         import { collection, getDocs, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
-            ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, generarFactura, contratosFacturables,
+            ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
             documentoContadores, imprimirHojas
         } from '../../../js/facturacion.js';
@@ -107,13 +120,14 @@
                 </div>
                 <div class="tabla-wrap">
                     <table>
-                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th><th></th></tr></thead>
+                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th><th></th></tr></thead>
                         <tbody>
                             ${filas.map(f => `
                                 <tr>
                                     <td><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked></td>
                                     <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
                                     <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
+                                    <td class="mor-td">${celdaMoratorios(f)}</td>
                                     <td class="num">${dinero(f.subtotal)}</td>
                                     <td class="num">${dinero(f.iva)}</td>
                                     <td class="num"><strong>${dinero(f.total)}</strong></td>
@@ -124,6 +138,7 @@
                                 </tr>`).join('')}
                         </tbody>
                         <tfoot><tr><td colspan="3">Total</td>
+                            <td class="mor-td">${(() => { const m = facturas.reduce((s, f) => s + montoMoratorios(f), 0); const n = facturas.filter(f => montoMoratorios(f) > 0).length; return m ? `<span class="mor-monto">${dinero(m)}</span><span class="mor-n">${n} locatario${n > 1 ? 's' : ''}</span>` : ''; })()}</td>
                             <td class="num">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
                             <td class="num">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
                             <td class="num">${dinero(total)}</td><td colspan="2"></td></tr></tfoot>
@@ -160,6 +175,7 @@
                     `Facturas LAFABDECHOC ${mesTxt(mes)}${elegidas.length < filas.length ? ` (${elegidas.length})` : ''}`);
             });
             app.querySelectorAll('select.estado').forEach(s => s.addEventListener('change', () => cambiarEstado(s)));
+            app.querySelectorAll('input.mor-switch').forEach(x => x.addEventListener('change', () => cambiarMoratorios(x, facturas)));
         }
 
         async function generar(faltan, contratos) {
@@ -212,6 +228,48 @@
                 console.error(err);
                 document.getElementById('msg').innerHTML = `<span class="err">No se pudo actualizar: ${esc(err.message)}</span>`;
                 btn.disabled = false;
+            }
+        }
+
+        // ---------- Moratorios (5% sobre la renta sin IVA) ----------
+        const PCT_MORATORIOS = 0.05;
+        const esConceptoMor = c => c.tipo === 'moratorios' || /MORATORIO/.test(c.concepto || '');
+        const montoMoratorios = f => (f.conceptos || []).filter(esConceptoMor).reduce((s, c) => s + (Number(c.total) || 0), 0);
+        function celdaMoratorios(f) {
+            const monto = montoMoratorios(f);
+            const on = monto > 0 || (f.moratoriosPct || 0) > 0;
+            const pct = Math.round((f.moratoriosPct || (on ? PCT_MORATORIOS : 0)) * 100);
+            return `<label class="switch" title="${on ? 'Quitar' : 'Cobrar'} moratorios (5% de la renta)">
+                    <input type="checkbox" class="mor-switch" data-id="${esc(f.id)}" ${on ? 'checked' : ''}><span class="slider"></span></label>
+                ${on ? `<span class="mor-monto">${dinero(monto)}</span><span class="mor-n">${pct}% de la renta</span>` : ''}`;
+        }
+        async function cambiarMoratorios(sw, facturas) {
+            const f = facturas.find(x => x.id === sw.dataset.id);
+            if (!f) return;
+            const pagada = f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde';
+            if (pagada && !confirm(`La factura de ${f.razonSocial} ya está marcada como pagada. ¿${sw.checked ? 'Agregar' : 'Quitar'} los moratorios de todos modos?`)) { sw.checked = !sw.checked; return; }
+            sw.disabled = true;
+            try {
+                const pct = sw.checked ? PCT_MORATORIOS : 0;
+                const renta = (f.conceptos || []).filter(c => c.tipo === 'renta' || /^RENTA/.test(c.concepto || '')).reduce((s, c) => s + (Number(c.subtotal) || 0), 0);
+                const sub = r2(renta * pct);
+                const conceptos = (f.conceptos || []).map(c => ({ ...c }));
+                let mor = conceptos.find(esConceptoMor);
+                if (!mor) {
+                    mor = { concepto: 'INTERESES MORATORIOS', tipo: 'moratorios' };
+                    const iBasura = conceptos.findIndex(c => c.tipo === 'basura');
+                    conceptos.splice(iBasura >= 0 ? iBasura : conceptos.length, 0, mor);
+                }
+                Object.assign(mor, { subtotal: sub, iva: r2(sub * IVA), total: r2(sub * (1 + IVA)) });
+                await updateDoc(doc(db, 'facturas', f.id), {
+                    conceptos, moratoriosPct: pct, ...totales(conceptos),
+                    actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp()
+                });
+                cargar(`<span class="ok">${sw.checked ? `Moratorios agregados a ${esc(f.razonSocial)}: ${dinero(mor.total)} (con IVA).` : `Moratorios quitados a ${esc(f.razonSocial)}.`}</span>`);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudieron actualizar los moratorios: ${esc(err.message)}</span>`;
+                sw.checked = !sw.checked; sw.disabled = false;
             }
         }
 

@@ -1,4 +1,4 @@
-// Alertas de contratos (fin, incremento, seguro, saldo por pagar).
+// Alertas de contratos: vigencia (fin de contrato), incremento de renta y depósito (saldo por pagar).
 // Lo usan locales/index.html (punto de color) y locales/caratula.html (detalle).
 
 export const VENTANA_DIAS = 90;
@@ -17,9 +17,9 @@ const esFecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '');
 //   peor: nivel más urgente (o null si no hay nada)
 export function alertasContrato(c) {
     const ev = [];
+    // Generan alerta: vigencia del contrato (fin), incremento de renta y depósito (saldo por pagar).
     if (esFecha(c.fin)) ev.push({ fecha: c.fin, tipo: 'Fin de contrato', det: c.plazo ? `Plazo ${c.plazo}` : '' });
     if (esFecha(c.incremento)) ev.push({ fecha: c.incremento, tipo: 'Incremento de renta', det: c.incrementoTipo ? `Tipo ${c.incrementoTipo}` : '' });
-    if (c.seguro && esFecha(c.seguro.vigencia)) ev.push({ fecha: c.seguro.vigencia, tipo: 'Vencimiento de seguro', det: [c.seguro.aseguradora, c.seguro.poliza && 'Póliza ' + c.seguro.poliza].filter(Boolean).join(' · ') });
     const lista = ev.map(e => ({ ...e, dias: diasHasta(e.fecha) }))
         .filter(e => e.dias <= VENTANA_DIAS)
         .map(e => ({ ...e, nivel: nivelDe(e.dias) }))
