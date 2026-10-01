@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1000px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 22px; }
+        h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 14px; }
+
+        .pestanas { display: flex; gap: 4px; border-bottom: 1px solid #eee; margin-bottom: 24px; }
+        .pestanas button { border: none; background: none; padding: 10px 16px; font-size: 15px; color: #777; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        .pestanas button.act { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
+
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+        .btn-sec:hover { background: #ebebeb; }
+        .btn-sec:disabled { opacity: .5; cursor: not-allowed; }
+
+        .panel { border: 1px solid #eee; border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; }
+        .panel p.nota { color: #888; font-size: 13px; margin: 0 0 14px; line-height: 1.5; }
+
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tr.inactivo td { color: #aaa; }
+        td input[type=text], td select { padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
+        td input[type=text] { width: 100%; min-width: 140px; }
+        .tu { font-size: 11px; color: #667eea; font-weight: 600; margin-left: 6px; }
+        .gris { color: #999; font-size: 12px; }
+
+        .switch { position: relative; display: inline-block; width: 38px; height: 22px; vertical-align: middle; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; transition: .2s; }
+        .switch .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+        .switch input:checked + .slider { background: #2e7d32; }
+        .switch input:checked + .slider::before { transform: translateX(16px); }
+        .switch input:disabled + .slider { opacity: .5; cursor: not-allowed; }
+
+        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+        .campos .ancho { grid-column: 1 / -1; }
+        .campos label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+        .campos input, .campos select { width: 100%; padding: 9px 11px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
+        .campos input:focus, .campos select:focus, td input:focus, td select:focus { outline: none; border-color: #667eea; }
+        .campos .ayuda { font-size: 12px; color: #999; margin-top: 4px; }
+        .pasos { margin: 0 0 16px; padding-left: 20px; color: #555; font-size: 14px; line-height: 1.7; }
+        .pasos a { color: #667eea; }
+
+        .valor { display: grid; grid-template-columns: 1fr 200px; gap: 8px 20px; align-items: center; padding: 14px 0; border-top: 1px solid #f3f3f3; }
+        .valor:first-of-type { border-top: none; padding-top: 0; }
+        .valor .nom { font-weight: 600; font-size: 14px; }
+        .valor .des { font-size: 12px; color: #999; margin-top: 3px; line-height: 1.4; }
+        .valor .entrada { display: flex; align-items: center; gap: 6px; }
+        .valor .entrada input { width: 100%; padding: 9px 11px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+        .valor .entrada input:focus { outline: none; border-color: #667eea; }
+        .valor .entrada span { color: #888; font-size: 13px; white-space: nowrap; }
+        .valor .calc { grid-column: 2; font-size: 12px; color: #888; text-align: right; }
+        .fijo { font-size: 15px; font-weight: 600; text-align: right; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .chips span { font-size: 12px; background: #f3f4ff; color: #555; border-radius: 10px; padding: 2px 9px; }
+
+        .pie { display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 6px; }
+        .msg { font-size: 14px; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        .hist { font-size: 13px; color: #666; }
+        .hist div { padding: 6px 0; border-top: 1px solid #f5f5f5; }
+        .hist div:first-child { border-top: none; }
+        .cargando { color: #999; padding: 40px 0; text-align: center; }
+
+        @media (max-width: 700px) {
+            .pestanas button { flex: 1; padding: 10px 6px; }
+            .campos { grid-template-columns: 1fr; }
+            .valor { grid-template-columns: 1fr; }
+            .valor .calc { grid-column: 1; }
+            .fijo { text-align: left; }
+            .pie .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db, auth } from '../../../js/auth.js';
+        import { collection, getDocs, getDoc, doc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const dinero = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+
+        // Igual que en js/facturacion.js (no se importa para no depender de su versión en caché)
+        const IVA = 0.16;
+        const DEF = { costoM3: 78.64, basuraSubtotal: 158.28, moratoriosPct: 0.05, diaLimitePago: 10 };
+        const ROLES = { admin: 'Administrador', operario: 'Operario' };
+        const PERMISOS_OPERARIO = ['ver_lecturas', 'crear_lecturas', 'editar_lecturas_mes_actual', 'ver_dashboard'];
+        const CONSOLA_USUARIOS = 'https://console.firebase.google.com/project/fabrica-399f2/authentication/users';
+
+        const yo = getCurrentUser();
+        let pestana = location.hash === '#valores' ? 'valores' : 'usuarios';
+        let usuarios = [];
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else pintar();
+        }
+
+        function pintar() {
+            app.innerHTML = `
+                <h1>Configuración</h1>
+                <p class="sub">Usuarios del panel y valores que usa la facturación.</p>
+                <div class="pestanas">
+                    <button data-p="usuarios" class="${pestana === 'usuarios' ? 'act' : ''}">Usuarios</button>
+                    <button data-p="valores" class="${pestana === 'valores' ? 'act' : ''}">Valores</button>
+                </div>
+                <div id="contenido"><div class="cargando">Cargando...</div></div>`;
+            app.querySelectorAll('.pestanas button').forEach(b => b.addEventListener('click', () => {
+                pestana = b.dataset.p;
+                history.replaceState(null, '', '#' + pestana);
+                pintar();
+            }));
+            (pestana === 'usuarios' ? vistaUsuarios() : vistaValores()).catch(err => {
+                console.error(err);
+                document.getElementById('contenido').innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            });
+        }
+
+        // ================= USUARIOS =================
+
+        async function vistaUsuarios(msg = '') {
+            const snap = await getDocs(collection(db, 'users'));
+            usuarios = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
+                .sort((a, b) => (a.activo === false) - (b.activo === false) || (a.rol || '').localeCompare(b.rol || '') || (a.nombre || a.email || '').localeCompare(b.nombre || b.email || '', 'es'));
+            const el = document.getElementById('contenido');
+            el.innerHTML = `
+                <div class="tabla-wrap" style="margin-bottom:10px">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Activo</th><th></th></tr></thead>
+                        <tbody>
+                            ${usuarios.map(u => {
+                                const esYo = u.uid === yo.uid;
+                                return `<tr class="${u.activo === false ? 'inactivo' : ''}" data-uid="${esc(u.uid)}">
+                                    <td><input type="text" class="u-nombre" value="${esc(u.nombre || '')}" placeholder="Nombre"></td>
+                                    <td>${esc(u.email || '')}${esYo ? '<span class="tu">tú</span>' : ''}</td>
+                                    <td><select class="u-rol" ${esYo ? 'disabled title="No puedes cambiar tu propio rol"' : ''}>
+                                        ${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${u.rol === k ? 'selected' : ''}>${v}</option>`).join('')}
+                                    </select></td>
+                                    <td><label class="switch" title="${esYo ? 'No puedes desactivarte a ti mismo' : u.activo === false ? 'Activar' : 'Desactivar'}">
+                                        <input type="checkbox" class="u-activo" ${u.activo !== false ? 'checked' : ''} ${esYo ? 'disabled' : ''}><span class="slider"></span></label></td>
+                                    <td><button class="btn-sec u-reset" ${u.email ? '' : 'disabled'}>Restablecer contraseña</button></td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="gris" style="margin:0 0 6px">Los cambios se guardan al momento. Un usuario desactivado ya no puede entrar al panel (su cuenta no se borra).</p>
+                <p class="msg" id="msgU">${msg}</p>
+
+                <div class="panel" style="margin-top:24px">
+                    <h2>Agregar usuario</h2>
+                    <ol class="pasos">
+                        <li>Crea la cuenta en <a href="${CONSOLA_USUARIOS}" target="_blank" rel="noopener">Firebase → Authentication → Users</a> con <strong>Add user</strong> (correo y una contraseña temporal).</li>
+                        <li>Copia el <strong>User UID</strong> que aparece en la lista y pégalo aquí abajo.</li>
+                        <li>Dale su perfil y su rol. Después puedes mandarle "Restablecer contraseña" para que elija la suya.</li>
+                    </ol>
+                    <div class="campos">
+                        <div class="ancho"><label>User UID</label><input id="n_uid" placeholder="Cadena de unas 28 letras y números" autocomplete="off" spellcheck="false"></div>
+                        <div><label>Correo</label><input id="n_email" type="email" placeholder="correo@ejemplo.com" autocomplete="off"></div>
+                        <div><label>Nombre</label><input id="n_nombre" placeholder="Nombre que se ve en el panel" autocomplete="off"></div>
+                        <div><label>Rol</label><select id="n_rol"><option value="operario">Operario (lecturas de agua y calendario)</option><option value="admin">Administrador (todo el panel)</option></select></div>
+                    </div>
+                    <div class="pie" style="margin-top:16px">
+                        <span class="msg" id="msgN"></span>
+                        <button class="btn" id="n_guardar">Dar de alta</button>
+                    </div>
+                </div>`;
+
+            el.querySelectorAll('tbody tr').forEach(tr => {
+                const u = usuarios.find(x => x.uid === tr.dataset.uid);
+                tr.querySelector('.u-nombre').addEventListener('change', e => guardarUsuario(u, { nombre: e.target.value.trim() }, 'Nombre guardado.'));
+                tr.querySelector('.u-rol').addEventListener('change', e => {
+                    const rol = e.target.value;
+                    if (!confirm(`¿Cambiar a ${u.nombre || u.email} a ${ROLES[rol]}?`)) { e.target.value = u.rol; return; }
+                    guardarUsuario(u, { rol, ...(rol === 'operario' ? { permisos: PERMISOS_OPERARIO } : {}) }, `${esc(u.nombre || u.email)} ahora es ${ROLES[rol]}.`, true);
+                });
+                tr.querySelector('.u-activo').addEventListener('change', e => {
+                    const activo = e.target.checked;
+                    if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} a ${u.nombre || u.email}?${activo ? '' : ' Ya no podrá entrar al panel.'}`)) { e.target.checked = !activo; return; }
+                    guardarUsuario(u, { activo }, `${esc(u.nombre || u.email)} ${activo ? 'activado' : 'desactivado'}.`, true);
+                });
+                tr.querySelector('.u-reset').addEventListener('click', () => restablecer(u));
+            });
+            document.getElementById('n_guardar').addEventListener('click', altaUsuario);
+        }
+
+        async function guardarUsuario(u, cambios, txt, redibujar = false) {
+            const msg = document.getElementById('msgU');
+            try {
+                await updateDoc(doc(db, 'users', u.uid), { ...cambios, actualizadoPor: yo.email, actualizadoEn: serverTimestamp() });
+                Object.assign(u, cambios);
+                if (redibujar) vistaUsuarios(`<span class="ok">${txt}</span>`);
+                else msg.innerHTML = `<span class="ok">${txt}</span>`;
+            } catch (err) {
+                console.error(err);
+                vistaUsuarios(`<span class="err">No se pudo guardar: ${esc(err.message)}</span>`);
+            }
+        }
+
+        async function restablecer(u) {
+            if (!confirm(`Se enviará a ${u.email} un correo de Firebase con un enlace para elegir una contraseña nueva. ¿Enviar?`)) return;
+            const msg = document.getElementById('msgU');
+            try {
+                await sendPasswordResetEmail(auth, u.email);
+                msg.innerHTML = `<span class="ok">Correo para restablecer la contraseña enviado a ${esc(u.email)}.</span>`;
+            } catch (err) {
+                console.error(err);
+                msg.innerHTML = `<span class="err">No se pudo enviar: ${esc(err.message)}</span>`;
+            }
+        }
+
+        async function altaUsuario() {
+            const v = id => document.getElementById(id).value.trim();
+            const uid = v('n_uid'), email = v('n_email').toLowerCase(), nombre = v('n_nombre'), rol = v('n_rol');
+            const msg = document.getElementById('msgN');
+            const error = t => { msg.innerHTML = `<span class="err">${t}</span>`; };
+            if (!/^[A-Za-z0-9]{20,40}$/.test(uid)) return error('El UID no parece válido: cópialo completo de la consola de Firebase.');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error('Escribe un correo válido.');
+            if (!nombre) return error('Escribe el nombre.');
+            if (usuarios.some(u => u.uid === uid)) return error('Ese UID ya tiene perfil.');
+            if (usuarios.some(u => (u.email || '').toLowerCase() === email)) return error('Ese correo ya tiene perfil.');
+            const btn = document.getElementById('n_guardar');
+            btn.disabled = true;
+            try {
+                await setDoc(doc(db, 'users', uid), {
+                    email, nombre, rol, activo: true,
+                    permisos: rol === 'operario' ? PERMISOS_OPERARIO : [],
+                    createdAt: serverTimestamp(), creadoPor: yo.email
+                });
+                vistaUsuarios(`<span class="ok">${esc(nombre)} dado de alta como ${ROLES[rol]}. Ya puede entrar con su correo y la contraseña que le pusiste en Firebase.</span>`);
+            } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                error(`No se pudo dar de alta: ${esc(err.message)}`);
+            }
+        }
+
+        // ================= VALORES =================
+
+        async function vistaValores(msg = '') {
+            const [snapA, snapF, snapC] = await Promise.all([
+                getDoc(doc(db, 'agua_config', 'general')),
+                getDoc(doc(db, 'facturacion_config', 'general')),
+                getDocs(collection(db, 'contratos'))
+            ]);
+            const agua = snapA.exists() ? snapA.data() : {};
+            const fac = snapF.exists() ? snapF.data() : {};
+            const val = {
+                costoM3: typeof agua.costoM3 === 'number' ? agua.costoM3 : DEF.costoM3,
+                basuraSubtotal: typeof fac.basura?.subtotal === 'number' ? fac.basura.subtotal : DEF.basuraSubtotal,
+                moratoriosPct: typeof fac.moratoriosPct === 'number' ? fac.moratoriosPct : DEF.moratoriosPct,
+                diaLimitePago: Number.isInteger(fac.diaLimitePago) ? fac.diaLimitePago : DEF.diaLimitePago
+            };
+            const conBasura = snapC.docs.map(d => d.data())
+                .filter(c => c.facturacion?.basura && !c.vencido)
+                .map(c => `Local ${(c.locales || []).join(', ')}`);
+            const historial = [...(fac.cambios || [])].reverse().slice(0, 8);
+
+            const el = document.getElementById('contenido');
+            el.innerHTML = `
+                <div class="panel">
+                    <h2>Valores de facturación</h2>
+                    <p class="nota">Se usan en las facturas que se generen o recalculen desde ahora. Las facturas ya guardadas conservan sus montos.</p>
+
+                    <div class="valor">
+                        <div><div class="nom">Agua: costo por m³</div><div class="des">Con IVA incluido. También se puede cambiar en Lecturas de agua.</div></div>
+                        <div class="entrada"><span>$</span><input type="number" id="v_costo" step="0.01" min="0" value="${val.costoM3}"></div>
+                        <div class="calc" id="c_costo"></div>
+                    </div>
+                    <div class="valor">
+                        <div><div class="nom">Recolección de basura</div><div class="des">Subtotal mensual sin IVA. Se cobra a los locales que lo tienen activado en su ficha de facturación.</div>
+                            <div class="chips">${conBasura.length ? conBasura.map(t => `<span>${esc(t)}</span>`).join('') : '<span>Ningún local</span>'}</div></div>
+                        <div class="entrada"><span>$</span><input type="number" id="v_basura" step="0.01" min="0" value="${val.basuraSubtotal}"></div>
+                        <div class="calc" id="c_basura"></div>
+                    </div>
+                    <div class="valor">
+                        <div><div class="nom">Intereses moratorios</div><div class="des">Porcentaje sobre la renta sin IVA. Se activa en cada factura con el interruptor de Facturación.</div></div>
+                        <div class="entrada"><input type="number" id="v_mor" step="0.5" min="0" max="100" value="${r2(val.moratoriosPct * 100)}"><span>%</span></div>
+                    </div>
+                    <div class="valor">
+                        <div><div class="nom">Día límite de pago</div><div class="des">Los pagos de renta después de este día se marcan como tarde (carátula y calendario).</div></div>
+                        <div class="entrada"><span>Día</span><input type="number" id="v_dia" step="1" min="1" max="28" value="${val.diaLimitePago}"></div>
+                    </div>
+                    <div class="pie">
+                        <span class="msg" id="msgV">${msg}</span>
+                        <button class="btn" id="v_guardar">Guardar cambios</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Fijos en el sistema</h2>
+                    <p class="nota">Estos no se cambian desde aquí; si alguno cambia hay que ajustarlo en el código.</p>
+                    <div class="valor"><div><div class="nom">IVA</div></div><div class="fijo">16%</div></div>
+                    <div class="valor"><div><div class="nom">Alertas de contratos</div><div class="des">Rojo vencido, naranja 30 días o menos, amarillo 60, azul 90.</div></div><div class="fijo">90 días antes</div></div>
+                    <div class="valor"><div><div class="nom">Tubo 21</div><div class="des">Se reparte entre los contratos que lo tienen en su ficha (hoy 50% y 50%).</div></div><div class="fijo">Por contrato</div></div>
+                </div>
+
+                ${historial.length ? `<div class="panel"><h2>Últimos cambios</h2><div class="hist">
+                    ${historial.map(h => `<div>${esc(h.texto)} <span class="gris">· ${esc(h.por || '')} · ${esc(h.en ? new Date(h.en).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '')}</span></div>`).join('')}
+                </div></div>` : ''}`;
+
+            const num = id => parseFloat(document.getElementById(id).value);
+            const calcular = () => {
+                const c = num('v_costo'), b = num('v_basura');
+                document.getElementById('c_costo').textContent = c > 0 ? `Sin IVA: ${dinero(r2(c / (1 + IVA)))}` : '';
+                document.getElementById('c_basura').textContent = b > 0 ? `IVA ${dinero(r2(b * IVA))} · Total ${dinero(r2(b * (1 + IVA)))}` : '';
+            };
+            ['v_costo', 'v_basura'].forEach(id => document.getElementById(id).addEventListener('input', calcular));
+            calcular();
+            document.getElementById('v_guardar').addEventListener('click', () => guardarValores(val));
+        }
+
+        async function guardarValores(antes) {
+            const num = id => parseFloat(document.getElementById(id).value);
+            const nuevo = {
+                costoM3: r2(num('v_costo')),
+                basuraSubtotal: r2(num('v_basura')),
+                moratoriosPct: r2(num('v_mor')) / 100,
+                diaLimitePago: Math.round(num('v_dia'))
+            };
+            const msg = document.getElementById('msgV');
+            const error = t => { msg.innerHTML = `<span class="err">${t}</span>`; };
+            if (!(nuevo.costoM3 > 0)) return error('El costo del agua debe ser mayor a cero.');
+            if (!(nuevo.basuraSubtotal >= 0)) return error('Escribe un monto de basura válido.');
+            if (!(nuevo.moratoriosPct >= 0 && nuevo.moratoriosPct <= 1)) return error('Los moratorios deben estar entre 0% y 100%.');
+            if (!(nuevo.diaLimitePago >= 1 && nuevo.diaLimitePago <= 28)) return error('El día límite debe estar entre 1 y 28.');
+
+            const textos = [];
+            if (nuevo.costoM3 !== antes.costoM3) textos.push(`Agua por m³: ${dinero(antes.costoM3)} → ${dinero(nuevo.costoM3)}`);
+            if (nuevo.basuraSubtotal !== antes.basuraSubtotal) textos.push(`Basura (sin IVA): ${dinero(antes.basuraSubtotal)} → ${dinero(nuevo.basuraSubtotal)}`);
+            if (nuevo.moratoriosPct !== antes.moratoriosPct) textos.push(`Moratorios: ${r2(antes.moratoriosPct * 100)}% → ${r2(nuevo.moratoriosPct * 100)}%`);
+            if (nuevo.diaLimitePago !== antes.diaLimitePago) textos.push(`Día límite de pago: ${antes.diaLimitePago} → ${nuevo.diaLimitePago}`);
+            if (!textos.length) { msg.innerHTML = '<span class="gris">No hay cambios que guardar.</span>'; return; }
+            if (!confirm('Se guardarán estos cambios:\n\n' + textos.join('\n'))) return;
+
+            const btn = document.getElementById('v_guardar');
+            btn.disabled = true;
+            const sello = { actualizadoPor: yo.email, actualizadoEn: serverTimestamp() };
+            const ahora = new Date().toISOString();
+            try {
+                const tareas = [setDoc(doc(db, 'facturacion_config', 'general'), {
+                    basura: { subtotal: nuevo.basuraSubtotal, iva: r2(nuevo.basuraSubtotal * IVA), total: r2(nuevo.basuraSubtotal * (1 + IVA)) },
+                    moratoriosPct: nuevo.moratoriosPct,
+                    diaLimitePago: nuevo.diaLimitePago,
+                    cambios: arrayUnion(...textos.map(texto => ({ texto, por: yo.email, en: ahora }))),
+                    ...sello
+                }, { merge: true })];
+                if (nuevo.costoM3 !== antes.costoM3) tareas.push(setDoc(doc(db, 'agua_config', 'general'), { costoM3: nuevo.costoM3, ...sello }, { merge: true }));
+                await Promise.all(tareas);
+                vistaValores(`<span class="ok">Cambios guardados.</span>`);
+            } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                error(`No se pudo guardar: ${esc(err.message)}`);
+            }
+        }
+    </script>
+</body>
+</html>

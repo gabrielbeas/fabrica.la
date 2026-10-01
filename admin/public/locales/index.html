@@ -27,6 +27,7 @@
         .chip { background: white; border: 1px solid #ddd; border-radius: 16px; padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; }
         .chip.activa { background: #667eea; border-color: #667eea; color: white; }
         .leyenda { margin-left: auto; font-size: 12px; color: #999; display: flex; gap: 12px; align-items: center; }
+        @media (max-width: 700px) { .filtros { flex-wrap: wrap; } .leyenda { margin-left: 0; width: 100%; } .tabla-movil tbody tr { position: relative; } .tabla-movil td.col-alerta { position: absolute; top: 11px; right: 14px; width: auto; padding: 0 !important; } .tabla-movil td.col-alerta:has(.punto) + td { padding-right: 22px !important; } }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 
         /* Tabla */
@@ -153,7 +154,7 @@
                 </div>
 
                 <div class="tabla-wrap">
-                    <table>
+                    <table class="tabla-movil">
                         <thead><tr><th class="col-alerta"></th><th>Locales</th><th>Inquilino</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Incremento</th><th class="num">Renta mensual</th><th class="num">Con IVA</th></tr></thead>
                         <tbody id="cuerpo"></tbody>
                         <tfoot><tr><td></td><td colspan="6">Total</td>

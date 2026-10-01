@@ -34,6 +34,25 @@
 
         .layout { display: grid; grid-template-columns: 1fr 330px; gap: 20px; align-items: start; }
         @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } }
+        /* Celular: el mes compacto; los eventos se ven como barritas de color y el detalle sale en el panel de abajo */
+        @media (max-width: 700px) {
+            .barra { gap: 8px; }
+            .nav-mes { flex: 1; }
+            .barra .nav-mes strong { min-width: 0; flex: 1; font-size: 17px; }
+            .barra .derecha { margin-left: 0; width: 100%; }
+            .derecha .btn { flex: 1; }
+            .filtros.filtros { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+            .filtros .filtro { flex: none; }
+            .mes .sem, .mes .dias { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+            .mes .sem div { padding: 6px 0; font-size: 10px; letter-spacing: 0; }
+            .mes .dia { min-height: 58px; padding: 4px 3px; }
+            .mes .dia .n { font-size: 12px; min-width: 22px; height: 22px; line-height: 22px; }
+            .mes .chip { font-size: 0; height: 5px; padding: 0; margin-top: 3px; border-left: none; border-radius: 3px; background: currentColor !important; }
+            .mes .mas { font-size: 10px; padding-left: 1px; }
+            .modal .campos { grid-template-columns: 1fr; }
+            .modal-fondo.modal-fondo { padding: 12px 8px; }
+            .modal-fondo .modal { padding: 18px 16px; }
+        }
 
         /* Mes */
         .mes { border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
@@ -87,9 +106,10 @@
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
-        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
+        let diaLimitePago = 10; // Configuración → facturacion_config/general
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -144,8 +164,10 @@
 
         async function cargar() {
             const tareas = [getDocs(collection(db, 'calendario_eventos')), getDocs(collection(db, 'agua_lecturas'))];
-            if (admin) tareas.push(getDocs(collection(db, 'contratos')));
-            const [snapEv, snapLec, snapC] = await Promise.all(tareas);
+            if (admin) tareas.push(getDocs(collection(db, 'contratos')), getDoc(doc(db, 'facturacion_config', 'general')).catch(() => null));
+            const [snapEv, snapLec, snapC, snapCfg] = await Promise.all(tareas);
+            const dia = snapCfg?.exists() ? snapCfg.data().diaLimitePago : null;
+            if (Number.isInteger(dia)) diaLimitePago = dia;
             manuales = snapEv.docs.map(d => ({ id: d.id, ...d.data() }));
             lecturas = snapLec.docs.map(d => d.data());
             contratos = snapC ? snapC.docs.map(d => ({ id: d.id, ...d.data() })) : [];
@@ -166,7 +188,8 @@
             const fechasLec = new Set(lecturas.map(l => l.fecha));
             for (let d = deISO(desde.slice(0, 7) + '-01'); iso(d) <= hasta; d.setMonth(d.getMonth() + 1)) {
                 const ym = iso(d).slice(0, 7);
-                if (admin && dentro(ym + '-10')) ev.push({ tipo: 'pago', fecha: ym + '-10', titulo: 'Límite de pago de renta', det: 'A partir del día 11 el pago se considera tarde', link: '../facturacion/?mes=' + ym });
+                const fLimite = `${ym}-${String(diaLimitePago).padStart(2, '0')}`;
+                if (admin && dentro(fLimite)) ev.push({ tipo: 'pago', fecha: fLimite, titulo: 'Límite de pago de renta', det: `A partir del día ${diaLimitePago + 1} el pago se considera tarde`, link: '../facturacion/?mes=' + ym });
                 const hayLectura = [...fechasLec].some(f => f.startsWith(ym));
                 if (!hayLectura && dentro(ym + '-21') && ym >= hoy.slice(0, 7)) ev.push({ tipo: 'agua', fecha: ym + '-21', titulo: 'Toca lectura de agua', det: 'Todavía no hay lecturas grabadas este mes', link: '../agua/lecturas.html' });
             }

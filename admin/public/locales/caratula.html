@@ -90,7 +90,7 @@
         .alerta-fila .que span { color: #888; font-size: 13px; }
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
-        @media (max-width: 700px) { .secciones { grid-template-columns: 1fr; } .hoja { padding: 22px; } dl { grid-template-columns: 120px 1fr; } }
+        @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 8px; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
@@ -109,6 +109,7 @@
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js';
 
         const app = document.getElementById('app');
+        let diaLimitePago = 10; // Configuración → facturacion_config/general; pagos después de ese día son tarde
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const dinero = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
         const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -130,7 +131,12 @@
 
         async function cargar() {
             const id = new URLSearchParams(location.search).get('id');
-            const snap = id ? await getDoc(doc(db, 'contratos', id)) : null;
+            const [snap, snapCfg] = await Promise.all([
+                id ? getDoc(doc(db, 'contratos', id)) : null,
+                getDoc(doc(db, 'facturacion_config', 'general')).catch(() => null)
+            ]);
+            const dia = snapCfg?.exists() ? snapCfg.data().diaLimitePago : null;
+            if (Number.isInteger(dia)) diaLimitePago = dia;
             if (!snap || !snap.exists()) {
                 app.innerHTML = `<div class="barra"><a href="./">← Locales</a></div><p class="err">No se encontró el contrato.</p>`;
                 return;
@@ -384,7 +390,7 @@
             const fechaCorta = f => f.split('-').reverse().join('/');
             const pagos = [...(c.pagosRenta || [])].sort((a, b) => a.fecha.localeCompare(b.fecha));
             const total = pagos.reduce((s, p) => s + (p.monto || 0), 0);
-            const esTarde = p => +p.fecha.slice(8, 10) >= 11; // pagos del día 11 en adelante
+            const esTarde = p => +p.fecha.slice(8, 10) > diaLimitePago; // pagos después del día límite
             const tardes = pagos.filter(esTarde).length;
             const anios =[...new Set(pagos.map(p => p.fecha.slice(0, 4)))];
             const limpiar = t => String(t || '').replace(/;?\s*(LOCAL [\d, ]+|OFICINAS)\s*;?/gi, ' ').replace(/\s+/g, ' ').trim();
@@ -393,7 +399,7 @@
                 const sub = del.reduce((s, p) => s + (p.monto || 0), 0);
                 return `${del.map(p => {
                     const extra = [p.nota, limpiar(p.tags) !== limpiar(p.pago) ? limpiar(p.tags) : ''].filter(Boolean).join(' · ');
-                    return `<tr${esTarde(p) ? ' class="tarde" title="Pagado del día 11 en adelante"' : ''}><td>${fechaCorta(p.fecha)}</td><td>${esc(p.pago)}${extra ? `<div class="nota-p">${esc(extra)}</div>` : ''}</td><td class="num">${dinero(p.monto)}</td></tr>`;
+                    return `<tr${esTarde(p) ? ' class="tarde" title="Pagado después del día ${diaLimitePago}"' : ''}><td>${fechaCorta(p.fecha)}</td><td>${esc(p.pago)}${extra ? `<div class="nota-p">${esc(extra)}</div>` : ''}</td><td class="num">${dinero(p.monto)}</td></tr>`;
                 }).join('')}
                 <tr class="sub"><td colspan="2">Total ${a} (${del.length} pago${del.length > 1 ? 's' : ''})</td><td class="num">${dinero(sub)}</td></tr>`;
             }).join('');
@@ -408,7 +414,7 @@
                 </table>
                 <div class="resumen-dep">
                     <div><span>Total pagado</span><strong>${dinero(total)}</strong></div>
-                    <div><span>Pagos</span><strong>${pagos.length}${tardes ? ` <span class="tarde-txt">(${tardes} después del día 10)</span>` : ''}</strong></div>
+                    <div><span>Pagos</span><strong>${pagos.length}${tardes ? ` <span class="tarde-txt">(${tardes} después del día ${diaLimitePago})</span>` : ''}</strong></div>
                     <div><span>Periodo</span><strong style="font-size:14px">${fechaCorta(pagos[0].fecha)} – ${fechaCorta(pagos[pagos.length - 1].fecha)}</strong></div>
                 </div>
                 <p class="nota-dep">Montos con IVA. No incluye depósitos en garantía. Algunos pagos incluyen agua o basura cuando se cobraron junto con la renta.${c.pagosRentaFuente ? ' Fuente: ' + esc(c.pagosRentaFuente) : ''}</p>`,

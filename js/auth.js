@@ -218,7 +218,7 @@ export function getSeccionesPermitidas() {
   const b = basePath();
 
   const todas = {
-    inicio:      { id: 'inicio',      nombre: 'Home',             url: b },
+    inicio:      { id: 'inicio',      nombre: 'Inicio',           url: b },
     locales:     { id: 'locales',     nombre: 'Contratos',        url: b + 'locales/' },
     facturacion: { id: 'facturacion', nombre: 'Facturación',      url: b + 'facturacion/' },
     agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },

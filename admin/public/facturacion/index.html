@@ -68,9 +68,9 @@
         import { collection, getDocs, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
-            cargarConfigGeneral, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
+            cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
             documentoContadores, imprimirHojas, totalesFactura
-        } from '../../../js/facturacion.js?v=20261001-5';
+        } from '../../../js/facturacion.js?v=20261001-6';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
@@ -86,7 +86,8 @@
         async function cargar(msg = '') {
             app.innerHTML = '<p style="color:#999">Cargando...</p>';
             try {
-                const [snapC, facturas] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes)]);
+                const [snapC, facturas, general] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes), cargarConfigGeneral()]);
+                PCT_MORATORIOS = general.moratoriosPct;
                 const contratos = snapC.docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
                 render(contratos, facturas, msg);
             } catch (err) {
@@ -128,7 +129,7 @@
                     <div class="tarjeta"><div class="k">Por cobrar</div><div class="v" style="color:#b26a00">${dinero(total - cobrado)}</div></div>
                 </div>
                 <div class="tabla-wrap">
-                    <table>
+                    <table class="tabla-movil">
                         <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
                         <tbody>
                             ${filas.map(f => `
@@ -255,15 +256,15 @@
             }
         }
 
-        // ---------- Moratorios (5% sobre la renta sin IVA) ----------
-        const PCT_MORATORIOS = 0.05;
+        // ---------- Moratorios (porcentaje de Configuración, sobre la renta sin IVA) ----------
+        let PCT_MORATORIOS = MORATORIOS_DEFAULT;
         const esConceptoMor = c => c.tipo === 'moratorios' || /MORATORIO/.test(c.concepto || '');
         const montoMoratorios = f => (f.conceptos || []).filter(esConceptoMor).reduce((s, c) => s + (Number(c.total) || 0), 0);
         function celdaMoratorios(f) {
             const monto = montoMoratorios(f);
             const on = monto > 0 || (f.moratoriosPct || 0) > 0;
             const pct = Math.round((f.moratoriosPct || (on ? PCT_MORATORIOS : 0)) * 100);
-            return `<label class="switch" title="${on ? 'Quitar' : 'Cobrar'} moratorios (5% de la renta)">
+            return `<label class="switch" title="${on ? 'Quitar' : 'Cobrar'} moratorios (${Math.round(PCT_MORATORIOS * 100)}% de la renta)">
                     <input type="checkbox" class="mor-switch" data-id="${esc(f.id)}" ${on ? 'checked' : ''}><span class="slider"></span></label>
                 ${on ? `<span class="mor-monto">${dinero(monto)}</span><span class="mor-n">${pct}% de la renta</span>` : ''}`;
         }

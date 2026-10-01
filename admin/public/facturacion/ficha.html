@@ -64,7 +64,7 @@
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
             documentoContadores, imprimirHojas, normalizarConceptos
-        } from '../../../js/facturacion.js?v=20261001-5';
+        } from '../../../js/facturacion.js?v=20261001-6';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);
@@ -208,7 +208,7 @@
             borrador = JSON.parse(JSON.stringify(factura));
             el.innerHTML = `
                 ${(factura.avisos || []).length ? `<div class="avisos">${factura.avisos.map(a => '⚠ ' + esc(a)).join('<br>')}</div>` : ''}
-                <table>
+                <table class="tabla-movil">
                     <thead><tr><th>Concepto</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th></th></tr></thead>
                     <tbody id="filas"></tbody>
                     <tbody><tr class="tot"><td>TOTAL</td><td class="num" id="t_sub"></td><td class="num" id="t_iva"></td><td class="num" id="t_tot"></td><td></td></tr></tbody>

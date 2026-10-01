@@ -51,6 +51,14 @@
         .app.pendiente { cursor: default; opacity: .6; }
         .app.pendiente:hover { transform: none; box-shadow: none; border-color: #eee; }
         .app.pendiente .ico { background: #c5c9d6; }
+        @media (max-width: 700px) {
+            .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .app { padding: 14px; gap: 8px; border-radius: 12px; }
+            .app .ico { width: 38px; height: 38px; border-radius: 10px; }
+            .app .ico svg { width: 20px; height: 20px; }
+            .app .nom { font-size: 14px; }
+            .app:hover { transform: none; }
+        }
         .prox { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; background: #f1f1f1; color: #888; vertical-align: middle; }
         th.ord { cursor: pointer; user-select: none; }
         th.ord:hover { color: #333; }
@@ -89,14 +97,14 @@
             config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>'
         };
         const APPS = [
-            { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: representante, teléfono y correos', href: '#directorio', soloAdmin: true },
+            { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: teléfono y correos', href: '#directorio', soloAdmin: true },
             { id: 'metrajes', nombre: 'Locales y metrajes', des: 'Superficie, renta y renta por m² de cada contrato', href: '#metrajes', soloAdmin: true },
             { id: 'locales', nombre: 'Contratos', des: 'Carátulas, vigencias y alertas', href: b + 'locales/', soloAdmin: true },
             { id: 'facturacion', nombre: 'Facturación', des: 'Facturas del mes y exportación para contadores', href: b + 'facturacion/', soloAdmin: true },
             { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
             // Módulos aún sin construir: se muestran como "Próximamente" y no abren nada
             { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
-            { id: 'config', nombre: 'Configuración', des: 'Usuarios y ajustes del panel', href: b + 'config/', soloAdmin: true, pendiente: true }
+            { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true }
         ];
         const tarjetaApp = a => a.pendiente
             ? `<div class="app pendiente" title="Este módulo todavía no está listo"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)} <span class="prox">Próximamente</span></span><span class="des">${esc(a.des)}</span></div>`
@@ -165,7 +173,6 @@
             locales: c => parseInt(c.locales?.[0] || 999),
             nombre: c => (c.nombreComercial || '').toLowerCase(),
             razon: c => (c.razonSocial || '').toLowerCase(),
-            representante: c => (c.representante || '').toLowerCase(),
             telefono: c => String(c.telefono || ''),
             correos: c => (correosDe(c)[0]?.correo || '').toLowerCase()
         };
@@ -193,17 +200,16 @@
                 <p class="sub">Contactos de cada local. Haz clic en el título de una columna para ordenar.</p>
                 <input class="buscar" id="buscar" placeholder="Buscar local, nombre o correo..." value="${esc(busquedaDir)}">
                 <div class="tabla-wrap">
-                    <table>
-                        <thead><tr>${thOrden(ordenDir, 'locales', 'Locales')}${thOrden(ordenDir, 'nombre', 'Nombre comercial')}${thOrden(ordenDir, 'razon', 'Razón social')}${thOrden(ordenDir, 'representante', 'Representante')}${thOrden(ordenDir, 'telefono', 'Teléfono')}${thOrden(ordenDir, 'correos', 'Correos')}</tr></thead>
+                    <table class="tabla-movil">
+                        <thead><tr>${thOrden(ordenDir, 'locales', 'Locales')}${thOrden(ordenDir, 'nombre', 'Nombre comercial')}${thOrden(ordenDir, 'razon', 'Razón social')}${thOrden(ordenDir, 'telefono', 'Teléfono')}${thOrden(ordenDir, 'correos', 'Correos')}</tr></thead>
                         <tbody id="dir">
                             ${lista.map(c => {
                                 const correos = correosDe(c);
-                                const texto = [c.locales?.join(' '), c.nombreComercial, c.razonSocial, c.representante, c.telefono, ...correos.map(x => x.correo)].join(' ').toLowerCase();
+                                const texto = [c.locales?.join(' '), c.nombreComercial, c.razonSocial, c.telefono, ...correos.map(x => x.correo)].join(' ').toLowerCase();
                                 return `<tr data-texto="${esc(texto)}">
                                     <td><a class="loc" href="${caratula(c.id)}">${esc((c.locales || []).join(', '))}</a>${c.vencido ? '<div class="vencido">Contrato vencido</div>' : ''}</td>
                                     <td>${esc(c.nombreComercial || '-')}</td>
                                     <td>${esc(c.razonSocial)}</td>
-                                    <td>${esc(c.representante || '-')}</td>
                                     <td>${c.telefono ? `<a href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}">${esc(c.telefono)}</a>` : '<span class="gris">Sin registrar</span>'}</td>
                                     <td class="correos">${correos.length ? correos.map(x => `<a href="mailto:${esc(x.correo)}">${esc(x.correo)} <span class="tipo">${esc(x.tipo)}</span></a>`).join('') : '<span class="gris">Sin registrar</span>'}</td>
                                 </tr>`;
@@ -255,7 +261,7 @@
                 <h1>Locales y metrajes</h1>
                 <p class="sub">Superficie y renta por contrato. Haz clic en el título de una columna para ordenar.</p>
                 <div class="tabla-wrap">
-                    <table>
+                    <table class="tabla-movil">
                         <thead><tr>${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acceso', 'Acceso')}${th('m2', 'm²', 'num')}<th style="width:26%"></th>${th('renta', 'Renta mensual', 'num')}${th('rentaM2', 'Renta por m²', 'num')}</tr></thead>
                         <tbody>
                             ${lista.map(c => `<tr>
