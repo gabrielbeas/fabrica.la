@@ -60,12 +60,18 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Resto de colecciones (calendarios...): usuarios registrados
+    // Calendario: cualquier usuario registrado ve y agrega eventos; solo el admin edita y borra
+    match /calendario_eventos/{id} {
+      allow read, create: if isRegistered();
+      allow update, delete: if isAdmin();
+    }
+
+    // Resto de colecciones: usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos']) && isRegistered();
     }
   }
 }

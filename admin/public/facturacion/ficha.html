@@ -48,6 +48,8 @@
         #msg { font-size: 14px; }
 
         .impresion { display: none; }
+        .datos-dl { grid-template-columns: 110px 1fr 110px 1fr; gap: 8px 16px; }
+        @media (max-width: 850px) { .datos-dl { grid-template-columns: 110px 1fr; } }
         @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .campos { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -107,30 +109,14 @@
                 <h1>${esc(cfg.razonSocialFactura || contrato.razonSocial)}</h1>
                 <p class="sub">Local ${esc((contrato.locales || []).join(', '))}${contrato.rfc ? ` · RFC ${esc(contrato.rfc)}` : ''}</p>
 
-                <div class="layout">
-                    <div>
-                        <div class="panel">
-                            <h2>Factura</h2>
-                            <div class="mes-bar">
-                                <input type="month" id="mes" value="${mes}">
-                                ${factura ? `<span class="pill ${ESTADOS[factura.estadoPago]?.clase}">${ESTADOS[factura.estadoPago]?.txt}</span>` : ''}
-                            </div>
-                            <div id="factura"></div>
-                        </div>
+                <div class="panel" id="datos"></div>
+                <div class="panel">
+                    <h2>Factura</h2>
+                    <div class="mes-bar">
+                        <input type="month" id="mes" value="${mes}">
+                        ${factura ? `<span class="pill ${ESTADOS[factura.estadoPago]?.clase}">${ESTADOS[factura.estadoPago]?.txt}</span>` : ''}
                     </div>
-                    <div>
-                        <div class="panel" id="datos"></div>
-                        <div class="panel">
-                            <h2>Historial</h2>
-                            <div class="hist">
-                                ${historial.length ? historial.map(h => `
-                                    <a href="?id=${encodeURIComponent(contrato.id)}&mes=${h.mes}" class="${h.mes === mes ? 'act' : ''}">
-                                        <span>${mesTxt(h.mes)}</span>
-                                        <span><span class="pill ${ESTADOS[h.estadoPago]?.clase}">${ESTADOS[h.estadoPago]?.txt}</span> ${dinero(h.total)}</span>
-                                    </a>`).join('') : '<p style="color:#999;font-size:14px">Sin facturas registradas.</p>'}
-                            </div>
-                        </div>
-                    </div>
+                    <div id="factura"></div>
                 </div>
                 <div class="impresion" id="impresion"></div>`;
 
@@ -151,7 +137,7 @@
             if (!editando) {
                 el.innerHTML = `
                     <h2>Datos de facturación <button class="btn-mini" id="editDatos">Editar</button></h2>
-                    <dl>
+                    <dl class="datos-dl">
                         <dt>Factura a</dt><dd>${esc(cfg.razonSocialFactura || contrato.razonSocial)}</dd>
                         <dt>Enviar a</dt><dd>${(cfg.correos || []).map(esc).join('<br>') || '-'}</dd>
                         <dt>Método</dt><dd>${esc(cfg.metodoPago || 'PUE')}</dd>
@@ -166,7 +152,7 @@
             }
             el.innerHTML = `
                 <h2>Datos de facturación</h2>
-                <div class="campos" style="grid-template-columns:1fr;margin-top:0">
+                <div class="campos" style="margin-top:0">
                     <div><label>Factura a (razón social)</label><input id="d_rs" value="${esc(cfg.razonSocialFactura || contrato.razonSocial)}"></div>
                     <div><label>Correos (uno por renglón)</label><textarea id="d_correos" rows="4">${esc((cfg.correos || []).join('\n'))}</textarea></div>
                     <div><label>Método de pago</label><input id="d_metodo" value="${esc(cfg.metodoPago || 'PUE')}"></div>

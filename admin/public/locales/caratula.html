@@ -230,6 +230,7 @@
                                 ${fila('Superficie', c.m2 ? `${esc(c.m2)} m²` : '')}
                                 ${fila('Giro', esc(c.giro))}
                                 ${fila('Representante', esc(c.representante))}
+                                ${fila('Teléfono', esc(c.telefono))}
                                 ${fila('Dirección', (c.direccion || []).map(esc).join('<br>'))}
                                 ${fila('Acceso al local', esc(c.acceso))}
                             </dl>
@@ -478,6 +479,7 @@
             ['nombreComercial', 'Nombre comercial', 'texto', 'Arrendatario'],
             ['giro', 'Giro', 'texto', 'Arrendatario'],
             ['representante', 'Representante legal', 'texto', 'Arrendatario'],
+            ['telefono', 'Teléfono de contacto', 'texto', 'Arrendatario'],
             ['acceso', 'Acceso al local', 'texto', 'Arrendatario'],
             ['direccion', 'Dirección (una línea por renglón)', 'lineas', 'Arrendatario'],
             ['garantia', 'Garantía', 'texto', 'Garantías'],

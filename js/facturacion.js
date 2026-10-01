@@ -268,33 +268,37 @@ function mtd(n, fuerte = false, guionSiCero = false) {
   return `<td class="n"><span class="mon">${ini}<span>${v < 0 ? '-$' : '$'}</span><span>${cifra}</span>${fin}</span></td>`;
 }
 
-/** Resumen del mes: una fila por factura */
+/** Resumen del mes: una fila por factura.
+ *  Columnas: Renta · Moratorios · Agua · Basura. "Otros" (extraordinarios u otros conceptos)
+ *  solo aparece si alguna factura del resumen los tiene, para que las columnas sigan sumando el subtotal. */
 export function resumenHTML(facturas, contratosPorId = {}) {
   const col = (f, tipos) => r2((f.conceptos || []).reduce((s, c, i) => s + (tipos.includes(tipoDe(c, i)) ? (Number(c.subtotal) || 0) : 0), 0));
   const filas = facturas.map((f, i) => {
     const c = contratosPorId[f.contratoId] || {};
     const t = totalesFactura(f);
-    return { f, c, t, i: i + 1, renta: col(f, ['renta']), agua: col(f, ['agua']), basura: col(f, ['basura']), otros: col(f, ['extraordinario', 'moratorios', 'otro']) };
+    return { f, c, t, i: i + 1, renta: col(f, ['renta']), mora: col(f, ['moratorios']), agua: col(f, ['agua']), basura: col(f, ['basura']), otros: col(f, ['extraordinario', 'otro']) };
   });
   const s = k => r2(filas.reduce((a, x) => a + (k in x.t ? x.t[k] : x[k]), 0));
+  const conOtros = filas.some(x => x.otros);
+  const anchos = conOtros
+    ? [3, 8, 20, 11, 7.5, 7, 6.5, 6, 6, 8.5, 7.5, 9]
+    : [3, 9, 22, 12, 8, 7.5, 7, 6.5, 8.5, 7.5, 9];
   return `
     <h2>Resumen · subtotales sin IVA por concepto</h2>
     <table class="fija">
-      <colgroup><col style="width:3%"><col style="width:9%"><col style="width:22%"><col style="width:12%">
-        <col style="width:8%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:6.5%">
-        <col style="width:9%"><col style="width:7.5%"><col style="width:9%"></colgroup>
+      <colgroup>${anchos.map(w => `<col style="width:${w}%">`).join('')}</colgroup>
       <thead><tr><th>#</th><th>Locales</th><th>Receptor</th><th>RFC</th>
-        <th class="n">Renta</th><th class="n">Agua</th><th class="n">Basura</th><th class="n">Otros</th>
+        <th class="n">Renta</th><th class="n">Moratorios</th><th class="n">Agua</th><th class="n">Basura</th>${conOtros ? '<th class="n">Otros</th>' : ''}
         <th class="n">Subtotal</th><th class="n">IVA 16%</th><th class="n">Total</th></tr></thead>
       <tbody>
         ${filas.map(x => `<tr>
           <td>${x.i}</td><td class="loc">${esc(localesDe(x.f, x.c))}</td><td>${esc(x.f.razonSocial)}</td>
           <td>${x.f.rfc || x.c.rfc ? esc(x.f.rfc || x.c.rfc) : '<span class="falta">FALTA</span>'}</td>
-          ${mtd(x.renta)}${mtd(x.agua, false, true)}
-          ${mtd(x.basura, false, true)}${mtd(x.otros, false, true)}
+          ${mtd(x.renta)}${mtd(x.mora, false, true)}${mtd(x.agua, false, true)}
+          ${mtd(x.basura, false, true)}${conOtros ? mtd(x.otros, false, true) : ''}
           ${mtd(x.t.subtotal)}${mtd(x.t.iva)}${mtd(x.t.total, true)}</tr>`).join('')}
         <tr class="tot"><td colspan="4">TOTAL · ${filas.length} facturas</td>
-          ${mtd(s('renta'))}${mtd(s('agua'))}${mtd(s('basura'))}${mtd(s('otros'))}
+          ${mtd(s('renta'))}${mtd(s('mora'))}${mtd(s('agua'))}${mtd(s('basura'))}${conOtros ? mtd(s('otros')) : ''}
           ${mtd(s('subtotal'))}${mtd(s('iva'))}${mtd(s('total'))}</tr>
       </tbody>
     </table>`;

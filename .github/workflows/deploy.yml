@@ -46,10 +46,11 @@ jobs:
           cp login.html firebase-config.js dist/
           cp -r js dist/js
           # Panel (solo archivos nuevos)
-          mkdir -p dist/admin/agua dist/admin/herramientas dist/admin/locales dist/admin/facturacion
+          mkdir -p dist/admin/agua dist/admin/herramientas dist/admin/locales dist/admin/facturacion dist/admin/calendarios
           cp admin/public/facturacion/index.html admin/public/facturacion/ficha.html dist/admin/facturacion/
           cp admin/public/herramientas/importar-facturas.html admin/public/herramientas/actualizar-caratulas.html dist/admin/herramientas/
           cp admin/public/index.html dist/admin/
+          cp admin/public/calendarios/index.html dist/admin/calendarios/
           cp -r admin/public/css dist/admin/css
           cp admin/public/agua/lecturas.html dist/admin/agua/
           cp admin/public/locales/index.html admin/public/locales/caratula.html dist/admin/locales/

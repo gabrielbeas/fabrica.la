@@ -3,185 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - La Fábrica de Chocolate</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <title>Inicio - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
     <style>
-        body {
-            background: white;
-        }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1250px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 26px; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 34px 0 12px; }
 
-        .main-content {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-        }
+        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; }
+        @media (max-width: 800px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
 
-        .dashboard-header {
-            margin-bottom: 30px;
-        }
-
-        .dashboard-header h1 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .dashboard-header p {
-            color: #999;
-            font-size: 14px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .stat-card-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        .stat-card-value {
-            font-size: 32px;
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-card-label {
-            color: #999;
-            font-size: 14px;
-        }
-
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .quick-link {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            text-align: center;
-            transition: transform 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .quick-link:hover {
-            transform: translateY(-5px);
-        }
-
-        .quick-link-icon {
-            font-size: 32px;
-        }
-
-        .quick-link-text {
-            font-weight: 600;
-            font-size: 14px;
-        }
+        .buscar { padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 280px; margin-bottom: 12px; }
+        .buscar:focus { outline: none; border-color: #667eea; }
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+        tbody tr:last-child td { border-bottom: none; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .gris { color: #999; font-size: 12px; }
+        .correos a { color: #667eea; text-decoration: none; display: block; }
+        .correos a:hover { text-decoration: underline; }
+        .correos .tipo { font-size: 11px; color: #aaa; }
+        a.loc { color: #333; text-decoration: none; font-weight: 600; }
+        a.loc:hover { color: #667eea; }
+        .vencido { color: #c62828; font-size: 11px; font-weight: 600; }
+        .barra-m2 { height: 8px; border-radius: 4px; background: #667eea; opacity: .55; }
+        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
+        .dos { display: grid; grid-template-columns: 1fr; gap: 0; }
+        .cargando { color: #999; padding: 40px 0; text-align: center; }
+        .err { color: #c62828; }
+        /* Apps del inicio */
+        .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 10px; }
+        .app { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px 18px; border: 1px solid #eee; border-radius: 14px; background: white; color: #333; text-decoration: none; transition: transform .15s, box-shadow .15s, border-color .15s; }
+        .app:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(102,126,234,.15); border-color: #d9ddfa; }
+        .app .ico { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .app .ico svg { width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .app .nom { font-weight: 600; font-size: 15px; }
+        .app .des { font-size: 12px; color: #999; line-height: 1.4; }
+        .app.pendiente { cursor: default; opacity: .6; }
+        .app.pendiente:hover { transform: none; box-shadow: none; border-color: #eee; }
+        .app.pendiente .ico { background: #c5c9d6; }
+        .prox { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; background: #f1f1f1; color: #888; vertical-align: middle; }
+        th.ord { cursor: pointer; user-select: none; }
+        th.ord:hover { color: #333; }
+        th.ord.act { color: #667eea; }
+        th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
+        .volver { display: inline-block; color: #667eea; text-decoration: none; font-size: 14px; margin-bottom: 14px; }
+        .acceso { display: inline-block; margin-top: 10px; padding: 11px 20px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; font-weight: 600; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f8f9fa;">
-            <div style="text-align: center; color: #667eea;">
-                <div style="font-size: 3em; margin-bottom: 20px; animation: spin 1s linear infinite;">⟳</div>
-                <h2>Cargando panel...</h2>
-            </div>
-            <style>
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            </style>
-        </div>
-    </div>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
         import { crearNavbar } from '../../js/navbar.js';
-        import { getCurrentUser, isAuthenticated } from '../../js/auth.js';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js';
+        import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-        // Verificar autenticación
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const num = n => (Number(n) || 0).toLocaleString('es-MX', { maximumFractionDigits: 2 });
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        // Quita anotaciones entre paréntesis de los correos, ej. "x@y.com (obligado solidario)"
+        const limpiarCorreo = s => String(s || '').replace(/\(.*?\)/g, '').trim();
+        const b = basePath();
+
+        // ---------- Apps del inicio (agregar aquí las nuevas) ----------
+        const ICO = {
+            directorio: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17c.8-2 2.5-3 4.5-3s3.7 1 4.5 3"/></svg>',
+            metrajes: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h9V3M12 12v9"/></svg>',
+            locales: '<svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>',
+            facturacion: '<svg viewBox="0 0 24 24"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+            agua: '<svg viewBox="0 0 24 24"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg>',
+            calendario: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+            config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>'
+        };
+        const APPS = [
+            { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: representante, teléfono y correos', href: '#directorio', soloAdmin: true },
+            { id: 'metrajes', nombre: 'Locales y metrajes', des: 'Superficie, renta y renta por m² de cada contrato', href: '#metrajes', soloAdmin: true },
+            { id: 'locales', nombre: 'Contratos', des: 'Carátulas, vigencias y alertas', href: b + 'locales/', soloAdmin: true },
+            { id: 'facturacion', nombre: 'Facturación', des: 'Facturas del mes y exportación para contadores', href: b + 'facturacion/', soloAdmin: true },
+            { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
+            // Módulos aún sin construir: se muestran como "Próximamente" y no abren nada
+            { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
+            { id: 'config', nombre: 'Configuración', des: 'Usuarios y ajustes del panel', href: b + 'config/', soloAdmin: true, pendiente: true }
+        ];
+        const tarjetaApp = a => a.pendiente
+            ? `<div class="app pendiente" title="Este módulo todavía no está listo"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)} <span class="prox">Próximamente</span></span><span class="des">${esc(a.des)}</span></div>`
+            : `<a class="app" href="${a.href}"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)}</span><span class="des">${esc(a.des)}</span></a>`;
+
+        let user = null, contratos = null;
+
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
         } else {
-            // Crear navbar
             crearNavbar();
+            user = getCurrentUser();
+            window.addEventListener('hashchange', mostrar);
+            mostrar();
+        }
 
-            // Cargar contenido del dashboard
-            const user = getCurrentUser();
-            const app = document.getElementById('app');
+        async function cargarContratos() {
+            if (contratos) return contratos;
+            const snap = await getDocs(collection(db, 'contratos'));
+            const hoy = hoyISO();
+            contratos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
+                .map(c => ({ ...c, vencido: !!(c.fin && c.fin < hoy) }));
+            return contratos;
+        }
 
+        async function mostrar() {
+            const vista = location.hash.slice(1);
+            const admin = esAdmin();
+            window.scrollTo(0, 0);
+            if (!admin || !['directorio', 'metrajes'].includes(vista)) {
+                app.innerHTML = `
+                    <h1>Bienvenido, ${esc(user.nombre || user.email)}</h1>
+                    <p class="sub">La Fábrica de Chocolate</p>
+                    <div class="apps">${APPS.filter(a => admin || !a.soloAdmin).map(tarjetaApp).join('')}</div>`;
+                return;
+            }
+            app.innerHTML = '<div class="cargando">Cargando...</div>';
+            try {
+                await cargarContratos();
+                if (vista === 'directorio') vistaDirectorio(); else vistaMetrajes();
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<a class="volver" href="#">← Inicio</a><p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        const caratula = id => `locales/caratula.html?id=${encodeURIComponent(id)}`;
+
+        // Correos únicos del locatario: notificación (contrato) + facturación
+        function correosDe(c) {
+            const lista = [];
+            (c.correosNotificacion || []).forEach(x => lista.push({ correo: limpiarCorreo(x), tipo: 'Contrato' }));
+            (c.facturacion?.correos || []).forEach(x => lista.push({ correo: limpiarCorreo(x), tipo: 'Facturación' }));
+            const vistos = new Map();
+            lista.filter(x => /@/.test(x.correo)).forEach(x => {
+                const k = x.correo.toLowerCase();
+                if (vistos.has(k)) { if (!vistos.get(k).tipo.includes(x.tipo)) vistos.get(k).tipo += ' · ' + x.tipo; }
+                else vistos.set(k, { ...x });
+            });
+            return [...vistos.values()];
+        }
+
+        // Columnas ordenables del Directorio
+        const COL_DIR = {
+            locales: c => parseInt(c.locales?.[0] || 999),
+            nombre: c => (c.nombreComercial || '').toLowerCase(),
+            razon: c => (c.razonSocial || '').toLowerCase(),
+            representante: c => (c.representante || '').toLowerCase(),
+            telefono: c => String(c.telefono || ''),
+            correos: c => (correosDe(c)[0]?.correo || '').toLowerCase()
+        };
+        let ordenDir = { col: 'locales', dir: 1 };
+        let busquedaDir = '';
+
+        // Encabezado ordenable (sirve para ambas tablas)
+        const thOrden = (orden, col, txt, cls = '') => {
+            const act = orden.col === col;
+            return `<th class="ord ${cls} ${act ? 'act' : ''}" data-col="${col}" title="Ordenar por ${txt.toLowerCase()}">${txt}<span class="flecha">${act ? (orden.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`;
+        };
+        // Vacíos siempre al final, sin importar la dirección
+        const comparar = (cols, orden) => (a, b) => {
+            const f = cols[orden.col], x = f(a), y = f(b);
+            const vx = x === '' || x === 0, vy = y === '' || y === 0;
+            if (vx !== vy) return vx ? 1 : -1;
+            return (typeof x === 'string' ? x.localeCompare(y, 'es') : x - y) * orden.dir || cols.locales(a) - cols.locales(b);
+        };
+
+        function vistaDirectorio() {
+            const lista = [...contratos].sort(comparar(COL_DIR, ordenDir));
             app.innerHTML = `
-                <div class="main-content">
-                    <div class="dashboard-header">
-                        <h1>¡Bienvenido, ${user.nombre || user.email}!</h1>
-                        <p>Panel de Control - La Fábrica de Chocolate</p>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-card-value">12</div>
-                            <div class="stat-card-label">Locales Activos</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-value">850</div>
-                            <div class="stat-card-label">M³ Consumidos</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-value">$45.2K</div>
-                            <div class="stat-card-label">Ingresos Totales</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-value">95%</div>
-                            <div class="stat-card-label">Ocupación</div>
-                        </div>
-                    </div>
-
-                    <h2 style="margin-top: 40px; color: #333;">Accesos Rápidos</h2>
-                    <div class="quick-links">
-                        <a href="agua/" class="quick-link">
-                            <span class="quick-link-text">Lecturas de Agua</span>
-                        </a>
-                        <a href="agua/" class="quick-link">
-                            <span class="quick-link-text">Consumo</span>
-                        </a>
-                        <a href="agua/" class="quick-link">
-                            <span class="quick-link-text">Cobros</span>
-                        </a>
-                        ${user.rol === 'admin' ? `
-                            <a href="#usuarios" class="quick-link">
-                                <span class="quick-link-text">Usuarios</span>
-                            </a>
-                        ` : ''}
-                    </div>
-
-                    <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 10px; color: #666; text-align: center;">
-                        <p>Sistema de Autenticación y Roles implementado exitosamente</p>
-                        <p style="font-size: 12px; margin-top: 10px;">Rol actual: <strong>${user.rol === 'admin' ? 'Administrador' : 'Operario'}</strong></p>
-                    </div>
+                <a class="volver" href="#">← Inicio</a>
+                <h1>Directorio</h1>
+                <p class="sub">Contactos de cada local. Haz clic en el título de una columna para ordenar.</p>
+                <input class="buscar" id="buscar" placeholder="Buscar local, nombre o correo..." value="${esc(busquedaDir)}">
+                <div class="tabla-wrap">
+                    <table>
+                        <thead><tr>${thOrden(ordenDir, 'locales', 'Locales')}${thOrden(ordenDir, 'nombre', 'Nombre comercial')}${thOrden(ordenDir, 'razon', 'Razón social')}${thOrden(ordenDir, 'representante', 'Representante')}${thOrden(ordenDir, 'telefono', 'Teléfono')}${thOrden(ordenDir, 'correos', 'Correos')}</tr></thead>
+                        <tbody id="dir">
+                            ${lista.map(c => {
+                                const correos = correosDe(c);
+                                const texto = [c.locales?.join(' '), c.nombreComercial, c.razonSocial, c.representante, c.telefono, ...correos.map(x => x.correo)].join(' ').toLowerCase();
+                                return `<tr data-texto="${esc(texto)}">
+                                    <td><a class="loc" href="${caratula(c.id)}">${esc((c.locales || []).join(', '))}</a>${c.vencido ? '<div class="vencido">Contrato vencido</div>' : ''}</td>
+                                    <td>${esc(c.nombreComercial || '-')}</td>
+                                    <td>${esc(c.razonSocial)}</td>
+                                    <td>${esc(c.representante || '-')}</td>
+                                    <td>${c.telefono ? `<a href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}">${esc(c.telefono)}</a>` : '<span class="gris">Sin registrar</span>'}</td>
+                                    <td class="correos">${correos.length ? correos.map(x => `<a href="mailto:${esc(x.correo)}">${esc(x.correo)} <span class="tipo">${esc(x.tipo)}</span></a>`).join('') : '<span class="gris">Sin registrar</span>'}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
                 </div>
-            `;
+                <p class="gris" style="margin-top:8px">El teléfono se captura en la carátula de cada contrato (Editar → Arrendatario).</p>`;
+            const filtrar = () => {
+                const q = busquedaDir.trim().toLowerCase();
+                document.querySelectorAll('#dir tr').forEach(tr => { tr.style.display = !q || tr.dataset.texto.includes(q) ? '' : 'none'; });
+            };
+            document.getElementById('buscar').addEventListener('input', e => { busquedaDir = e.target.value; filtrar(); });
+            filtrar();
+            app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
+                const col = t.dataset.col;
+                ordenDir = ordenDir.col === col ? { col, dir: -ordenDir.dir } : { col, dir: 1 };
+                vistaDirectorio();
+            }));
+        }
+
+        // Columnas ordenables de "Locales y metrajes": clave → valor para comparar
+        const COL_MET = {
+            locales: c => parseInt(c.locales?.[0] || 999),
+            locatario: c => (c.nombreComercial || c.razonSocial || '').toLowerCase(),
+            acceso: c => (c.acceso || '').toLowerCase(),
+            m2: c => Number(c.m2) || 0,
+            renta: c => c.total || 0,
+            rentaM2: c => c.m2 ? (c.total || 0) / c.m2 : 0
+        };
+        let ordenMet = { col: 'locales', dir: 1 };
+
+        function vistaMetrajes() {
+            const m2Total = contratos.reduce((s, c) => s + (Number(c.m2) || 0), 0);
+            const nLocales = contratos.reduce((s, c) => s + (c.locales || []).length, 0);
+            const rentaTotal = contratos.reduce((s, c) => s + (c.total || 0), 0);
+            const maxM2 = Math.max(1, ...contratos.map(c => Number(c.m2) || 0));
+            const th = (col, txt, cls = '') => {
+                const act = ordenMet.col === col;
+                return `<th class="ord ${cls} ${act ? 'act' : ''}" data-col="${col}" title="Ordenar por ${txt.toLowerCase()}">${txt}<span class="flecha">${act ? (ordenMet.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`;
+            };
+            const f = COL_MET[ordenMet.col];
+            const lista = [...contratos].sort((a, b) => {
+                const x = f(a), y = f(b);
+                return (typeof x === 'string' ? x.localeCompare(y, 'es') : x - y) * ordenMet.dir || COL_MET.locales(a) - COL_MET.locales(b);
+            });
+            app.innerHTML = `
+                <a class="volver" href="#">← Inicio</a>
+                <h1>Locales y metrajes</h1>
+                <p class="sub">Superficie y renta por contrato. Haz clic en el título de una columna para ordenar.</p>
+                <div class="tabla-wrap">
+                    <table>
+                        <thead><tr>${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acceso', 'Acceso')}${th('m2', 'm²', 'num')}<th style="width:26%"></th>${th('renta', 'Renta mensual', 'num')}${th('rentaM2', 'Renta por m²', 'num')}</tr></thead>
+                        <tbody>
+                            ${lista.map(c => `<tr>
+                                <td><a class="loc" href="${caratula(c.id)}">${esc((c.locales || []).join(', '))}</a></td>
+                                <td>${esc(c.nombreComercial || c.razonSocial)}${c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
+                                <td>${esc(c.acceso || '-')}</td>
+                                <td class="num">${c.m2 ? num(c.m2) : '<span class="gris">-</span>'}</td>
+                                <td>${c.m2 ? `<div class="barra-m2" style="width:${(Number(c.m2) / maxM2 * 100).toFixed(1)}%"></div>` : ''}</td>
+                                <td class="num">${dinero(c.total)}</td>
+                                <td class="num">${c.m2 ? dinero((c.total || 0) / c.m2) : '-'}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                        <tfoot><tr><td colspan="3">Total · ${contratos.length} contratos, ${nLocales} locales</td><td class="num">${num(m2Total)}</td><td></td>
+                            <td class="num">${dinero(rentaTotal)}</td><td class="num">${m2Total ? dinero(rentaTotal / m2Total) : '-'}</td></tr></tfoot>
+                    </table>
+                </div>
+                <p class="gris" style="margin-top:8px">Los m² son por contrato (como vienen en cada carátula). Los contratos con varios locales muestran la superficie total. Renta sin IVA.</p>`;
+            app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
+                const col = t.dataset.col;
+                // Primer clic: texto A→Z, números de mayor a menor; segundo clic invierte
+                ordenMet = ordenMet.col === col ? { col, dir: -ordenMet.dir } : { col, dir: ['locales', 'locatario', 'acceso'].includes(col) ? 1 : -1 };
+                vistaMetrajes();
+            }));
         }
     </script>
 </body>
