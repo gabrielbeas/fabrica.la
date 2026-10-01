@@ -39,6 +39,12 @@
         .vacio { border: 1px dashed #ddd; border-radius: 10px; padding: 30px; text-align: center; color: #777; }
         .ok { color: #2e7d32; } .err { color: #c62828; }
 
+        /* Interruptor de inclusión: verde = activa, negro = apagada (montos tachados) */
+        .sw-sel .slider { background: #111 !important; }
+        .sw-sel input:checked + .slider { background: #2e7d32 !important; }
+        tr.redactada td { color: #999; }
+        tr.redactada .monto { background: #111; color: transparent !important; border-radius: 3px; user-select: none; }
+
         /* Moratorios: interruptor + monto */
         th.mor-th { text-align: left; }
         td.mor-td { white-space: nowrap; }
@@ -123,17 +129,17 @@
                 </div>
                 <div class="tabla-wrap">
                     <table>
-                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
+                        <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
                         <tbody>
                             ${filas.map(f => `
-                                <tr class="fila-f" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
-                                    <td><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked></td>
+                                <tr class="fila-f" data-id="${esc(f.id)}" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
+                                    <td><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked><span class="slider"></span></label></td>
                                     <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
                                     <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
                                     <td class="mor-td">${celdaMoratorios(f)}</td>
-                                    <td class="num">${dinero(f.subtotal)}</td>
-                                    <td class="num">${dinero(f.iva)}</td>
-                                    <td class="num"><strong>${dinero(f.total)}</strong></td>
+                                    <td class="num"><span class="monto">${dinero(f.subtotal)}</span></td>
+                                    <td class="num"><span class="monto">${dinero(f.iva)}</span></td>
+                                    <td class="num"><strong class="monto">${dinero(f.total)}</strong></td>
                                     <td><select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" data-id="${esc(f.id)}">
                                         ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}
                                     </select></td>
@@ -141,9 +147,9 @@
                         </tbody>
                         <tfoot><tr><td colspan="3">Total</td>
                             <td class="mor-td">${(() => { const m = facturas.reduce((s, f) => s + montoMoratorios(f), 0); const n = facturas.filter(f => montoMoratorios(f) > 0).length; return m ? `<span class="mor-monto">${dinero(m)}</span><span class="mor-n">${n} locatario${n > 1 ? 's' : ''}</span>` : ''; })()}</td>
-                            <td class="num">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
-                            <td class="num">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
-                            <td class="num">${dinero(total)}</td><td></td></tr></tfoot>
+                            <td class="num" id="totSub">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
+                            <td class="num" id="totIva">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
+                            <td class="num" id="totTot">${dinero(total)}</td><td></td></tr></tfoot>
                     </table>
                 </div>`}`;
 
@@ -155,12 +161,19 @@
             document.getElementById('generar')?.addEventListener('click', () => generar(faltan, contratos));
             document.getElementById('actAgua')?.addEventListener('click', () => actualizarAgua(facturas, contratos));
             const seleccion = () => [...app.querySelectorAll('input.sel:checked')].map(x => x.dataset.id);
+            // Interruptor apagado = la factura se "tacha" (redacted): montos ocultos y fuera de los totales
             const actualizarSel = () => {
-                const n = seleccion().length;
+                const activas = new Set(seleccion());
+                const n = activas.size;
                 const nSel = document.getElementById('nSel');
                 if (nSel) nSel.textContent = n;
                 const todas = document.getElementById('selTodas');
-                if (todas) { todas.checked = n === filas.length; todas.indeterminate = n > 0 && n < filas.length; }
+                if (todas) todas.checked = n === filas.length;
+                app.querySelectorAll('tr.fila-f').forEach(tr => tr.classList.toggle('redactada', !activas.has(tr.dataset.id)));
+                const act = facturas.filter(f => activas.has(f.id));
+                const suma = k => dinero(act.reduce((s, f) => s + (f[k] || 0), 0));
+                const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                set('totSub', suma('subtotal')); set('totIva', suma('iva')); set('totTot', suma('total'));
             };
             app.querySelectorAll('input.sel').forEach(x => x.addEventListener('change', actualizarSel));
             document.getElementById('selTodas')?.addEventListener('change', e => {
@@ -172,12 +185,13 @@
                 // Vuelve a leer las facturas para exportar lo último guardado (por si se editaron en otra pestaña)
                 const frescas = (await cargarFacturasMes(mes)).map(f => ({ ...f, ...totalesFactura(f) }));
                 const orden = filas.map(f => f.id);
-                const elegidas = frescas.filter(f => ids.has(f.id)).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
-                if (!elegidas.length) { alert('Selecciona al menos una factura.'); return; }
+                // Todas salen en el PDF; las apagadas van tachadas (redacted) y no suman
+                const elegidas = frescas.map(f => ({ ...f, _redactada: !ids.has(f.id) })).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
+                if (!ids.size) { alert('Activa al menos una factura.'); return; }
                 const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
                 const conResumen = document.getElementById('conResumen').checked;
                 imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen }),
-                    `Facturas LAFABDECHOC ${mesTxt(mes)}${elegidas.length < filas.length ? ` (${elegidas.length})` : ''}`);
+                    `Facturas LAFABDECHOC ${mesTxt(mes)}${ids.size < filas.length ? ` (${ids.size} de ${filas.length})` : ''}`);
             });
             app.querySelectorAll('select.estado').forEach(s => s.addEventListener('change', () => cambiarEstado(s)));
             // Toda la fila abre la factura, salvo los controles (casilla, interruptor, estado)
