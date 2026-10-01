@@ -256,8 +256,15 @@ export const ESTILO_HOJA = `
   .hc .tot td { background: #ececec !important; font-weight: 700; border-top: 2px solid #111; border-bottom: 2px solid #111; font-size: 11px; }
   .hc .falta { color: #c00; font-weight: 700; }
   .hc .peq, .hc td.peq { color: #666; font-size: 9.5px; }
-  .hc .ficha { page-break-inside: avoid; break-inside: avoid; border: 1px solid #bbb; border-radius: 4px; margin: 0 0 12px; }
+  .hc .ficha { page-break-inside: avoid; break-inside: avoid; border: 2px solid #333; border-radius: 5px; margin: 0 0 14px; overflow: hidden; }
   .hc .ficha-cab { display: grid; grid-template-columns: 2.4fr 1.1fr 1.1fr 0.8fr; border-bottom: 1px solid #bbb; }
+  /* En las fichas, las líneas de TOTAL A FACTURAR son más ligeras que en el resumen */
+  .hc .ficha .tot td { border-top: 1px solid #888; border-bottom: 1px solid #888; background: #f4f4f4 !important; }
+  /* Páginas de fichas: se reparten a lo alto de la hoja carta horizontal */
+  .hc .pag-fichas { display: flex; flex-direction: column; justify-content: space-between; }
+  .hc .pag-fichas.ultima { justify-content: flex-start; gap: 9mm; }
+  .hc .pag-fichas .ficha { margin: 0; }
+  .hc .pag-fichas:not(.fin) { break-after: page; page-break-after: always; }
   .hc .ficha-cab div { padding: 6px 9px; border-right: 1px solid #e2e2e2; }
   .hc .ficha-cab div:last-child { border-right: none; }
   .hc .k { display: block; font-size: 7.5px; color: #777; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
@@ -374,8 +381,50 @@ export function documentoContadores(mes, facturas, contratosPorId = {}, { resume
   return `<div class="hc">
     ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}`)}
     ${facturas.length > 1 && resumen ? resumenHTML(facturas, contratosPorId) + '<h2 class="salto">Detalle por receptor</h2>' : ''}
-    ${facturas.map((f, i) => hojaFacturaHTML(f, contratosPorId[f.contratoId], facturas.length > 1 ? i + 1 : '')).join('')}
+    <div class="fichas">${facturas.map((f, i) => hojaFacturaHTML(f, contratosPorId[f.contratoId], facturas.length > 1 ? i + 1 : '')).join('')}</div>
   </div>`;
+}
+
+/** Acomoda las fichas en páginas (carta horizontal) y las reparte a lo alto para usar casi toda la hoja.
+ *  Se mide cada ficha ya dibujada con el ancho imprimible real, y se agrupan las que caben por página. */
+function paginarFichas(cont) {
+  const cajaFichas = cont.querySelector('.fichas');
+  if (!cajaFichas) return;
+  const prev = cont.getAttribute('style') || '';
+  // Se dibuja fuera de pantalla con el ancho imprimible: carta horizontal 279.4 mm − márgenes 2 × 12 mm
+  cont.setAttribute('style', 'display:block !important; position:absolute; left:-10000px; top:0; width:255mm; visibility:hidden;');
+  const mm = (() => { const d = document.createElement('div'); d.style.height = '100mm'; cont.appendChild(d); const h = d.getBoundingClientRect().height / 100; d.remove(); return h; })();
+  const alto = 188 * mm;                       // 215.9 mm − márgenes 2 × 10 mm − holgura
+  const minGap = 6 * mm;
+  const fichas = [...cajaFichas.querySelectorAll(':scope > .ficha')];
+  // Espacio ya ocupado en la primera página de fichas (título "Detalle por receptor" o encabezado)
+  const ref = cont.querySelector('.salto') || cont.querySelector('.hc');
+  let usado = cajaFichas.getBoundingClientRect().top - ref.getBoundingClientRect().top;
+  const paginas = [[]];
+  fichas.forEach(f => {
+    const h = f.getBoundingClientRect().height;
+    const pag = paginas[paginas.length - 1];
+    const necesita = h + (pag.length ? minGap : 0);
+    if (pag.length && usado + necesita > alto) { paginas.push([f]); usado = h; }
+    else { pag.push(f); usado += necesita; }
+  });
+  // Altura disponible de cada página (la primera descuenta el título)
+  const inicio = cajaFichas.getBoundingClientRect().top - ref.getBoundingClientRect().top;
+  const altoDe = f => f.getBoundingClientRect().height;
+  const medidas = paginas.map(g => g.reduce((s, f) => s + altoDe(f), 0)); // antes de moverlas
+  cajaFichas.innerHTML = '';
+  paginas.forEach((grupo, i) => {
+    const div = document.createElement('div');
+    const ultima = i === paginas.length - 1;
+    const disponible = i === 0 ? alto - inicio : alto;
+    // Se reparten a lo alto si hay varias y la página queda llena en buena parte; si no, van seguidas
+    const repartir = grupo.length > 1 && (!ultima || medidas[i] > disponible * 0.6);
+    div.className = 'pag-fichas' + (repartir ? '' : ' ultima') + (ultima ? ' fin' : '');
+    if (repartir) div.style.height = `${disponible / mm}mm`;
+    grupo.forEach(f => div.appendChild(f));
+    cajaFichas.appendChild(div);
+  });
+  cont.setAttribute('style', prev);
 }
 
 /** Abre el diálogo de impresión con las hojas (el usuario elige "Guardar como PDF") */
@@ -397,6 +446,7 @@ export function imprimirHojas(html, titulo) {
     document.head.appendChild(st);
   }
   cont.innerHTML = html;
+  paginarFichas(cont);
   const tituloPrevio = document.title;
   document.title = titulo; // nombre sugerido del PDF
   window.print();
