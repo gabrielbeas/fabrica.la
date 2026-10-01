@@ -267,6 +267,7 @@ export const ESTILO_HOJA = `
   .hc .ficha-pie { display: grid; grid-template-columns: 1.4fr 1fr; border-top: 1px solid #bbb; font-size: 10px; }
   .hc .ficha-pie div { padding: 6px 9px; }
   .hc .salto { page-break-before: always; break-before: page; }
+  .hc .redact { color: #111 !important; letter-spacing: -1px; white-space: nowrap; overflow: hidden; display: inline-block; max-width: 100%; vertical-align: bottom; }
 `;
 
 export function encabezadoHoja(mes, subtitulo = '') {
@@ -275,6 +276,12 @@ export function encabezadoHoja(mes, subtitulo = '') {
     <div class="der">${esc(subtitulo)}<br>Generado el ${fechaDMY(hoyISO())}</div></div>`;
 }
 
+
+// Celda tachada (redacted): factura apagada en la lista; no muestra el monto
+// Se usan bloques "█" (no el texto real): aunque la impresión quite los fondos, nada se puede leer
+const tapar = (txt, max = 60) => `<span class="redact">${'█'.repeat(Math.max(4, Math.min(max, String(txt || '').length || 8)))}</span>`;
+const tdTachado = () => `<td class="n">${tapar('00,000.00')}</td>`;
+const mtdR = (red, ...a) => red ? tdTachado() : mtd(...a);
 
 // Celda de dinero alineada tipo contable: "$" a la izquierda, cifra a la derecha; 0 → "–" si se pide
 function mtd(n, fuerte = false, guionSiCero = false) {
@@ -295,8 +302,10 @@ export function resumenHTML(facturas, contratosPorId = {}) {
     const t = totalesFactura(f);
     return { f, c, t, i: i + 1, renta: col(f, ['renta']), mora: col(f, ['moratorios']), agua: col(f, ['agua']), basura: col(f, ['basura']), otros: col(f, ['extraordinario', 'otro']) };
   });
-  const s = k => r2(filas.reduce((a, x) => a + (k in x.t ? x.t[k] : x[k]), 0));
-  const conOtros = filas.some(x => x.otros);
+  // Las facturas apagadas (_redactada) se muestran tachadas y no entran en los totales
+  const s = k => r2(filas.filter(x => !x.f._redactada).reduce((a, x) => a + (k in x.t ? x.t[k] : x[k]), 0));
+  const conOtros = filas.some(x => x.otros && !x.f._redactada);
+  const nAct = filas.filter(x => !x.f._redactada).length;
   const anchos = conOtros
     ? [3, 8, 20, 11, 7.5, 7, 6.5, 6, 6, 8.5, 7.5, 9]
     : [3, 9, 22, 12, 8, 7.5, 7, 6.5, 8.5, 7.5, 9];
@@ -311,10 +320,10 @@ export function resumenHTML(facturas, contratosPorId = {}) {
         ${filas.map(x => `<tr>
           <td>${x.i}</td><td class="loc">${esc(localesDe(x.f, x.c))}</td><td>${esc(x.f.razonSocial)}</td>
           <td>${x.f.rfc || x.c.rfc ? esc(x.f.rfc || x.c.rfc) : '<span class="falta">FALTA</span>'}</td>
-          ${mtd(x.renta)}${mtd(x.mora, false, true)}${mtd(x.agua, false, true)}
-          ${mtd(x.basura, false, true)}${conOtros ? mtd(x.otros, false, true) : ''}
-          ${mtd(x.t.subtotal)}${mtd(x.t.iva)}${mtd(x.t.total, true)}</tr>`).join('')}
-        <tr class="tot"><td colspan="4">TOTAL · ${filas.length} facturas</td>
+          ${mtdR(x.f._redactada, x.renta)}${mtdR(x.f._redactada, x.mora, false, true)}${mtdR(x.f._redactada, x.agua, false, true)}
+          ${mtdR(x.f._redactada, x.basura, false, true)}${conOtros ? mtdR(x.f._redactada, x.otros, false, true) : ''}
+          ${mtdR(x.f._redactada, x.t.subtotal)}${mtdR(x.f._redactada, x.t.iva)}${mtdR(x.f._redactada, x.t.total, true)}</tr>`).join('')}
+        <tr class="tot"><td colspan="4">TOTAL · ${nAct} factura${nAct === 1 ? '' : 's'}${nAct < filas.length ? ` (${filas.length - nAct} tachada${filas.length - nAct === 1 ? '' : 's'})` : ''}</td>
           ${mtd(s('renta'))}${mtd(s('mora'))}${mtd(s('agua'))}${mtd(s('basura'))}${conOtros ? mtd(s('otros')) : ''}
           ${mtd(s('subtotal'))}${mtd(s('iva'))}${mtd(s('total'))}</tr>
       </tbody>
@@ -324,6 +333,7 @@ export function resumenHTML(facturas, contratosPorId = {}) {
 /** Ficha de una factura: datos del receptor + conceptos con monto */
 export function hojaFacturaHTML(f, contrato = {}, numero = '') {
   const t = totalesFactura(f);
+  const red = !!f._redactada; // factura apagada: detalle y montos tachados
   const rfc = f.rfc || contrato.rfc;
   const conceptos = normalizarConceptos(f.conceptos || []).map((c, i) => ({ ...c, _tipo: tipoDe(c, i) })).filter(c => Number(c.total) || Number(c.subtotal));
   const detalle = c => {
@@ -344,24 +354,25 @@ export function hojaFacturaHTML(f, contrato = {}, numero = '') {
         <colgroup><col style="width:24%"><col style="width:40%"><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup>
         <thead><tr><th>Concepto</th><th>Detalle</th><th class="n">Subtotal</th><th class="n">IVA 16%</th><th class="n">Total</th></tr></thead>
         <tbody>
-          ${conceptos.map(c => `<tr><td><strong>${esc(c.concepto)}</strong>${c.descripcion ? `<br><span class="peq">${esc(c.descripcion)}</span>` : ''}</td>
-            <td class="peq">${detalle(c)}</td>
-            ${mtd(c.subtotal)}${mtd(c.iva)}${mtd(c.total)}</tr>`).join('')}
-          <tr class="tot"><td colspan="2">TOTAL A FACTURAR</td>${mtd(t.subtotal)}${mtd(t.iva)}${mtd(t.total)}</tr>
+          ${conceptos.map(c => `<tr><td><strong>${esc(c.concepto)}</strong>${c.descripcion ? `<br>${red ? tapar(c.descripcion) : `<span class="peq">${esc(c.descripcion)}</span>`}` : ''}</td>
+            <td class="peq">${red ? tapar(detalle(c)) : detalle(c)}</td>
+            ${mtdR(red, c.subtotal)}${mtdR(red, c.iva)}${mtdR(red, c.total)}</tr>`).join('')}
+          <tr class="tot"><td colspan="2">TOTAL A FACTURAR</td>${mtdR(red, t.subtotal)}${mtdR(red, t.iva)}${mtdR(red, t.total)}</tr>
         </tbody>
       </table>
       <div class="ficha-pie">
         <div><span class="k">Enviar CFDI a</span>${correosDe(f).map(esc).join(' · ')}</div>
-        <div><span class="k">Notas</span>${f.notas ? esc(f.notas).replace(/\n/g, ' · ') : '–'}</div>
+        <div><span class="k">Notas</span>${f.notas ? (red ? tapar(f.notas) : esc(f.notas).replace(/\n/g, ' · ')) : '–'}</div>
       </div>
     </div>`;
 }
 
 /** Documento completo: encabezado + resumen + fichas */
 export function documentoContadores(mes, facturas, contratosPorId = {}, { resumen = true } = {}) {
-  const tot = r2(facturas.reduce((s, f) => s + (totalesFactura(f).total || 0), 0));
+  const activas = facturas.filter(f => !f._redactada);
+  const tot = r2(activas.reduce((s, f) => s + (totalesFactura(f).total || 0), 0));
   return `<div class="hc">
-    ${encabezadoHoja(mes, `${facturas.length} factura(s) · Total ${dinero(tot)}`)}
+    ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}`)}
     ${facturas.length > 1 && resumen ? resumenHTML(facturas, contratosPorId) + '<h2 class="salto">Detalle por receptor</h2>' : ''}
     ${facturas.map((f, i) => hojaFacturaHTML(f, contratosPorId[f.contratoId], facturas.length > 1 ? i + 1 : '')).join('')}
   </div>`;
