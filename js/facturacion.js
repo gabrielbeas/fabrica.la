@@ -63,8 +63,10 @@ export async function cargarFacturasContrato(contratoId) {
 }
 
 // Última lectura con importe de un tubo hasta el último día de un mes (incluye las tomadas en ese mes)
+// El agua que se factura en un mes es la del MES ANTERIOR (ej. factura de octubre → lectura de septiembre).
+// Se toma la última lectura capturada antes del día 1 del mes de la factura.
 function ultimaLecturaHasta(lecturas, tubo, mes) {
-  const limite = `${mesMas(mes, 1)}-01`;
+  const limite = `${mes}-01`;
   return lecturas
     .filter(l => l.tubo === tubo && l.fecha < limite && typeof l.importe === 'number')
     .sort((a, b) => b.fecha.localeCompare(a.fecha))[0] || null;
@@ -111,11 +113,12 @@ export function conceptoAgua(contrato, mes, lecturas, facturadas = new Set()) {
   let total = 0; const fechas = []; const ids = []; let periodo = null;
   tubos.forEach(({ tubo, proporcion = 1 }) => {
     const l = ultimaLecturaHasta(lecturas, tubo, mes);
-    if (!l) { avisos.push(`Sin lecturas de agua del tubo ${tubo} hasta ${mesTxt(mes)}.`); return; }
+    if (!l) { avisos.push(`Sin lecturas de agua del tubo ${tubo} antes de ${mesTxt(mes)}.`); return; }
     if (facturadas.has(idLectura(l))) {
       avisos.push(`Tubo ${tubo}: no hay lectura nueva; la última (${l.fecha}) ya se cobró. Captura la lectura en Lecturas de Agua y recalcula.`);
       return;
     }
+    if (l.fecha.slice(0, 7) !== mesMas(mes, -1)) avisos.push(`Tubo ${tubo}: no hay lectura de ${mesTxt(mesMas(mes, -1))}; se usó la del ${l.fecha}.`);
     if (typeof l.consumo === 'number' && l.consumo < 0) avisos.push(`Tubo ${tubo}: la lectura del ${l.fecha} tiene consumo negativo (${l.consumo} m³).`);
     total += l.importe * proporcion;
     ids.push(idLectura(l));
@@ -203,11 +206,25 @@ const tipoDe = (c, i) => c.tipo || (i === 0 ? 'renta'
   : /BASURA/.test(c.concepto) ? 'basura'
   : /AGUA/.test(c.concepto) ? 'agua' : 'otro');
 
-// Totales: si la factura trae los del Sheet y cuadran (±2 centavos), se respetan
-function totalesFactura(f) {
-  const calc = totales(f.conceptos || []);
-  return (typeof f.total === 'number' && Math.abs(f.total - calc.total) <= 0.02)
-    ? { subtotal: f.subtotal, iva: f.iva, total: f.total } : calc;
+/** Deja cada concepto a centavos exactos para que renglones, resumen y totales siempre cuadren.
+ *  Agua: el monto capturado es el TOTAL con IVA → subtotal = total ÷ 1.16.
+ *  Lo demás: el monto base es el SUBTOTAL → IVA = subtotal × 16 % (o 0 si el concepto no lleva IVA). */
+export function normalizarConceptos(conceptos = []) {
+  return conceptos.map((c, i) => {
+    const tipo = tipoDe(c, i);
+    if (tipo === 'agua') {
+      const t = r2(Number(c.total) || 0), sub = r2(t / (1 + IVA));
+      return { ...c, subtotal: sub, iva: r2(t - sub), total: t };
+    }
+    const sub = r2(Number(c.subtotal) || 0);
+    const sinIva = Number(c.iva) === 0 && Math.abs((Number(c.total) || 0) - sub) < 0.005 && sub !== 0;
+    const iva = sinIva ? 0 : r2(sub * IVA);
+    return { ...c, subtotal: sub, iva, total: r2(sub + iva) };
+  });
+}
+/** Totales de una factura: siempre la suma de sus conceptos normalizados (mismo número en pantalla, resumen y detalle) */
+export function totalesFactura(f) {
+  return totales(normalizarConceptos(f.conceptos || []));
 }
 // Fin del periodo de renta vigente = día anterior al próximo incremento
 function finPeriodoRenta(contrato = {}) {
@@ -272,7 +289,7 @@ function mtd(n, fuerte = false, guionSiCero = false) {
  *  Columnas: Renta · Moratorios · Agua · Basura. "Otros" (extraordinarios u otros conceptos)
  *  solo aparece si alguna factura del resumen los tiene, para que las columnas sigan sumando el subtotal. */
 export function resumenHTML(facturas, contratosPorId = {}) {
-  const col = (f, tipos) => r2((f.conceptos || []).reduce((s, c, i) => s + (tipos.includes(tipoDe(c, i)) ? (Number(c.subtotal) || 0) : 0), 0));
+  const col = (f, tipos) => r2(normalizarConceptos(f.conceptos || []).reduce((s, c, i) => s + (tipos.includes(tipoDe(c, i)) ? c.subtotal : 0), 0));
   const filas = facturas.map((f, i) => {
     const c = contratosPorId[f.contratoId] || {};
     const t = totalesFactura(f);
@@ -308,7 +325,7 @@ export function resumenHTML(facturas, contratosPorId = {}) {
 export function hojaFacturaHTML(f, contrato = {}, numero = '') {
   const t = totalesFactura(f);
   const rfc = f.rfc || contrato.rfc;
-  const conceptos = (f.conceptos || []).map((c, i) => ({ ...c, _tipo: tipoDe(c, i) })).filter(c => Number(c.total) || Number(c.subtotal));
+  const conceptos = normalizarConceptos(f.conceptos || []).map((c, i) => ({ ...c, _tipo: tipoDe(c, i) })).filter(c => Number(c.total) || Number(c.subtotal));
   const detalle = c => {
     if (c._tipo === 'renta') { const fp = finPeriodoRenta(contrato); return `Mensualidad ${mesCap(f.mes)}${fp ? ` · periodo de renta vigente hasta ${fechaDMY(fp)}` : ''}`; }
     if (c._tipo === 'moratorios') return `${Math.round((f.moratoriosPct || 0) * 100)}% sobre la renta`;

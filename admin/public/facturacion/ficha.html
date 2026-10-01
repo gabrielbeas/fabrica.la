@@ -63,7 +63,7 @@
         import {
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
-            documentoContadores, imprimirHojas
+            documentoContadores, imprimirHojas, normalizarConceptos
         } from '../../../js/facturacion.js';
 
         const app = document.getElementById('app');
@@ -222,7 +222,7 @@
                 <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;flex-wrap:wrap">
                     <span id="msg">${msg}</span>
                     <button class="btn-sec" id="regenerar" title="Vuelve a prellenar con la renta del contrato y las lecturas de agua">Recalcular desde contrato</button>
-                    <button class="btn-sec" id="imprimir">Exportar PDF</button>
+                    <button class="btn-sec" id="imprimir" title="Guarda los cambios y exporta lo guardado, igual que el PDF del mes">Guardar y exportar PDF</button>
                     <button class="btn" id="guardar">Guardar factura</button>
                 </div>`;
             dibujarFilas();
@@ -230,7 +230,7 @@
                 borrador.conceptos.push({ concepto: 'OTRO', subtotal: 0, iva: 0, total: 0, tipo: 'otro', editable: true });
                 dibujarFilas();
             });
-            document.getElementById('guardar').addEventListener('click', guardarFactura);
+            document.getElementById('guardar').addEventListener('click', () => guardarFactura());
             document.getElementById('regenerar').addEventListener('click', regenerar);
             document.getElementById('imprimir').addEventListener('click', imprimir);
         }
@@ -277,7 +277,7 @@
             tbody.querySelectorAll('[data-nombre]').forEach(inp => inp.addEventListener('input', () => { borrador.conceptos[+inp.dataset.nombre].concepto = inp.value; }));
             tbody.querySelectorAll('[data-desc]').forEach(inp => inp.addEventListener('input', () => { borrador.conceptos[+inp.dataset.desc].descripcion = inp.value; }));
             tbody.querySelectorAll('[data-quitar]').forEach(b => b.addEventListener('click', () => { borrador.conceptos.splice(+b.dataset.quitar, 1); dibujarFilas(); }));
-            const t = totales(borrador.conceptos);
+            const t = totales(normalizarConceptos(borrador.conceptos));
             document.getElementById('t_sub').textContent = dinero(t.subtotal);
             document.getElementById('t_iva').textContent = dinero(t.iva);
             document.getElementById('t_tot').textContent = dinero(t.total);
@@ -291,13 +291,15 @@
             Object.assign(c, { subtotal: s, iva: r2(s * IVA), total: r2(s * (1 + IVA)) });
         }
 
-        async function guardarFactura() {
+        async function guardarFactura(msgOk = '<span class="ok">Factura guardada.</span>') {
             const msg = document.getElementById('msg');
             const btn = document.getElementById('guardar');
             btn.disabled = true; msg.className = ''; msg.textContent = 'Guardando...';
+            const conceptos = normalizarConceptos(borrador.conceptos);
             const datos = {
                 ...borrador,
-                ...totales(borrador.conceptos),
+                conceptos,
+                ...totales(conceptos),
                 estadoPago: document.getElementById('f_estado').value,
                 fechaPago: document.getElementById('f_fechaPago').value || null,
                 notas: document.getElementById('f_notas').value.trim(),
@@ -307,10 +309,12 @@
             delete datos.id;
             try {
                 await setDoc(doc(db, 'facturas', facturaId(contrato.id, mes)), datos);
-                await cargar('<span class="ok">Factura guardada.</span>');
+                await cargar(msgOk);
+                return true;
             } catch (err) {
                 msg.className = 'err'; msg.textContent = 'No se pudo guardar: ' + err.message;
                 btn.disabled = false;
+                return false;
             }
         }
 
@@ -343,12 +347,25 @@
             document.getElementById('msg').innerHTML = '<span>Recalculada. Revisa y da clic en <strong>Guardar factura</strong>.</span>';
         }
 
-        function imprimir() {
-            // Toma lo que está en pantalla (aunque no se haya guardado)
-            const f = { ...borrador, notas: document.getElementById('f_notas').value.trim(),
-                        correos: borrador.correos || (contrato.facturacion || {}).correos || [] };
+        // Primero guarda y luego exporta lo guardado: así este PDF, el PDF del mes y la pantalla siempre coinciden
+        async function imprimir() {
+            const ok = await guardarFactura('<span class="ok">Factura guardada y exportada.</span>');
+            if (!ok) return;
+            const f = { ...factura, correos: factura.correos || (contrato.facturacion || {}).correos || [] };
             imprimirHojas(documentoContadores(mes, [f], { [contrato.id]: contrato }), `Factura ${mesTxt(mes)} - ${f.razonSocial}`);
         }
+
+        // Aviso si sales con cambios sin guardar
+        const hayCambios = () => {
+            if (!factura || !borrador || !document.getElementById('f_notas')) return false;
+            const actual = { c: normalizarConceptos(borrador.conceptos), m: borrador.moratoriosPct || 0,
+                notas: document.getElementById('f_notas').value.trim(), e: document.getElementById('f_estado').value,
+                fp: document.getElementById('f_fechaPago').value || null };
+            const guardado = { c: normalizarConceptos(factura.conceptos || []), m: factura.moratoriosPct || 0,
+                notas: (factura.notas || '').trim(), e: factura.estadoPago, fp: factura.fechaPago || null };
+            return JSON.stringify(actual) !== JSON.stringify(guardado);
+        };
+        window.addEventListener('beforeunload', e => { if (hayCambios()) { e.preventDefault(); e.returnValue = ''; } });
     </script>
 </body>
 </html>

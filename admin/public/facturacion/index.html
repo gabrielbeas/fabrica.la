@@ -63,7 +63,7 @@
         import {
             ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
-            documentoContadores, imprimirHojas
+            documentoContadores, imprimirHojas, totalesFactura
         } from '../../../js/facturacion.js';
 
         const app = document.getElementById('app');
@@ -90,6 +90,8 @@
         }
 
         function render(contratos, facturas, msg) {
+            // Subtotal, IVA y total siempre calculados igual que en el PDF (conceptos a centavos exactos)
+            facturas = facturas.map(f => ({ ...f, ...totalesFactura(f) }));
             const facturables = contratosFacturables(contratos);
             const porContrato = Object.fromEntries(facturas.map(f => [f.contratoId, f]));
             const faltan = facturables.filter(c => !porContrato[c.id]);
@@ -101,7 +103,7 @@
 
             app.innerHTML = `
                 <h1>Facturación</h1>
-                <p class="sub">Facturas mensuales de LAFABDECHOC a cada locatario. <span style="color:#ccc">· v3 (agua y basura del mes)</span></p>
+                <p class="sub">Facturas mensuales de LAFABDECHOC a cada locatario. <span style="color:#ccc">· v4 (agua del mes anterior)</span></p>
                 <div class="controles">
                     <div><label for="mes">Mes de facturación</label><input type="month" id="mes" value="${mes}"></div>
                     ${faltan.length ? `<button class="btn" id="generar">Generar ${facturas.length ? `faltantes (${faltan.length})` : `facturas de ${mesTxt(mes)}`}</button>` : ''}
@@ -165,9 +167,12 @@
                 app.querySelectorAll('input.sel').forEach(x => { x.checked = e.target.checked; });
                 actualizarSel();
             });
-            document.getElementById('exportar')?.addEventListener('click', () => {
+            document.getElementById('exportar')?.addEventListener('click', async () => {
                 const ids = new Set(seleccion());
-                const elegidas = filas.filter(f => ids.has(f.id));
+                // Vuelve a leer las facturas para exportar lo último guardado (por si se editaron en otra pestaña)
+                const frescas = (await cargarFacturasMes(mes)).map(f => ({ ...f, ...totalesFactura(f) }));
+                const orden = filas.map(f => f.id);
+                const elegidas = frescas.filter(f => ids.has(f.id)).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
                 if (!elegidas.length) { alert('Selecciona al menos una factura.'); return; }
                 const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
                 const conResumen = document.getElementById('conResumen').checked;
