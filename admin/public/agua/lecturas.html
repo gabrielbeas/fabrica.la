@@ -188,7 +188,7 @@
 
             app.innerHTML = `
                 <h1>Lecturas de Agua</h1>
-                <p class="sub">Captura la lectura de cada medidor. El consumo y el importe se calculan solos.</p>
+                <p class="sub">Captura la lectura de cada medidor. El consumo y el importe se calculan solos.${esAdmin() ? ' <a href="siapa.html" style="color:#667eea;text-decoration:none">Ver recibos de SIAPA →</a>' : ''}</p>
 
                 <div class="controles">
                     <div class="campo">

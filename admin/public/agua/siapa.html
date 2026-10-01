@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAPA - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 22px; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 34px 0 12px; }
+        .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .barra .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .volver { display: inline-block; color: #667eea; text-decoration: none; font-size: 14px; margin-bottom: 14px; }
+
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+        .btn-sec:hover { background: #ebebeb; }
+        .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer; color: #555; }
+        .btn-mini:hover { border-color: #667eea; color: #667eea; }
+        .btn-mini.borrar:hover { border-color: #c62828; color: #c62828; }
+
+        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; line-height: 1.4; }
+        .tarjeta.alerta .val { color: #c62828; }
+        .tarjeta.bien .val { color: #2e7d32; }
+        @media (max-width: 900px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
+
+        /* Gráficas: una por medida (nunca dos ejes) */
+        .graficas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) { .graficas { grid-template-columns: 1fr; } }
+        .grafica { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px 10px; position: relative; }
+        .grafica h3 { margin: 0 0 2px; font-size: 14px; }
+        .grafica .leyenda { font-size: 12px; color: #999; display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+        .grafica .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+        .grafica svg { width: 100%; height: auto; display: block; overflow: visible; }
+        .grafica svg text { font-size: 10px; fill: #999; }
+        .grafica .barra-g { fill: #667eea; }
+        .grafica .barra-g.nota { fill: url(#rayas); }
+        .grafica .hit { fill: transparent; cursor: default; }
+        .grafica .hit:hover + .barra-g, .grafica g.sel .barra-g { opacity: .75; }
+        .tip { position: absolute; pointer-events: none; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 8px 10px; font-size: 12px; line-height: 1.5; color: #333; white-space: nowrap; z-index: 5; display: none; }
+        .tip strong { display: block; font-size: 13px; }
+        .tip .gris { color: #999; }
+
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
+        td { padding: 9px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        th.num { text-align: right; }
+        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
+        .nota-pill { font-size: 11px; padding: 1px 7px; border-radius: 8px; background: #fff8e1; color: #8a5a00; }
+        .neg { color: #c62828; } .pos { color: #2e7d32; }
+        .gris { color: #999; font-size: 12px; }
+        .aviso { background: #fff8e1; color: #8a5a00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin: 10px 0 0; line-height: 1.5; }
+        .vacio { color: #999; font-size: 14px; padding: 16px 0; }
+
+        .recibo { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
+        .recibo .tit { font-weight: 600; }
+        .recibo .det { font-size: 12px; color: #888; line-height: 1.6; }
+        .recibo .tot { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .recibo .tot small { display: block; font-weight: 400; font-size: 12px; color: #888; }
+        .dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .dos-col { grid-template-columns: 1fr; } }
+
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 1000; overflow-y: auto; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 640px; padding: 24px 26px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal h3 { margin: 0 0 4px; font-size: 18px; }
+        .modal .sub { margin-bottom: 16px; }
+        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #667eea; margin: 18px 0 10px; }
+        .campos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; }
+        .campos .ancho { grid-column: 1 / -1; }
+        .campos label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+        .campos input, .campos select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .campos input:focus { outline: none; border-color: #667eea; }
+        @media (max-width: 700px) { .campos { grid-template-columns: 1fr 1fr; } }
+        .pie { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+        .msg { font-size: 13px; margin-right: auto; }
+        .ok { color: #2e7d32; } .err { color: #c62828; }
+        .cargando { color: #999; padding: 40px 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js';
+        import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const dinero = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+        const pesos = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.round(Math.abs(n)).toLocaleString('es-MX') : '-';
+        const numero = (n, d = 0) => typeof n === 'number' ? n.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d }) : '-';
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const fechaCorta = f => { if (!f) return '-'; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const mesCorto = f => { const [y, m] = f.split('-'); return `${MESES[+m - 1]} ${y.slice(2)}`; };
+        const mesLargo = f => { const [y, m] = f.split('-'); return `${MESES_L[+m - 1]} ${y}`; };
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const NOTA_TXT = 'SIAPA marcó la lectura con nota (210 / 206); la lectura se repite del periodo anterior, así que el consumo parece estimado';
+
+        let periodos = [], recibos = [], pagos = [], lecturas = [], tarifa = null;
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else cargar();
+        }
+
+        async function cargar(msg = '') {
+            try {
+                const [sP, sR, sG, sL, sA] = await Promise.all([
+                    getDocs(collection(db, 'siapa_periodos')),
+                    getDocs(collection(db, 'siapa_recibos')),
+                    getDocs(collection(db, 'siapa_pagos')),
+                    getDocs(collection(db, 'agua_lecturas')),
+                    getDoc(doc(db, 'agua_config', 'general'))
+                ]);
+                periodos = sP.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.fechaLectura.localeCompare(b.fechaLectura));
+                recibos = sR.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.emision || '').localeCompare(a.emision || ''));
+                pagos = sG.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.fecha.localeCompare(a.fecha));
+                lecturas = sL.docs.map(d => d.data());
+                tarifa = sA.exists() && typeof sA.data().costoM3 === 'number' ? sA.data().costoM3 : 78.64; // mismo valor inicial que Lecturas
+                vista(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<h1>SIAPA</h1><p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        // Agua cobrada a locatarios (lecturas del panel) por periodo de SIAPA, para comparar.
+        // Cada lectura cuenta en el periodo de SIAPA con la fecha de lectura más cercana (máx. 20 días),
+        // porque las fechas de captura no siempre caen en el mismo mes. El tubo MTO es el medidor
+        // general (no es un locatario) y no se suma.
+        const dias = (a, b) => Math.abs(new Date(a) - new Date(b)) / 86400000;
+        function cobradoPorPeriodo() {
+            const por = {};
+            let excluidas = 0;
+            lecturas.forEach(l => {
+                if (!l.fecha || String(l.tubo).toUpperCase() === 'MTO') return;
+                const dudosa = (l.revisar || []).length || (typeof l.consumo === 'number' && (l.consumo < 0 || l.consumo > 2000));
+                if (dudosa) { excluidas++; return; }
+                let mejor = null;
+                periodos.forEach(p => { const d = dias(p.fechaLectura, l.fecha); if (d <= 20 && (!mejor || d < mejor.d)) mejor = { p, d }; });
+                if (!mejor) return;
+                const k = mejor.p.fechaLectura;
+                por[k] = por[k] || { m3: 0, importe: 0, n: 0 };
+                if (typeof l.consumo === 'number') por[k].m3 += l.consumo;
+                if (typeof l.importe === 'number') por[k].importe += l.importe;
+                por[k].n++;
+            });
+            return { por, excluidas };
+        }
+
+        function vista(msg) {
+            const ultimo = periodos[periodos.length - 1];
+            const doce = periodos.slice(-12);
+            const m3_12 = doce.reduce((s, p) => s + (p.m3 || 0), 0);
+            const imp_12 = doce.reduce((s, p) => s + (p.importe || 0), 0);
+            const costoReal = m3_12 ? imp_12 / m3_12 : null;
+            const { por: cobrado, excluidas } = cobradoPorPeriodo();
+            const comp = doce.map(p => ({ p, c: cobrado[p.fechaLectura] })).filter(x => x.c);
+            const pagadoComp = comp.reduce((s, x) => s + (x.p.importe || 0), 0);
+            const cobradoComp = comp.reduce((s, x) => s + x.c.importe, 0);
+            const recuperado = pagadoComp ? cobradoComp / pagadoComp : null;
+            const recibo = recibos.find(r => r.totalAPagar !== undefined && r.tipo !== 'recibo de pago');
+            const cuenta = recibos.find(r => r.cuenta)?.cuenta;
+
+            app.innerHTML = `
+                <a class="volver" href="lecturas.html">← Lecturas de agua</a>
+                <div class="barra">
+                    <div>
+                        <h1>SIAPA</h1>
+                        <p class="sub">Recibos de la toma general${cuenta ? ` · cuenta ${esc(cuenta)}` : ''}. Importes con IVA.</p>
+                    </div>
+                    <div class="acciones">
+                        <button class="btn-sec" id="nPago">Registrar pago</button>
+                        <button class="btn" id="nRecibo">Capturar recibo</button>
+                    </div>
+                </div>
+                <p class="msg" id="msg">${msg}</p>
+
+                ${!periodos.length ? '<p class="vacio">Todavía no hay periodos capturados.</p>' : `
+                <div class="tarjetas">
+                    <div class="tarjeta">
+                        <div class="et">Último periodo</div>
+                        <div class="val">${pesos(ultimo.importe)}</div>
+                        <div class="det">${numero(ultimo.m3)} m³ · lectura del ${fechaCorta(ultimo.fechaLectura)}</div>
+                    </div>
+                    <div class="tarjeta">
+                        <div class="et">Últimos 12 periodos</div>
+                        <div class="val">${pesos(imp_12)}</div>
+                        <div class="det">${numero(m3_12)} m³ · del ${fechaCorta(doce[0].fechaLectura)} al ${fechaCorta(ultimo.fechaLectura)}</div>
+                    </div>
+                    <div class="tarjeta ${costoReal && tarifa && costoReal > tarifa ? 'alerta' : ''}">
+                        <div class="et">Costo real por m³</div>
+                        <div class="val">${dinero(costoReal)}</div>
+                        <div class="det">${tarifa ? `Cobras ${dinero(tarifa)} a los locatarios${costoReal > tarifa ? ' (menos de lo que cuesta)' : ''}` : 'Últimos 12 periodos, con alcantarillado, saneamiento e IVA'}</div>
+                    </div>
+                    <div class="tarjeta ${recuperado !== null ? (recuperado < 1 ? 'alerta' : 'bien') : ''}">
+                        <div class="et">Recuperado con locatarios</div>
+                        <div class="val">${recuperado !== null ? Math.round(recuperado * 100) + '%' : '-'}</div>
+                        <div class="det">${recuperado !== null ? `Cobrado ${pesos(cobradoComp)} de ${pesos(pagadoComp)} pagados a SIAPA (${comp.length} meses con lecturas)` : 'Sin lecturas de locatarios en esos meses'}</div>
+                    </div>
+                </div>
+                ${recibo ? `<p class="aviso">Último recibo (emitido ${fechaCorta(recibo.emision)}): total a pagar <strong>${dinero(recibo.totalAPagar)}</strong>, vence ${fechaCorta(recibo.vence)}${recibo.recargos ? ` · incluye ${dinero(recibo.recargos)} de recargos` : ''}.</p>` : ''}
+
+                <h2>Consumo e importe por periodo</h2>
+                <div class="graficas">
+                    <div class="grafica" id="gImporte"></div>
+                    <div class="grafica" id="gM3"></div>
+                </div>
+
+                <h2>SIAPA contra lo cobrado a locatarios</h2>
+                <div class="tabla-wrap">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Periodo</th><th class="num">m³ SIAPA</th><th class="num">m³ locatarios</th><th class="num">Diferencia m³</th><th class="num">Pagado a SIAPA</th><th class="num">Cobrado</th><th class="num">Diferencia</th></tr></thead>
+                        <tbody>${[...periodos].reverse().map(p => {
+                            const c = cobrado[p.fechaLectura];
+                            const dm3 = c ? p.m3 - c.m3 : null, dimp = c ? c.importe - p.importe : null;
+                            return `<tr>
+                                <td><strong>${fechaCorta(p.fechaLectura)}</strong></td>
+                                <td class="num">${numero(p.m3)}</td>
+                                <td class="num">${c ? numero(c.m3, 1) : '<span class="gris">Sin lecturas</span>'}</td>
+                                <td class="num">${dm3 !== null ? numero(dm3, 1) : '-'}</td>
+                                <td class="num">${pesos(p.importe)}</td>
+                                <td class="num">${c ? pesos(c.importe) : '-'}</td>
+                                <td class="num ${dimp === null ? '' : dimp < 0 ? 'neg' : 'pos'}">${dimp !== null ? pesos(dimp) : '-'}</td>
+                            </tr>`;
+                        }).join('')}</tbody>
+                    </table>
+                </div>
+                <p class="gris" style="margin-top:8px">m³ locatarios = suma de los tubos capturados en Lecturas de agua con fecha cercana a la lectura de SIAPA (sin el tubo MTO, que es el medidor general); la diferencia es agua de áreas comunes, fugas o medidores sin lectura. Diferencia en pesos: rojo = cobraste menos de lo que pagaste.${excluidas ? ` Se omiten ${excluidas} lecturas marcadas para revisar o con consumo fuera de rango.` : ''}</p>
+
+                <h2>Periodos facturados</h2>
+                <div class="tabla-wrap">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Fecha de lectura</th><th class="num">Lectura</th><th>Nota</th><th class="num">m³</th><th class="num">Días</th><th class="num">m³ por día</th><th class="num">Importe</th><th></th></tr></thead>
+                        <tbody>${[...periodos].reverse().map(p => `<tr>
+                            <td><strong>${fechaCorta(p.fechaLectura)}</strong></td>
+                            <td class="num">${numero(p.lectura)}</td>
+                            <td>${p.nota ? `<span class="nota-pill" title="${esc(NOTA_TXT)}">${esc(p.nota)}</span>` : ''}</td>
+                            <td class="num">${numero(p.m3)}</td>
+                            <td class="num">${numero(p.dias)}</td>
+                            <td class="num">${numero(p.m3Dia, 3)}</td>
+                            <td class="num">${dinero(p.importe)}</td>
+                            <td class="num"><button class="btn-mini" data-editar="${esc(p.id)}">Editar</button></td>
+                        </tr>`).join('')}</tbody>
+                    </table>
+                </div>`}
+
+                <div class="dos-col">
+                    <div>
+                        <h2>Recibos</h2>
+                        ${recibos.length ? recibos.map(r => `<div class="recibo">
+                            <div>
+                                <div class="tit">${r.tipo === 'recibo de pago' ? 'Recibo de pago' : `Periodo ${r.periodoDel ? fechaCorta(r.periodoDel) + ' al ' + fechaCorta(r.periodoAl) : '-'}`}</div>
+                                <div class="det">Emitido ${fechaCorta(r.emision)} · vence ${fechaCorta(r.vence)}${r.totalMes ? ` · mes ${dinero(r.totalMes)}` : ''}${r.recargos ? ` · recargos ${dinero(r.recargos)}` : ''}
+                                ${r.desglose ? `<br>Consumo ${dinero(r.desglose.consumo)} · alcantarillado ${dinero(r.desglose.alcantarillado)} · saneamiento ${dinero(r.desglose.saneamiento)} · descarga ${dinero(r.desglose.descarga)} · IVA ${dinero(r.desglose.iva)}` : ''}
+                                ${r.nota ? `<br>${esc(r.nota)}` : ''}</div>
+                            </div>
+                            <div class="tot">${dinero(r.totalAPagar)}<small>total a pagar</small><button class="btn-mini borrar" data-borrar-recibo="${esc(r.id)}" style="margin-top:6px">Borrar</button></div>
+                        </div>`).join('') : '<p class="vacio">Sin recibos.</p>'}
+                    </div>
+                    <div>
+                        <h2>Pagos a SIAPA</h2>
+                        ${pagos.length ? `<div class="tabla-wrap"><table class="tabla-movil">
+                            <thead><tr><th>Fecha</th><th class="num">Monto</th><th>Nota</th><th></th></tr></thead>
+                            <tbody>${pagos.map(g => `<tr><td><strong>${fechaCorta(g.fecha)}</strong></td><td class="num">${dinero(g.monto)}</td><td>${esc(g.nota || '')}</td>
+                                <td class="num"><button class="btn-mini borrar" data-borrar-pago="${esc(g.id)}">Borrar</button></td></tr>`).join('')}</tbody>
+                            <tfoot><tr><td>Total</td><td class="num">${dinero(pagos.reduce((s, g) => s + (g.monto || 0), 0))}</td><td></td><td></td></tr></tfoot>
+                        </table></div>
+                        <p class="gris" style="margin-top:8px">Los recibos solo muestran el último pago; si hubo pagos entre recibos, regístralos aquí.</p>` : '<p class="vacio">Sin pagos registrados.</p>'}
+                    </div>
+                </div>`;
+
+            if (periodos.length) {
+                grafica('gImporte', 'Importe por periodo', p => p.importe, v => pesos(v));
+                grafica('gM3', 'm³ por periodo', p => p.m3, v => numero(v) + ' m³');
+            }
+            document.getElementById('nRecibo').addEventListener('click', () => ventanaRecibo());
+            document.getElementById('nPago').addEventListener('click', ventanaPago);
+            app.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => ventanaRecibo(periodos.find(p => p.id === b.dataset.editar))));
+            app.querySelectorAll('[data-borrar-pago]').forEach(b => b.addEventListener('click', () => borrar('siapa_pagos', b.dataset.borrarPago, 'este pago')));
+            app.querySelectorAll('[data-borrar-recibo]').forEach(b => b.addEventListener('click', () => borrar('siapa_recibos', b.dataset.borrarRecibo, 'este recibo (el periodo y su consumo se conservan)')));
+        }
+
+        // Barras simples, una sola medida por gráfica, con tooltip al pasar el mouse
+        function grafica(id, titulo, valor, fmt) {
+            const el = document.getElementById(id);
+            const datos = periodos.map(p => ({ p, v: valor(p) || 0 }));
+            const W = 560, H = 190, izq = 46, abajo = 22, arriba = 6;
+            const max = Math.max(...datos.map(d => d.v)) || 1;
+            const paso = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+            const tope = Math.ceil(max / paso) * paso;
+            const ticks = [0, tope / 2, tope];
+            const ancho = (W - izq) / datos.length, barra = Math.max(4, ancho - 2);
+            const y = v => arriba + (H - arriba - abajo) * (1 - v / tope);
+            const etiquetaCada = Math.ceil(datos.length / 9);
+            el.innerHTML = `<h3>${titulo}</h3>
+                <div class="leyenda"><span><i style="background:#667eea"></i>Lectura tomada</span><span><i style="background-image:repeating-linear-gradient(45deg,#667eea 0 2px,#c9d0f7 2px 4px)"></i>Con nota de SIAPA (210 / 206)</span></div>
+                <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
+                    <defs><pattern id="rayas" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#c9d0f7"/><rect width="2" height="4" fill="#667eea"/></pattern></defs>
+                    ${ticks.map(t => `<line x1="${izq}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#eee"/><text x="${izq - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t).replace(' m³', '')}</text>`).join('')}
+                    ${datos.map((d, i) => {
+                        const x = izq + i * ancho + (ancho - barra) / 2, top = y(d.v), alto = Math.max(0, H - abajo - top);
+                        const r = Math.min(4, barra / 2, alto);
+                        const path = `M${x},${H - abajo} V${top + r} Q${x},${top} ${x + r},${top} H${x + barra - r} Q${x + barra},${top} ${x + barra},${top + r} V${H - abajo} Z`;
+                        return `<g data-i="${i}">
+                            <rect class="hit" x="${izq + i * ancho}" y="${arriba}" width="${ancho}" height="${H - abajo - arriba}"/>
+                            <path class="barra-g ${d.p.nota ? 'nota' : ''}" d="${path}" style="pointer-events:none"/>
+                            ${i % etiquetaCada === 0 || i === datos.length - 1 ? `<text x="${izq + i * ancho + ancho / 2}" y="${H - 6}" text-anchor="middle">${mesCorto(d.p.fechaLectura)}</text>` : ''}
+                        </g>`;
+                    }).join('')}
+                </svg>
+                <div class="tip"></div>`;
+            const tip = el.querySelector('.tip');
+            el.querySelectorAll('g[data-i]').forEach(g => {
+                const d = datos[+g.dataset.i];
+                g.querySelector('.hit').addEventListener('mousemove', e => {
+                    tip.innerHTML = `<strong>${fmt(d.v)}</strong>${mesLargo(d.p.fechaLectura)} · lectura ${fechaCorta(d.p.fechaLectura)}<br><span class="gris">${numero(d.p.m3)} m³ en ${numero(d.p.dias)} días · ${pesos(d.p.importe)}${d.p.nota ? ` · nota ${esc(d.p.nota)}` : ''}</span>`;
+                    tip.style.display = 'block';
+                    const caja = el.getBoundingClientRect();
+                    let left = e.clientX - caja.left + 12;
+                    if (left + tip.offsetWidth > caja.width) left = e.clientX - caja.left - tip.offsetWidth - 12;
+                    tip.style.left = Math.max(4, left) + 'px';
+                    tip.style.top = (e.clientY - caja.top - tip.offsetHeight - 10) + 'px';
+                });
+                g.querySelector('.hit').addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+            });
+        }
+
+        function abrirVentana(html, alAbrir) {
+            const fondo = document.createElement('div');
+            fondo.className = 'modal-fondo';
+            fondo.innerHTML = `<div class="modal">${html}</div>`;
+            document.body.appendChild(fondo);
+            const cerrar = () => fondo.remove();
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.closest('[data-cerrar]')) cerrar(); });
+            alAbrir(fondo, cerrar);
+        }
+
+        // Captura de un recibo nuevo (periodo + recibo) o edición de un periodo existente
+        function ventanaRecibo(periodo) {
+            const p = periodo || {};
+            const ed = !!periodo;
+            const campo = (id, label, tipo = 'number', valor = '', extra = '') => `<div ${extra}><label>${label}</label><input id="${id}" type="${tipo}" ${tipo === 'number' ? 'step="0.01"' : ''} value="${esc(valor ?? '')}"></div>`;
+            abrirVentana(`
+                <h3>${ed ? 'Editar periodo' : 'Capturar recibo de SIAPA'}</h3>
+                <p class="sub">${ed ? `Lectura del ${fechaCorta(p.fechaLectura)}.` : 'Copia los datos del recibo. El periodo y su consumo alimentan la tabla y las gráficas.'}</p>
+                <h4>Consumo del periodo</h4>
+                <div class="campos">
+                    ${campo('f_fecha', 'Fecha de lectura', 'date', p.fechaLectura || '', ed ? 'style="pointer-events:none;opacity:.6"' : '')}
+                    ${campo('f_lectura', 'Lectura', 'number', p.lectura)}
+                    <div><label>Nota</label><input id="f_nota" value="${esc(p.nota || '')}" placeholder="Ej. 210"></div>
+                    ${campo('f_m3', 'Consumo m³', 'number', p.m3)}
+                    ${campo('f_dias', 'Días', 'number', p.dias)}
+                    ${campo('f_importe', 'Importe del mes (con IVA)', 'number', p.importe)}
+                </div>
+                ${ed ? '' : `<h4>Recibo</h4>
+                <div class="campos">
+                    ${campo('r_del', 'Periodo del', 'date')}
+                    ${campo('r_al', 'Periodo al', 'date')}
+                    ${campo('r_emision', 'Fecha de emisión', 'date', hoyISO())}
+                    ${campo('r_vence', 'Vencimiento', 'date')}
+                    ${campo('r_total', 'Total a pagar', 'number')}
+                    ${campo('r_recargos', 'Recargos', 'number')}
+                </div>
+                <h4>Detalle de la facturación (opcional)</h4>
+                <div class="campos">
+                    ${campo('d_consumo', 'Consumo del periodo')}
+                    ${campo('d_alc', 'Alcantarillado')}
+                    ${campo('d_san', 'Plantas de saneamiento')}
+                    ${campo('d_desc', 'Descarga aguas residuales')}
+                    ${campo('d_iva', 'IVA')}
+                </div>`}
+                <div class="pie">
+                    <span class="msg" id="vmsg"></span>
+                    <button class="btn-sec" data-cerrar>Cancelar</button>
+                    <button class="btn" id="vguardar">${ed ? 'Guardar' : 'Guardar recibo'}</button>
+                </div>`, (fondo, cerrar) => {
+                const v = id => fondo.querySelector('#' + id)?.value.trim() ?? '';
+                const n = id => { const x = v(id); return x === '' ? null : parseFloat(x); };
+                fondo.querySelector('#vguardar').addEventListener('click', async () => {
+                    const msg = fondo.querySelector('#vmsg');
+                    const error = t => { msg.innerHTML = `<span class="err">${t}</span>`; };
+                    const fecha = v('f_fecha');
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return error('Falta la fecha de lectura.');
+                    const m3 = n('f_m3'), dias = n('f_dias'), importe = n('f_importe');
+                    if (!(m3 >= 0) || !(dias > 0) || !(importe >= 0)) return error('Faltan consumo, días o importe.');
+                    if (!ed && periodos.some(x => x.fechaLectura === fecha) && !confirm('Ya hay un periodo con esa fecha de lectura. ¿Reemplazarlo?')) return;
+                    const usuario = getCurrentUser().email;
+                    const sello = { actualizadoPor: usuario, actualizadoEn: serverTimestamp() };
+                    const tareas = [setDoc(doc(db, 'siapa_periodos', fecha), {
+                        fechaLectura: fecha, lectura: n('f_lectura'), nota: v('f_nota'), m3, dias,
+                        m3Dia: r2(m3 / dias * 1000) / 1000, importe, origen: ed ? (p.origen || 'panel') : 'panel', ...sello
+                    }, { merge: true })];
+                    if (!ed) {
+                        const emision = v('r_emision');
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(emision)) return error('Falta la fecha de emisión del recibo.');
+                        const desglose = { consumo: n('d_consumo'), alcantarillado: n('d_alc'), saneamiento: n('d_san'), descarga: n('d_desc'), iva: n('d_iva') };
+                        tareas.push(setDoc(doc(db, 'siapa_recibos', emision), {
+                            periodoDel: v('r_del') || null, periodoAl: v('r_al') || fecha, emision, vence: v('r_vence') || null,
+                            totalMes: importe, totalAPagar: n('r_total') ?? importe, recargos: n('r_recargos'),
+                            desglose: Object.values(desglose).some(x => x !== null) ? desglose : null,
+                            cuenta: recibos.find(r => r.cuenta)?.cuenta || null, origen: 'panel', ...sello
+                        }));
+                    }
+                    const btn = fondo.querySelector('#vguardar');
+                    btn.disabled = true;
+                    try {
+                        await Promise.all(tareas);
+                        cerrar();
+                        cargar(`<span class="ok">${ed ? 'Periodo actualizado.' : 'Recibo guardado.'}</span>`);
+                    } catch (err) {
+                        console.error(err);
+                        btn.disabled = false;
+                        error('No se pudo guardar: ' + esc(err.message));
+                    }
+                });
+            });
+        }
+
+        function ventanaPago() {
+            abrirVentana(`
+                <h3>Registrar pago a SIAPA</h3>
+                <p class="sub">Monto total pagado, como aparece en el comprobante.</p>
+                <div class="campos">
+                    <div><label>Fecha de pago</label><input id="g_fecha" type="date" value="${hoyISO()}"></div>
+                    <div><label>Monto</label><input id="g_monto" type="number" step="0.01" min="0"></div>
+                    <div class="ancho"><label>Nota (opcional)</label><input id="g_nota" placeholder="Ej. liquida adeudo con recargos"></div>
+                </div>
+                <div class="pie">
+                    <span class="msg" id="gmsg"></span>
+                    <button class="btn-sec" data-cerrar>Cancelar</button>
+                    <button class="btn" id="gguardar">Registrar pago</button>
+                </div>`, (fondo, cerrar) => {
+                fondo.querySelector('#gguardar').addEventListener('click', async () => {
+                    const fecha = fondo.querySelector('#g_fecha').value, monto = parseFloat(fondo.querySelector('#g_monto').value);
+                    const msg = fondo.querySelector('#gmsg');
+                    if (!fecha || !(monto > 0)) { msg.innerHTML = '<span class="err">Escribe la fecha y el monto.</span>'; return; }
+                    try {
+                        await setDoc(doc(db, 'siapa_pagos', `${fecha}_${Math.round(monto * 100)}`), {
+                            fecha, monto: r2(monto), nota: fondo.querySelector('#g_nota').value.trim(),
+                            origen: 'panel', capturadoPor: getCurrentUser().email, capturadoEn: serverTimestamp()
+                        });
+                        cerrar();
+                        cargar(`<span class="ok">Pago de ${dinero(monto)} registrado.</span>`);
+                    } catch (err) {
+                        msg.innerHTML = `<span class="err">No se pudo guardar: ${esc(err.message)}</span>`;
+                    }
+                });
+            });
+        }
+
+        async function borrar(coleccion, id, que) {
+            if (!confirm(`¿Borrar ${que}?`)) return;
+            try {
+                await deleteDoc(doc(db, coleccion, id));
+                cargar('<span class="ok">Borrado.</span>');
+            } catch (err) {
+                document.getElementById('msg').innerHTML = `<span class="err">No se pudo borrar: ${esc(err.message)}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
