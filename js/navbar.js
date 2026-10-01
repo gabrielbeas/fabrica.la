@@ -38,6 +38,10 @@ export function crearNavbar() {
               <span class="text">${seccion.nombre}</span>
             </a>
           `).join('')}
+          <div class="menu-usuario">
+            <span>${user.nombre || user.email}<small>${getRoleLabel(user.rol)}</small></span>
+            <button class="logout-btn" id="logoutBtnMovil">Salir</button>
+          </div>
         </div>
 
         <div class="navbar-user">
@@ -67,11 +71,14 @@ export function crearNavbar() {
   navbar.innerHTML = navbarHTML;
   navContainer.insertBefore(navbar.firstElementChild, navContainer.firstChild);
 
-  // Agregar estilos del navbar
+  // Agregar estilos del navbar y la capa para celular
   agregarEstilosNavbar();
+  agregarEstilosMovil();
+  etiquetarTablas();
 
   // Event listeners
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+  document.getElementById('logoutBtnMovil').addEventListener('click', handleLogout);
   document.getElementById('navbarToggle').addEventListener('click', toggleMenu);
 
   // Marcar sección activa
@@ -278,16 +285,31 @@ function agregarEstilosNavbar() {
       transition: all 0.3s;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
+    .menu-usuario {
+      display: none;
+    }
+
+    /* Responsive: el menú completo no cabe por debajo de ~1000px */
+    @media (max-width: 1000px) {
+      .navbar-container {
+        height: 60px;
+        padding: 0 16px;
+      }
+
+      .navbar-brand .logo-img {
+        height: 30px;
+      }
+
       .navbar-toggle {
         display: flex;
+        padding: 10px;
+        margin-right: -10px;
       }
 
       .navbar-menu {
         display: none;
         position: absolute;
-        top: 70px;
+        top: 60px;
         left: 0;
         right: 0;
         background: white;
@@ -295,6 +317,9 @@ function agregarEstilosNavbar() {
         gap: 0;
         margin-left: 0;
         border-bottom: 1px solid #eee;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
       }
 
       .navbar-menu.active {
@@ -303,8 +328,30 @@ function agregarEstilosNavbar() {
 
       .nav-link {
         width: 100%;
+        padding: 14px 20px;
+        font-size: 15px;
         border-bottom: 1px solid #f0f0f0;
         border-right: 3px solid transparent;
+      }
+
+      .menu-usuario {
+        display: flex;
+        align-self: stretch;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 20px;
+        background: #fafafa;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .menu-usuario small {
+        display: block;
+        font-weight: 400;
+        font-size: 12px;
+        color: #999;
       }
 
       .nav-link.active {
@@ -325,20 +372,101 @@ function agregarEstilosNavbar() {
       }
     }
 
-    @media (max-width: 480px) {
-      .navbar-container {
-        padding: 0 10px;
-      }
-
-      .navbar-brand .title {
-        display: none;
-      }
-
-      .nav-link .text {
-        font-size: 12px;
-      }
-    }
   `;
 
   document.head.appendChild(style);
+}
+
+/**
+ * Capa compartida para celular. Cada página trae sus propios estilos;
+ * esto solo corrige lo común en pantallas angostas (márgenes, letra de los
+ * campos, botones, rejillas) y convierte en tarjetas las tablas marcadas
+ * con la clase "tabla-movil".
+ */
+function agregarEstilosMovil() {
+  const style = document.createElement('style');
+  style.textContent = `
+    @media (max-width: 700px) {
+      .main { padding: 18px 14px 50px !important; }
+      h1 { font-size: 22px !important; }
+      .sub { font-size: 13px; margin-bottom: 18px; }
+
+      /* 16px evita que iPhone haga zoom al tocar un campo */
+      input, select, textarea { font-size: 16px !important; }
+      .buscar { width: 100% !important; }
+
+      .btn, .btn-sec { padding: 11px 16px; }
+      .barra, .acciones { flex-wrap: wrap; }
+
+      /* Rejillas de tarjetas de resumen: dos por renglón */
+      .tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+      .tarjeta { padding: 12px 14px !important; }
+      .tarjeta .val { font-size: 19px !important; overflow-wrap: anywhere; }
+
+      /* Listas de datos (dt/dd): etiqueta arriba, valor abajo */
+      dl { grid-template-columns: minmax(0, 1fr) !important; gap: 2px !important; }
+      dt { margin-top: 8px; font-size: 12px; }
+      dd { overflow-wrap: anywhere; }
+
+      .resumen, .resumen-dep { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+      .secciones, .layout { grid-template-columns: minmax(0, 1fr) !important; }
+      .panel { padding: 16px 14px !important; }
+      .panel .tabla-movil tbody tr { padding: 6px 12px; }
+
+      /* Ventanas emergentes a casi toda la pantalla */
+      .modal-fondo { padding: 12px 8px !important; }
+      .modal { padding: 18px 16px !important; border-radius: 10px !important; }
+      .modal-cab { flex-wrap: wrap; gap: 10px !important; }
+
+      /* Tablas que siguen siendo tabla: se desplazan dentro de su caja */
+      .secciones table, .modal table, table.tabla-h { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      /* Tablas en tarjetas: cada renglón es una tarjeta con "etiqueta: valor" */
+      .tabla-wrap:has(> .tabla-movil) { border: none !important; overflow: visible !important; }
+      table.tabla-movil, .tabla-movil tbody, .tabla-movil tfoot, .tabla-movil tr, .tabla-movil td { display: block; width: 100%; }
+      .tabla-movil thead tr { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+      .tabla-movil thead th { display: none; }
+      .tabla-movil thead th.ord { display: inline-flex; align-items: center; background: white; border: 1px solid #e6e6e6; border-radius: 14px; padding: 5px 10px; font-size: 11px; }
+      .tabla-movil thead th.ord.act { border-color: #667eea; }
+      .tabla-movil tbody tr, .tabla-movil tfoot tr { border: 1px solid #eee !important; border-radius: 10px; padding: 8px 14px; margin-bottom: 10px; background: white; }
+      .tabla-movil tr[style*="display: none"], .tabla-movil tr[hidden] { display: none !important; }
+      .tabla-movil td { padding: 6px 0 !important; border: none !important; text-align: right !important; background: none !important; white-space: normal !important; overflow-wrap: anywhere; }
+      .tabla-movil td::after { content: ""; display: block; clear: both; }
+      .tabla-movil td::before { content: attr(data-label); float: left; max-width: 45%; margin-right: 12px; text-align: left; color: #999; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; line-height: 1.6; }
+      .tabla-movil td:not([data-label])::before, .tabla-movil td[data-label=""]::before { display: none; }
+      .tabla-movil td:not([data-label]), .tabla-movil td[data-label=""] { text-align: left !important; }
+      .tabla-movil td:empty { display: none; }
+      .tabla-movil td:first-child { font-size: 15px; font-weight: 600; }
+      .tabla-movil td input[type=number], .tabla-movil td input[type=text] { width: 150px !important; max-width: 55%; }
+      .tabla-movil tfoot tr, .tabla-movil tr.tot { background: #fafafa; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
+ * Pone a cada celda de las tablas "tabla-movil" el texto de su encabezado
+ * (data-label), que la vista de celular muestra como etiqueta. Las tablas se
+ * vuelven a dibujar seguido, así que se observa el DOM.
+ */
+function etiquetarTablas() {
+  const etiquetar = () => {
+    document.querySelectorAll('table.tabla-movil').forEach(tabla => {
+      const encabezados = [...tabla.querySelectorAll('thead th')].map(th => (th.firstChild?.textContent ?? th.textContent).trim());
+      tabla.querySelectorAll('tbody tr, tfoot tr').forEach(tr => {
+        let col = 0;
+        [...tr.children].forEach(td => {
+          if (!td.hasAttribute('data-label') && encabezados[col] !== undefined) td.setAttribute('data-label', (td.colSpan || 1) > 1 ? '' : encabezados[col]);
+          col += td.colSpan || 1;
+        });
+      });
+    });
+  };
+  let pendiente = false;
+  new MutationObserver(() => {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(() => { pendiente = false; etiquetar(); });
+  }).observe(document.body, { childList: true, subtree: true });
+  etiquetar();
 }

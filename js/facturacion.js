@@ -6,6 +6,9 @@ import {
 
 export const IVA = 0.16;
 export const BASURA_DEFAULT = { subtotal: 158.28, iva: 25.32, total: 183.60 };
+// Valores por defecto de facturacion_config/general; se cambian en Configuración
+export const MORATORIOS_DEFAULT = 0.05;   // sobre la renta sin IVA
+export const DIA_LIMITE_DEFAULT = 10;     // pagos después de este día son tarde
 
 export const ESTADOS = {
   pendiente:   { txt: 'Pendiente',       clase: 'e-pendiente' },
@@ -44,7 +47,7 @@ export function totales(conceptos) {
 
 export async function cargarConfigGeneral() {
   const s = await getDoc(doc(db, 'facturacion_config', 'general'));
-  return { basura: BASURA_DEFAULT, ...(s.exists() ? s.data() : {}) };
+  return { basura: BASURA_DEFAULT, moratoriosPct: MORATORIOS_DEFAULT, diaLimitePago: DIA_LIMITE_DEFAULT, ...(s.exists() ? s.data() : {}) };
 }
 
 export async function cargarLecturas() {

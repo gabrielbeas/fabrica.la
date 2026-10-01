@@ -37,6 +37,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `facturacion/ficha.html` | Factura de un locatario; datos de facturación arriba | admin |
 | `agua/lecturas.html` | Captura de lecturas, calendario propio con punto rojo en días con lecturas, histórico por tubo (clic en la fila) | admin y operario |
 | `calendarios/index.html` | Calendario: eventos automáticos (vencimientos, incrementos, límite de pago día 10, lecturas de agua, feriados LFT 2026–2027) + eventos capturados en `calendario_eventos` | admin y operario |
+| `config/index.html` | Configuración: pestaña Usuarios (perfiles de `users`: nombre, rol, activo, alta con UID de la consola, restablecer contraseña) y pestaña Valores (costo de agua, basura, % moratorios, día límite de pago; cambios en `facturacion_config/general.cambios`) | admin |
 | `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
 
 Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban Apps Script/Sheets, `admin/public/js/`) se sacó del repo el 01/10/2026 y quedó en `_privado/sacado-del-repo/`. Lo único que sigue de Apps Script es `admin/public/agua/apps-script/Historial.gs` (manda las lecturas al Sheet LFdC_OPERACION; valida el token de Firebase).
@@ -47,9 +48,13 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - `contratos`: un documento por contrato (`contrato_1`, `contrato_7-15`, ...). Incluye `rentas`, `historialDepositos`, `pagosRenta`, `facturacion` (correos, tubos de agua, basura), CFE. Subcolección `historial`.
 - `facturas`: id `{contratoId}_{YYYY-MM}`; `conceptos` con `tipo` (renta, extraordinario, moratorios, basura, agua, otro), `moratoriosPct`, `estadoPago`.
 - `agua_medidores`, `agua_lecturas` (id `{tubo}_{fecha}`), `agua_config/general` (`costoM3`).
+- `facturacion_config/general`: `basura {subtotal, iva, total}`, `moratoriosPct`, `diaLimitePago`, `cambios` (bitácora). Defaults en `js/facturacion.js` (`BASURA_DEFAULT`, `MORATORIOS_DEFAULT`, `DIA_LIMITE_DEFAULT`).
 - `calendario_eventos`: `titulo, tipo (actividad|vacaciones|feriado), inicio, fin, local, nota, creadoPor`.
 
 ## Reglas de negocio
+
+Costo de agua, basura, % de moratorios y día límite de pago se editan en Configuración → Valores (los números de abajo son los vigentes al 01/10/2026). IVA y ventanas de alertas siguen fijos en el código.
+
 
 - **Agua:** costo por m³ **con IVA incluido** (78.64). Subtotal = total ÷ 1.16. **El agua que se factura es la del mes anterior** (factura de octubre → lectura de septiembre, tomada alrededor del día 21); el periodo que aparece es el mes de la lectura. El tubo 21 se reparte 50/50 entre Proyectos Saraperos y Cine Responsable.
 - **Basura:** $158.28 + IVA = $183.60 para locales 16-18, 19-22, 11-13 y 10; periodo = mes de la factura.
@@ -61,7 +66,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 ## Pendientes
 
 - Publicar en Firebase la regla de `calendario_eventos` (lectura y alta para registrados; editar y borrar solo admin).
-- Configuración: gestión de usuarios y crear el perfil del operario.
+- Crear la cuenta del operario (consola de Firebase → Add user) y darle perfil en Configuración.
 - Facturas de septiembre 2026: correr "Actualizar agua y periodos" (siguen ligadas a lecturas del 29/09, que se borraron).
 - Tubo 10: lectura anómala del 29/02/2024 (99,998.222 m³) importada del Sheet; confirmar el valor real.
 - Depósitos de los locales 6, 7 y 15: detalle en _privado.
