@@ -27,9 +27,8 @@ export function crearNavbar() {
     <nav class="navbar">
       <div class="navbar-container">
         <div class="navbar-brand">
-          <a href="${basePath()}">
-            <span class="logo">F</span>
-            <span class="title">La Fábrica</span>
+          <a href="${basePath()}" title="Inicio">
+            <img class="logo-img" src="${basePath()}css/logo.png" alt="La Fábrica de Chocolate">
           </a>
         </div>
 
@@ -166,8 +165,10 @@ function agregarEstilosNavbar() {
       color: #333;
     }
 
-    .navbar-brand .logo {
-      font-size: 28px;
+    .navbar-brand .logo-img {
+      height: 34px;
+      width: auto;
+      display: block;
     }
 
     .navbar-menu {

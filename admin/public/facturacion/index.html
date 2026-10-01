@@ -29,7 +29,8 @@
         td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        a.ver { color: #667eea; text-decoration: none; white-space: nowrap; }
+        tr.fila-f { cursor: pointer; }
+        tr.fila-f:hover td { background: #f8f9ff; }
         select.estado { padding: 5px 8px; border-radius: 12px; border: 1px solid transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
         .e-pendiente { background: #f1f1f1; color: #555; } .e-proceso { background: #fff8e1; color: #b26a00; }
         .e-pagado { background: #e8f5e9; color: #2e7d32; } .e-tarde { background: #fdecea; color: #c62828; }
@@ -120,10 +121,10 @@
                 </div>
                 <div class="tabla-wrap">
                     <table>
-                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th><th></th></tr></thead>
+                        <thead><tr><th><input type="checkbox" id="selTodas" checked title="Seleccionar todas"></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
                         <tbody>
                             ${filas.map(f => `
-                                <tr>
+                                <tr class="fila-f" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
                                     <td><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked></td>
                                     <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
                                     <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
@@ -134,14 +135,13 @@
                                     <td><select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" data-id="${esc(f.id)}">
                                         ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}
                                     </select></td>
-                                    <td><a class="ver" href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}">Ver factura →</a></td>
                                 </tr>`).join('')}
                         </tbody>
                         <tfoot><tr><td colspan="3">Total</td>
                             <td class="mor-td">${(() => { const m = facturas.reduce((s, f) => s + montoMoratorios(f), 0); const n = facturas.filter(f => montoMoratorios(f) > 0).length; return m ? `<span class="mor-monto">${dinero(m)}</span><span class="mor-n">${n} locatario${n > 1 ? 's' : ''}</span>` : ''; })()}</td>
                             <td class="num">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
                             <td class="num">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
-                            <td class="num">${dinero(total)}</td><td colspan="2"></td></tr></tfoot>
+                            <td class="num">${dinero(total)}</td><td></td></tr></tfoot>
                     </table>
                 </div>`}`;
 
@@ -175,6 +175,11 @@
                     `Facturas LAFABDECHOC ${mesTxt(mes)}${elegidas.length < filas.length ? ` (${elegidas.length})` : ''}`);
             });
             app.querySelectorAll('select.estado').forEach(s => s.addEventListener('change', () => cambiarEstado(s)));
+            // Toda la fila abre la factura, salvo los controles (casilla, interruptor, estado)
+            app.querySelectorAll('tr.fila-f').forEach(tr => tr.addEventListener('click', e => {
+                if (e.target.closest('input, select, label, button, a')) return;
+                if (e.ctrlKey || e.metaKey) window.open(tr.dataset.href, '_blank'); else location.href = tr.dataset.href;
+            }));
             app.querySelectorAll('input.mor-switch').forEach(x => x.addEventListener('change', () => cambiarMoratorios(x, facturas)));
         }
 

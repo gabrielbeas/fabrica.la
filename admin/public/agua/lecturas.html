@@ -86,6 +86,8 @@
         .tabla-h th { padding: 9px 10px; }
         .tabla-h tr.sub td { font-weight: 600; background: #fafafa; border-top: 1px solid #ddd; }
         .tabla-h tr.neg td { background: #fff8e1; }
+        .tabla-h tr.anom td { background: #fdecea; color: #c62828; }
+        .anom-txt { font-size: 11px; font-style: normal; font-weight: 600; }
         .barra-c { width: 120px; }
         .barra-c span { display: block; height: 8px; border-radius: 4px; background: #667eea; opacity: .6; }
         .nota-h { font-size: 12px; color: #888; margin: 14px 0 0; }
@@ -271,7 +273,7 @@
             tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
             tbody.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => eliminarLectura(b.dataset.borrar)));
             // Filas con histórico: clic en cualquier parte de la fila (menos el campo de captura y botones)
-            medidores.filter(m => TUBOS_CON_HISTORICO.includes(m.id)).forEach(m => {
+            medidores.forEach(m => {
                 const fila = document.getElementById(`fila-${m.id}`);
                 fila.classList.add('con-historico');
                 fila.title = 'Ver histórico de lecturas';
@@ -335,8 +337,7 @@
             }
         }
 
-        // ---------- Histórico por tubo (prueba: solo tubo 15, A mi me gusta la gasolina) ----------
-        const TUBOS_CON_HISTORICO = ['15'];
+        // ---------- Histórico por tubo (clic en cualquier fila) ----------
         const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const fechaCorta = f => f ? f.split('-').reverse().join('/') : '-';
         const periodoTxt = p => { if (!/^\d{4}-\d{2}$/.test(p || '')) return '-'; const [y, m] = p.split('-'); return `${MESES[+m - 1]} ${y}`; };
@@ -352,20 +353,26 @@
                 const importe = typeof l.importe === 'number' ? l.importe : (consumo !== null && costo !== null ? +(consumo * costo).toFixed(2) : null);
                 return { ...l, consumo, costo, importe };
             });
-            const maxC = Math.max(1, ...filas.map(f => f.consumo || 0));
-            const totalC = filas.reduce((s, f) => s + (f.consumo || 0), 0);
-            const totalI = filas.reduce((s, f) => s + (f.importe || 0), 0);
+            // Consumos imposibles (p. ej. el medidor dio la vuelta a 99,998) se marcan y NO entran en totales
+            const ANOMALO = 1000; // m³ en una sola lectura
+            filas.forEach(f => { f.anomala = (f.consumo || 0) > ANOMALO; });
+            const validas = filas.filter(f => !f.anomala);
+            const anomalas = filas.length - validas.length;
+            const maxC = Math.max(1, ...validas.map(f => f.consumo || 0));
+            const totalC = validas.reduce((s, f) => s + (f.consumo || 0), 0);
+            const totalI = validas.reduce((s, f) => s + (f.importe || 0), 0);
             const anios = [...new Set(filas.map(f => f.fecha.slice(0, 4)))];
             const cuerpo = anios.map(a => {
                 const del = filas.filter(f => f.fecha.startsWith(a));
-                const c = del.reduce((s, f) => s + (f.consumo || 0), 0), imp = del.reduce((s, f) => s + (f.importe || 0), 0);
+                const ok = del.filter(f => !f.anomala);
+                const c = ok.reduce((s, f) => s + (f.consumo || 0), 0), imp = ok.reduce((s, f) => s + (f.importe || 0), 0);
                 return del.map(f => `
-                    <tr class="${f.consumo < 0 ? 'neg' : ''}">
+                    <tr class="${f.anomala ? 'anom' : f.consumo < 0 ? 'neg' : ''}" ${f.anomala ? 'title="Consumo imposible: no se suma en los totales. Revisa esta lectura."' : f.consumo < 0 ? 'title="Consumo negativo: la lectura es menor que la anterior"' : ''}>
                         <td>${fechaCorta(f.fecha)}</td>
                         <td>${periodoTxt(f.periodo || f.fecha.slice(0, 7))}</td>
                         <td class="num">${fmt(f.lectura)}</td>
                         <td class="num">${f.consumo === null ? 'primera' : fmt(f.consumo)}</td>
-                        <td class="barra-c"><span style="width:${Math.max(0, (f.consumo || 0) / maxC * 100)}%"></span></td>
+                        <td class="barra-c">${f.anomala ? '<em class="anom-txt">anómala</em>' : `<span style="width:${Math.max(0, (f.consumo || 0) / maxC * 100)}%"></span>`}</td>
                         <td class="num">${f.costo === null ? '-' : dinero(f.costo)}</td>
                         <td class="num">${dinero(f.importe)}</td>
                     </tr>`).join('') +
@@ -392,7 +399,8 @@
                         <thead><tr><th>Fecha</th><th>Periodo</th><th class="num">Lectura (m³)</th><th class="num">Consumo (m³)</th><th></th><th class="num">Costo m³</th><th class="num">Importe</th></tr></thead>
                         <tbody>${cuerpo}</tbody>
                     </table>
-                    <p class="nota-h">Importes con IVA incluido, al costo por m³ vigente en cada lectura.</p>` : '<p class="nota-h">Este tubo no tiene lecturas registradas.</p>'}
+                    <p class="nota-h">Importes con IVA incluido, al costo por m³ vigente en cada lectura.
+                        En amarillo: consumo negativo (la lectura bajó).${anomalas ? ` <strong style="color:#c62828">En rojo: ${anomalas} lectura${anomalas > 1 ? 's' : ''} con consumo imposible (más de ${ANOMALO.toLocaleString('es-MX')} m³); no se suma${anomalas > 1 ? 'n' : ''} en los totales.</strong>` : ''}</p>` : '<p class="nota-h">Este tubo no tiene lecturas registradas.</p>'}
                 </div>`;
             const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
             const teclas = e => { if (e.key === 'Escape') cerrar(); };

@@ -178,8 +178,11 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <div class="logo" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60px; height: 60px; margin: 0 auto 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px;">F</div>
-            <h1>La Fábrica de Chocolate</h1>
+            <img id="logoLogin" alt="La Fábrica de Chocolate" style="display:block; width: 240px; max-width: 80%; height: auto; margin: 0 auto 18px;">
+            <script>
+                // Local: /admin/public/css/logo.png · Publicado: /admin/css/logo.png
+                document.getElementById('logoLogin').src = (['localhost', '127.0.0.1'].includes(location.hostname) ? '/admin/public/' : '/admin/') + 'css/logo.png';
+            </script>
             <p>Panel de Administración</p>
         </div>
 
