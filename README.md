@@ -2,13 +2,12 @@
 
 La Fábrica de Chocolate.
 
-## Publicación
+- Sitio público: `https://fabrica.la/` (fuente: `fabrica/`)
+- Panel administrativo: `https://fabrica.la/admin/` (fuente: `admin/public/`, login en `login.html`)
 
-- Sitio público: `https://fabrica.la/`
-- Panel administrativo: `https://fabrica.la/admin/`
-- Fuente del panel: `dashboard/public/agua/`
+El panel es HTML + JavaScript estático con Firebase Auth y Firestore. Los datos
+(contratos, facturas, lecturas de agua) viven en Firestore y los protegen las
+reglas de seguridad de Firebase; en este repositorio no hay datos privados.
 
-GitHub Pages publica contenido estático y no ejecuta el backend ubicado en
-`dashboard/src`. El acceso a `/admin/*` se protege con el Cloudflare Worker
-ubicado en `cloudflare/admin-auth/`; una contraseña implementada únicamente en
-HTML o JavaScript no protegería los archivos del panel.
+Se publica con GitHub Actions (`.github/workflows/deploy.yml`) en GitHub Pages.
+Detalles de arquitectura y reglas de trabajo en `CLAUDE.md`.

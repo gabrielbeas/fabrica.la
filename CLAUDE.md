@@ -39,7 +39,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `calendarios/index.html` | Calendario: eventos automáticos (vencimientos, incrementos, límite de pago día 10, lecturas de agua, feriados LFT 2026–2027) + eventos capturados en `calendario_eventos` | admin y operario |
 | `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
 
-Archivos viejos que ya no se usan (no se publican): `admin/public/agua/index.html`, `agua-cobros.html`, `detail.html`, `hidraulico.html`, `lecturas-agua.html`, `admin/public/js/app.js`. Ojo: `agua/index.html` tiene correos de inquilinos escritos en el código; conviene borrarlo del repo.
+Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban Apps Script/Sheets, `admin/public/js/`) se sacó del repo el 01/10/2026 y quedó en `_privado/sacado-del-repo/`. Lo único que sigue de Apps Script es `admin/public/agua/apps-script/Historial.gs` (manda las lecturas al Sheet LFdC_OPERACION; valida el token de Firebase).
 
 ### Colecciones de Firestore
 
@@ -65,4 +65,4 @@ Archivos viejos que ya no se usan (no se publican): `admin/public/agua/index.htm
 - Facturas de septiembre 2026: correr "Actualizar agua y periodos" (siguen ligadas a lecturas del 29/09, que se borraron).
 - Tubo 10: lectura anómala del 29/02/2024 (99,998.222 m³) importada del Sheet; confirmar el valor real.
 - Depósitos de los locales 6, 7 y 15: hay $6,300 de 2022 sin asignar; el ajuste de Setter Bistro del 15/08/2025 difiere por $6 entre Simplifi y la tabla de Gabriel.
-- Borrar del repo las páginas viejas de `admin/public/agua/` y `admin/public/js/app.js`.
+- Seguridad (auditoría 01/10/2026), pasos manuales de Gabriel: archivar en script.google.com el despliegue viejo del conector `Code.gs` (sigue vivo, protegido con token, ya nadie lo usa); borrar en Cloudflare el Worker `admin-auth` si sigue existiendo; en Firebase Auth desactivar el alta de usuarios desde el cliente y restringir la API key por dominio (fabrica.la, localhost); cambiar las contraseñas si alguna vez se usaron `admin123456` u `operario123` (quedaron en el historial público de git).
