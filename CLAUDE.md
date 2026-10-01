@@ -23,7 +23,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 
 - `js/auth.js`: login, roles, `basePath()`, `getSeccionesPermitidas()` (menú por rol), exporta `auth` y `db`.
 - `js/navbar.js`: barra superior con logo (`admin/public/css/logo.png`).
-- `js/facturacion.js`: lógica de facturas, agua, basura y el PDF para contadores.
+- `js/facturacion.js`: lógica de facturas, agua, basura y el PDF para contadores. Se importa con `?v=AAAAMMDD-n` en `facturacion/index.html` y `ficha.html`: **cada vez que cambie este archivo, subir el número de versión** en ambos imports (si no, el navegador usa la copia vieja en caché y el PDF sale distinto a la pantalla).
 - `js/alertas-contrato.js`: alertas de contratos (fin de contrato, incremento de renta, saldo de depósito por pagar). El seguro NO genera alerta.
 
 ### Secciones (`admin/public/`)
