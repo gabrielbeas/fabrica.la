@@ -34,6 +34,8 @@
         .resumen-dep strong { display: block; font-size: 18px; margin-top: 4px; font-variant-numeric: tabular-nums; }
         tr.total.pagado td { border-top: none; color: #2e7d32; }
         tr.total.pagado .nota-p { font-weight: 400; }
+        .sub-cfe { font-size: 13px; font-weight: 600; color: #555; margin: 12px 0 6px; }
+        .sub-cfe:first-of-type { margin-top: 0; }
         .tabla-dep tr.tarde td { background: #fdecea; color: #c62828; }
         .tabla-dep tr.tarde .nota-p { color: #d9534f; }
         .tarde-txt { display: inline; font-size: 12px; font-weight: 600; color: #c62828; }
@@ -233,25 +235,6 @@
                             </dl>
                         </div>
                         <div class="seccion">
-                            <h2>Garantías</h2>
-                            <dl>
-                                ${fila('Garantía', esc(c.garantia))}
-                                ${fila('Obligado solidario', (c.obligadosSolidarios || []).map(esc).join('<br>'))}
-                                ${fila('Detalle', esc(c.garantiaDetalle))}
-                                ${fila('Seguros requeridos', esc(c.segurosRequeridos))}
-                            </dl>
-                        </div>
-                        <div class="seccion ancha">
-                            <h2>Condiciones del contrato</h2>
-                            <dl>
-                                ${fila('Periodo de gracia', esc(c.periodoGracia))}
-                                ${fila('Moratorios', esc(c.moratoriosContrato))}
-                                ${fila('Terminación anticipada', esc(c.terminacionAnticipada))}
-                                ${fila('Notificaciones', (c.correosNotificacion || []).map(esc).join(' · '))}
-                                ${fila('Documento', esc(c.documento))}
-                            </dl>
-                        </div>
-                        <div class="seccion">
                             <h2>Vigencia</h2>
                             <div class="vig-wrap">
                             ${alertaVigencia(c)}
@@ -300,13 +283,7 @@
                         </div>` : ''}
                         <div class="seccion">
                             <h2>CFE</h2>
-                            <dl>
-                                ${filaSiempre('Titular del servicio', esc(c.cfeTitular))}
-                                ${filaSiempre('Dirección del servicio', esc(c.cfe))}
-                                ${filaSiempre('No. de servicio', esc(c.cfeServicio))}
-                                ${filaSiempre('RMU', esc(c.cfeRmu))}
-                                ${filaSiempre('Cuenta', esc(c.cfeCuenta))}
-                            </dl>
+                            ${bloquesCFE(c)}
                         </div>
                         <div class="seccion">
                             <h2>Seguro y servicios</h2>
@@ -316,6 +293,25 @@
                                 ${filaSiempre('A nombre de', esc(c.seguro?.nombre))}
                                 ${filaSiempre('Vigencia del seguro', c.seguro?.vigencia ? fechaTxt(c.seguro.vigencia) : '')}
                                 ${filaSiempre('Telmex', esc(c.telmex))}
+                            </dl>
+                        </div>
+                        <div class="seccion">
+                            <h2>Garantías</h2>
+                            <dl>
+                                ${fila('Garantía', esc(c.garantia))}
+                                ${fila('Obligado solidario', (c.obligadosSolidarios || []).map(esc).join('<br>'))}
+                                ${fila('Detalle', esc(c.garantiaDetalle))}
+                                ${fila('Seguros requeridos', esc(c.segurosRequeridos))}
+                            </dl>
+                        </div>
+                        <div class="seccion ancha">
+                            <h2>Condiciones del contrato</h2>
+                            <dl>
+                                ${fila('Periodo de gracia', esc(c.periodoGracia))}
+                                ${fila('Moratorios', esc(c.moratoriosContrato))}
+                                ${fila('Terminación anticipada', esc(c.terminacionAnticipada))}
+                                ${fila('Notificaciones', (c.correosNotificacion || []).map(esc).join(' · '))}
+                                ${fila('Documento', esc(c.documento))}
                             </dl>
                         </div>
                         ${c.notas ? `
@@ -342,6 +338,21 @@
 
         let contratoActual = null;
         let avisoPendiente = '';
+
+        // Servicios de CFE: el principal (cfe*) y, si existe, un segundo servicio (cfe2*)
+        function bloquesCFE(c) {
+            const dl = s => `<dl>
+                ${filaSiempre('Titular del servicio', esc(s.titular))}
+                ${filaSiempre('Dirección del servicio', esc(s.direccion))}
+                ${filaSiempre('No. de servicio', esc(s.servicio))}
+                ${filaSiempre('RMU', esc(s.rmu))}
+                ${filaSiempre('Cuenta', esc(s.cuenta))}
+            </dl>`;
+            const s1 = { titular: c.cfeTitular, direccion: c.cfe, servicio: c.cfeServicio, rmu: c.cfeRmu, cuenta: c.cfeCuenta };
+            const s2 = { titular: c.cfe2Titular, direccion: c.cfe2Direccion, servicio: c.cfe2Servicio, rmu: c.cfe2Rmu, cuenta: c.cfe2Cuenta };
+            if (!Object.values(s2).some(Boolean)) return dl(s1);
+            return `<div class="sub-cfe">Servicio 1</div>${dl(s1)}<div class="sub-cfe">Servicio 2</div>${dl(s2)}`;
+        }
 
         // Total pagado de renta (pagos reales de Simplifi; no incluye depósitos en garantía)
         function filaTotalPagado(c) {
@@ -506,6 +517,11 @@
             ['cfeServicio', 'No. de servicio', 'texto', 'CFE'],
             ['cfeRmu', 'RMU', 'texto', 'CFE'],
             ['cfeCuenta', 'Cuenta', 'texto', 'CFE'],
+            ['cfe2Titular', 'Titular (2º servicio)', 'texto', 'CFE · segundo servicio'],
+            ['cfe2Direccion', 'Dirección (2º servicio)', 'texto', 'CFE · segundo servicio'],
+            ['cfe2Servicio', 'No. de servicio (2º)', 'texto', 'CFE · segundo servicio'],
+            ['cfe2Rmu', 'RMU (2º servicio)', 'texto', 'CFE · segundo servicio'],
+            ['cfe2Cuenta', 'Cuenta (2º servicio)', 'texto', 'CFE · segundo servicio'],
             ['notas', 'Notas', 'textarea', 'Notas']
         ];
         const leer = (c, k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), c);

@@ -43,6 +43,53 @@
         .mensaje { font-size: 14px; }
         .ok { color: #2e7d32; } .err { color: #c62828; }
         .cargando { color: #999; padding: 40px 0; text-align: center; }
+
+        /* Calendario propio (para poder marcar días con lecturas) */
+        .cal-wrap { position: relative; }
+        .cal-btn { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; background: white; cursor: pointer; min-width: 190px; text-align: left; color: #333; }
+        .cal-btn:hover, .cal-btn:focus { border-color: #667eea; outline: none; }
+        .cal { position: absolute; top: calc(100% + 6px); left: 0; z-index: 900; background: white; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.15); padding: 12px; width: 290px; }
+        .cal-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .cal-cab strong { font-size: 15px; text-transform: capitalize; }
+        .cal-cab button { border: none; background: none; font-size: 22px; line-height: 1; padding: 2px 10px; cursor: pointer; color: #555; border-radius: 6px; }
+        .cal-cab button:hover:not(:disabled) { background: #f3f4fe; }
+        .cal-cab button:disabled { color: #ddd; cursor: default; }
+        .cal-sem, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .cal-sem span { font-size: 11px; color: #999; padding: 4px 0; }
+        .cal-dias button { position: relative; border: none; background: none; height: 36px; border-radius: 6px; font-size: 14px; cursor: pointer; color: #333; }
+        .cal-dias button:hover:not(:disabled) { background: #f3f4fe; }
+        .cal-dias button:disabled { color: #ccc; cursor: default; }
+        .cal-dias button.hoy { font-weight: 700; }
+        .cal-dias button.sel { background: #667eea; color: white; }
+        .punto-lec { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c62828; }
+        .cal-dias .punto-lec { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); }
+        .cal-dias button.sel .punto-lec { background: white; }
+        .cal-pie { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0; font-size: 12px; color: #888; }
+        .cal-pie button { border: none; background: none; color: #667eea; font-size: 13px; cursor: pointer; }
+
+        /* Filas con histórico */
+        tr.con-historico { cursor: pointer; }
+        tr.con-historico:hover td { background: #f3f4fe; }
+        tr.con-historico .tubo { color: #667eea; text-decoration: underline; text-underline-offset: 3px; }
+
+        /* Ventana de histórico */
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 1000; overflow-y: auto; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 900px; padding: 26px 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid #333; padding-bottom: 14px; margin-bottom: 18px; }
+        .modal-cab .emp { font-size: 12px; color: #777; letter-spacing: .05em; text-transform: uppercase; }
+        .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
+        .resumen-h { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+        .resumen-h div { border: 1px solid #eee; border-radius: 8px; padding: 10px 12px; }
+        .resumen-h span { display: block; font-size: 11px; color: #888; }
+        .resumen-h strong { display: block; font-size: 16px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .tabla-h td { padding: 7px 10px; font-size: 13px; }
+        .tabla-h th { padding: 9px 10px; }
+        .tabla-h tr.sub td { font-weight: 600; background: #fafafa; border-top: 1px solid #ddd; }
+        .tabla-h tr.neg td { background: #fff8e1; }
+        .barra-c { width: 120px; }
+        .barra-c span { display: block; height: 8px; border-radius: 4px; background: #667eea; opacity: .6; }
+        .nota-h { font-size: 12px; color: #888; margin: 14px 0 0; }
+        @media (max-width: 700px) { .resumen-h { grid-template-columns: repeat(2, 1fr); } .barra-c { display: none; } }
     </style>
 </head>
 <body>
@@ -144,7 +191,11 @@
                 <div class="controles">
                     <div class="campo">
                         <label for="fecha">Fecha de lectura</label>
-                        <input type="date" id="fecha" value="${hoy()}" max="${hoy()}">
+                        <input type="hidden" id="fecha" value="${hoy()}">
+                        <div class="cal-wrap">
+                            <button type="button" class="cal-btn" id="fechaBtn"></button>
+                            <div class="cal" id="cal" hidden></div>
+                        </div>
                     </div>
                     <div class="campo">
                         <label for="costo">Costo por m³ (IVA incluido)</label>
@@ -185,6 +236,7 @@
             `;
 
             document.getElementById('fecha').addEventListener('change', dibujarFilas);
+            iniciarCalendario();
             if (admin) {
                 document.getElementById('costo').addEventListener('input', recalcularTodo);
                 document.getElementById('guardarCosto').addEventListener('click', guardarCosto);
@@ -218,7 +270,135 @@
             }).join('');
             tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
             tbody.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => eliminarLectura(b.dataset.borrar)));
+            // Filas con histórico: clic en cualquier parte de la fila (menos el campo de captura y botones)
+            medidores.filter(m => TUBOS_CON_HISTORICO.includes(m.id)).forEach(m => {
+                const fila = document.getElementById(`fila-${m.id}`);
+                fila.classList.add('con-historico');
+                fila.title = 'Ver histórico de lecturas';
+                fila.addEventListener('click', e => { if (!e.target.closest('input, button')) verHistorico(m); });
+            });
             recalcularTodo();
+        }
+
+        // ---------- Calendario de fecha de lectura (punto rojo = días con lecturas grabadas) ----------
+        const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        let calMes = null; // 'YYYY-MM' que se está viendo
+        function iniciarCalendario() {
+            const inp = document.getElementById('fecha'), btn = document.getElementById('fechaBtn'), cal = document.getElementById('cal');
+            const pintarBoton = () => { const [y, m, d] = inp.value.split('-'); btn.textContent = `${+d} ${MESES_LARGOS[+m - 1]} ${y}`; };
+            pintarBoton();
+            btn.addEventListener('click', () => {
+                if (!cal.hidden) { cal.hidden = true; return; }
+                calMes = inp.value.slice(0, 7); pintarCal(); cal.hidden = false;
+            });
+            // composedPath: el botón clicado puede ya no estar en la página (se redibuja el mes), así que se revisa la ruta original del clic
+            document.addEventListener('click', e => { if (!e.composedPath().some(n => n.classList?.contains('cal-wrap'))) cal.hidden = true; });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') cal.hidden = true; });
+            cal.addEventListener('click', e => {
+                const t = e.target.closest('[data-accion], [data-dia]');
+                if (!t || t.disabled) return;
+                if (t.dataset.dia) {
+                    inp.value = t.dataset.dia; pintarBoton(); cal.hidden = true;
+                    inp.dispatchEvent(new Event('change'));
+                    return;
+                }
+                const [y, m] = calMes.split('-').map(Number);
+                if (t.dataset.accion === 'hoy') { inp.value = hoy(); pintarBoton(); cal.hidden = true; inp.dispatchEvent(new Event('change')); return; }
+                const d = new Date(y, m - 1 + (t.dataset.accion === 'sig' ? 1 : -1), 1);
+                calMes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                pintarCal();
+            });
+            function pintarCal() {
+                const [y, m] = calMes.split('-').map(Number);
+                const conLecturas = new Set(lecturas.map(l => l.fecha));
+                const primero = new Date(y, m - 1, 1).getDay();          // 0 = domingo
+                const dias = new Date(y, m, 0).getDate();
+                const limite = hoy(), elegido = inp.value;
+                let celdas = '';
+                for (let i = 0; i < primero; i++) celdas += '<span></span>';
+                for (let d = 1; d <= dias; d++) {
+                    const f = `${calMes}-${String(d).padStart(2, '0')}`;
+                    const n = lecturas.filter(l => l.fecha === f).length;
+                    celdas += `<button type="button" data-dia="${f}" class="${f === elegido ? 'sel' : ''} ${f === limite ? 'hoy' : ''}" ${f > limite ? 'disabled' : ''}
+                        ${n ? `title="${n} lectura${n > 1 ? 's' : ''} grabada${n > 1 ? 's' : ''}"` : ''}>${d}${conLecturas.has(f) ? '<i class="punto-lec"></i>' : ''}</button>`;
+                }
+                const sigDeshabilitado = calMes >= limite.slice(0, 7);
+                cal.innerHTML = `
+                    <div class="cal-cab">
+                        <button type="button" data-accion="ant" aria-label="Mes anterior">‹</button>
+                        <strong>${MESES_LARGOS[m - 1]} ${y}</strong>
+                        <button type="button" data-accion="sig" aria-label="Mes siguiente" ${sigDeshabilitado ? 'disabled' : ''}>›</button>
+                    </div>
+                    <div class="cal-sem"><span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span></div>
+                    <div class="cal-dias">${celdas}</div>
+                    <div class="cal-pie"><span><i class="punto-lec"></i> Con lecturas grabadas</span><button type="button" data-accion="hoy">Hoy</button></div>`;
+            }
+        }
+
+        // ---------- Histórico por tubo (prueba: solo tubo 15, A mi me gusta la gasolina) ----------
+        const TUBOS_CON_HISTORICO = ['15'];
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => f ? f.split('-').reverse().join('/') : '-';
+        const periodoTxt = p => { if (!/^\d{4}-\d{2}$/.test(p || '')) return '-'; const [y, m] = p.split('-'); return `${MESES[+m - 1]} ${y}`; };
+
+        function verHistorico(m) {
+            const lista = lecturas.filter(l => l.tubo === m.id && typeof l.lectura === 'number')
+                .sort((a, b) => a.fecha.localeCompare(b.fecha));
+            // Consumo e importe: los guardados; si faltan, se calculan contra la lectura anterior
+            const filas = lista.map((l, i) => {
+                const prev = lista[i - 1];
+                const consumo = typeof l.consumo === 'number' ? l.consumo : (prev ? +(l.lectura - prev.lectura).toFixed(3) : null);
+                const costo = typeof l.costoM3 === 'number' ? l.costoM3 : null;
+                const importe = typeof l.importe === 'number' ? l.importe : (consumo !== null && costo !== null ? +(consumo * costo).toFixed(2) : null);
+                return { ...l, consumo, costo, importe };
+            });
+            const maxC = Math.max(1, ...filas.map(f => f.consumo || 0));
+            const totalC = filas.reduce((s, f) => s + (f.consumo || 0), 0);
+            const totalI = filas.reduce((s, f) => s + (f.importe || 0), 0);
+            const anios = [...new Set(filas.map(f => f.fecha.slice(0, 4)))];
+            const cuerpo = anios.map(a => {
+                const del = filas.filter(f => f.fecha.startsWith(a));
+                const c = del.reduce((s, f) => s + (f.consumo || 0), 0), imp = del.reduce((s, f) => s + (f.importe || 0), 0);
+                return del.map(f => `
+                    <tr class="${f.consumo < 0 ? 'neg' : ''}">
+                        <td>${fechaCorta(f.fecha)}</td>
+                        <td>${periodoTxt(f.periodo || f.fecha.slice(0, 7))}</td>
+                        <td class="num">${fmt(f.lectura)}</td>
+                        <td class="num">${f.consumo === null ? 'primera' : fmt(f.consumo)}</td>
+                        <td class="barra-c"><span style="width:${Math.max(0, (f.consumo || 0) / maxC * 100)}%"></span></td>
+                        <td class="num">${f.costo === null ? '-' : dinero(f.costo)}</td>
+                        <td class="num">${dinero(f.importe)}</td>
+                    </tr>`).join('') +
+                    `<tr class="sub"><td colspan="3">Total ${a} (${del.length} lectura${del.length > 1 ? 's' : ''})</td><td class="num">${fmt(c)}</td><td></td><td></td><td class="num">${dinero(imp)}</td></tr>`;
+            }).join('');
+
+            const fondo = document.createElement('div');
+            fondo.className = 'modal-fondo';
+            fondo.innerHTML = `
+                <div class="modal" role="dialog" aria-label="Histórico de lecturas">
+                    <div class="modal-cab">
+                        <div><div class="emp">Histórico de lecturas de agua</div><h3>Tubo ${escape(m.tubo)} · ${escape(m.empresa)}</h3></div>
+                        <button class="btn-sec" data-cerrar>Cerrar</button>
+                    </div>
+                    ${filas.length ? `
+                    <div class="resumen-h">
+                        <div><span>Lecturas</span><strong>${filas.length}</strong></div>
+                        <div><span>Desde</span><strong>${fechaCorta(filas[0].fecha)}</strong></div>
+                        <div><span>Consumo total</span><strong>${fmt(totalC)} m³</strong></div>
+                        <div><span>Importe total</span><strong>${dinero(totalI)}</strong></div>
+                        <div><span>Promedio por lectura</span><strong>${fmt(totalC / Math.max(1, filas.filter(f => f.consumo !== null).length))} m³</strong></div>
+                    </div>
+                    <table class="tabla-h">
+                        <thead><tr><th>Fecha</th><th>Periodo</th><th class="num">Lectura (m³)</th><th class="num">Consumo (m³)</th><th></th><th class="num">Costo m³</th><th class="num">Importe</th></tr></thead>
+                        <tbody>${cuerpo}</tbody>
+                    </table>
+                    <p class="nota-h">Importes con IVA incluido, al costo por m³ vigente en cada lectura.</p>` : '<p class="nota-h">Este tubo no tiene lecturas registradas.</p>'}
+                </div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
         }
 
         let eliminando = false;
