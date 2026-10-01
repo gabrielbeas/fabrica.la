@@ -53,7 +53,7 @@ jobs:
           cp admin/public/calendarios/index.html dist/admin/calendarios/
           cp admin/public/config/index.html dist/admin/config/
           cp -r admin/public/css dist/admin/css
-          cp admin/public/agua/lecturas.html dist/admin/agua/
+          cp admin/public/agua/lecturas.html admin/public/agua/siapa.html dist/admin/agua/
           cp admin/public/locales/index.html admin/public/locales/caratula.html dist/admin/locales/
           cp admin/public/herramientas/importar-agua.html admin/public/herramientas/importar-contratos.html dist/admin/herramientas/
           # Verificación: nada privado debe quedar publicado

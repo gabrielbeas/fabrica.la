@@ -36,6 +36,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `facturacion/index.html` | Facturas del mes, interruptor de moratorios (5% de la renta sin IVA), "Actualizar agua y periodos", PDF para contadores | admin |
 | `facturacion/ficha.html` | Factura de un locatario; datos de facturación arriba | admin |
 | `agua/lecturas.html` | Captura de lecturas, calendario propio con punto rojo en días con lecturas, histórico por tubo (clic en la fila) | admin y operario |
+| `agua/siapa.html` | SIAPA (toma general): tarjetas de costo real por m³ y % recuperado, gráficas de importe y m³, comparación por periodo contra las lecturas de locatarios (sin el tubo MTO, que es el medidor general; cada lectura va al periodo SIAPA más cercano, máx. 20 días), periodos, recibos y pagos; captura de recibo y de pago | admin |
 | `calendarios/index.html` | Calendario: eventos automáticos (vencimientos, incrementos, límite de pago día 10, lecturas de agua, feriados LFT 2026–2027) + eventos capturados en `calendario_eventos` | admin y operario |
 | `config/index.html` | Configuración: pestaña Usuarios (perfiles de `users`: nombre, rol, activo, alta con UID de la consola, restablecer contraseña) y pestaña Valores (costo de agua, basura, % moratorios, día límite de pago; cambios en `facturacion_config/general.cambios`) | admin |
 | `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
@@ -48,6 +49,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - `contratos`: un documento por contrato (`contrato_1`, `contrato_7-15`, ...). Incluye `rentas`, `historialDepositos`, `pagosRenta`, `facturacion` (correos, tubos de agua, basura), CFE. Subcolección `historial`.
 - `facturas`: id `{contratoId}_{YYYY-MM}`; `conceptos` con `tipo` (renta, extraordinario, moratorios, basura, agua, otro), `moratoriosPct`, `estadoPago`.
 - `agua_medidores`, `agua_lecturas` (id `{tubo}_{fecha}`), `agua_config/general` (`costoM3`).
+- `siapa_periodos` (id = fecha de lectura `YYYY-MM-DD`: lectura, nota, m3, dias, m3Dia, importe), `siapa_recibos` (id = fecha de emisión: periodo, vence, totalMes, totalAPagar, recargos, desglose, cuenta), `siapa_pagos` (id `{fecha}_{centavos}`). Importados de los PDF en `_privado/siapa/` (resumen en `_privado/siapa/siapa.json`). Solo admin.
 - `facturacion_config/general`: `basura {subtotal, iva, total}`, `moratoriosPct`, `diaLimitePago`, `cambios` (bitácora). Defaults en `js/facturacion.js` (`BASURA_DEFAULT`, `MORATORIOS_DEFAULT`, `DIA_LIMITE_DEFAULT`).
 - `calendario_eventos`: `titulo, tipo (actividad|vacaciones|feriado), inicio, fin, local, nota, creadoPor`.
 
@@ -65,7 +67,9 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 
 ## Pendientes
 
-- Publicar en Firebase la regla de `calendario_eventos` (lectura y alta para registrados; editar y borrar solo admin).
+- Publicar en Firebase las reglas de `siapa_periodos`, `siapa_recibos` y `siapa_pagos` (ya están en `firestore.rules`; mientras no se publiquen caen en la regla general de usuarios registrados).
+- SIAPA: confirmar qué significan las notas 210 y 206 junto a la lectura (parecen consumo estimado: la lectura se repite del periodo anterior). No hay recibos de jul 2023 a ago 2024.
+
 - Crear la cuenta del operario (consola de Firebase → Add user) y darle perfil en Configuración.
 - Facturas de septiembre 2026: correr "Actualizar agua y periodos" (siguen ligadas a lecturas del 29/09, que se borraron).
 - Tubo 10: lectura anómala del 29/02/2024 (99,998.222 m³) importada del Sheet; confirmar el valor real.

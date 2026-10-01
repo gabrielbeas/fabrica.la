@@ -60,6 +60,17 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // SIAPA (toma general de la plaza): periodos, recibos y pagos -> solo admin
+    match /siapa_periodos/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /siapa_recibos/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /siapa_pagos/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Calendario: cualquier usuario registrado ve y agrega eventos; solo el admin edita y borra
     match /calendario_eventos/{id} {
       allow read, create: if isRegistered();
@@ -68,10 +79,10 @@ service cloud.firestore {
 
     // Resto de colecciones: usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
   }
 }
