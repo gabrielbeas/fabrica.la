@@ -46,6 +46,45 @@
         .grafica .barra-g.nota { fill: url(#rayas); }
         .grafica .hit { fill: transparent; cursor: default; }
         .grafica .hit:hover + .barra-g, .grafica g.sel .barra-g { opacity: .75; }
+        .grafica.linea .serie { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+        .grafica.linea .punto { stroke: white; stroke-width: 2; }
+        .grafica.linea svg text.etq { font-size: 11px; font-weight: 600; fill: #555; }
+        .grafica.linea .linea-s.fondo .serie { stroke-width: 1.5; }
+        .grafica.linea .leyenda [data-k] { cursor: default; }
+        .tabla-ley { margin-top: 14px; overflow-x: auto; }
+        .tabla-ley table { font-size: 13px; }
+        .tabla-ley th { padding: 8px 10px; cursor: pointer; user-select: none; white-space: normal; vertical-align: bottom; line-height: 1.3; }
+        .tabla-ley th:hover { color: #333; }
+        .tabla-ley th.act { color: #667eea; }
+        .tabla-ley th .flecha { font-size: 9px; margin-left: 4px; opacity: .4; }
+        .tabla-ley th.act .flecha { opacity: 1; }
+        .tabla-ley td { padding: 6px 10px; white-space: nowrap; }
+        .tabla-ley td:nth-child(4) { white-space: normal; min-width: 200px; }
+        .tabla-ley tr.ley { cursor: pointer; }
+        .tabla-ley tr.ley:hover td { background: #f7f8ff; }
+        .tabla-ley tr.ley.off td { opacity: .4; text-decoration: line-through; }
+        .tabla-ley .sw-th, .tabla-ley .sw-td { width: 46px; }
+        .tabla-ley .sw-td .switch { pointer-events: none; }
+        .reporte-barra { margin-top: 12px; display: flex; justify-content: flex-end; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .slider { position: absolute; inset: 0; background: #ddd; border-radius: 20px; transition: .2s; }
+        .switch .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+        .switch input:checked + .slider { background: #667eea; }
+        .switch input:checked + .slider::before { transform: translateX(14px); }
+        .tabla-ley td i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: 3px; }
+        .grafica.linea .leyenda [data-k]:hover { color: #333; }
+        .grafica.linea .leyenda [data-k][title] { cursor: pointer; user-select: none; }
+        .grafica.linea .leyenda [data-k].off { opacity: .35; text-decoration: line-through; }
+        .grafica.linea .mostrar-todos { margin: 0 0 6px; }
+        .grafica.linea svg.foco .linea-s, .grafica.linea svg.foco .etq-g { opacity: .15; transition: opacity .15s; }
+        .grafica.linea svg.foco .linea-s.activa, .grafica.linea svg.foco .etq-g.activa { opacity: 1; }
+        .grafica.linea svg.foco .linea-s.activa .serie { stroke-width: 3; }
+        .grafica.linea svg.foco .linea-s.fondo.activa .serie { stroke: #555; }
+        .tip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
+        .grafica.linea .guia { stroke: #bbb; stroke-width: 1; stroke-dasharray: 3 3; display: none; }
+        .grafica.linea .sub-g { font-size: 12px; color: #999; margin: 0 0 6px; line-height: 1.4; }
+        .grafica.linea .leyenda i { height: 3px; width: 16px; border-radius: 2px; vertical-align: 3px; }
         .tip { position: absolute; pointer-events: none; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 8px 10px; font-size: 12px; line-height: 1.5; color: #333; white-space: nowrap; z-index: 5; display: none; }
         .tip strong { display: block; font-size: 13px; }
         .tip .gris { color: #999; }
@@ -111,7 +150,7 @@
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
         const NOTA_TXT = 'SIAPA marcó la lectura con nota (210 / 206); la lectura se repite del periodo anterior, así que el consumo parece estimado';
 
-        let periodos = [], recibos = [], pagos = [], lecturas = [], tarifa = null;
+        let periodos = [], recibos = [], pagos = [], lecturas = [], medidores = [], inicioTubo = {}, localesTubo = {}, tarifa = null;
 
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
@@ -123,13 +162,26 @@
 
         async function cargar(msg = '') {
             try {
-                const [sP, sR, sG, sL, sA] = await Promise.all([
+                const [sP, sR, sG, sL, sA, sM, sC] = await Promise.all([
                     getDocs(collection(db, 'siapa_periodos')),
                     getDocs(collection(db, 'siapa_recibos')),
                     getDocs(collection(db, 'siapa_pagos')),
                     getDocs(collection(db, 'agua_lecturas')),
-                    getDoc(doc(db, 'agua_config', 'general'))
+                    getDoc(doc(db, 'agua_config', 'general')),
+                    getDocs(collection(db, 'agua_medidores')),
+                    getDocs(collection(db, 'contratos'))
                 ]);
+                medidores = sM.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Inicio del contrato de cada tubo (si un tubo tiene varios contratos, el más antiguo).
+                // RENOVADOS: el contrato actual es renovación y el locatario ya estaba antes, así que se grafica todo su histórico.
+                const RENOVADOS = ['21'];   // 21: Proyectos Saraperos / Cine Responsable (renovaron en may 2026)
+                inicioTubo = {}; localesTubo = {};
+                sC.docs.map(d => d.data()).forEach(c => (c.facturacion?.tubos || []).forEach(({ tubo }) => {
+                    const k = String(tubo).toUpperCase();
+                    if (!c.vencido || !localesTubo[k]) localesTubo[k] = (c.locales || []).join(', ');
+                    if (RENOVADOS.includes(k)) return;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(c.inicio || '') && (!inicioTubo[k] || c.inicio < inicioTubo[k])) inicioTubo[k] = c.inicio;
+                }));
                 periodos = sP.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.fechaLectura.localeCompare(b.fechaLectura));
                 recibos = sR.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.emision || '').localeCompare(a.emision || ''));
                 pagos = sG.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -144,20 +196,49 @@
 
         // Agua cobrada a locatarios (lecturas del panel) por periodo de SIAPA, para comparar.
         // Cada lectura cuenta en el periodo de SIAPA con la fecha de lectura más cercana (máx. 20 días),
-        // porque las fechas de captura no siempre caen en el mismo mes. El tubo MTO es el medidor
-        // general (no es un locatario) y no se suma.
+        // porque las fechas de captura no siempre caen en el mismo mes. No se suman el tubo MTO (medidor
+        // maestro) ni Servicios Generales (consumo propio de la plaza), que no se cobra.
         const dias = (a, b) => Math.abs(new Date(a) - new Date(b)) / 86400000;
+        // Periodo de SIAPA al que pertenece una lectura: el de fecha más cercana (máx. 20 días);
+        // si no hay (periodos trimestrales de 2024), el primero que termina después de la lectura.
+        function periodoDe(fecha) {
+            let mejor = null;
+            periodos.forEach(p => { const d = dias(p.fechaLectura, fecha); if (d <= 20 && (!mejor || d < mejor.d)) mejor = { p, d }; });
+            if (mejor) return mejor.p;
+            return periodos.find(p => p.fechaLectura >= fecha) || null;
+        }
+        const esMTO = l => String(l.tubo).toUpperCase() === 'MTO';
+        // Consumo propio de la plaza (no se cobra a locatarios): Servicios Generales. El tubo 14 cuenta como un local más.
+        const PROPIOS = ['SG'];
+        const esPropio = l => PROPIOS.includes(String(l.tubo).toUpperCase());
+        const lecturaDudosa = l => (l.revisar || []).length || (typeof l.consumo === 'number' && (l.consumo < 0 || l.consumo > 2000));
+
+        // m³ por periodo de SIAPA: medidor general (SIAPA), suma de locales, consumo propio y tubo MTO
+        function consumoPorPeriodo() {
+            const loc = {}, mto = {}, propio = {};
+            lecturas.forEach(l => {
+                if (!l.fecha || typeof l.consumo !== 'number' || lecturaDudosa(l)) return;
+                // Se omite la primera lectura de cada medidor (consumo = lectura: es la base, no consumo)
+                // y, en MTO, los saltos por cambio de medidor
+                if (l.consumo === l.lectura && l.lectura > 5) return;
+                if (esMTO(l) && l.consumo > 400) return;
+                const p = periodoDe(l.fecha);
+                if (!p) return;
+                const destino = esMTO(l) ? mto : esPropio(l) ? propio : loc;
+                destino[p.fechaLectura] = (destino[p.fechaLectura] || 0) + l.consumo;
+            });
+            return periodos.map(p => ({ p, siapa: p.m3, locales: loc[p.fechaLectura] ?? null, propio: propio[p.fechaLectura] ?? null, mto: mto[p.fechaLectura] ?? null }));
+        }
+
         function cobradoPorPeriodo() {
             const por = {};
             let excluidas = 0;
             lecturas.forEach(l => {
-                if (!l.fecha || String(l.tubo).toUpperCase() === 'MTO') return;
-                const dudosa = (l.revisar || []).length || (typeof l.consumo === 'number' && (l.consumo < 0 || l.consumo > 2000));
-                if (dudosa) { excluidas++; return; }
-                let mejor = null;
-                periodos.forEach(p => { const d = dias(p.fechaLectura, l.fecha); if (d <= 20 && (!mejor || d < mejor.d)) mejor = { p, d }; });
-                if (!mejor) return;
-                const k = mejor.p.fechaLectura;
+                if (!l.fecha || esMTO(l) || esPropio(l)) return;
+                if (lecturaDudosa(l)) { excluidas++; return; }
+                const per = periodoDe(l.fecha);
+                if (!per) return;
+                const k = per.fechaLectura;
                 por[k] = por[k] || { m3: 0, importe: 0, n: 0 };
                 if (typeof l.consumo === 'number') por[k].m3 += l.consumo;
                 if (typeof l.importe === 'number') por[k].importe += l.importe;
@@ -206,10 +287,10 @@
                         <div class="val">${pesos(imp_12)}</div>
                         <div class="det">${numero(m3_12)} m³ · del ${fechaCorta(doce[0].fechaLectura)} al ${fechaCorta(ultimo.fechaLectura)}</div>
                     </div>
-                    <div class="tarjeta ${costoReal && tarifa && costoReal > tarifa ? 'alerta' : ''}">
+                    <div class="tarjeta ${costoReal && tarifa && r2(costoReal) > tarifa ? 'alerta' : ''}">
                         <div class="et">Costo real por m³</div>
                         <div class="val">${dinero(costoReal)}</div>
-                        <div class="det">${tarifa ? `Cobras ${dinero(tarifa)} a los locatarios${costoReal > tarifa ? ' (menos de lo que cuesta)' : ''}` : 'Últimos 12 periodos, con alcantarillado, saneamiento e IVA'}</div>
+                        <div class="det">${tarifa ? `Cobras ${dinero(tarifa)} a los locatarios${r2(costoReal) > tarifa ? ' (menos de lo que cuesta)' : ''}` : 'Últimos 12 periodos, con alcantarillado, saneamiento e IVA'}</div>
                     </div>
                     <div class="tarjeta ${recuperado !== null ? (recuperado < 1 ? 'alerta' : 'bien') : ''}">
                         <div class="et">Recuperado con locatarios</div>
@@ -219,11 +300,20 @@
                 </div>
                 ${recibo ? `<p class="aviso">Último recibo (emitido ${fechaCorta(recibo.emision)}): total a pagar <strong>${dinero(recibo.totalAPagar)}</strong>, vence ${fechaCorta(recibo.vence)}${recibo.recargos ? ` · incluye ${dinero(recibo.recargos)} de recargos` : ''}.</p>` : ''}
 
+                <h2>Consumo: LAFABDECHOC contra locales</h2>
+                <div class="grafica linea" id="gAcum"></div>
+                <div class="grafica linea" id="gMes" style="margin-top:16px"></div>
+                <div class="grafica linea" id="gLocal" style="margin-top:16px"></div>
+
                 <h2>Consumo e importe por periodo</h2>
                 <div class="graficas">
                     <div class="grafica" id="gImporte"></div>
                     <div class="grafica" id="gM3"></div>
                 </div>
+
+                <h2>Costo por m³: SIAPA contra lo que cobras</h2>
+                <div class="grafica linea" id="gCosto"></div>
+                <div id="tCosto"></div>
 
                 <h2>SIAPA contra lo cobrado a locatarios</h2>
                 <div class="tabla-wrap">
@@ -244,7 +334,7 @@
                         }).join('')}</tbody>
                     </table>
                 </div>
-                <p class="gris" style="margin-top:8px">m³ locatarios = suma de los tubos capturados en Lecturas de agua con fecha cercana a la lectura de SIAPA (sin el tubo MTO, que es el medidor general); la diferencia es agua de áreas comunes, fugas o medidores sin lectura. Diferencia en pesos: rojo = cobraste menos de lo que pagaste.${excluidas ? ` Se omiten ${excluidas} lecturas marcadas para revisar o con consumo fuera de rango.` : ''}</p>
+                <p class="gris" style="margin-top:8px">m³ locatarios = suma de los tubos capturados en Lecturas de agua con fecha cercana a la lectura de SIAPA (sin el medidor maestro MTO ni Servicios Generales); la diferencia es Servicios Generales más fugas o tomas sin medidor. Diferencia en pesos: rojo = cobraste menos de lo que pagaste.${excluidas ? ` Se omiten ${excluidas} lecturas marcadas para revisar o con consumo fuera de rango.` : ''}</p>
 
                 <h2>Periodos facturados</h2>
                 <div class="tabla-wrap">
@@ -289,6 +379,9 @@
                 </div>`;
 
             if (periodos.length) {
+                graficasConsumo();
+                graficaPorLocal();
+                costoPorM3();
                 grafica('gImporte', 'Importe por periodo', p => p.importe, v => pesos(v));
                 grafica('gM3', 'm³ por periodo', p => p.m3, v => numero(v) + ' m³');
             }
@@ -297,6 +390,450 @@
             app.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => ventanaRecibo(periodos.find(p => p.id === b.dataset.editar))));
             app.querySelectorAll('[data-borrar-pago]').forEach(b => b.addEventListener('click', () => borrar('siapa_pagos', b.dataset.borrarPago, 'este pago')));
             app.querySelectorAll('[data-borrar-recibo]').forEach(b => b.addEventListener('click', () => borrar('siapa_recibos', b.dataset.borrarRecibo, 'este recibo (el periodo y su consumo se conservan)')));
+        }
+
+        // Consumo de LAFABDECHOC (medidor general de SIAPA) contra la suma de locales y el tubo MTO.
+        // Una medida por gráfica: acumulado y mes a mes (normalizado a 30 días por los periodos trimestrales de 2024).
+        const SERIES = [
+            { k: 'siapa', nombre: 'LAFABDECHOC (SIAPA)', corto: 'LAFABDECHOC', color: '#667eea', dash: '' },
+            { k: 'locales', nombre: 'Locales (suma)', corto: 'Locales', color: '#13855c', dash: '' },
+            { k: 'propio', nombre: 'Servicios Generales', corto: 'Servicios Generales', color: '#a05195', dash: '' },
+            { k: 'mto', nombre: 'Medidor MTO', corto: 'MTO', color: '#e8590c', dash: '5 4' }
+        ];
+        function graficasConsumo() {
+            const filas = consumoPorPeriodo();
+            // Acumulado desde el primer periodo en que las tres líneas tienen dato, para comparar parejo;
+            // cada línea se corta en su primer periodo sin dato (no se rellena con ceros).
+            let ini = filas.findIndex(f => SERIES.every(s => f[s.k] !== null));
+            if (ini < 0) ini = Math.max(0, filas.findIndex(f => f.locales !== null));
+            const desde = filas.slice(ini);
+            const acum = {};
+            SERIES.forEach(s => {
+                let suma = 0, cortada = false;
+                acum[s.k] = desde.map(f => { if (cortada || f[s.k] === null) { cortada = true; return null; } suma += f[s.k]; return suma; });
+            });
+            graficaLineas('gAcum', 'Consumo acumulado (m³)',
+                `Suma de m³ desde el periodo que cierra el ${fechaCorta(desde[0].p.fechaLectura)}, el primero con lecturas de SIAPA, de los locales, de Servicios Generales y de MTO (medidor maestro que leen ustedes). LAFABDECHOC menos locales menos Servicios Generales es agua que no pasa por ningún medidor (fugas o tomas sin medidor).`,
+                desde.map(f => f.p), acum, v => numero(v) + ' m³');
+            const mes = {};
+            SERIES.forEach(s => { mes[s.k] = filas.map(f => f[s.k] === null ? null : f[s.k] / f.p.dias * 30); });
+            graficaLineas('gMes', 'Consumo mes a mes (m³ por 30 días)',
+                'Cada periodo de SIAPA llevado a 30 días, porque en 2024 SIAPA facturó por trimestre. Los huecos son periodos sin lecturas.',
+                filas.map(f => f.p), mes, v => numero(v) + ' m³');
+        }
+
+        // Gráfica de líneas con eje de tiempo. series: [{ k, nombre, corto, color, dash, fondo }]
+        // (fondo = línea gris sin nombre al final). Al pasar el mouse por el nombre en la leyenda
+        // se resalta esa línea; sobre la gráfica, una guía muestra los valores del periodo.
+        // opc.alto: alto en px del lienzo (260 por defecto); opc.ocultables: clic en la leyenda oculta/muestra
+        // la línea y la escala se ajusta a las que quedan.
+        const OCULTOS = {};
+        function graficaLineas(id, titulo, subtitulo, pers, valores, fmt, series = SERIES, conDiferencia = true, opc = {}) {
+            const el = document.getElementById(id);
+            const todas = series;
+            const ocultos = OCULTOS[id] || (OCULTOS[id] = new Set());
+            if (opc.ocultables) series = todas.filter(s => !ocultos.has(s.k));
+            const W = 900, H = opc.alto || 260, izq = 50, der = 150, abajo = opc.mensual ? 34 : 22, arriba = 10;
+            const t = pers.map(p => new Date(p.fechaLectura).getTime());
+            const t0 = t[0], t1 = t[t.length - 1];
+            const x = v => izq + (W - izq - der) * (v - t0) / ((t1 - t0) || 1);
+            const max = Math.max(1, ...series.flatMap(s => valores[s.k].filter(v => v !== null)));
+            const paso = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+            const tope = Math.ceil(max / paso) * paso;
+            // opc.base: valor donde empieza el eje (0 por defecto)
+            const base = opc.base || 0;
+            const y = v => arriba + (H - arriba - abajo) * (1 - (v - base) / (tope - base));
+            // Gráficas altas: una marca cada paso redondo (5, 10, 50...); las bajas: cuartos
+            let ticks = [0, 1, 2, 3, 4].map(j => base + (tope - base) * j / 4);
+            if (H > 300) { let p = paso; while ((tope - base) / p > 12) p *= 2; ticks = Array.from({ length: Math.round((tope - base) / p) + 1 }, (_, j) => base + j * p); }
+            const tramos = vals => {
+                const out = []; let cur = [];
+                vals.forEach((v, i) => { if (v === null) { if (cur.length) out.push(cur); cur = []; } else cur.push([x(t[i]), y(v)]); });
+                if (cur.length) out.push(cur);
+                return out;
+            };
+            // Nombre al final de cada línea con color (texto en gris oscuro, el punto lleva el color)
+            const finales = series.filter(s => !s.fondo).map(s => { const v = valores[s.k]; let i = v.length - 1; while (i >= 0 && v[i] === null) i--; return i >= 0 ? { s, i, yy: y(v[i]) } : null; })
+                .filter(Boolean).sort((a, b) => a.yy - b.yy);
+            // Separa los nombres 14 px entre sí sin salirse por abajo: primero hacia abajo, luego se suben si no caben
+            finales.forEach((f, j) => { if (j && f.yy - finales[j - 1].yy < 14) f.yy = finales[j - 1].yy + 14; });
+            const limite = H - abajo - 2;
+            for (let j = finales.length - 1; j >= 0; j--) {
+                const tope = j === finales.length - 1 ? limite : finales[j + 1].yy - 14;
+                if (finales[j].yy > tope) finales[j].yy = tope;
+            }
+            const etiquetaCada = Math.ceil(pers.length / 10);
+            // Eje con una marca por mes calendario (día 1), guía vertical tenue y el año en cada enero
+            function ejeMensual() {
+                const ini = new Date(t0), fin = new Date(t1);
+                let out = '';
+                for (let d = new Date(ini.getFullYear(), ini.getMonth() + 1, 1); d <= fin; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+                    const xx = x(d.getTime()), ene = d.getMonth() === 0;
+                    out += `<line x1="${xx}" x2="${xx}" y1="${arriba}" y2="${H - abajo}" stroke="${ene ? '#e3e3e3' : '#f4f4f4'}"/>`
+                        + `<text x="${xx}" y="${H - abajo + 12}" text-anchor="middle" style="font-size:9px">${MESES[d.getMonth()]}</text>`
+                        + (ene ? `<text x="${xx}" y="${H - abajo + 25}" text-anchor="middle" style="font-size:10px;font-weight:600;fill:#666">${d.getFullYear()}</text>` : '');
+                }
+                return out;
+            }
+            const muestra = s => `<i style="background:${s.dash ? `repeating-linear-gradient(90deg,${s.color} 0 5px,transparent 5px 8px)` : s.color}"></i>`;
+            // Las líneas de fondo van primero para que las de color queden encima
+            const orden = [...series.filter(s => s.fondo), ...series.filter(s => !s.fondo)];
+            el.innerHTML = `<h3>${titulo}</h3><p class="sub-g">${subtitulo}</p>
+                ${opc.tabla ? '' : `<div class="leyenda">${todas.map(s => `<span data-k="${esc(s.k)}" class="ley ${ocultos.has(s.k) && opc.ocultables ? 'off' : ''}"${opc.ocultables ? ' title="Clic para ocultar o mostrar"' : ''}>${muestra(s)}${esc(s.nombre)}</span>`).join('')}</div>`}
+                ${opc.ocultables && ocultos.size ? `<button class="btn-mini mostrar-todos">Mostrar todos (${ocultos.size} oculto${ocultos.size > 1 ? 's' : ''})</button>` : ''}
+                <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
+                    ${ticks.map(v => `<line x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="${izq - 6}" y="${y(v) + 3}" text-anchor="end">${opc.eje ? opc.eje(v) : numero(v)}</text>`).join('')}
+                    ${opc.mensual ? ejeMensual() : pers.map((p, i) => i % etiquetaCada === 0 || i === pers.length - 1 ? `<text x="${x(t[i])}" y="${H - 6}" text-anchor="middle">${mesCorto(p.fechaLectura)}</text>` : '').join('')}
+                    <line class="guia" x1="0" x2="0" y1="${arriba}" y2="${H - abajo}"/>
+                    ${orden.map(s => `<g class="linea-s${s.fondo ? ' fondo' : ''}" data-k="${esc(s.k)}">${tramos(valores[s.k]).map(tr => tr.length === 1
+                        ? `<circle cx="${tr[0][0]}" cy="${tr[0][1]}" r="3" fill="${s.color}"/>`
+                        : `<polyline class="serie" points="${tr.map(q => q.join(',')).join(' ')}" stroke="${s.color}"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`).join('')}</g>`).join('')}
+                    ${finales.map(f => `<g class="etq-g" data-k="${esc(f.s.k)}"><circle cx="${x(t[f.i]) + 10}" cy="${f.yy}" r="3.5" fill="${f.s.color}"/><text class="etq" x="${x(t[f.i]) + 17}" y="${f.yy + 4}">${esc(f.s.corto)}</text></g>`).join('')}
+                    <g class="marcas"></g>
+                    <rect class="hit" x="${izq}" y="${arriba}" width="${W - izq - der}" height="${H - abajo - arriba}"/>
+                </svg>
+                <div class="tip"></div>
+                ${opc.tabla ? tablaLeyenda(id, todas, opc.tabla, ocultos, muestra) : ''}`;
+            const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), guia = el.querySelector('.guia'), marcas = el.querySelector('.marcas');
+            // Resaltar una línea al pasar el mouse por su nombre en la leyenda
+            const redibujar = () => graficaLineas(id, titulo, subtitulo, pers, valores, fmt, todas, conDiferencia, opc);
+            if (opc.ocultables) {
+                el.querySelectorAll('.ley[data-k]').forEach(sp => sp.addEventListener('click', () => {
+                    ocultos.has(sp.dataset.k) ? ocultos.delete(sp.dataset.k) : ocultos.add(sp.dataset.k);
+                    redibujar();
+                }));
+                el.querySelector('.mostrar-todos')?.addEventListener('click', () => { ocultos.clear(); redibujar(); });
+                // Interruptor general: apaga todos si hay alguno prendido; si no, prende todos
+                el.querySelector('.sw-todos')?.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (ocultos.size < todas.length) todas.forEach(s => ocultos.add(s.k)); else ocultos.clear();
+                    redibujar();
+                });
+                el.querySelector('.btn-reporte')?.addEventListener('click', () => {
+                    const k = todas.find(s => !ocultos.has(s.k))?.k;
+                    if (k && opc.tabla?.reporte) opc.tabla.reporte(k);
+                });
+            }
+            // Ordenar la tabla al hacer clic en el encabezado
+            el.querySelectorAll('.tabla-ley th[data-col]').forEach(th => th.addEventListener('click', () => {
+                const o = ORDEN_TABLA[id];
+                ORDEN_TABLA[id] = { col: th.dataset.col, dir: o.col === th.dataset.col ? -o.dir : (th.dataset.num ? -1 : 1) };
+                redibujar();
+            }));
+            el.querySelectorAll('.ley[data-k]').forEach(sp => {
+                sp.addEventListener('mouseenter', () => {
+                    svg.classList.add('foco');
+                    svg.querySelectorAll(`[data-k="${CSS.escape(sp.dataset.k)}"]`).forEach(g => g.classList.add('activa'));
+                });
+                sp.addEventListener('mouseleave', () => { svg.classList.remove('foco'); svg.querySelectorAll('.activa').forEach(g => g.classList.remove('activa')); });
+            });
+            const hit = el.querySelector('.hit');
+            hit.addEventListener('mousemove', e => {
+                const r = svg.getBoundingClientRect();
+                const px = (e.clientX - r.left) * W / r.width;
+                let i = 0;
+                t.forEach((v, j) => { if (Math.abs(x(v) - px) < Math.abs(x(t[i]) - px)) i = j; });
+                const xi = x(t[i]);
+                guia.setAttribute('x1', xi); guia.setAttribute('x2', xi); guia.style.display = 'block';
+                marcas.innerHTML = series.filter(s => !s.fondo).map(s => valores[s.k][i] === null ? '' : `<circle class="punto" cx="${xi}" cy="${y(valores[s.k][i])}" r="4.5" fill="${s.color}"/>`).join('');
+                // En el recuadro: de mayor a menor en ese periodo
+                const filasTip = series.map(s => ({ s, v: valores[s.k][i] })).filter(f => f.v !== null || series.length <= 4)
+                    .sort((a, b) => series.length > 4 ? b.v - a.v : 0);
+                let extra = '';
+                if (conDiferencia && valores.siapa && valores.locales && valores.siapa[i] !== null && valores.locales[i] !== null)
+                    extra = `<br><span class="gris">Sin medidor (SIAPA − locales − Servicios Generales): ${fmt(valores.siapa[i] - valores.locales[i] - (valores.propio?.[i] || 0))}</span>`;
+                tip.innerHTML = `<strong>${mesLargo(pers[i].fechaLectura)}</strong><span class="gris">Lectura de SIAPA del ${fechaCorta(pers[i].fechaLectura)}</span><br>`
+                    + filasTip.map(f => `${muestra(f.s)}${esc(f.s.nombre)}: ${f.v === null ? '<span class="gris">sin dato</span>' : fmt(f.v)}`).join('<br>')
+                    + extra;
+                tip.style.display = 'block';
+                const caja = el.getBoundingClientRect();
+                let left = e.clientX - caja.left + 14;
+                if (left + tip.offsetWidth > caja.width) left = e.clientX - caja.left - tip.offsetWidth - 14;
+                tip.style.left = Math.max(4, left) + 'px';
+                tip.style.top = Math.max(4, e.clientY - caja.top - tip.offsetHeight - 12) + 'px';
+            });
+            hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; guia.style.display = 'none'; marcas.innerHTML = ''; });
+        }
+
+        // Una línea por medidor de local (m³ por 30 días). Los 5 que más consumen en los últimos
+        // 12 periodos llevan color fijo; los demás van en gris y se resaltan desde la leyenda.
+        // 8 colores distintos; del noveno en adelante se repiten con línea punteada para distinguirlos
+        const COLORES_LOCALES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
+        function graficaPorLocal() {
+            const porTubo = {};
+            lecturas.forEach(l => {
+                if (!l.fecha || esMTO(l) || esPropio(l) || typeof l.consumo !== 'number' || lecturaDudosa(l)) return;
+                if (l.consumo === l.lectura && l.lectura > 5) return;
+                const p = periodoDe(l.fecha);
+                if (!p) return;
+                const k = String(l.tubo);
+                // Cada local empieza en el inicio de su contrato (antes era otro locatario o el local vacío)
+                if (inicioTubo[k.toUpperCase()] && l.fecha < inicioTubo[k.toUpperCase()]) return;
+                porTubo[k] = porTubo[k] || {};
+                porTubo[k][p.fechaLectura] = (porTubo[k][p.fechaLectura] || 0) + l.consumo;
+            });
+            const tubos = Object.keys(porTubo);
+            if (!tubos.length) { document.getElementById('gLocal').innerHTML = '<p class="vacio">Sin lecturas de locales.</p>'; return; }
+            const ini = periodos.findIndex(p => tubos.some(k => porTubo[k][p.fechaLectura] !== undefined));
+            const pers = periodos.slice(Math.max(0, ini));
+            const ultimos = pers.slice(-12).map(p => p.fechaLectura);
+            const total12 = k => ultimos.reduce((s, f) => s + (porTubo[k][f] || 0), 0);
+            const orden = tubos.sort((a, b) => total12(b) - total12(a));
+            const nombre = k => { const e = (medidores.find(m => String(m.id) === k) || {}).empresa; return e ? `Tubo ${k} · ${e}` : `Tubo ${k}`; };
+            const series = orden.map((k, i) => ({
+                k, nombre: nombre(k), corto: nombre(k).replace(/^Tubo (\S+) · /, '$1 · ').slice(0, 22),
+                color: COLORES_LOCALES[i % COLORES_LOCALES.length], dash: i >= COLORES_LOCALES.length ? '6 4' : '', fondo: false
+            }));
+            const valores = {};
+            // Antes del inicio del contrato no hay línea (null), aunque hubiera lecturas del medidor
+            series.forEach(s => { const ini = inicioTubo[s.k.toUpperCase()]; valores[s.k] = pers.map(p => (ini && p.fechaLectura < ini) || porTubo[s.k][p.fechaLectura] === undefined ? null : porTubo[s.k][p.fechaLectura] / p.dias * 30); });
+            // Datos de la tabla (uno por medidor)
+            const doce = pers.slice(-12);
+            const filas = {};
+            series.forEach(s => {
+                const m = porTubo[s.k];
+                const d12 = doce.filter(p => m[p.fechaLectura] !== undefined);
+                const m12 = d12.reduce((a, p) => a + m[p.fechaLectura], 0);
+                const dias12 = d12.reduce((a, p) => a + p.dias, 0);
+                const ult = [...pers].reverse().find(p => m[p.fechaLectura] !== undefined);
+                const empresa = (medidores.find(x => String(x.id) === s.k) || {}).empresa || '';
+                filas[s.k] = {
+                    local: localesTubo[s.k.toUpperCase()] || '', tubo: s.k, nombre: empresa,
+                    m12, prom: dias12 ? m12 / dias12 * 30 : null,
+                    ultimo: ult ? m[ult.fechaLectura] / ult.dias * 30 : null,
+                    total: Object.values(m).reduce((a, v) => a + v, 0),
+                    desde: inicioTubo[s.k.toUpperCase()] || null
+                };
+            });
+            const m3 = v => v === null || v === undefined ? '-' : numero(v, 1);
+            graficaLineas('gLocal', 'Consumo por local (m³ por 30 días)',
+                `Un medidor por línea (del noveno en adelante, punteada). En la tabla de abajo: pasa el mouse por un renglón para resaltar su línea, clic para ocultarla y que la escala se ajuste, clic en un encabezado para ordenar. Cada línea empieza en el inicio del contrato de su locatario; si el contrato es renovación (tubo 21), se muestra todo su histórico. El tubo 21 es compartido (50 / 50).`,
+                pers, valores, v => numero(v, 1) + ' m³', series, false, {
+                    alto: 600, ocultables: true, mensual: true,
+                    tabla: {
+                        filas, defecto: { col: 'm12', dir: -1 },
+                        reporte: k => reporteLocal(k, { pers, valores: valores[k], fila: filas[k], color: series.find(s => s.k === k).color }),
+                        columnas: [
+                            { k: 'local', t: 'Local', orden: f => parseInt(f.local) || 999 },
+                            { k: 'tubo', t: 'Tubo', orden: f => parseInt(f.tubo) || 999 },
+                            { k: 'nombre', t: 'Locatario', texto: true },
+                            { k: 'm12', t: 'm³ últimos 12 periodos', num: true, fmt: m3 },
+                            { k: 'prom', t: 'Promedio por 30 días', num: true, fmt: m3 },
+                            { k: 'ultimo', t: 'Último periodo (30 días)', num: true, fmt: m3 },
+                            { k: 'total', t: 'Total desde el inicio', num: true, fmt: m3 },
+                            { k: 'desde', t: 'Desde', fmt: v => v ? fechaCorta(v) : '<span class="gris">Todo el histórico</span>', orden: f => f.desde || '' }
+                        ]
+                    }
+                });
+        }
+
+        // ---------- Costo por m³: SIAPA (importe del periodo ÷ m³, con IVA y todos los conceptos) contra la tarifa cobrada ----------
+        // Tarifa cobrada de un periodo = el costo por m³ más usado en las lecturas de locales asignadas a ese periodo.
+        function costoPorM3() {
+            const cuenta = {};
+            lecturas.forEach(l => {
+                if (!l.fecha || esMTO(l) || esPropio(l) || typeof l.costoM3 !== 'number' || !(l.costoM3 > 0)) return;
+                const p = periodoDe(l.fecha);
+                if (!p) return;
+                const c = cuenta[p.fechaLectura] = cuenta[p.fechaLectura] || {};
+                const k = l.costoM3.toFixed(2);
+                c[k] = (c[k] || 0) + 1;
+            });
+            const filas = periodos.map(p => {
+                const c = cuenta[p.fechaLectura];
+                const cobro = c ? +Object.entries(c).sort((a, b) => b[1] - a[1])[0][0] : null;
+                const siapa = p.m3 ? p.importe / p.m3 : null;
+                return { p, siapa, cobro, dif: siapa !== null && cobro !== null ? cobro - siapa : null };
+            });
+            // Promedios de todo el histórico, ponderados por m³ (total de pesos entre total de m³)
+            const histSiapa = periodos.reduce((a, p) => a + p.importe, 0) / periodos.reduce((a, p) => a + p.m3, 0);
+            const cobradas = lecturas.filter(l => l.fecha && !esMTO(l) && !esPropio(l) && !lecturaDudosa(l)
+                && typeof l.consumo === 'number' && l.consumo > 0 && typeof l.importe === 'number' && !(l.consumo === l.lectura && l.lectura > 5));
+            const histCobro = cobradas.reduce((a, l) => a + l.importe, 0) / (cobradas.reduce((a, l) => a + l.consumo, 0) || 1);
+            const valores = { siapa: filas.map(f => f.siapa), cobro: filas.map(f => f.cobro), histSiapa: filas.map(() => histSiapa), histCobro: filas.map(() => histCobro) };
+            const ult12 = filas.slice(-12);
+            const m3_12 = ult12.reduce((a, f) => a + f.p.m3, 0), imp12 = ult12.reduce((a, f) => a + f.p.importe, 0);
+            graficaLineas('gCosto', 'Costo por m³ (con IVA)',
+                `SIAPA: importe del periodo entre los m³ facturados (incluye alcantarillado, saneamiento, descarga e IVA). Tú: costo por m³ con que se grabaron las lecturas de los locales de ese periodo. Punteadas: promedio de todo el histórico, ponderado por m³ (SIAPA ${dinero(histSiapa)}, tú ${dinero(histCobro)}; ${dinero(histSiapa - histCobro)} menos por m³). Últimos 12 periodos: SIAPA ${dinero(imp12 / m3_12)} por m³; en Lecturas de agua el costo para lecturas nuevas es ${dinero(tarifa)}.`,
+                periodos, valores, v => dinero(v),
+                [{ k: 'siapa', nombre: 'Costo SIAPA por m³', corto: 'SIAPA', color: '#667eea', dash: '' },
+                 { k: 'cobro', nombre: 'Lo que cobras por m³', corto: 'Cobras', color: '#13855c', dash: '' },
+                 { k: 'histSiapa', nombre: `Promedio histórico SIAPA (${dinero(histSiapa)})`, corto: `Prom. SIAPA ${dinero(histSiapa)}`, color: '#667eea', dash: '6 4' },
+                 { k: 'histCobro', nombre: `Promedio histórico cobrado (${dinero(histCobro)})`, corto: `Prom. cobrado ${dinero(histCobro)}`, color: '#13855c', dash: '6 4' }],
+                false, { alto: 360, mensual: true, base: 40, eje: v => '$' + numero(v) });
+            // Por año
+            const anios = [...new Set(periodos.map(p => p.fechaLectura.slice(0, 4)))];
+            const resumen = anios.map(a => {
+                const fs = filas.filter(f => f.p.fechaLectura.startsWith(a));
+                const m3 = fs.reduce((s, f) => s + f.p.m3, 0), imp = fs.reduce((s, f) => s + f.p.importe, 0);
+                return { a, n: fs.length, m3, siapa: m3 ? imp / m3 : null, cobros: [...new Set(fs.map(f => f.cobro).filter(v => v !== null))].sort((x, y) => x - y) };
+            });
+            document.getElementById('tCosto').innerHTML = `
+                <div class="tabla-wrap" style="margin-top:12px">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Año</th><th class="num">Periodos</th><th class="num">m³ SIAPA</th><th class="num">Costo SIAPA por m³</th><th>Lo que cobraste por m³</th></tr></thead>
+                        <tbody>${resumen.map(r => `<tr><td><strong>${r.a}</strong></td><td class="num">${r.n}</td><td class="num">${numero(r.m3)}</td><td class="num">${dinero(r.siapa)}</td><td>${r.cobros.map(dinero).join(', ') || '-'}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+                <div class="tabla-wrap" style="margin-top:12px">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Periodo</th><th class="num">m³</th><th class="num">Importe SIAPA</th><th class="num">SIAPA por m³</th><th class="num">Cobras por m³</th><th class="num">Diferencia por m³</th></tr></thead>
+                        <tbody>${[...filas].reverse().map(f => `<tr>
+                            <td><strong>${fechaCorta(f.p.fechaLectura)}</strong>${f.p.nota ? ` <span class="nota-pill" title="${esc(NOTA_TXT)}">${esc(f.p.nota)}</span>` : ''}</td>
+                            <td class="num">${numero(f.p.m3)}</td>
+                            <td class="num">${pesos(f.p.importe)}</td>
+                            <td class="num">${dinero(f.siapa)}</td>
+                            <td class="num">${f.cobro === null ? '<span class="gris">Sin lecturas</span>' : dinero(f.cobro)}</td>
+                            <td class="num ${f.dif === null ? '' : f.dif < 0 ? 'neg' : 'pos'}">${f.dif === null ? '-' : dinero(f.dif)}</td>
+                        </tr>`).join('')}</tbody>
+                    </table>
+                </div>
+                <p class="gris" style="margin-top:8px">Diferencia en rojo: cobraste menos por m³ de lo que costó en SIAPA ese periodo. El costo por m³ de SIAPA sube en los meses de más consumo (tarifa por bloques), así que conviene comparar contra los periodos de consumo alto.</p>`;
+        }
+
+        // ---------- Reporte de un local (hoja carta para imprimir o guardar como PDF) ----------
+        function reporteLocal(k, { pers, valores, fila, color }) {
+            const desde = fila.desde;
+            const lects = lecturas.filter(l => String(l.tubo) === k && l.fecha && (!desde || l.fecha >= desde))
+                .sort((a, b) => a.fecha.localeCompare(b.fecha));
+            const cobrado = lects.reduce((a, l) => a + (typeof l.importe === 'number' ? l.importe : 0), 0);
+            const ultimaLect = [...lects].reverse().find(l => typeof l.costoM3 === 'number');
+            const puntos = pers.map((p, i) => ({ p, v: valores[i] })).filter(d => d.v !== null);
+            const hoy = new Date();
+            const hoyTxt = `${hoy.getDate()} de ${MESES_L[hoy.getMonth()]} de ${hoy.getFullYear()}`;
+            const titulo = `Consumo de agua - Local ${fila.local || fila.tubo} - ${fila.nombre}`;
+
+            // Gráfica: m³ por 30 días de este local, con su promedio de los últimos 12 periodos
+            const W = 700, H = 230, izq = 42, der = 14, arriba = 10, abajo = 34;
+            const t = puntos.map(d => new Date(d.p.fechaLectura).getTime());
+            const t0 = t[0], t1 = t[t.length - 1];
+            const x = v => izq + (W - izq - der) * (v - t0) / ((t1 - t0) || 1);
+            const max = Math.max(1, ...puntos.map(d => d.v), fila.prom || 0);
+            const paso = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+            const tope = Math.ceil(max / paso) * paso;
+            const y = v => arriba + (H - arriba - abajo) * (1 - v / tope);
+            let eje = '';
+            for (let d = new Date(new Date(t0).getFullYear(), new Date(t0).getMonth() + 1, 1); d.getTime() <= t1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+                const xx = x(d.getTime()), ene = d.getMonth() === 0;
+                eje += `<line x1="${xx}" x2="${xx}" y1="${arriba}" y2="${H - abajo}" stroke="${ene ? '#ddd' : '#f2f2f2'}"/><text x="${xx}" y="${H - abajo + 12}" text-anchor="middle" font-size="8" fill="#999">${MESES[d.getMonth()]}</text>`
+                    + (ene ? `<text x="${xx}" y="${H - abajo + 25}" text-anchor="middle" font-size="9" font-weight="600" fill="#666">${d.getFullYear()}</text>` : '');
+            }
+            const ticks = [0, tope / 4, tope / 2, tope * 3 / 4, tope];
+            const svg = puntos.length ? `<svg viewBox="0 0 ${W} ${H}" width="100%">
+                ${ticks.map(v => `<line x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="${izq - 5}" y="${y(v) + 3}" text-anchor="end" font-size="9" fill="#999">${numero(v)}</text>`).join('')}
+                ${eje}
+                ${fila.prom ? `<line x1="${izq}" x2="${W - der}" y1="${y(fila.prom)}" y2="${y(fila.prom)}" stroke="#999" stroke-dasharray="4 3"/><text x="${W - der}" y="${y(fila.prom) - 4}" text-anchor="end" font-size="9" fill="#666">Promedio 12 periodos: ${numero(fila.prom, 1)} m³</text>` : ''}
+                <polyline points="${puntos.map((d, i) => `${x(t[i])},${y(d.v)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+                ${puntos.map((d, i) => `<circle cx="${x(t[i])}" cy="${y(d.v)}" r="2.5" fill="${color}"/>`).join('')}
+            </svg>` : '<p class="gris">Sin lecturas para graficar.</p>';
+
+            const html = `<div class="rep">
+                <div class="rep-cab">
+                    <img src="../css/logo.png" alt="La Fábrica de Chocolate">
+                    <div><div class="rep-et">Reporte de consumo de agua</div><div class="rep-fecha">Emitido el ${hoyTxt}</div></div>
+                </div>
+                <h1>${esc(fila.nombre)}</h1>
+                <p class="rep-sub">Local ${esc(fila.local || '-')} · Tubo ${esc(fila.tubo)} · ${desde ? `Contrato desde el ${fechaCorta(desde)}` : 'Todo el histórico'}${lects.length ? ` · Lecturas del ${fechaCorta(lects[0].fecha)} al ${fechaCorta(lects[lects.length - 1].fecha)}` : ''}</p>
+                <div class="rep-tarjetas">
+                    <div><span>Últimos 12 periodos</span><strong>${numero(fila.m12, 1)} m³</strong></div>
+                    <div><span>Promedio por 30 días</span><strong>${fila.prom === null ? '-' : numero(fila.prom, 1) + ' m³'}</strong></div>
+                    <div><span>Último periodo (30 días)</span><strong>${fila.ultimo === null ? '-' : numero(fila.ultimo, 1) + ' m³'}</strong></div>
+                    <div><span>Total desde el inicio</span><strong>${numero(fila.total, 1)} m³</strong></div>
+                    <div><span>Importe registrado</span><strong>${dinero(cobrado)}</strong></div>
+                    <div><span>Costo m³ de la última lectura</span><strong>${ultimaLect ? dinero(ultimaLect.costoM3) : '-'}</strong></div>
+                </div>
+                <h2>Consumo por periodo (m³ por 30 días)</h2>
+                ${svg}
+                <h2>Lecturas</h2>
+                <table class="rep-tabla">
+                    <thead><tr><th>Fecha</th><th class="num">Lectura (m³)</th><th class="num">Consumo (m³)</th><th class="num">Costo m³</th><th class="num">Importe</th><th>Observaciones</th></tr></thead>
+                    <tbody>${lects.map(l => `<tr>
+                        <td>${fechaCorta(l.fecha)}</td>
+                        <td class="num">${typeof l.lectura === 'number' ? numero(l.lectura, 3) : '-'}</td>
+                        <td class="num">${typeof l.consumo === 'number' ? numero(l.consumo, 3) : '-'}</td>
+                        <td class="num">${typeof l.costoM3 === 'number' ? dinero(l.costoM3) : '-'}</td>
+                        <td class="num">${typeof l.importe === 'number' ? dinero(l.importe) : '-'}</td>
+                        <td>${esc(l.observaciones || '')}</td>
+                    </tr>`).join('')}</tbody>
+                    <tfoot><tr><td>Total</td><td></td><td class="num">${numero(lects.reduce((a, l) => a + (typeof l.consumo === 'number' && l.consumo > 0 ? l.consumo : 0), 0), 3)}</td><td></td><td class="num">${dinero(cobrado)}</td><td></td></tr></tfoot>
+                </table>
+                <p class="rep-pie">Consumo por 30 días = consumo del periodo de lectura de SIAPA llevado a 30 días. La Fábrica de Chocolate · Panel de administración.</p>
+            </div>`;
+            imprimirReporte(html, titulo);
+        }
+
+        function imprimirReporte(html, titulo) {
+            let cont = document.getElementById('reporte-impresion');
+            if (!cont) {
+                cont = document.createElement('div');
+                cont.id = 'reporte-impresion';
+                document.body.appendChild(cont);
+                const st = document.createElement('style');
+                st.textContent = `
+                    #reporte-impresion { display: none; }
+                    @page { size: letter portrait; margin: 12mm 14mm; }
+                    @media print {
+                        body > *:not(#reporte-impresion) { display: none !important; }
+                        #reporte-impresion { display: block !important; }
+                        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                    .rep { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; font-size: 11px; }
+                    .rep-cab { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 14px; }
+                    .rep-cab img { height: 30px; }
+                    .rep-cab > div { text-align: right; }
+                    .rep-et { font-size: 13px; font-weight: 700; }
+                    .rep-fecha { font-size: 10px; color: #777; }
+                    .rep h1 { font-size: 18px; margin: 0 0 2px; }
+                    .rep-sub { color: #666; margin: 0 0 12px; }
+                    .rep h2 { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 16px 0 6px; }
+                    .rep-tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+                    .rep-tarjetas div { border: 1px solid #ddd; border-radius: 6px; padding: 6px 9px; }
+                    .rep-tarjetas span { display: block; font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .03em; }
+                    .rep-tarjetas strong { font-size: 14px; }
+                    .rep-tabla { width: 100%; border-collapse: collapse; font-size: 10px; }
+                    .rep-tabla th { text-align: left; color: #666; font-weight: 600; border-bottom: 1px solid #ccc; padding: 4px 6px; background: #f5f5f5; }
+                    .rep-tabla td { padding: 3px 6px; border-bottom: 1px solid #eee; }
+                    .rep-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+                    .rep-tabla tr { break-inside: avoid; }
+                    .rep-tabla tfoot td { font-weight: 700; border-top: 1px solid #999; }
+                    .rep-pie { margin-top: 12px; font-size: 9px; color: #999; }`;
+                document.head.appendChild(st);
+            }
+            cont.innerHTML = html;
+            const img = cont.querySelector('img');
+            const tituloPrevio = document.title;
+            const imprimir = () => {
+                document.title = titulo; // nombre sugerido del PDF
+                window.print();
+                setTimeout(() => { document.title = tituloPrevio; }, 1000);
+            };
+            if (img && !img.complete) { img.onload = img.onerror = imprimir; } else imprimir();
+        }
+
+        // Leyenda como tabla ordenable: cada renglón lleva la muestra de color de su línea
+        const ORDEN_TABLA = {};
+        function tablaLeyenda(id, series, tabla, ocultos, muestra) {
+            const o = ORDEN_TABLA[id] || (ORDEN_TABLA[id] = { ...tabla.defecto });
+            const col = tabla.columnas.find(c => c.k === o.col) || tabla.columnas[0];
+            const valorDe = s => { const f = tabla.filas[s.k]; return col.orden ? col.orden(f) : f[col.k]; };
+            const filas = [...series].sort((a, b) => {
+                const x = valorDe(a), y = valorDe(b);
+                if (x === null || x === undefined) return 1;
+                if (y === null || y === undefined) return -1;
+                return (typeof x === 'string' ? x.localeCompare(y, 'es', { numeric: true }) : x - y) * o.dir;
+            });
+            return `<div class="tabla-ley"><table>
+                <thead><tr><th class="sw-th"><label class="switch sw-todos" title="${ocultos.size < series.length ? 'Apagar todos' : 'Prender todos'}"><input type="checkbox" ${ocultos.size === 0 ? 'checked' : ''}><span class="slider"></span></label></th><th></th>${tabla.columnas.map(c => `<th data-col="${c.k}"${c.num ? ' data-num="1" class="num' : ' class="'}${c.k === o.col ? ' act' : ''}" title="Ordenar por ${c.t.toLowerCase()}">${c.t}<span class="flecha">${c.k === o.col ? (o.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`).join('')}</tr></thead>
+                <tbody>${filas.map(s => { const f = tabla.filas[s.k]; return `<tr class="ley${ocultos.has(s.k) ? ' off' : ''}" data-k="${esc(s.k)}" title="Clic para ocultar o mostrar la línea">
+                    <td class="sw-td"><span class="switch"><input type="checkbox" tabindex="-1" ${ocultos.has(s.k) ? '' : 'checked'}><span class="slider"></span></span></td>
+                    <td>${muestra(s)}</td>
+                    ${tabla.columnas.map(c => `<td${c.num ? ' class="num"' : ''}>${c.fmt ? c.fmt(f[c.k]) : esc(f[c.k] ?? '')}</td>`).join('')}
+                </tr>`; }).join('')}</tbody>
+            </table>
+            ${tabla.reporte ? (series.length - ocultos.size === 1
+                ? `<div class="reporte-barra"><button class="btn btn-reporte">Reporte de ${esc(tabla.filas[series.find(x => !ocultos.has(x.k)).k].nombre || 'este local')} (PDF)</button></div>`
+                : `<p class="gris" style="margin:10px 0 0">Para sacar el reporte de un local, apaga todos con el interruptor del encabezado y prende solo ese.</p>`) : ''}
+            </div>`;
         }
 
         // Barras simples, una sola medida por gráfica, con tooltip al pasar el mouse
