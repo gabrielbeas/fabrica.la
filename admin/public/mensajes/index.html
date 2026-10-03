@@ -138,7 +138,7 @@
 
         function tarjeta(m) {
             const vencido = m.activo !== false && !m.completado && m.fechaSiguiente && m.fechaSiguiente <= hoy();
-            const proxima = m.completado ? 'Enviado' : m.fechaSiguiente ? `${vencido ? 'Pendiente desde' : 'Próximo envío'}: ${esc(m.fechaSiguiente)}${m.envioAutomatico && m.canal === 'Correo' ? ` · ${esc(m.horaEnvio || '09:00')}` : ''}` : 'Sin fecha programada';
+            const proxima = m.completado ? 'Enviado' : m.fechaSiguiente ? `${vencido ? 'Pendiente desde' : 'Próximo envío'}: ${esc(m.fechaSiguiente)}` : 'Sin fecha programada';
             return `<article class="mensaje ${vencido ? 'vencido' : ''}">
                 <div class="cab"><h2>${esc(m.titulo || 'Mensaje sin título')}</h2><span class="etiqueta ${vencido ? 'urgente' : ''}">${esc(proxima)}</span></div>
                 <div class="etiquetas">
@@ -146,14 +146,13 @@
                     <span class="etiqueta">${esc(m.canal || 'Canal por definir')}</span>
                     <span class="etiqueta">${esc(m.destinatarios || 'Destinatarios por definir')}</span>
                     <span class="etiqueta">${esc(frecuencia[m.frecuencia] || frecuencia.eventual)}</span>
-                    ${m.canal === 'Correo' ? `<span class="etiqueta ${m.envioAutomatico ? 'urgente' : ''}">${m.envioAutomatico ? 'Correo automático activo' : 'Correo automático apagado'}</span>` : ''}
                     ${m.activo === false ? '<span class="etiqueta">Archivado</span>' : ''}
                 </div>
                 <div class="texto">${esc(m.contenido || '')}</div>
                 ${m.notas ? `<p class="notas">${esc(m.notas)}</p>` : ''}
                 <div class="acciones">
                     <button class="btn-sec" data-copiar="${esc(m.id)}">Copiar texto</button>
-                    ${m.activo !== false && !m.completado && !m.envioAutomatico ? `<button class="btn-sec" data-enviado="${esc(m.id)}">Registrar envío</button>` : ''}
+                    ${m.activo !== false && !m.completado ? `<button class="btn-sec" data-enviado="${esc(m.id)}">Registrar envío</button>` : ''}
                     <button class="btn-sec" data-editar="${esc(m.id)}">Editar</button>
                 </div>
                 <details class="historial" data-historial="${esc(m.id)}"><summary>Ver últimos envíos</summary><div class="historial-items">Abre para consultar el registro.</div></details>
@@ -243,7 +242,7 @@
 
         function formulario(m = null) {
             const nuevo = !m;
-            const datos = m || { titulo: '', categoria: 'Operación', canal: 'WhatsApp', destinatarios: 'Todos los locatarios', frecuencia: 'mensual', fechaSiguiente: '', contenido: '', notas: '', activo: true, audiencia: 'prueba', correoPrueba: '', asunto: '', periodo: '', horaEnvio: '09:00', envioAutomatico: false };
+            const datos = m || { titulo: '', categoria: 'Operación', canal: 'WhatsApp', destinatarios: 'Todos los locatarios', frecuencia: 'mensual', fechaSiguiente: '', contenido: '', notas: '', activo: true, asunto: '', periodo: '' };
             const fondo = document.createElement('div');
             fondo.className = 'fondo';
             fondo.innerHTML = `<section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
@@ -255,15 +254,9 @@
                     <div class="campo" id="campoDestinatarios"><label for="m_destinatarios">Destinatarios / referencia</label><input id="m_destinatarios" maxlength="160" value="${esc(datos.destinatarios)}" placeholder="Ej. Todos los locatarios"></div>
                     <div class="campo"><label for="m_frecuencia">Frecuencia</label><select id="m_frecuencia">${Object.entries(frecuencia).map(([id, nombre]) => `<option value="${id}" ${datos.frecuencia === id ? 'selected' : ''}>${nombre}</option>`).join('')}</select></div>
                     <div class="campo"><label for="m_fecha">Próxima fecha de envío</label><input id="m_fecha" type="date" value="${esc(datos.fechaSiguiente || '')}"></div>
-                    <div class="campo ancho" id="campoCorreo" style="display:none"><label for="m_audiencia">Audiencia de correo</label><select id="m_audiencia"><option value="prueba" ${datos.audiencia !== 'locatariosActivos' ? 'selected' : ''}>Solo correo de prueba</option><option value="locatariosActivos" ${datos.audiencia === 'locatariosActivos' ? 'selected' : ''}>Locatarios con contrato vigente</option></select></div>
-                    <div class="campo" id="campoCorreoPrueba" style="display:none"><label for="m_correoPrueba">Correo de prueba</label><input id="m_correoPrueba" type="email" maxlength="254" value="${esc(datos.correoPrueba || '')}" placeholder="Escribe el correo que recibirá la prueba"></div>
-                    <div class="campo" id="campoAsunto" style="display:none"><label for="m_asunto">Asunto del correo</label><input id="m_asunto" maxlength="180" value="${esc(datos.asunto || datos.titulo || '')}"></div>
-                    <div class="campo" id="campoHora" style="display:none"><label for="m_hora">Hora de envío (Guadalajara)</label><input id="m_hora" type="time" value="${esc(datos.horaEnvio || '09:00')}"></div>
-                    <div class="campo" id="campoPeriodo" style="display:none"><label for="m_periodo">Periodo para [periodo] (opcional)</label><input id="m_periodo" maxlength="80" value="${esc(datos.periodo || '')}" placeholder="Ej. octubre de 2026"></div>
+                    <div class="campo ancho" id="campoAsunto" style="display:none"><label for="m_asunto">Asunto / encabezado (opcional)</label><input id="m_asunto" maxlength="180" value="${esc(datos.asunto || datos.titulo || '')}"></div>
                     <div class="campo ancho"><label for="m_contenido">Texto del mensaje</label><textarea id="m_contenido" rows="7" maxlength="5000" placeholder="Escribe el texto reutilizable. Puedes dejar variables visibles, por ejemplo: [nombre] o [periodo].">${esc(datos.contenido)}</textarea></div>
                     <div class="campo ancho"><label for="m_notas">Notas para quien lo envía (opcional)</label><textarea id="m_notas" rows="2" maxlength="1000">${esc(datos.notas || '')}</textarea></div>
-                    <label class="campo ancho check" id="campoAutomatico" style="display:none"><input type="checkbox" id="m_automatico" ${datos.envioAutomatico === true ? 'checked' : ''}> Activar envío automático en la fecha y hora programadas</label>
-                    <p class="campo ancho aviso" id="avisoAutomatico" style="display:none">La prueba se envía únicamente al correo indicado. La audiencia de locatarios toma correos guardados en contratos vigentes. Cada correo se envía por separado. Verifica el texto, fecha y audiencia antes de activar.</p>
                     ${nuevo ? '' : `<label class="campo ancho check"><input type="checkbox" id="m_activo" ${datos.activo !== false ? 'checked' : ''}> Mensaje activo (desmarca para archivarlo)</label>`}
                 </div>
                 <div class="msg" id="m_msg" role="status"></div>
@@ -275,20 +268,12 @@
             document.addEventListener('keydown', tecla);
             document.body.appendChild(fondo);
             const canalInput = document.getElementById('m_canal');
-            const audienciaInput = document.getElementById('m_audiencia');
             const actualizarCamposCorreo = () => {
                 const esCorreo = canalInput.value === 'Correo';
-                document.getElementById('campoCorreo').style.display = esCorreo ? '' : 'none';
                 document.getElementById('campoAsunto').style.display = esCorreo ? '' : 'none';
-                document.getElementById('campoHora').style.display = esCorreo ? '' : 'none';
-                document.getElementById('campoPeriodo').style.display = esCorreo ? '' : 'none';
-                document.getElementById('campoAutomatico').style.display = esCorreo ? '' : 'none';
-                document.getElementById('avisoAutomatico').style.display = esCorreo ? '' : 'none';
-                document.getElementById('campoCorreoPrueba').style.display = esCorreo && audienciaInput.value === 'prueba' ? '' : 'none';
-                document.getElementById('campoDestinatarios').style.display = esCorreo ? 'none' : '';
+                document.getElementById('campoDestinatarios').querySelector('label').textContent = esCorreo ? 'Destinatarios (correo o grupo)' : 'Destinatarios / referencia';
             };
             canalInput.addEventListener('change', actualizarCamposCorreo);
-            audienciaInput.addEventListener('change', actualizarCamposCorreo);
             actualizarCamposCorreo();
             document.getElementById('m_titulo').focus();
             document.getElementById('m_guardar').addEventListener('click', async e => {
@@ -297,20 +282,14 @@
                     titulo: document.getElementById('m_titulo').value.trim(),
                     categoria: document.getElementById('m_categoria').value,
                     canal: document.getElementById('m_canal').value,
-                    destinatarios: document.getElementById('m_canal').value === 'Correo'
-                        ? (document.getElementById('m_audiencia').value === 'prueba' ? `Prueba: ${document.getElementById('m_correoPrueba').value.trim()}` : 'Locatarios con contrato vigente')
-                        : document.getElementById('m_destinatarios').value.trim(),
+                    destinatarios: document.getElementById('m_destinatarios').value.trim(),
                     frecuencia: document.getElementById('m_frecuencia').value,
                     fechaSiguiente: document.getElementById('m_fecha').value,
                     contenido: document.getElementById('m_contenido').value.trim(),
                     notas: document.getElementById('m_notas').value.trim(),
                     activo: nuevo || document.getElementById('m_activo').checked,
-                    audiencia: document.getElementById('m_canal').value === 'Correo' ? document.getElementById('m_audiencia').value : '',
-                    correoPrueba: document.getElementById('m_canal').value === 'Correo' && document.getElementById('m_audiencia').value === 'prueba' ? document.getElementById('m_correoPrueba').value.trim() : '',
                     asunto: document.getElementById('m_canal').value === 'Correo' ? document.getElementById('m_asunto').value.trim() : '',
-                    horaEnvio: document.getElementById('m_canal').value === 'Correo' ? document.getElementById('m_hora').value : '',
-                    periodo: document.getElementById('m_canal').value === 'Correo' ? document.getElementById('m_periodo').value.trim() : '',
-                    envioAutomatico: document.getElementById('m_canal').value === 'Correo' && document.getElementById('m_automatico').checked
+                    periodo: m?.periodo || ''
                 };
                 if (!nuevoDato.titulo || !nuevoDato.contenido || !nuevoDato.destinatarios) {
                     msg.className = 'msg error'; msg.textContent = 'Completa el nombre, destinatarios y texto del mensaje.'; return;
@@ -318,13 +297,9 @@
                 if (nuevoDato.frecuencia !== 'eventual' && !nuevoDato.fechaSiguiente && !m?.completado) {
                     msg.className = 'msg error'; msg.textContent = 'Indica cuándo debe enviarse por primera vez.'; return;
                 }
-                if (nuevoDato.envioAutomatico && nuevoDato.frecuencia === 'eventual') {
-                    msg.className = 'msg error'; msg.textContent = 'El envío automático requiere una frecuencia fija.'; return;
+                if (nuevoDato.canal === 'Correo' && nuevoDato.asunto && /[\r\n]/.test(nuevoDato.asunto)) {
+                    msg.className = 'msg error'; msg.textContent = 'El asunto debe estar en una sola línea.'; return;
                 }
-                if (nuevoDato.canal === 'Correo' && (!nuevoDato.asunto || (nuevoDato.audiencia === 'prueba' && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(nuevoDato.correoPrueba)))) {
-                    msg.className = 'msg error'; msg.textContent = 'Escribe un asunto y un correo de prueba válido para la audiencia seleccionada.'; return;
-                }
-                if (nuevoDato.envioAutomatico && !m?.envioAutomatico && !confirm(`Vas a activar el envío automático por Gmail. Audiencia: ${nuevoDato.audiencia === 'prueba' ? nuevoDato.correoPrueba : 'todos los correos registrados en contratos vigentes'}. ¿Confirmas?`)) return;
                 btn.disabled = true;
                 try {
                     const usuario = getCurrentUser();
