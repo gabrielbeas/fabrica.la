@@ -223,11 +223,12 @@ export function getSeccionesPermitidas() {
     facturacion: { id: 'facturacion', nombre: 'Facturación',      url: b + 'facturacion/' },
     agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },
     calendarios: { id: 'calendarios', nombre: 'Calendarios',      url: b + 'calendarios/' },
-    config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' }
+    config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' },
+    mensajes:    { id: 'mensajes',    nombre: 'Mensajes a locatarios', url: b + 'mensajes/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config'],
+    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config', 'mensajes'],
     operario: ['inicio', 'agua', 'calendarios']
   };
 

@@ -77,12 +77,20 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Biblioteca de mensajes reutilizables y registro de envíos: solo admin.
+    match /mensajes_locatarios/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /mensajes_locatarios/{mensajeId}/envios/{envioId} {
+      allow read, create: if isAdmin();
+    }
+
     // Resto de colecciones: usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'mensajes_locatarios', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'mensajes_locatarios', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
   }
 }
