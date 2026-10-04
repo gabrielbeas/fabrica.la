@@ -22,6 +22,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
     }
 
+    function puedeUsarCajaChica() {
+      return isRegistered()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol in ['admin', 'operario'];
+    }
+
     // Perfiles: cada quien lee el suyo; solo el admin ve y modifica todos
     match /users/{userId} {
       allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
@@ -77,12 +82,61 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Caja Chica: admin y operario consultan; operario agrega movimientos y cortes sin editar ni borrar.
+    match /caja_chica_config/{id} {
+      allow read: if puedeUsarCajaChica();
+      allow create, update: if isAdmin()
+        && request.resource.data.saldoInicial is number
+        && request.resource.data.saldoInicial >= 0
+        && request.resource.data.fechaInicio is string;
+      allow delete: if false;
+    }
+    match /caja_chica_movimientos/{id} {
+      allow read: if puedeUsarCajaChica();
+      allow create: if puedeUsarCajaChica()
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.fecha is string
+        && request.resource.data.tipo in ['gasto', 'entrada']
+        && request.resource.data.categoria is string
+        && request.resource.data.descripcion is string
+        && request.resource.data.importe is number
+        && request.resource.data.importe > 0
+        && request.resource.data.estado == (isAdmin() ? 'aprobado' : 'pendiente')
+        && request.resource.data.comprobantePath is string
+        && (request.resource.data.comprobantePath == '' || request.resource.data.comprobantePath.matches('caja-chica/' + request.auth.uid + '/.*'));
+      allow update: if isAdmin()
+        && resource.data.estado == 'pendiente'
+        && request.resource.data.estado in ['aprobado', 'rechazado']
+        && request.resource.data.revisadoPor == request.auth.uid
+        && request.resource.data.revisadoEn is timestamp
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'revisadoPor', 'revisadoPorNombre', 'revisadoEn', 'notaRevision']);
+      allow delete: if false;
+
+      match /historial/{eventoId} {
+        allow read: if puedeUsarCajaChica();
+        allow create: if isAdmin()
+          && request.resource.data.registradoPor == request.auth.uid
+          && request.resource.data.accion in ['aprobado', 'rechazado'];
+        allow update, delete: if false;
+      }
+    }
+    match /caja_chica_cortes/{id} {
+      allow read: if puedeUsarCajaChica();
+      allow create: if puedeUsarCajaChica()
+        && request.resource.data.registradoPor == request.auth.uid
+        && request.resource.data.fecha is string
+        && request.resource.data.saldoEsperado is number
+        && request.resource.data.efectivoContado is number
+        && request.resource.data.diferencia is number;
+      allow update, delete: if false;
+    }
+
     // Resto de colecciones: usuarios registrados
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos']) && isRegistered();
     }
   }
 }

@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function userPath() {
+      return /databases/(default)/documents/users/$(request.auth.uid);
+    }
+
+    function puedeUsarCajaChica() {
+      return request.auth != null
+        && firestore.exists(userPath())
+        && firestore.get(userPath()).data.get('activo', true) != false
+        && firestore.get(userPath()).data.rol in ['admin', 'operario'];
+    }
+
+    function esAdmin() {
+      return puedeUsarCajaChica()
+        && firestore.get(userPath()).data.rol == 'admin';
+    }
+
+    match /caja-chica/{uid}/{movimientoId}/{fileName} {
+      allow get: if puedeUsarCajaChica();
+      allow create: if puedeUsarCajaChica()
+        && uid == request.auth.uid
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow delete: if puedeUsarCajaChica() && (uid == request.auth.uid || esAdmin());
+      allow list, update: if false;
+    }
+  }
+}

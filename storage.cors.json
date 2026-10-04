@@ -1,0 +1,14 @@
+[
+  {
+    "origin": [
+      "https://fabrica.la",
+      "https://www.fabrica.la",
+      "https://fabrica-399f2.firebaseapp.com",
+      "http://localhost:8000",
+      "http://127.0.0.1:8000"
+    ],
+    "method": ["GET", "HEAD", "POST", "PUT"],
+    "responseHeader": ["Content-Type", "x-goog-resumable"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -95,7 +95,8 @@
             agua: '<svg viewBox="0 0 24 24"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg>',
             siapa: '<svg viewBox="0 0 24 24"><path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg>',
             calendario: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
-            config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>'
+            config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+            caja: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2M7 6V4h10v2"/></svg>'
         };
         const APPS = [
             { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: teléfono y correos', href: '#directorio', soloAdmin: true },
@@ -105,7 +106,8 @@
             { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
             { id: 'siapa', nombre: 'SIAPA', des: 'Recibos, pagos y consumo de la toma general', href: b + 'agua/siapa.html', soloAdmin: true },
             { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
-            { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true }
+            { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true },
+            { id: 'caja', nombre: 'Caja Chica', des: 'Gastos, reposiciones y cortes de efectivo', href: b + 'caja-chica/', roles: ['admin', 'operario'] }
         ];
         const tarjetaApp = a => a.pendiente
             ? `<div class="app pendiente" title="Este módulo todavía no está listo"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)} <span class="prox">Próximamente</span></span><span class="des">${esc(a.des)}</span></div>`
@@ -140,7 +142,7 @@
                 app.innerHTML = `
                     <h1>Bienvenido, ${esc(user.nombre || user.email)}</h1>
                     <p class="sub">La Fábrica de Chocolate</p>
-                    <div class="apps">${APPS.filter(a => admin || !a.soloAdmin).map(tarjetaApp).join('')}</div>`;
+                    <div class="apps">${APPS.filter(a => a.roles ? a.roles.includes(user.rol) : admin || !a.soloAdmin).map(tarjetaApp).join('')}</div>`;
                 return;
             }
             app.innerHTML = '<div class="cargando">Cargando...</div>';
