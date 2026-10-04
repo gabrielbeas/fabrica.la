@@ -17,7 +17,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 - **GitHub Pages** con GitHub Actions (`.github/workflows/deploy.yml`) arma `dist/`: el sitio público sale de `fabrica/`, el panel de `admin/public/` se publica en `/admin/`. **Cada página nueva del panel hay que agregarla a `deploy.yml`.** El build falla si encuentra `_privado`, `data.json` o `.gs` en `dist/`.
 - `basePath()` en `js/auth.js`: `/admin/public/` en local y `/admin/` publicado. Usarlo para todos los enlaces internos.
 - Cloudflare solo maneja DNS (ya no hay Worker).
-- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas.
+- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 12:47 (agrega Bitácora; incluye Caja Chica; la regla general para colecciones sin regla propia es solo admin).
 
 ### Archivos compartidos
 
@@ -40,6 +40,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `calendarios/index.html` | Calendario: eventos automáticos (vencimientos, incrementos, límite de pago día 10, lecturas de agua, feriados LFT 2026–2027) + eventos capturados en `calendario_eventos` | admin y operario |
 | `config/index.html` | Configuración: pestaña Usuarios (perfiles de `users`: nombre, rol, activo, alta con UID de la consola, restablecer contraseña) y pestaña Valores (costo de agua, basura, % moratorios, día límite de pago; cambios en `facturacion_config/general.cambios`) | admin |
 | `caja-chica/index.html` | Control de caja chica: movimientos, comprobantes privados en Storage, saldo inicial, resumen y cortes | admin y operario |
+| `bitacora/index.html` | Bitácora de acciones realizadas: fecha y hora, categoría, lugar, acción, detalle, responsable y hasta 3 fotos/PDF privados en Storage (`bitacora/{uid}/{registroId}/`). Filtros por mes, categoría, lugar, responsable y texto. El operario corrige sus registros durante 24 h; el admin corrige cualquiera; nadie borra; cada corrección deja `historial`. Las listas de categorías y responsables están en la página y en `firestore.rules` (cambiar las dos) | admin y operario |
 | `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
 
 Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban Apps Script/Sheets, `admin/public/js/`) se sacó del repo el 01/10/2026 y quedó en `_privado/sacado-del-repo/`. Lo único que sigue de Apps Script es `admin/public/agua/apps-script/Historial.gs` (manda las lecturas al Sheet LFdC_OPERACION; valida el token de Firebase).
@@ -57,6 +58,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - `caja_chica_movimientos/{id}`: `tipo (gasto|entrada)`, `fecha`, `importe`, `descripcion`, `categoria`, `responsable`, `proveedor`, `metodoPago`, `estado (pendiente|aprobado|rechazado)`, datos de autoría y metadatos del comprobante. Los comprobantes se guardan en Firebase Storage, nunca como URL pública; el campo `comprobantePath` guarda la ruta privada.
 - `caja_chica_movimientos/{id}/historial/{eventoId}`: cambios con `accion`, mapas `antes` y `despues`, persona que hizo el cambio y fecha del evento. También se registra aquí la aprobación o rechazo del admin.
 - `caja_chica_cortes/{id}`: saldo esperado, efectivo contado, diferencia, nota opcional y autoría del corte.
+- `bitacora/{id}`: `fecha, hora, categoria, lugar, accion, detalle, responsable, fotos [{path, nombre, tipo, bytes}]`, `creadoPor, registradoPorNombre, creadoEn`, y al corregir `editadoPor, editadoPorNombre, editadoEn, ultimaEdicionHistorialId`. Subcolección `historial` con `antes`/`despues`.
 
 ## Continuidad de Caja Chica (actualizado 04/10/2026)
 
@@ -67,6 +69,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - Los administradores pueden editar cualquier movimiento, incluso aprobado o rechazado; la edición conserva el estado del movimiento y escribe antes/después en una subcolección de historial mediante un batch atómico. Los operarios pueden editar únicamente sus propios movimientos pendientes. Al aprobar/rechazar el administrador, el operario ya no puede editarlo. Nadie borra movimientos desde el panel.
 - En movimientos anteriores a separar Responsable y Proveedor, al editar, si el antiguo `responsable` no coincide con la lista actual y falta `proveedor`, se migra visualmente ese valor al campo Proveedor para no perderlo. Se debe escoger un Responsable válido antes de guardar.
 - Colecciones protegidas de forma explícita en `firestore.rules`; no deben quedar cubiertas por la regla catch-all permisiva. Las reglas activas de Firestore se publican a mano en Firebase Console y no se actualizan con GitHub Pages. Tras cambiar `firestore.rules`, Gabriel debe publicar su contenido en Firestore → Reglas antes de probar escrituras en producción.
+- Firebase Storage se activó apenas el 04/10/2026 (antes no existía el bucket, así que los comprobantes no podían subirse): bucket `fabrica-399f2.firebasestorage.app` en US-EAST1, con el permiso de reglas cruzadas Storage→Firestore ya otorgado. Reglas de `storage.rules` (Caja Chica y Bitácora) publicadas ese día. CORS de `storage.cors.json` aplicado ese día desde Cloud Shell (`gcloud storage buckets update gs://fabrica-399f2.firebasestorage.app --cors-file=cors.json`).
 - Firebase Storage: `storage.rules` restringe lecturas y cargas a perfiles activos admin/operario, con límite de 10 MB y tipos imagen/PDF. `storage.cors.json` contiene los orígenes permitidos para descargar comprobantes con autenticación. Las reglas de Storage y CORS tampoco se publican mediante el workflow de Pages; confirmar con Gabriel que fueron aplicadas al proyecto/bucket antes de depurar errores de permisos.
 - Para probar local en Windows, desde la raíz usar `py -3 -m http.server 8000 --bind 127.0.0.1`; abrir `http://127.0.0.1:8000/admin/public/caja-chica/`. En esta máquina `localhost` puede resolver a `::1` y mostrar una página “Not found” servida por otro proceso; preferir `127.0.0.1`. Dejar abierta la terminal. La API key Firebase solo está autorizada en los orígenes/puertos listados arriba; el puerto alternativo requiere modificar la restricción de referrer en Google Cloud.
 - El commit más reciente conocido es `5d49da7` (`Mejora edición y captura de Caja Chica`), subido a `main`; incluyó edición de admin/operario, campos Responsable/Proveedor, reglas de Firestore e historial. Verificar el estado de Git antes de continuar porque este archivo y cambios posteriores pueden estar sin commit.
@@ -89,10 +92,8 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 
 - SIAPA: confirmar qué significan las notas 210 y 206 junto a la lectura (parecen consumo estimado: la lectura se repite del periodo anterior). Histórico completo de sep 2023 a sep 2026 (jul-ago 2023 no se buscan). Detalle de pagos en _privado.
 
-- Sheet LFdC_OPERACION, pestaña HIDRAULICO: las lecturas de febrero 2026 dicen 01/24/2026; la fecha real es 20/02/2026 (ya corregida en Firestore el 02/10/2026). Corregirla también en el Sheet.
-- Crear la cuenta del operario (consola de Firebase → Add user) y darle perfil en Configuración.
-- Facturas de septiembre 2026: correr "Actualizar agua y periodos" (siguen ligadas a lecturas del 29/09, que se borraron).
-- Tubo 10: lectura anómala del 29/02/2024 (99,998.222 m³) importada del Sheet; confirmar el valor real.
+- Tubo 10, lectura del 29/02/2024: en Firestore ya está en 0 m³ y $0 (04/10/2026); en el Sheet HIDRAULICO sigue con 99,997.531 m³. Gabriel quiere retomarlo después: no tocar el Sheet ni ese tubo hasta entonces.
+- Operario: cuenta `victor@fabrica.la` (Victor Navaro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
 - Depósitos de los locales 6, 7 y 15: detalle en _privado.
 
 ## Seguridad (auditoría 01/10/2026)

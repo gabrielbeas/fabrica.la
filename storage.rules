@@ -27,5 +27,16 @@ service firebase.storage {
       allow delete: if puedeUsarCajaChica() && (uid == request.auth.uid || esAdmin());
       allow list, update: if false;
     }
+
+    // Fotos de la Bitácora: mismas condiciones que los comprobantes de Caja Chica
+    match /bitacora/{uid}/{registroId}/{fileName} {
+      allow get: if puedeUsarCajaChica();
+      allow create: if puedeUsarCajaChica()
+        && uid == request.auth.uid
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow delete: if puedeUsarCajaChica() && (uid == request.auth.uid || esAdmin());
+      allow list, update: if false;
+    }
   }
 }

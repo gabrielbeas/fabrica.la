@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        .main { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: #999; font-size: 14px; margin: 0 0 22px; }
+        .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+        .btn-sec:hover { background: #ebebeb; }
+        .link { border: none; background: none; padding: 0; color: #667eea; font-size: 13px; cursor: pointer; }
+        .link:hover { text-decoration: underline; }
+
+        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; }
+        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+        .tarjeta .det { font-size: 12px; color: #999; margin-top: 2px; }
+        @media (max-width: 900px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
+
+        .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .filtros input, .filtros select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
+        .filtros input[type=search] { flex: 1 1 200px; }
+        .filtros input:focus, .filtros select:focus { outline: none; border-color: #667eea; }
+
+        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+        tbody tr:last-child td { border-bottom: none; }
+        .fecha { white-space: nowrap; color: #555; }
+        .fecha small { display: block; color: #999; }
+        .accion { font-weight: 600; }
+        .detalle { color: #777; font-size: 13px; margin-top: 3px; white-space: pre-line; }
+        .pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 10px; background: #f3f4ff; color: #555; white-space: nowrap; }
+        .gris { color: #999; font-size: 12px; }
+        .acciones-f { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+        .vacio { color: #999; text-align: center; padding: 30px 10px; }
+        .aviso { margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+        .aviso.ok { background: #e8f5e9; color: #2e7d32; }
+        .aviso.err { background: #fdecea; color: #c62828; }
+        .cargando { color: #999; padding: 40px 0; text-align: center; }
+
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 1000; overflow-y: auto; }
+        .modal-fondo.abierto { display: flex; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 600px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal h3 { margin: 0 0 4px; font-size: 18px; }
+        .modal .sub { margin-bottom: 16px; }
+        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+        .campos .ancho { grid-column: 1 / -1; }
+        .campos label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+        .campos input, .campos select, .campos textarea { width: 100%; padding: 9px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
+        .campos input:focus, .campos select:focus, .campos textarea:focus { outline: none; border-color: #667eea; }
+        .fotos-ops { display: flex; gap: 8px; flex-wrap: wrap; }
+        .fotos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .foto { position: relative; width: 84px; height: 84px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; text-align: center; background: #fafafa; }
+        .foto img { width: 100%; height: 100%; object-fit: cover; }
+        .foto button { position: absolute; top: 3px; right: 3px; border: none; background: rgba(0,0,0,.55); color: white; border-radius: 50%; width: 20px; height: 20px; line-height: 18px; font-size: 13px; cursor: pointer; padding: 0; }
+        .ayuda { font-size: 12px; color: #999; margin-top: 4px; }
+        .progreso { height: 4px; border-radius: 4px; background: #eee; margin-top: 8px; overflow: hidden; }
+        .progreso span { display: block; height: 100%; width: 0; background: #667eea; transition: width .15s; }
+        .pie { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+        .msg { font-size: 13px; color: #c62828; margin-right: auto; }
+        .oculto { display: none; }
+        .hist div { padding: 8px 0; border-top: 1px solid #f3f3f3; font-size: 13px; }
+        .hist div:first-child { border-top: none; }
+        @media (max-width: 700px) { .campos { grid-template-columns: 1fr; } .modal { padding: 18px 16px; } }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+
+    <div class="modal-fondo" id="modal">
+        <div class="modal">
+            <h3 id="mTitulo">Registrar acción</h3>
+            <p class="sub" id="mSub">Anota lo que se hizo, dónde y quién lo hizo.</p>
+            <div class="campos">
+                <div><label for="fFecha">Fecha</label><input type="date" id="fFecha"></div>
+                <div><label for="fHora">Hora</label><input type="time" id="fHora"></div>
+                <div><label for="fCategoria">Categoría</label><select id="fCategoria"></select></div>
+                <div><label for="fLugar">Lugar</label><select id="fLugar"></select></div>
+                <div class="ancho"><label for="fAccion">Acción realizada</label><input id="fAccion" maxlength="160" placeholder="Ej. Limpieza de filtro de la bomba 2"></div>
+                <div class="ancho"><label for="fDetalle">Detalle (opcional)</label><textarea id="fDetalle" rows="3" maxlength="1500" placeholder="Observaciones, hallazgos, material usado..."></textarea></div>
+                <div><label for="fResponsable">Responsable</label><select id="fResponsable"></select></div>
+                <div class="ancho">
+                    <label>Fotos (opcional, hasta 3; foto o PDF de máximo 10 MB)</label>
+                    <div class="fotos-ops">
+                        <button type="button" class="btn-sec" id="bCamara">Tomar foto</button>
+                        <button type="button" class="btn-sec" id="bArchivo">Elegir archivo</button>
+                    </div>
+                    <input type="file" id="iCamara" accept="image/*" capture="environment" class="oculto">
+                    <input type="file" id="iArchivo" accept="image/*,application/pdf" multiple class="oculto">
+                    <div class="fotos" id="fotos"></div>
+                    <div class="progreso"><span id="progreso"></span></div>
+                </div>
+            </div>
+            <p class="ayuda" id="mNota"></p>
+            <div class="pie">
+                <span class="msg" id="mMsg"></span>
+                <button class="btn-sec" data-cerrar>Cancelar</button>
+                <button class="btn" id="bGuardar">Registrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-fondo" id="modalHist">
+        <div class="modal">
+            <h3>Historial de cambios</h3>
+            <p class="sub" id="hSub"></p>
+            <div class="hist" id="hLista"></div>
+            <div class="pie"><button class="btn-sec" data-cerrar>Cerrar</button></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js';
+        import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js';
+        import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { collection, doc, getDocs, setDoc, writeBatch, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // Listas fijas (las mismas que valida firestore.rules)
+        const CATEGORIAS = ['Limpieza', 'Mantenimiento', 'Mantenimiento preventivo', 'Bombas y cisterna', 'Agua', 'Electricidad', 'Seguridad', 'Basura y recolección', 'Jardinería', 'Proveedor o servicio externo', 'Atención a locatario', 'Otro'];
+        const LUGARES = [...Array.from({ length: 22 }, (_, i) => `Local ${i + 1}`), 'Oficinas', 'Áreas comunes', 'Baños', 'Estacionamiento', 'Azotea', 'Cuarto de bombas', 'Cisterna', 'Fachada', 'Otro'];
+        const RESPONSABLES = ['Claudio Del Angel', 'Victor Navaro', 'Admin LAFABDECHOC'];
+        const MAX_FOTOS = 3, MAX_BYTES = 10 * 1024 * 1024;
+        const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
+        const HORAS_EDICION = 24; // el operario corrige sus registros hasta 24 h después de capturarlos
+
+        const app = document.getElementById('app');
+        const user = getCurrentUser();
+        const admin = esAdmin(), operario = esOperario();
+        const storage = getStorage(getApp());
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => { if (!f) return '-'; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const ahora = () => { const d = new Date(); const l = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString(); return { fecha: l.slice(0, 10), hora: l.slice(11, 16) }; };
+
+        let registros = [], editando = null, fotosNuevas = [], fotosActuales = [];
+
+        if (!isAuthenticated() || !(admin || operario)) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            iniciar();
+        }
+
+        function iniciar() {
+            const opciones = (id, lista) => { document.getElementById(id).innerHTML = lista.map(v => `<option>${esc(v)}</option>`).join(''); };
+            opciones('fCategoria', CATEGORIAS);
+            opciones('fLugar', LUGARES);
+            document.getElementById('fResponsable').innerHTML = '<option value="">Selecciona</option>' + RESPONSABLES.map(v => `<option>${esc(v)}</option>`).join('');
+            document.getElementById('bCamara').addEventListener('click', () => document.getElementById('iCamara').click());
+            document.getElementById('bArchivo').addEventListener('click', () => document.getElementById('iArchivo').click());
+            document.getElementById('iCamara').addEventListener('change', agregarArchivos);
+            document.getElementById('iArchivo').addEventListener('change', agregarArchivos);
+            document.getElementById('bGuardar').addEventListener('click', guardar);
+            document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.modal-fondo').id)));
+            document.querySelectorAll('.modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-fondo.abierto').forEach(m => cerrar(m.id)); });
+            cargar();
+        }
+
+        async function cargar(aviso = '') {
+            try {
+                const s = await getDocs(query(collection(db, 'bitacora'), orderBy('fecha', 'desc'), limit(1500)));
+                registros = s.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || '')));
+                vista(aviso);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<h1>Bitácora</h1><p class="aviso err">No se pudo cargar la bitácora (${esc(err.code || err.message)}). Si es un error de permisos, falta publicar las reglas de Firestore.</p>`;
+            }
+        }
+
+        function vista(aviso) {
+            const hoy = ahora().fecha, mes = hoy.slice(0, 7);
+            const delMes = registros.filter(r => r.fecha?.startsWith(mes));
+            const deHoy = registros.filter(r => r.fecha === hoy);
+            const topCat = Object.entries(delMes.reduce((a, r) => (a[r.categoria] = (a[r.categoria] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1])[0];
+            const misMes = delMes.filter(r => r.creadoPor === auth.currentUser?.uid).length;
+            app.innerHTML = `
+                <div class="barra">
+                    <div><h1>Bitácora</h1><p class="sub">Registro de acciones realizadas en la plaza: qué se hizo, dónde, cuándo y quién.</p></div>
+                    <button class="btn" id="bNuevo">Registrar acción</button>
+                </div>
+                ${aviso ? `<p class="aviso ok">${aviso}</p>` : ''}
+                <div class="tarjetas">
+                    <div class="tarjeta"><div class="et">Hoy</div><div class="val">${deHoy.length}</div><div class="det">acciones registradas</div></div>
+                    <div class="tarjeta"><div class="et">Este mes</div><div class="val">${delMes.length}</div><div class="det">${misMes} capturadas por ti</div></div>
+                    <div class="tarjeta"><div class="et">Categoría más frecuente</div><div class="val" style="font-size:17px">${topCat ? esc(topCat[0]) : '-'}</div><div class="det">${topCat ? `${topCat[1]} este mes` : 'Sin registros este mes'}</div></div>
+                    <div class="tarjeta"><div class="et">Total</div><div class="val">${registros.length}</div><div class="det">en la bitácora</div></div>
+                </div>
+                <div class="filtros">
+                    <input type="month" id="flMes" value="${mes}" title="Mes">
+                    <select id="flCategoria"><option value="">Todas las categorías</option>${CATEGORIAS.map(c => `<option>${esc(c)}</option>`).join('')}</select>
+                    <select id="flLugar"><option value="">Todos los lugares</option>${LUGARES.map(c => `<option>${esc(c)}</option>`).join('')}</select>
+                    <select id="flResponsable"><option value="">Todos los responsables</option>${RESPONSABLES.map(c => `<option>${esc(c)}</option>`).join('')}</select>
+                    <input type="search" id="flBuscar" placeholder="Buscar en acción o detalle">
+                </div>
+                <div class="tabla-wrap">
+                    <table class="tabla-movil">
+                        <thead><tr><th>Fecha</th><th>Categoría</th><th>Lugar</th><th>Acción</th><th>Responsable</th><th>Fotos</th><th></th></tr></thead>
+                        <tbody id="filas"></tbody>
+                    </table>
+                    <div class="vacio oculto" id="sinFilas">No hay registros con esos filtros.</div>
+                </div>
+                <p class="gris" style="margin-top:8px">${admin ? 'Como administrador puedes corregir cualquier registro. Nadie puede borrar registros; cada corrección queda en el historial.' : `Puedes corregir tus registros hasta ${HORAS_EDICION} horas después de capturarlos. No se pueden borrar; cada corrección queda en el historial.`}</p>`;
+            document.getElementById('bNuevo').addEventListener('click', () => abrir());
+            ['flMes', 'flCategoria', 'flLugar', 'flResponsable'].forEach(id => document.getElementById(id).addEventListener('change', filas));
+            document.getElementById('flBuscar').addEventListener('input', filas);
+            filas();
+        }
+
+        const puedeEditar = r => admin || (operario && r.creadoPor === auth.currentUser?.uid && r.creadoEn?.toMillis && Date.now() - r.creadoEn.toMillis() < HORAS_EDICION * 3600000);
+
+        function filas() {
+            const v = id => document.getElementById(id).value;
+            const q = v('flBuscar').trim().toLocaleLowerCase('es-MX');
+            const lista = registros.filter(r => (!v('flMes') || r.fecha?.startsWith(v('flMes')))
+                && (!v('flCategoria') || r.categoria === v('flCategoria'))
+                && (!v('flLugar') || r.lugar === v('flLugar'))
+                && (!v('flResponsable') || r.responsable === v('flResponsable'))
+                && (!q || `${r.accion} ${r.detalle || ''}`.toLocaleLowerCase('es-MX').includes(q)));
+            const tbody = document.getElementById('filas');
+            tbody.innerHTML = lista.map(r => `<tr>
+                <td class="fecha"><strong>${fechaCorta(r.fecha)}</strong><small>${esc(r.hora || '')}</small></td>
+                <td><span class="pill">${esc(r.categoria)}</span></td>
+                <td>${esc(r.lugar)}</td>
+                <td><div class="accion">${esc(r.accion)}</div>${r.detalle ? `<div class="detalle">${esc(r.detalle)}</div>` : ''}</td>
+                <td>${esc(r.responsable)}<div class="gris">Capturó: ${esc(r.registradoPorNombre || '')}</div></td>
+                <td>${(r.fotos || []).length ? (r.fotos || []).map((f, i) => `<button class="link" data-foto="${esc(r.id)}" data-i="${i}">${f.tipo === 'application/pdf' ? 'PDF' : 'Foto'} ${i + 1}</button>`).join('<br>') : '<span class="gris">-</span>'}</td>
+                <td><div class="acciones-f">${puedeEditar(r) ? `<button class="link" data-editar="${esc(r.id)}">Corregir</button>` : ''}${r.ultimaEdicionHistorialId ? `<button class="link" data-hist="${esc(r.id)}">Historial</button>` : ''}</div></td>
+            </tr>`).join('');
+            document.getElementById('sinFilas').classList.toggle('oculto', lista.length > 0);
+            tbody.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => abrir(registros.find(r => r.id === b.dataset.editar))));
+            tbody.querySelectorAll('[data-foto]').forEach(b => b.addEventListener('click', () => verArchivo(registros.find(r => r.id === b.dataset.foto).fotos[+b.dataset.i])));
+            tbody.querySelectorAll('[data-hist]').forEach(b => b.addEventListener('click', () => verHistorial(registros.find(r => r.id === b.dataset.hist))));
+        }
+
+        // ---------- Formulario ----------
+        function abrir(r = null) {
+            editando = r;
+            const a = ahora();
+            const set = (id, val) => { document.getElementById(id).value = val; };
+            set('fFecha', r?.fecha || a.fecha);
+            set('fHora', r?.hora || a.hora);
+            set('fCategoria', r?.categoria || CATEGORIAS[0]);
+            set('fLugar', r?.lugar || 'Áreas comunes');
+            set('fAccion', r?.accion || '');
+            set('fDetalle', r?.detalle || '');
+            set('fResponsable', r?.responsable || (RESPONSABLES.includes(user.nombre) ? user.nombre : ''));
+            fotosNuevas = [];
+            fotosActuales = [...(r?.fotos || [])];
+            pintarFotos();
+            document.getElementById('progreso').style.width = '0%';
+            document.getElementById('mMsg').textContent = '';
+            document.getElementById('mTitulo').textContent = r ? 'Corregir registro' : 'Registrar acción';
+            document.getElementById('bGuardar').textContent = r ? 'Guardar corrección' : 'Registrar';
+            document.getElementById('mNota').textContent = r ? 'La corrección queda en el historial del registro.' : 'Los registros no se pueden borrar.';
+            document.getElementById('modal').classList.add('abierto');
+        }
+
+        function cerrar(id) {
+            document.getElementById(id).classList.remove('abierto');
+            if (id === 'modal') { fotosNuevas.forEach(f => f.url && URL.revokeObjectURL(f.url)); fotosNuevas = []; }
+        }
+
+        // Reduce fotos grandes (lado mayor 1920 px, JPEG) para que suban rápido desde el celular
+        async function reducir(file) {
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 1.5 * 1024 * 1024) return file;
+            try {
+                const img = await createImageBitmap(file);
+                const k = Math.min(1, 1920 / Math.max(img.width, img.height));
+                const c = document.createElement('canvas');
+                c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
+                return blob && blob.size < file.size ? new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file;
+            } catch { return file; }
+        }
+
+        async function agregarArchivos(e) {
+            const lista = [...(e.target.files || [])];
+            e.target.value = '';
+            const msg = document.getElementById('mMsg');
+            msg.textContent = '';
+            for (const f of lista) {
+                if (fotosActuales.length + fotosNuevas.length >= MAX_FOTOS) { msg.textContent = `Máximo ${MAX_FOTOS} fotos por registro.`; break; }
+                if (!TIPOS.includes(f.type)) { msg.textContent = 'Solo fotos (JPG, PNG, WEBP, HEIC) o PDF.'; continue; }
+                const r = await reducir(f);
+                if (r.size > MAX_BYTES) { msg.textContent = 'Un archivo pasa de 10 MB.'; continue; }
+                fotosNuevas.push({ file: r, url: r.type.startsWith('image/') && !r.type.includes('hei') ? URL.createObjectURL(r) : '' });
+            }
+            pintarFotos();
+        }
+
+        function pintarFotos() {
+            const cont = document.getElementById('fotos');
+            cont.innerHTML = fotosActuales.map((f, i) => `<div class="foto" title="${esc(f.nombre)}">${esc(f.tipo === 'application/pdf' ? 'PDF' : 'Foto guardada')}<button data-quitar-act="${i}" title="Quitar">×</button></div>`).join('')
+                + fotosNuevas.map((f, i) => `<div class="foto" title="${esc(f.file.name)}">${f.url ? `<img src="${f.url}" alt="">` : esc(f.file.type === 'application/pdf' ? 'PDF' : f.file.name)}<button data-quitar-new="${i}" title="Quitar">×</button></div>`).join('');
+            cont.querySelectorAll('[data-quitar-act]').forEach(b => b.addEventListener('click', () => { fotosActuales.splice(+b.dataset.quitarAct, 1); pintarFotos(); }));
+            cont.querySelectorAll('[data-quitar-new]').forEach(b => b.addEventListener('click', () => { const [f] = fotosNuevas.splice(+b.dataset.quitarNew, 1); if (f.url) URL.revokeObjectURL(f.url); pintarFotos(); }));
+            const lleno = fotosActuales.length + fotosNuevas.length >= MAX_FOTOS;
+            document.getElementById('bCamara').disabled = lleno;
+            document.getElementById('bArchivo').disabled = lleno;
+        }
+
+        const nombreSeguro = n => n.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'archivo';
+
+        async function subir(registroId, file, i, total) {
+            const path = `bitacora/${auth.currentUser.uid}/${registroId}/${Date.now()}_${i}_${nombreSeguro(file.name)}`;
+            await new Promise((ok, mal) => {
+                const t = uploadBytesResumable(ref(storage, path), file, { contentType: file.type, customMetadata: { uploadedBy: auth.currentUser.uid } });
+                t.on('state_changed', s => { document.getElementById('progreso').style.width = `${Math.round(((i + s.bytesTransferred / s.totalBytes) / total) * 100)}%`; }, mal, ok);
+            });
+            return { path, nombre: file.name, tipo: file.type, bytes: file.size };
+        }
+
+        async function guardar() {
+            const v = id => document.getElementById(id).value.trim();
+            const msg = document.getElementById('mMsg'), btn = document.getElementById('bGuardar');
+            const datos = { fecha: v('fFecha'), hora: v('fHora'), categoria: v('fCategoria'), lugar: v('fLugar'), accion: v('fAccion'), detalle: v('fDetalle'), responsable: v('fResponsable') };
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha) || !/^\d{2}:\d{2}$/.test(datos.hora)) { msg.textContent = 'Revisa la fecha y la hora.'; return; }
+            if (datos.fecha > ahora().fecha) { msg.textContent = 'La fecha no puede ser futura.'; return; }
+            if (!datos.accion) { msg.textContent = 'Escribe la acción realizada.'; return; }
+            if (!RESPONSABLES.includes(datos.responsable)) { msg.textContent = 'Selecciona el responsable.'; return; }
+            if (editando && !puedeEditar(editando)) { msg.textContent = 'Este registro ya no se puede corregir.'; return; }
+            btn.disabled = true; msg.textContent = '';
+            const refDoc = editando ? doc(db, 'bitacora', editando.id) : doc(collection(db, 'bitacora'));
+            const subidas = [];
+            try {
+                for (let i = 0; i < fotosNuevas.length; i++) subidas.push(await subir(refDoc.id, fotosNuevas[i].file, i, fotosNuevas.length));
+                const fotos = [...fotosActuales, ...subidas];
+                const nombre = user.nombre || user.email;
+                if (editando) {
+                    const hist = doc(collection(db, 'bitacora', editando.id, 'historial'));
+                    const campos = ['fecha', 'hora', 'categoria', 'lugar', 'accion', 'detalle', 'responsable', 'fotos'];
+                    const antes = Object.fromEntries(campos.map(k => [k, editando[k] ?? (k === 'fotos' ? [] : '')]));
+                    const b = writeBatch(db);
+                    b.update(refDoc, { ...datos, fotos, editadoPor: auth.currentUser.uid, editadoPorNombre: nombre, editadoEn: serverTimestamp(), ultimaEdicionHistorialId: hist.id });
+                    b.set(hist, { accion: 'editado', antes, despues: { ...datos, fotos }, registradoPor: auth.currentUser.uid, registradoPorNombre: nombre, registradoEn: serverTimestamp() });
+                    await b.commit();
+                } else {
+                    await setDoc(refDoc, { ...datos, fotos, creadoPor: auth.currentUser.uid, registradoPorNombre: nombre, creadoEn: serverTimestamp() });
+                }
+                cerrar('modal');
+                await cargar(editando ? 'Corrección guardada; quedó en el historial.' : 'Acción registrada.');
+            } catch (err) {
+                console.error(err);
+                for (const s of subidas) { try { await deleteObject(ref(storage, s.path)); } catch { /* el archivo se queda sin registro */ } }
+                msg.textContent = err.code === 'permission-denied' || err.code === 'storage/unauthorized'
+                    ? 'Permiso denegado: falta publicar las reglas de Firestore o Storage, o el registro ya no se puede corregir.'
+                    : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        async function verArchivo(f) {
+            if (!f?.path) return;
+            try {
+                const blob = await getBlob(ref(storage, f.path), MAX_BYTES);
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank', 'noopener');
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } catch (err) {
+                console.error(err);
+                alert('No se pudo abrir el archivo. Revisa las reglas de Storage.');
+            }
+        }
+
+        async function verHistorial(r) {
+            document.getElementById('hSub').textContent = `${fechaCorta(r.fecha)} ${r.hora || ''} · ${r.accion}`;
+            const lista = document.getElementById('hLista');
+            lista.innerHTML = '<div class="gris">Cargando...</div>';
+            document.getElementById('modalHist').classList.add('abierto');
+            try {
+                const s = await getDocs(query(collection(db, 'bitacora', r.id, 'historial'), orderBy('registradoEn', 'desc')));
+                const etq = { fecha: 'Fecha', hora: 'Hora', categoria: 'Categoría', lugar: 'Lugar', accion: 'Acción', detalle: 'Detalle', responsable: 'Responsable', fotos: 'Fotos' };
+                lista.innerHTML = s.docs.map(d => {
+                    const h = d.data();
+                    const cambios = Object.keys(etq).filter(k => JSON.stringify(h.antes?.[k] ?? '') !== JSON.stringify(h.despues?.[k] ?? ''))
+                        .map(k => k === 'fotos' ? `Fotos: ${(h.antes?.fotos || []).length} → ${(h.despues?.fotos || []).length}` : `${etq[k]}: «${esc(h.antes?.[k] || '')}» → «${esc(h.despues?.[k] || '')}»`);
+                    const cuando = h.registradoEn?.toDate ? h.registradoEn.toDate().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+                    return `<div><strong>${esc(h.registradoPorNombre || '')}</strong> <span class="gris">${esc(cuando)}</span><br>${cambios.join('<br>') || '<span class="gris">Sin cambios visibles</span>'}</div>`;
+                }).join('') || '<div class="gris">Sin cambios.</div>';
+            } catch (err) {
+                lista.innerHTML = `<div class="gris">No se pudo cargar el historial (${esc(err.code || err.message)}).</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

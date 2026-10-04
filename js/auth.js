@@ -224,12 +224,13 @@ export function getSeccionesPermitidas() {
     agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },
     calendarios: { id: 'calendarios', nombre: 'Calendarios',      url: b + 'calendarios/' },
     config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' },
-    cajaChica:   { id: 'cajaChica',   nombre: 'Caja Chica',       url: b + 'caja-chica/' }
+    cajaChica:   { id: 'cajaChica',   nombre: 'Caja Chica',       url: b + 'caja-chica/' },
+    bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config', 'cajaChica'],
-    operario: ['inicio', 'agua', 'calendarios', 'cajaChica']
+    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config', 'cajaChica', 'bitacora'],
+    operario: ['inicio', 'agua', 'calendarios', 'cajaChica', 'bitacora']
   };
 
   return (porRol[role] || []).map(id => todas[id]);

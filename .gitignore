@@ -14,3 +14,8 @@ Thumbs.db
 
 # Datos privados (no subir: el repo es público)
 _privado/
+
+# Archivos locales de herramientas (no subir)
+AGENTS.md
+firebase-debug.log
+*-debug.log
