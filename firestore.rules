@@ -92,31 +92,64 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /caja_chica_movimientos/{id} {
+      function edicionValida() {
+        return request.resource.data.estado == resource.data.estado
+          && request.resource.data.editadoPor == request.auth.uid
+          && request.resource.data.editadoEn is timestamp
+          && request.resource.data.ultimaEdicionHistorialId is string
+          && request.resource.data.fecha is string
+          && request.resource.data.tipo in ['gasto', 'entrada']
+          && request.resource.data.categoria is string
+          && request.resource.data.responsable in ['Claudio Del Angel', 'Victor Navaro', 'Admin LAFABDECHOC']
+          && request.resource.data.proveedor is string
+          && request.resource.data.descripcion is string
+          && request.resource.data.importe is number
+          && request.resource.data.importe > 0
+          && request.resource.data.comprobantePath is string
+          && (request.resource.data.comprobantePath == resource.data.comprobantePath || request.resource.data.comprobantePath.matches('caja-chica/' + request.auth.uid + '/.*'))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipo', 'fecha', 'importe', 'descripcion', 'categoria', 'responsable', 'proveedor', 'metodoPago', 'comprobantePath', 'comprobanteNombre', 'comprobanteTipo', 'comprobanteBytes', 'editadoPor', 'editadoEn', 'ultimaEdicionHistorialId'])
+          && !exists(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId))
+          && existsAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId))
+          && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId)).data.accion == 'editado'
+          && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId)).data.registradoPor == request.auth.uid;
+      }
       allow read: if puedeUsarCajaChica();
       allow create: if puedeUsarCajaChica()
         && request.resource.data.creadoPor == request.auth.uid
         && request.resource.data.fecha is string
         && request.resource.data.tipo in ['gasto', 'entrada']
         && request.resource.data.categoria is string
+        && request.resource.data.responsable in ['Claudio Del Angel', 'Victor Navaro', 'Admin LAFABDECHOC']
+        && request.resource.data.proveedor is string
         && request.resource.data.descripcion is string
         && request.resource.data.importe is number
         && request.resource.data.importe > 0
         && request.resource.data.estado == (isAdmin() ? 'aprobado' : 'pendiente')
         && request.resource.data.comprobantePath is string
         && (request.resource.data.comprobantePath == '' || request.resource.data.comprobantePath.matches('caja-chica/' + request.auth.uid + '/.*'));
-      allow update: if isAdmin()
-        && resource.data.estado == 'pendiente'
-        && request.resource.data.estado in ['aprobado', 'rechazado']
-        && request.resource.data.revisadoPor == request.auth.uid
-        && request.resource.data.revisadoEn is timestamp
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'revisadoPor', 'revisadoPorNombre', 'revisadoEn', 'notaRevision']);
+      allow update: if (isAdmin()
+          && resource.data.estado == 'pendiente'
+          && request.resource.data.estado in ['aprobado', 'rechazado']
+          && request.resource.data.revisadoPor == request.auth.uid
+          && request.resource.data.revisadoEn is timestamp
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'revisadoPor', 'revisadoPorNombre', 'revisadoEn', 'notaRevision']))
+        || ((isAdmin()
+          || (puedeUsarCajaChica() && resource.data.creadoPor == request.auth.uid && resource.data.estado == 'pendiente'))
+          && edicionValida());
       allow delete: if false;
 
       match /historial/{eventoId} {
         allow read: if puedeUsarCajaChica();
-        allow create: if isAdmin()
-          && request.resource.data.registradoPor == request.auth.uid
-          && request.resource.data.accion in ['aprobado', 'rechazado'];
+        allow create: if (isAdmin()
+            && request.resource.data.registradoPor == request.auth.uid
+            && request.resource.data.accion in ['aprobado', 'rechazado'])
+          || ((isAdmin() || (puedeUsarCajaChica()
+            && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.creadoPor == request.auth.uid
+            && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.estado == 'pendiente'))
+            && request.resource.data.accion == 'editado'
+            && request.resource.data.registradoPor == request.auth.uid
+            && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.ultimaEdicionHistorialId == eventoId
+            && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.editadoPor == request.auth.uid);
         allow update, delete: if false;
       }
     }

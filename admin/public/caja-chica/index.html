@@ -24,12 +24,13 @@
       <div class="field"><label for="fecha">Fecha</label><input class="input" id="fecha" type="date"></div>
       <div class="field"><label for="importe">Importe (MXN)</label><input class="input" id="importe" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       <div class="field"><label for="categoria">Categoría</label><select class="select" id="categoria"></select></div>
+      <div class="field full"><label for="proveedor">Proveedor (nombre del establecimiento)</label><input class="input" id="proveedor" maxlength="120" placeholder="Nombre del establecimiento"></div>
       <div class="field full"><label for="descripcion">Descripción</label><input class="input" id="descripcion" maxlength="180" placeholder="¿Qué se pagó o recibió?"></div>
-      <div class="field"><label for="responsable">Responsable / proveedor</label><input class="input" id="responsable" maxlength="120" placeholder="Nombre o proveedor"></div>
+      <div class="field"><label for="responsable">Responsable</label><select class="select" id="responsable" required><option value="">Selecciona responsable</option><option>Claudio Del Angel</option><option>Victor Navaro</option><option>Admin LAFABDECHOC</option></select></div>
       <div class="field"><label for="metodo">Método de pago</label><select class="select" id="metodo"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></div>
       <div class="field full"><label>Comprobante (opcional, máximo 10 MB)</label><div class="upload-options"><button class="btn" type="button" id="tomarFoto">Tomar foto</button><button class="btn" type="button" id="adjuntarArchivo">Elegir foto o PDF</button></div><input class="file-input" id="entradaCamara" type="file" accept="image/*" capture="environment"><input class="file-input" id="entradaArchivo" type="file" accept="image/*,application/pdf"><div class="file-info" id="archivoInfo">Puedes tomar la foto ahora o elegir un archivo existente.</div><img class="file-preview" id="archivoPreview" alt="Vista previa del comprobante"><div class="progress"><span id="progreso"></span></div></div>
     </div>
-    <p class="footnote" id="notaRevision">Los registros no se pueden borrar. Los gastos capturados por operarios quedan pendientes de revisión del administrador.</p>
+    <p class="footnote" id="notaRevision">No se pueden borrar registros. Los operarios pueden editar sus movimientos pendientes hasta que el administrador los revise.</p>
     <div class="modal-msg" id="movimientoError" role="status"></div>
     <div class="modal-actions"><button class="btn" data-close="movimientoModal">Cancelar</button><button class="btn btn-primary" id="guardarMovimiento">Registrar</button></div>
   </section></div>
@@ -62,7 +63,8 @@
     const MAX_BYTES = 10 * 1024 * 1024;
     const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
     const CATEGORIAS_GASTO = ['Mantenimiento', 'Insumos', 'Traslados', 'Limpieza', 'Servicios', 'Otro'];
-    let movimientos = [], config = null, ultimoCorte = null, archivo = null, urlPreview = '';
+    const RESPONSABLES = ['Claudio Del Angel', 'Victor Navaro', 'Admin LAFABDECHOC'];
+    let movimientos = [], config = null, ultimoCorte = null, archivo = null, urlPreview = '', editingMovementId = null;
     const money = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
@@ -141,7 +143,7 @@
           <article class="metric"><div class="metric-label">Por revisar <span class="metric-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5m0 4h.01"/></svg></span></div><div class="metric-value">${pendientes}</div><div class="metric-detail">${pendientes === 1 ? 'Movimiento pendiente' : 'Movimientos pendientes'}</div></article>
         </section>
         <div class="layout"><section class="panel">
-          <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Registro inalterable de gastos y entradas.</p></div><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div>
+          <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Todos los cambios quedan registrados en el historial.</p></div><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div>
           <div class="toolbar"><input class="search" id="buscar" type="search" placeholder="Buscar descripción o responsable"><select class="select" id="filtroTipo"><option value="todos">Todos los tipos</option><option value="gasto">Gastos</option><option value="entrada">Entradas</option></select><select class="select" id="filtroEstado"><option value="todos">Todos los estados</option><option value="pendiente">Pendiente</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option></select></div>
           <div class="table-wrap"><table><thead><tr><th>Movimiento</th><th>Fecha</th><th>Categoría</th><th>Estado</th><th>Comprobante</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody id="filas"></tbody></table><div class="empty" id="sinFilas">No hay movimientos para esos filtros.</div></div>
         </section><aside class="side">
@@ -158,16 +160,19 @@
     function renderFilas() {
       const q = document.getElementById('buscar').value.trim().toLocaleLowerCase('es-MX');
       const tipo = document.getElementById('filtroTipo').value, estado = document.getElementById('filtroEstado').value, mes = document.getElementById('filtroMes').value;
-      const visibles = movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.categoria || ''}`.toLocaleLowerCase('es-MX').includes(q)));
+      const visibles = movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.proveedor || ''} ${m.categoria || ''}`.toLocaleLowerCase('es-MX').includes(q)));
       const tbody = document.getElementById('filas');
       tbody.innerHTML = visibles.map(m => {
         const estadoLabel = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado';
         const attachment = m.comprobantePath ? `<button class="link-btn" data-comprobante="${escapeHtml(m.id)}">Ver archivo</button>` : '<span class="hint">Sin archivo</span>';
         const review = admin && m.estado === 'pendiente' ? `<div class="row-actions"><button class="link-btn" data-revisar="${escapeHtml(m.id)}" data-estado="aprobado">Aprobar</button><button class="link-btn reject" data-revisar="${escapeHtml(m.id)}" data-estado="rechazado">Rechazar</button></div>` : '';
-        return `<tr><td><div class="desc">${escapeHtml(m.descripcion)}</div><div class="detail">${escapeHtml(m.responsable || m.registradoPorNombre || '')} · ${escapeHtml(m.metodoPago || '')}</div></td><td class="date">${escapeHtml(parseDate(m.fecha || ''))}</td><td><span class="pill">${escapeHtml(m.categoria || '')}</span></td><td><span class="pill ${escapeHtml(m.estado || 'aprobado')}">${estadoLabel}</span></td><td>${attachment}</td><td class="amount ${m.tipo === 'entrada' ? 'entrada' : 'salida'}">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td><td>${review}</td></tr>`;
+        const edit = admin || (operador && m.estado === 'pendiente' && m.creadoPor === auth.currentUser?.uid) ? `<button class="link-btn" data-editar="${escapeHtml(m.id)}">Editar</button>` : '';
+        const details = [m.responsable || m.registradoPorNombre || '', m.proveedor || '', m.metodoPago || ''].filter(Boolean).join(' · ');
+        return `<tr><td><div class="desc">${escapeHtml(m.descripcion)}</div><div class="detail">${escapeHtml(details)}</div></td><td class="date">${escapeHtml(parseDate(m.fecha || ''))}</td><td><span class="pill">${escapeHtml(m.categoria || '')}</span></td><td><span class="pill ${escapeHtml(m.estado || 'aprobado')}">${estadoLabel}</span></td><td>${attachment}</td><td class="amount ${m.tipo === 'entrada' ? 'entrada' : 'salida'}">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td><td><div class="row-actions">${edit}${review}</div></td></tr>`;
       }).join('');
       document.getElementById('sinFilas').style.display = visibles.length ? 'none' : 'block';
       tbody.querySelectorAll('[data-revisar]').forEach(b => b.addEventListener('click', () => revisar(b.dataset.revisar, b.dataset.estado)));
+      tbody.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => editarMovimiento(b.dataset.editar)));
       tbody.querySelectorAll('[data-comprobante]').forEach(b => b.addEventListener('click', () => abrirComprobante(movimientos.find(m => m.id === b.dataset.comprobante))));
     }
 
@@ -182,16 +187,40 @@
     function abrirMovimiento(tipo = 'gasto') {
       if (!config) { showNotice('Primero el administrador debe configurar el saldo inicial.', true); return; }
       hideNotice();
+      editingMovementId = null;
       document.getElementById('tipo').value = tipo;
       opcionesCategoria(tipo, tipo === 'entrada' ? 'Reposición' : '');
       document.getElementById('fecha').value = today();
       document.getElementById('importe').value = '';
       document.getElementById('descripcion').value = '';
       document.getElementById('responsable').value = '';
+      document.getElementById('proveedor').value = '';
       document.getElementById('metodo').value = 'efectivo';
       document.getElementById('movimientoError').textContent = '';
       document.getElementById('notaRevision').style.display = admin ? 'none' : '';
       document.getElementById('movimientoTitulo').textContent = tipo === 'entrada' ? 'Registrar reposición' : 'Registrar movimiento';
+      document.getElementById('guardarMovimiento').textContent = 'Registrar';
+      abrirModal('movimientoModal');
+    }
+
+    function editarMovimiento(id) {
+      const m = movimientos.find(item => item.id === id);
+      if (!m || (!admin && (!operador || m.creadoPor !== auth.currentUser?.uid || m.estado !== 'pendiente'))) return;
+      editingMovementId = id;
+      document.getElementById('tipo').value = m.tipo;
+      opcionesCategoria(m.tipo, m.categoria);
+      document.getElementById('fecha').value = m.fecha || today();
+      document.getElementById('importe').value = Number(m.importe || 0).toFixed(2);
+      document.getElementById('descripcion').value = m.descripcion || '';
+      document.getElementById('responsable').value = RESPONSABLES.includes(m.responsable) ? m.responsable : '';
+      document.getElementById('proveedor').value = m.proveedor || (m.responsable && !RESPONSABLES.includes(m.responsable) ? m.responsable : '');
+      document.getElementById('metodo').value = m.metodoPago || 'efectivo';
+      document.getElementById('movimientoError').textContent = '';
+      document.getElementById('notaRevision').style.display = '';
+      document.getElementById('movimientoTitulo').textContent = 'Editar movimiento';
+      document.getElementById('guardarMovimiento').textContent = 'Guardar cambios';
+      limpiarArchivo();
+      if (m.comprobantePath) document.getElementById('archivoInfo').textContent = `Comprobante actual: ${m.comprobanteNombre || 'archivo adjunto'}. Elige otro solo si quieres reemplazarlo.`;
       abrirModal('movimientoModal');
     }
 
@@ -235,33 +264,50 @@
       const error = document.getElementById('movimientoError'), button = document.getElementById('guardarMovimiento');
       const tipo = document.getElementById('tipo').value, fecha = document.getElementById('fecha').value;
       const importe = Number(document.getElementById('importe').value), descripcion = document.getElementById('descripcion').value.trim();
-      if (!fecha || !descripcion || !Number.isFinite(importe) || importe <= 0) { error.textContent = 'Completa fecha, descripción e importe válido.'; return; }
+      const responsable = document.getElementById('responsable').value, proveedor = document.getElementById('proveedor').value.trim();
+      if (!fecha || !descripcion || !RESPONSABLES.includes(responsable) || !Number.isFinite(importe) || importe <= 0) { error.textContent = 'Completa fecha, responsable, descripción e importe válido.'; return; }
       if (archivo && (!TIPOS.includes(archivo.type) || archivo.size > MAX_BYTES)) { error.textContent = 'Revisa el tipo de archivo y el límite de 10 MB.'; return; }
+      const editing = editingMovementId ? movimientos.find(m => m.id === editingMovementId) : null;
+      if (editingMovementId && (!editing || (!admin && (!operador || editing.estado !== 'pendiente' || editing.creadoPor !== auth.currentUser?.uid)))) { error.textContent = 'Este movimiento ya no se puede editar.'; return; }
       button.disabled = true; error.textContent = '';
-      const movementRef = doc(collection(db, 'caja_chica_movimientos'));
-      let objectPath = '';
+      const movementRef = editing ? doc(db, 'caja_chica_movimientos', editing.id) : doc(collection(db, 'caja_chica_movimientos'));
+      let objectPath = '', uploadedPath = '';
       try {
-        if (archivo) objectPath = await subirComprobante(movementRef.id, archivo);
-        await setDoc(movementRef, {
+        if (editing) objectPath = editing.comprobantePath || '';
+        if (archivo) { objectPath = await subirComprobante(movementRef.id, archivo); uploadedPath = objectPath; }
+        const values = {
           tipo, fecha, importe, descripcion,
           categoria: document.getElementById('categoria').value,
-          responsable: document.getElementById('responsable').value.trim(),
+          responsable,
+          proveedor,
           metodoPago: document.getElementById('metodo').value,
-          estado: admin ? 'aprobado' : 'pendiente',
           comprobantePath: objectPath,
-          comprobanteNombre: archivo?.name || '',
-          comprobanteTipo: archivo?.type || '',
-          comprobanteBytes: archivo?.size || 0,
-          creadoPor: auth.currentUser.uid,
-          registradoPorNombre: user.nombre || user.email,
-          creadoEn: serverTimestamp()
-        });
+          comprobanteNombre: archivo?.name || editing?.comprobanteNombre || '',
+          comprobanteTipo: archivo?.type || editing?.comprobanteTipo || '',
+          comprobanteBytes: archivo?.size || editing?.comprobanteBytes || 0
+        };
+        if (editing) {
+          const batch = writeBatch(db), historyRef = doc(collection(db, 'caja_chica_movimientos', editing.id, 'historial'));
+          const before = Object.fromEntries(['tipo','fecha','importe','descripcion','categoria','responsable','proveedor','metodoPago','comprobantePath','comprobanteNombre','comprobanteTipo','comprobanteBytes'].map(key => [key, editing[key] ?? '']));
+          const after = { ...values };
+          batch.update(movementRef, { ...values, editadoPor: auth.currentUser.uid, editadoEn: serverTimestamp(), ultimaEdicionHistorialId: historyRef.id });
+          batch.set(historyRef, { accion: 'editado', antes: before, despues: after, registradoPor: auth.currentUser.uid, registradoPorNombre: user.nombre || user.email, registradoEn: serverTimestamp() });
+          await batch.commit();
+        } else {
+          await setDoc(movementRef, {
+            ...values,
+            estado: admin ? 'aprobado' : 'pendiente',
+            creadoPor: auth.currentUser.uid,
+            registradoPorNombre: user.nombre || user.email,
+            creadoEn: serverTimestamp()
+          });
+        }
         cerrarModal('movimientoModal');
         await cargar();
-        showNotice(admin ? 'Movimiento registrado.' : 'Movimiento registrado y enviado a revisión.');
+        showNotice(editing ? 'Cambios guardados; quedaron registrados en el historial.' : admin ? 'Movimiento registrado.' : 'Movimiento registrado y enviado a revisión.');
       } catch (err) {
         console.error('No se pudo registrar el movimiento:', err);
-        if (objectPath) { try { await deleteObject(ref(storage, objectPath)); } catch (cleanupError) { console.error('No se pudo retirar un comprobante sin movimiento asociado:', cleanupError); } }
+        if (uploadedPath) { try { await deleteObject(ref(storage, uploadedPath)); } catch (cleanupError) { console.error('No se pudo retirar un comprobante sin movimiento asociado:', cleanupError); } }
         error.textContent = err.code === 'storage/unauthorized' || err.code === 'permission-denied' ? 'Las reglas activas de Firebase todavía no permiten esta operación. Publica storage.rules y firestore.rules.' : 'No se pudo guardar el movimiento. Inténtalo de nuevo; no se confirmó el registro.';
       } finally { button.disabled = false; }
     }
