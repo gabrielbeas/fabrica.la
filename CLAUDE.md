@@ -73,7 +73,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - Firebase Storage se activó apenas el 04/10/2026 (antes no existía el bucket, así que los comprobantes no podían subirse): bucket `fabrica-399f2.firebasestorage.app` en US-EAST1, con el permiso de reglas cruzadas Storage→Firestore ya otorgado. Reglas de `storage.rules` (Caja Chica y Bitácora) publicadas ese día. CORS de `storage.cors.json` aplicado ese día desde Cloud Shell (`gcloud storage buckets update gs://fabrica-399f2.firebasestorage.app --cors-file=cors.json`).
 - Firebase Storage: `storage.rules` restringe lecturas y cargas a perfiles activos admin/operario, con límite de 10 MB y tipos imagen/PDF. `storage.cors.json` contiene los orígenes permitidos para descargar comprobantes con autenticación. Las reglas de Storage y CORS tampoco se publican mediante el workflow de Pages; confirmar con Gabriel que fueron aplicadas al proyecto/bucket antes de depurar errores de permisos.
 - Para probar local en Windows, desde la raíz usar `py -3 -m http.server 8000 --bind 127.0.0.1`; abrir `http://127.0.0.1:8000/admin/public/caja-chica/`. En esta máquina `localhost` puede resolver a `::1` y mostrar una página “Not found” servida por otro proceso; preferir `127.0.0.1`. Dejar abierta la terminal. La API key Firebase solo está autorizada en los orígenes/puertos listados arriba; el puerto alternativo requiere modificar la restricción de referrer en Google Cloud.
-- El commit más reciente conocido es `5d49da7` (`Mejora edición y captura de Caja Chica`), subido a `main`; incluyó edición de admin/operario, campos Responsable/Proveedor, reglas de Firestore e historial. Verificar el estado de Git antes de continuar porque este archivo y cambios posteriores pueden estar sin commit.
+- Verificar el estado de Git antes de continuar: puede haber cambios sin commit.
 - Gabriel normalmente realiza sus propios commits y push. Solo ejecutar CCPP cuando lo pida explícitamente. Antes de CCPP, revisar archivos staged y excluir `_privado/`, información sensible, `AGENTS.md` local y logs como `firebase-debug.log` salvo instrucción expresa.
 - Prueba estática aplicada: extraer el `<script type="module">` de `admin/public/caja-chica/index.html` y pasarlo a `node --input-type=module --check`, además de `git diff --check`. No afirmar que las reglas se compilaron o que la función se probó contra Firebase si no se ejecutó un emulador o una prueba real.
 
@@ -96,6 +96,17 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 - Tubo 10, lectura del 29/02/2024: en Firestore ya está en 0 m³ y $0 (04/10/2026); en el Sheet HIDRAULICO sigue con 99,997.531 m³. Gabriel quiere retomarlo después: no tocar el Sheet ni ese tubo hasta entonces.
 - Operario: cuenta `victor@fabrica.la` (Victor Navaro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
 - Depósitos de los locales 6, 7 y 15 y un ajuste de Setter Bistro por revisar; montos en `_privado/pendientes.md`.
+
+## Auditoría 04/10/2026
+
+- El historial de git se reescribió el 04/10/2026 (push forzado): se quitaron montos reales (`building.json`, versiones viejas de este archivo), 10 fotos sin usar y `work/`. No se guardó respaldo del historial anterior (las fotos originales las tiene Gabriel). Si Codex vuelve a crear refs `refs/codex/...` en el repo, son solo locales y se pueden borrar.
+- `js/navbar.js` confirma la sesión con Firebase en cada página (`onAuthChange`): si el usuario fue desactivado o cambió su rol o nombre, se corrige la copia de `localStorage`.
+- Hecho el 04/10/2026: verificación en dos pasos en gabriel@ y admin@; Authentication → User actions con «Enable create» y «Enable delete» desmarcados y protección contra enumeración de correos activa.
+- Password policy: Gabriel decidió conservar las contraseñas actuales; la política se queda en «Notify» con mínimo 6. No activar «Require enforcement» sin antes revisar las contraseñas (el buzón de victor@ no existe para recuperarla).
+- `Historial.gs` redesplegado el 04/10/2026 como versión 2 del mismo deployment (la URL de `lecturas.html` no cambia). Para cambios futuros: Deploy → Manage deployments → editar → New version.
+- Apps Script (04/10/2026): «LFdC - Conector Panel» se mandó a la papelera. «lecturas» (prototipo ligado a un Sheet) tenía un despliegue web activo con acceso «Anyone» que corría como gabriel@ y leía/escribía su Sheet sin autenticación: se archivó (la URL ya no responde). Ese proyecto solo se puede borrar con «Delete forever»; queda a decisión de Gabriel.
+- App Check: no activado. Requiere registrar una clave de reCAPTCHA, cambiar el código del panel y tokens de depuración para probar en local; aporta poco mientras las reglas protegen los datos.
+- Pendiente de decidir: reglas más estrictas para el operario en `agua_lecturas` (hoy puede cambiar cualquier campo) y validar `creadoPor` en `calendario_eventos`.
 
 ## Seguridad (auditoría 01/10/2026)
 
