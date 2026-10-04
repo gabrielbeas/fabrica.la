@@ -102,7 +102,7 @@
                 .map(c => ({ ...c, _e: estadoDe(c), _a: alertasContrato(c) }));
 
             if (!contratos.length) {
-                app.innerHTML = `<h1>Locales</h1><p class="sub">Todavía no hay contratos en el panel. Impórtalos desde <a href="../herramientas/importar-contratos.html">Importar contratos</a>.</p>`;
+                app.innerHTML = `<h1>Locales</h1><p class="sub">Todavía no hay contratos en el panel. Se importan con la herramienta local <code>herramientas/importar-contratos.html</code> (no está publicada).</p>`;
                 return;
             }
 

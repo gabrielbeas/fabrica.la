@@ -34,18 +34,18 @@ function doPost(e) {
     var filas = (body.lecturas || []).map(function (l) {
       return [
         new Date(),
-        String(l.accion || 'guardada'),
-        String(l.fecha || ''),
-        String(l.tubo || ''),
-        String(l.empresa || ''),
+        texto(l.accion || 'guardada'),
+        texto(l.fecha),
+        texto(l.tubo),
+        texto(l.empresa),
         numero(l.lecturaAnterior),
-        String(l.fechaAnterior || ''),
+        texto(l.fechaAnterior),
         numero(l.lectura),
         numero(l.consumo),
         numero(l.costoM3),
         numero(l.importe),
         usuario.email,
-        String(l.id || '')
+        texto(l.id)
       ];
     });
     if (!filas.length) return respuesta({ ok: true, filas: 0 });
@@ -60,7 +60,8 @@ function doPost(e) {
     }
     return respuesta({ ok: true, filas: filas.length });
   } catch (err) {
-    return respuesta({ ok: false, error: String(err.message || err) });
+    console.error(err);
+    return respuesta({ ok: false, error: 'Error al registrar en el Sheet' });
   }
 }
 
@@ -96,6 +97,12 @@ function obtenerHoja() {
     hoja.setFrozenRows(1);
   }
   return hoja;
+}
+
+// Texto que manda el panel: si empieza con = + - @ el Sheet lo tomaría como fórmula
+function texto(v) {
+  var s = (v === null || v === undefined) ? '' : String(v);
+  return /^[=+\-@]/.test(s) ? "'" + s : s;
 }
 
 function numero(v) {

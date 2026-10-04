@@ -5,7 +5,8 @@ name: Deploy to GitHub Pages
 # login.html, js/, firebase-config -> fabrica.la/            (login y código compartido del panel)
 # admin/public/ (solo lo nuevo)    -> fabrica.la/admin/      (panel con Firebase)
 #
-# NO se publican: admin/src (backend viejo), admin/public/agua/data.json,
+# NO se publican: admin/public/herramientas/ (importadores de una sola vez: se usan en local),
+# admin/src (backend viejo), admin/public/agua/data.json,
 # apps-script/, las páginas viejas de agua que dependían del Worker de Cloudflare,
 # ni _privado/ (datos privados, excluido en .gitignore).
 #
@@ -46,9 +47,8 @@ jobs:
           cp login.html firebase-config.js dist/
           cp -r js dist/js
           # Panel (solo archivos nuevos)
-          mkdir -p dist/admin/agua dist/admin/herramientas dist/admin/locales dist/admin/facturacion dist/admin/calendarios dist/admin/config dist/admin/caja-chica dist/admin/bitacora
+          mkdir -p dist/admin/agua dist/admin/locales dist/admin/facturacion dist/admin/calendarios dist/admin/config dist/admin/caja-chica dist/admin/bitacora
           cp admin/public/facturacion/index.html admin/public/facturacion/ficha.html dist/admin/facturacion/
-          cp admin/public/herramientas/importar-facturas.html admin/public/herramientas/actualizar-caratulas.html dist/admin/herramientas/
           cp admin/public/index.html dist/admin/
           cp admin/public/calendarios/index.html dist/admin/calendarios/
           cp admin/public/config/index.html dist/admin/config/
@@ -57,9 +57,8 @@ jobs:
           cp -r admin/public/css dist/admin/css
           cp admin/public/agua/lecturas.html admin/public/agua/siapa.html dist/admin/agua/
           cp admin/public/locales/index.html admin/public/locales/caratula.html dist/admin/locales/
-          cp admin/public/herramientas/importar-agua.html admin/public/herramientas/importar-contratos.html dist/admin/herramientas/
           # Verificación: nada privado debe quedar publicado
-          if find dist -name 'data.json' -o -path '*_privado*' -o -name '*.gs' | grep -q .; then
+          if find dist -name 'data.json' -o -path '*_privado*' -o -name '*.gs' -o -path '*herramientas*' | grep -q .; then
             echo "ERROR: archivos privados en dist"; exit 1
           fi
           find dist -type f | sort

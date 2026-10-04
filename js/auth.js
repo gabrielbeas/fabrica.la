@@ -6,16 +6,10 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword
+  onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import {
   getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
   doc,
   getDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -125,67 +119,6 @@ export async function getUserData(uid) {
 }
 
 /**
- * Crear usuario en Firestore (solo admin)
- */
-export async function crearUsuario(uid, email, nombre, rol, permisos = []) {
-  try {
-    const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, {
-      email,
-      nombre,
-      rol,
-      permisos,
-      createdAt: new Date(),
-      activo: true
-    });
-    return { success: true };
-  } catch (error) {
-    console.error('Error creando usuario:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * Registrar nuevo operario (solo admin)
- */
-export async function registrarOperario(email, password, nombre) {
-  try {
-    // Crear usuario en Auth
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const uid = userCredential.user.uid;
-
-    // Crear documento en Firestore
-    await crearUsuario(uid, email, nombre, 'operario', [
-      'ver_lecturas',
-      'crear_lecturas',
-      'editar_lecturas_mes_actual',
-      'ver_dashboard'
-    ]);
-
-    return { success: true, uid };
-  } catch (error) {
-    console.error('Error registrando operario:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-// ============================================
-// CONTROL DE ACCESO
-// ============================================
-
-/**
- * Verificar si usuario tiene permiso
- */
-export function tienePermiso(permiso) {
-  const user = getCurrentUser();
-  if (!user) return false;
-
-  if (user.rol === 'admin') return true; // Admin tiene todos los permisos
-
-  return user.permisos && user.permisos.includes(permiso);
-}
-
-/**
  * Verificar si usuario es admin
  */
 export function esAdmin() {
@@ -246,8 +179,17 @@ export function getSeccionesPermitidas() {
 export function onAuthChange(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // Usuario autenticado
-      const userData = await getUserData(user.uid);
+      // Usuario autenticado. Si no se puede leer el perfil (sin red), se conserva
+      // la sesión con la copia guardada en vez de sacar al usuario.
+      let userData;
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        userData = snap.exists() ? snap.data() : null;
+      } catch (error) {
+        console.error('No se pudo verificar el perfil:', error);
+        callback(getCurrentUser());
+        return;
+      }
       if (!userData || userData.activo === false) {
         await signOut(auth);
         localStorage.removeItem('currentUser');

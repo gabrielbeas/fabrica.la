@@ -6,8 +6,11 @@ import {
   logout,
   getSeccionesPermitidas,
   isAuthenticated,
-  basePath
+  basePath,
+  onAuthChange
 } from './auth.js';
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /**
  * Crear navbar dinámicamente
@@ -39,7 +42,7 @@ export function crearNavbar() {
             </a>
           `).join('')}
           <div class="menu-usuario">
-            <span>${user.nombre || user.email}<small>${getRoleLabel(user.rol)}</small></span>
+            <span>${esc(user.nombre || user.email)}<small>${getRoleLabel(user.rol)}</small></span>
             <button class="logout-btn" id="logoutBtnMovil">Salir</button>
           </div>
         </div>
@@ -47,7 +50,7 @@ export function crearNavbar() {
         <div class="navbar-user">
           <div class="user-info">
             <div class="user-details">
-              <div class="user-name">${user.nombre || user.email}</div>
+              <div class="user-name">${esc(user.nombre || user.email)}</div>
               <div class="user-role">${getRoleLabel(user.rol)}</div>
             </div>
           </div>
@@ -75,6 +78,14 @@ export function crearNavbar() {
   agregarEstilosNavbar();
   agregarEstilosMovil();
   etiquetarTablas();
+
+  // La copia del perfil en localStorage solo sirve para pintar rápido la página.
+  // Aquí se confirma con Firebase: si la sesión expiró o el usuario fue desactivado
+  // se manda al login, y si cambió su rol o su nombre se recarga con el perfil nuevo.
+  onAuthChange(actual => {
+    if (!actual) { window.location.href = '/login.html'; return; }
+    if (actual.rol !== user.rol || actual.nombre !== user.nombre) window.location.reload();
+  });
 
   // Event listeners
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);

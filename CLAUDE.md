@@ -4,7 +4,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 
 ## Reglas importantes
 
-- **El repo es público.** Nunca subir datos privados: RFCs, correos o teléfonos de inquilinos, montos de contratos, recibos de CFE, escrituras. Todo eso vive en Firestore o en `_privado/` (ignorado en `.gitignore`). Antes de cada commit, revisar que nada privado quede en el código.
+- **El repo es público, incluido este archivo.** Nunca subir datos privados: RFCs, correos o teléfonos de inquilinos, montos de contratos, pagos o saldos, números de cuenta, recibos de CFE, escrituras. Todo eso vive en Firestore o en `_privado/` (ignorado en `.gitignore`); los pendientes con montos van en `_privado/pendientes.md`. Antes de cada commit, revisar que nada privado quede en el código.
 - **Interfaz:** fondo blanco, **sin emojis**, textos en español, estilo limpio (bordes `#eee`, morado `#667eea` / gradiente `#667eea → #764ba2`).
 - No borrar datos de Firestore sin confirmarlo con Gabriel. Las ediciones de contratos deben dejar entrada en `contratos/{id}/historial`.
 - No inventar datos: si algo no está en Firestore o en los archivos, preguntar.
@@ -41,7 +41,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `config/index.html` | Configuración: pestaña Usuarios (perfiles de `users`: nombre, rol, activo, alta con UID de la consola, restablecer contraseña) y pestaña Valores (costo de agua, basura, % moratorios, día límite de pago; cambios en `facturacion_config/general.cambios`) | admin |
 | `caja-chica/index.html` | Control de caja chica: movimientos, comprobantes privados en Storage, saldo inicial, resumen y cortes | admin y operario |
 | `bitacora/index.html` | Bitácora de acciones realizadas: fecha y hora, categoría, lugar, acción, detalle, responsable y hasta 3 fotos/PDF privados en Storage (`bitacora/{uid}/{registroId}/`). Filtros por mes, categoría, lugar, responsable y texto. El operario corrige sus registros durante 24 h; el admin corrige y elimina cualquiera (al eliminar se borran fotos e historial y queda copia en `bitacora_eliminados`); cada corrección deja `historial`. Las listas de categorías y responsables están en la página y en `firestore.rules` (cambiar las dos) | admin y operario |
-| `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
+| `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas). **No se publican** (desde el 04/10/2026): se usan solo en local, porque «Importar contratos» sobrescribe contratos completos | admin |
 
 Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban Apps Script/Sheets, `admin/public/js/`) se sacó del repo el 01/10/2026 y quedó en `_privado/sacado-del-repo/`. Lo único que sigue de Apps Script es `admin/public/agua/apps-script/Historial.gs` (manda las lecturas al Sheet LFdC_OPERACION; valida el token de Firebase).
 
@@ -91,11 +91,11 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 
 ## Pendientes
 
-- SIAPA: confirmar qué significan las notas 210 y 206 junto a la lectura (parecen consumo estimado: la lectura se repite del periodo anterior). Histórico completo de sep 2023 a sep 2026 (jul-ago 2023 no se buscan). Detalle de pagos en _privado.
+- SIAPA: confirmar qué significan las notas 210 y 206 junto a la lectura (parecen consumo estimado: la lectura se repite del periodo anterior). Histórico completo de sep 2023 a sep 2026 (jul-ago 2023 no se buscan). Los pagos del banco (`_privado/siapa/pagos-banco.csv`) cuadran con los recibos salvo unos recargos de 2026; detalle en `_privado/pendientes.md`.
 
 - Tubo 10, lectura del 29/02/2024: en Firestore ya está en 0 m³ y $0 (04/10/2026); en el Sheet HIDRAULICO sigue con 99,997.531 m³. Gabriel quiere retomarlo después: no tocar el Sheet ni ese tubo hasta entonces.
 - Operario: cuenta `victor@fabrica.la` (Victor Navaro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
-- Depósitos de los locales 6, 7 y 15: detalle en _privado.
+- Depósitos de los locales 6, 7 y 15 y un ajuste de Setter Bistro por revisar; montos en `_privado/pendientes.md`.
 
 ## Seguridad (auditoría 01/10/2026)
 

@@ -121,7 +121,7 @@
                             <input type="checkbox" id="conResumen" checked> Incluir resumen</label>` : ''}
                     <span id="msg">${msg}</span>
                 </div>
-                ${!facturables.length ? `<div class="vacio">Ningún contrato tiene datos de facturación todavía. Impórtalos en <a href="../herramientas/importar-facturas.html">Importar facturación</a>.</div>` :
+                ${!facturables.length ? `<div class="vacio">Ningún contrato tiene datos de facturación todavía. Se importan con la herramienta local <code>herramientas/importar-facturas.html</code> (no está publicada).</div>` :
                   !facturas.length ? `<div class="vacio">No hay facturas de <strong>${mesTxt(mes)}</strong>.<br><br>"Generar" las prellena con la renta de cada contrato, el agua de las lecturas y la recolección de basura. Después revisas y ajustas cada una.</div>` : `
                 <div class="resumen">
                     <div class="tarjeta"><div class="k">Facturado ${mesTxt(mes)}</div><div class="v">${dinero(total)}</div></div>
