@@ -72,6 +72,8 @@
         .oculto { display: none; }
         .hist div { padding: 8px 0; border-top: 1px solid #f3f3f3; font-size: 13px; }
         .hist div:first-child { border-top: none; }
+        .btn-peligro { background: #c62828; }
+        .link.peligro { color: #c62828; }
         .modal.visor { max-width: 900px; }
         .modal.visor h3 { margin-bottom: 12px; overflow-wrap: anywhere; }
         #vContenido img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; border-radius: 8px; }
@@ -124,6 +126,19 @@
         </div>
     </div>
 
+    <div class="modal-fondo" id="modalEliminar">
+        <div class="modal">
+            <h3>Eliminar registro</h3>
+            <p class="sub" id="eSub"></p>
+            <p style="font-size:14px;margin:0">Se borran el registro, sus fotos y su historial de correcciones. Queda una copia en la bitácora de eliminados (sin fotos). No se puede deshacer.</p>
+            <div class="pie">
+                <span class="msg" id="eMsg"></span>
+                <button class="btn-sec" data-cerrar>Cancelar</button>
+                <button class="btn btn-peligro" id="bEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-fondo" id="modalFoto">
         <div class="modal visor">
             <h3 id="vTitulo">Foto</h3>
@@ -139,7 +154,7 @@
         import { crearNavbar } from '../../../js/navbar.js';
         import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js';
         import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { collection, doc, getDocs, setDoc, writeBatch, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { collection, doc, getDocs, setDoc, writeBatch, deleteDoc, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
         // Listas fijas (las mismas que valida firestore.rules)
@@ -178,6 +193,7 @@
             document.getElementById('iCamara').addEventListener('change', agregarArchivos);
             document.getElementById('iArchivo').addEventListener('change', agregarArchivos);
             document.getElementById('bGuardar').addEventListener('click', guardar);
+            document.getElementById('bEliminar').addEventListener('click', eliminar);
             document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.modal-fondo').id)));
             document.querySelectorAll('.modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
             document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-fondo.abierto').forEach(m => cerrar(m.id)); });
@@ -228,7 +244,7 @@
                     </table>
                     <div class="vacio oculto" id="sinFilas">No hay registros con esos filtros.</div>
                 </div>
-                <p class="gris" style="margin-top:8px">${admin ? 'Como administrador puedes corregir cualquier registro. Nadie puede borrar registros; cada corrección queda en el historial.' : `Puedes corregir tus registros hasta ${HORAS_EDICION} horas después de capturarlos. No se pueden borrar; cada corrección queda en el historial.`}</p>`;
+                <p class="gris" style="margin-top:8px">${admin ? 'Como administrador puedes corregir o eliminar cualquier registro. Cada corrección queda en el historial y cada registro eliminado queda copiado en la bitácora de eliminados.' : `Puedes corregir tus registros hasta ${HORAS_EDICION} horas después de capturarlos. No se pueden borrar; cada corrección queda en el historial.`}</p>`;
             document.getElementById('bNuevo').addEventListener('click', () => abrir());
             ['flMes', 'flCategoria', 'flLugar', 'flResponsable'].forEach(id => document.getElementById(id).addEventListener('change', filas));
             document.getElementById('flBuscar').addEventListener('input', filas);
@@ -253,12 +269,45 @@
                 <td><div class="accion">${esc(r.accion)}</div>${r.detalle ? `<div class="detalle">${esc(r.detalle)}</div>` : ''}</td>
                 <td>${esc(r.responsable)}<div class="gris">Capturó: ${esc(r.registradoPorNombre || '')}</div></td>
                 <td>${(r.fotos || []).length ? (r.fotos || []).map((f, i) => `<button class="link" data-foto="${esc(r.id)}" data-i="${i}">${f.tipo === 'application/pdf' ? 'PDF' : 'Foto'} ${i + 1}</button>`).join('<br>') : '<span class="gris">-</span>'}</td>
-                <td><div class="acciones-f">${puedeEditar(r) ? `<button class="link" data-editar="${esc(r.id)}">Corregir</button>` : ''}${r.ultimaEdicionHistorialId ? `<button class="link" data-hist="${esc(r.id)}">Historial</button>` : ''}</div></td>
+                <td><div class="acciones-f">${puedeEditar(r) ? `<button class="link" data-editar="${esc(r.id)}">Corregir</button>` : ''}${r.ultimaEdicionHistorialId ? `<button class="link" data-hist="${esc(r.id)}">Historial</button>` : ''}${admin ? `<button class="link peligro" data-eliminar="${esc(r.id)}">Eliminar</button>` : ''}</div></td>
             </tr>`).join('');
             document.getElementById('sinFilas').classList.toggle('oculto', lista.length > 0);
             tbody.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => abrir(registros.find(r => r.id === b.dataset.editar))));
             tbody.querySelectorAll('[data-foto]').forEach(b => b.addEventListener('click', () => verArchivo(registros.find(r => r.id === b.dataset.foto).fotos[+b.dataset.i])));
             tbody.querySelectorAll('[data-hist]').forEach(b => b.addEventListener('click', () => verHistorial(registros.find(r => r.id === b.dataset.hist))));
+            tbody.querySelectorAll('[data-eliminar]').forEach(b => b.addEventListener('click', () => pedirEliminar(registros.find(r => r.id === b.dataset.eliminar))));
+        }
+
+        // ---------- Eliminar (solo admin) ----------
+        let eliminando = null;
+        function pedirEliminar(r) {
+            eliminando = r;
+            document.getElementById('eSub').textContent = `${fechaCorta(r.fecha)} ${r.hora || ''} · ${r.lugar} · ${r.accion}`;
+            document.getElementById('eMsg').textContent = '';
+            document.getElementById('modalEliminar').classList.add('abierto');
+        }
+
+        async function eliminar() {
+            const r = eliminando, btn = document.getElementById('bEliminar'), msg = document.getElementById('eMsg');
+            if (!r || !admin) return;
+            btn.disabled = true; msg.textContent = '';
+            try {
+                // Copia en bitacora_eliminados + borrado del registro y su historial en un solo batch
+                const hist = await getDocs(collection(db, 'bitacora', r.id, 'historial'));
+                const { id, ...datos } = r;
+                const b = writeBatch(db);
+                b.set(doc(db, 'bitacora_eliminados', id), { ...datos, correcciones: hist.size, eliminadoPor: auth.currentUser.uid, eliminadoPorNombre: user.nombre || user.email, eliminadoEn: serverTimestamp() });
+                hist.docs.forEach(h => b.delete(h.ref));
+                b.delete(doc(db, 'bitacora', id));
+                await b.commit();
+                // Fotos: si alguna no se puede borrar, el registro ya no existe y el archivo queda huérfano
+                for (const f of r.fotos || []) { try { await deleteObject(ref(storage, f.path)); } catch (err) { console.warn('No se borró', f.path, err); } }
+                cerrar('modalEliminar');
+                await cargar('Registro eliminado.');
+            } catch (err) {
+                console.error(err);
+                msg.textContent = err.code === 'permission-denied' ? 'Permiso denegado: falta publicar las reglas de Firestore.' : 'No se pudo eliminar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
         }
 
         // ---------- Formulario ----------
@@ -280,7 +329,7 @@
             document.getElementById('mMsg').textContent = '';
             document.getElementById('mTitulo').textContent = r ? 'Corregir registro' : 'Registrar acción';
             document.getElementById('bGuardar').textContent = r ? 'Guardar corrección' : 'Registrar';
-            document.getElementById('mNota').textContent = r ? 'La corrección queda en el historial del registro.' : 'Los registros no se pueden borrar.';
+            document.getElementById('mNota').textContent = r ? 'La corrección queda en el historial del registro.' : (admin ? 'Solo el administrador puede eliminar registros.' : 'Los registros no se pueden borrar.');
             document.getElementById('modal').classList.add('abierto');
         }
 

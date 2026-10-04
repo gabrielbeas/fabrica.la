@@ -165,7 +165,8 @@ service cloud.firestore {
     }
 
     // Bitácora: admin y operario consultan y registran; el operario corrige sus registros
-    // durante 24 h; el admin corrige cualquiera. Nadie borra. Cada corrección deja historial.
+    // durante 24 h; el admin corrige y elimina cualquiera. Cada corrección deja historial;
+    // al eliminar, el panel guarda una copia en bitacora_eliminados (cubierta por la regla general: solo admin).
     match /bitacora/{id} {
       function camposValidos() {
         return request.resource.data.fecha is string
@@ -198,7 +199,7 @@ service cloud.firestore {
         && request.resource.data.editadoEn == request.time
         && !exists(/databases/$(database)/documents/bitacora/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId))
         && existsAfter(/databases/$(database)/documents/bitacora/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId));
-      allow delete: if false;
+      allow delete: if isAdmin();
 
       match /historial/{eventoId} {
         allow read: if puedeUsarCajaChica();
@@ -207,7 +208,8 @@ service cloud.firestore {
           && request.resource.data.registradoPor == request.auth.uid
           && getAfter(/databases/$(database)/documents/bitacora/$(id)).data.ultimaEdicionHistorialId == eventoId
           && getAfter(/databases/$(database)/documents/bitacora/$(id)).data.editadoPor == request.auth.uid;
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin();
       }
     }
 

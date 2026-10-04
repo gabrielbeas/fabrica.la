@@ -17,7 +17,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 - **GitHub Pages** con GitHub Actions (`.github/workflows/deploy.yml`) arma `dist/`: el sitio público sale de `fabrica/`, el panel de `admin/public/` se publica en `/admin/`. **Cada página nueva del panel hay que agregarla a `deploy.yml`.** El build falla si encuentra `_privado`, `data.json` o `.gs` en `dist/`.
 - `basePath()` en `js/auth.js`: `/admin/public/` en local y `/admin/` publicado. Usarlo para todos los enlaces internos.
 - Cloudflare solo maneja DNS (ya no hay Worker).
-- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 12:47 (agrega Bitácora; incluye Caja Chica; la regla general para colecciones sin regla propia es solo admin).
+- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 13:46 (Bitácora, con borrado solo para admin; incluye Caja Chica; la regla general para colecciones sin regla propia es solo admin).
 
 ### Archivos compartidos
 
@@ -40,7 +40,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 | `calendarios/index.html` | Calendario: eventos automáticos (vencimientos, incrementos, límite de pago día 10, lecturas de agua, feriados LFT 2026–2027) + eventos capturados en `calendario_eventos` | admin y operario |
 | `config/index.html` | Configuración: pestaña Usuarios (perfiles de `users`: nombre, rol, activo, alta con UID de la consola, restablecer contraseña) y pestaña Valores (costo de agua, basura, % moratorios, día límite de pago; cambios en `facturacion_config/general.cambios`) | admin |
 | `caja-chica/index.html` | Control de caja chica: movimientos, comprobantes privados en Storage, saldo inicial, resumen y cortes | admin y operario |
-| `bitacora/index.html` | Bitácora de acciones realizadas: fecha y hora, categoría, lugar, acción, detalle, responsable y hasta 3 fotos/PDF privados en Storage (`bitacora/{uid}/{registroId}/`). Filtros por mes, categoría, lugar, responsable y texto. El operario corrige sus registros durante 24 h; el admin corrige cualquiera; nadie borra; cada corrección deja `historial`. Las listas de categorías y responsables están en la página y en `firestore.rules` (cambiar las dos) | admin y operario |
+| `bitacora/index.html` | Bitácora de acciones realizadas: fecha y hora, categoría, lugar, acción, detalle, responsable y hasta 3 fotos/PDF privados en Storage (`bitacora/{uid}/{registroId}/`). Filtros por mes, categoría, lugar, responsable y texto. El operario corrige sus registros durante 24 h; el admin corrige y elimina cualquiera (al eliminar se borran fotos e historial y queda copia en `bitacora_eliminados`); cada corrección deja `historial`. Las listas de categorías y responsables están en la página y en `firestore.rules` (cambiar las dos) | admin y operario |
 | `herramientas/` | Importadores de una sola vez (agua, contratos, facturas, carátulas) | admin |
 
 Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban Apps Script/Sheets, `admin/public/js/`) se sacó del repo el 01/10/2026 y quedó en `_privado/sacado-del-repo/`. Lo único que sigue de Apps Script es `admin/public/agua/apps-script/Historial.gs` (manda las lecturas al Sheet LFdC_OPERACION; valida el token de Firebase).
@@ -59,6 +59,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 - `caja_chica_movimientos/{id}/historial/{eventoId}`: cambios con `accion`, mapas `antes` y `despues`, persona que hizo el cambio y fecha del evento. También se registra aquí la aprobación o rechazo del admin.
 - `caja_chica_cortes/{id}`: saldo esperado, efectivo contado, diferencia, nota opcional y autoría del corte.
 - `bitacora/{id}`: `fecha, hora, categoria, lugar, accion, detalle, responsable, fotos [{path, nombre, tipo, bytes}]`, `creadoPor, registradoPorNombre, creadoEn`, y al corregir `editadoPor, editadoPorNombre, editadoEn, ultimaEdicionHistorialId`. Subcolección `historial` con `antes`/`despues`.
+- `bitacora_eliminados/{id}`: copia del registro eliminado por el admin (mismo id) con `correcciones`, `eliminadoPor`, `eliminadoPorNombre`, `eliminadoEn`. Solo admin (regla general).
 
 ## Continuidad de Caja Chica (actualizado 04/10/2026)
 
