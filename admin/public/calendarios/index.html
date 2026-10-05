@@ -57,7 +57,17 @@
 
         /* Mes */
         .mes { border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; }
-        .sem, .dias { display: grid; grid-template-columns: repeat(7, 1fr); }
+        /* minmax(0, 1fr): las siete columnas miden igual aunque un evento tenga texto largo */
+        .sem, .dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+        .dia { min-width: 0; }
+        .chip { cursor: pointer; }
+        .chip:hover { filter: brightness(.95); }
+        .mas { cursor: pointer; text-decoration: underline; text-decoration-color: var(--linea); }
+        .det-tipo { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 10px; }
+        .det-tipo i { width: 8px; height: 8px; border-radius: 999px; }
+        .det-fecha { color: var(--tinta-suave); font-size: 14px; margin: 0 0 12px; }
+        .det-texto { font-size: 14px; line-height: 20px; margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+        .det-lista .ev { cursor: pointer; }
         .sem div { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; padding: 8px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); text-align: center; }
         .dia { min-height: 108px; border-right: 1px solid var(--linea); border-bottom: 1px solid var(--linea); padding: 6px 6px 4px; cursor: pointer; position: relative; background: var(--fondo); }
         .dia:nth-child(7n) { border-right: none; }
@@ -88,7 +98,7 @@
         .vacio { color: var(--tinta-tenue); font-size: 13px; }
 
         /* Ventana para capturar */
-        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; z-index: 1000; overflow-y: auto; }
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; z-index: 2000; overflow-y: auto; }
         .modal { background: var(--fondo); border-radius: 12px; width: 100%; max-width: 520px; padding: 24px 26px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
         .modal h3 { margin: 0 0 16px; font-size: 18px; }
         .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
@@ -261,8 +271,8 @@
                                 const cls = [f.slice(0, 7) !== mesVista && 'fuera', f === hoy && 'hoy', f === diaSel && 'sel', (d.getDay() === 0 || d.getDay() === 6) && 'finde', esOficial(f) && 'oficial'].filter(Boolean).join(' ');
                                 return `<div class="dia ${cls}" data-f="${f}">
                                     <span class="n">${d.getDate()}</span>
-                                    ${lista.slice(0, 3).map(e => `<span class="chip" style="border-color:${TIPOS[e.tipo].color};background:${TIPOS[e.tipo].color}14;color:${TIPOS[e.tipo].color}" title="${esc(e.titulo)}">${esc(e.titulo)}</span>`).join('')}
-                                    ${lista.length > 3 ? `<div class="mas">+${lista.length - 3} más</div>` : ''}
+                                    ${lista.slice(0, 3).map((e, i) => `<span class="chip" data-ev="${i}" role="button" tabindex="0" style="border-color:${TIPOS[e.tipo].color};background:${TIPOS[e.tipo].color}14;color:${TIPOS[e.tipo].color}" title="${esc(e.titulo)}">${esc(e.titulo)}</span>`).join('')}
+                                    ${lista.length > 3 ? `<div class="mas" role="button" tabindex="0">+${lista.length - 3} más</div>` : ''}
                                 </div>`;
                             }).join('')}
                         </div>
@@ -284,8 +294,63 @@
                 x.addEventListener('click', () => { diaSel = x.dataset.f; if (diaSel.slice(0, 7) !== mesVista) mesVista = diaSel.slice(0, 7); dibujar(); });
                 x.addEventListener('dblclick', () => formulario(null, x.dataset.f));
             });
+            // Clic en un evento: ventana con el detalle completo. Clic en "+N más": todos los del día.
+            const abrirChip = (el, k) => {
+                const f = el.closest('.dia').dataset.f;
+                if (el.classList.contains('mas')) verDia(f); else verDetalle(delDia(f)[+el.dataset.ev]);
+            };
+            app.querySelectorAll('.chip, .mas').forEach(x => {
+                x.addEventListener('click', k => { k.stopPropagation(); abrirChip(x); });
+                x.addEventListener('dblclick', k => k.stopPropagation());
+                x.addEventListener('keydown', k => { if (k.key === 'Enter' || k.key === ' ') { k.preventDefault(); abrirChip(x); } });
+            });
             dibujarPanelDia(delDia(diaSel));
             dibujarProximos();
+        }
+
+        // ---------- Ventana de detalle ----------
+        function ventana(html, alAbrir) {
+            const fondo = document.createElement('div');
+            fondo.className = 'modal-fondo';
+            fondo.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = k => { if (k.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', k => { if (k.target === fondo || k.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+            alAbrir?.(fondo, cerrar);
+            fondo.querySelector('[data-cerrar]')?.focus();
+        }
+
+        function verDetalle(e) {
+            if (!e) return;
+            const t = TIPOS[e.tipo];
+            const editable = e.manual && puedeEditar(e.manual);
+            ventana(`
+                <span class="det-tipo" style="background:${t.color}14;color:${t.color}"><i style="background:${t.color}"></i>${esc(t.nombre)}</span>
+                <h3 style="margin-bottom:6px">${esc(e.titulo)}</h3>
+                <p class="det-fecha">${fechaLarga(e.fecha)}</p>
+                ${e.det ? `<p class="det-texto">${esc(e.det)}</p>` : ''}
+                ${e.manual?.creadoPor ? `<p class="det-fecha" style="margin:10px 0 0">Capturado por ${esc(e.manual.creadoPor)}</p>` : ''}
+                <div class="acciones">
+                    ${e.link ? `<a class="btn-sec izq" href="${e.link}" style="text-decoration:none">Abrir</a>` : ''}
+                    ${editable ? `<button class="btn-sec" id="d_editar">Editar</button>` : ''}
+                    <button class="btn" data-cerrar>Cerrar</button>
+                </div>`, (fondo, cerrar) => {
+                fondo.querySelector('#d_editar')?.addEventListener('click', () => { cerrar(); formulario(manuales.find(m => m.id === e.manual.id)); });
+            });
+        }
+
+        function verDia(f) {
+            const lista = delDia(f);
+            ventana(`
+                <h3 style="margin-bottom:6px">${fechaLarga(f)}</h3>
+                <p class="det-fecha">${lista.length} eventos</p>
+                <div class="det-lista">${lista.map((e, i) => `<div data-i="${i}">${filaEvento(e)}</div>`).join('')}</div>
+                <div class="acciones"><button class="btn" data-cerrar>Cerrar</button></div>`, (fondo, cerrar) => {
+                fondo.querySelectorAll('[data-i]').forEach(x => x.addEventListener('click', k => { if (k.target.closest('a, button')) return; cerrar(); verDetalle(lista[+x.dataset.i]); }));
+                fondo.querySelectorAll('.editar').forEach(b => b.addEventListener('click', () => { cerrar(); formulario(manuales.find(m => m.id === b.dataset.id)); }));
+            });
         }
 
         function moverMes(n) {
