@@ -119,7 +119,7 @@ service cloud.firestore {
         || (esOperario() && resource.data.creadoPor == request.auth.token.email);
     }
 
-    // Caja Chica: admin y operario consultan; operario agrega movimientos y cortes sin editar ni borrar.
+    // Caja Chica: admin y operario consultan; el operario agrega movimientos y cortes; solo el admin borra movimientos.
     match /caja_chica_config/{id} {
       allow read: if puedeUsarCajaChica();
       allow create, update: if isAdmin()
@@ -173,7 +173,8 @@ service cloud.firestore {
         || ((isAdmin()
           || (puedeUsarCajaChica() && resource.data.creadoPor == request.auth.uid && resource.data.estado == 'pendiente'))
           && edicionValida());
-      allow delete: if false;
+      // Solo el admin borra; el panel guarda antes una copia en caja_chica_eliminados (regla general: solo admin)
+      allow delete: if isAdmin();
 
       match /historial/{eventoId} {
         allow read: if puedeUsarCajaChica();
@@ -187,7 +188,8 @@ service cloud.firestore {
             && request.resource.data.registradoPor == request.auth.uid
             && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.ultimaEdicionHistorialId == eventoId
             && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)).data.editadoPor == request.auth.uid);
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin();
       }
     }
     match /caja_chica_cortes/{id} {
