@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261004-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -65,7 +65,9 @@
         .dia.fuera { background: var(--fondo-hundido); }
         .dia.fuera .n { color: var(--tinta-tenue); }
         .dia.finde { background: var(--fondo-hundido); }
-        .dia.sel { outline: 2px solid var(--accion); outline-offset: -2px; z-index: 1; }
+        .dia.sel { outline: var(--trazo) solid var(--accion); outline-offset: calc(-1 * var(--trazo)); z-index: 1; }
+        /* Feriado oficial (art. 74 LFT): tachado rojo de esquina a esquina, con el grosor de trazo del sistema */
+        .dia.oficial::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - var(--trazo) / 2), var(--peligro) calc(50% - var(--trazo) / 2), var(--peligro) calc(50% + var(--trazo) / 2), transparent calc(50% + var(--trazo) / 2)); }
         .dia .n { font-size: 13px; font-weight: 600; color: var(--tinta-suave); display: inline-block; min-width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 12px; }
         .dia.hoy .n { background: var(--accion); color: var(--on-accion); }
         .chip { display: block; font-size: 11px; line-height: 1.25; padding: 2px 6px; border-radius: 4px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid; }
@@ -105,8 +107,8 @@
     <div class="main" id="app"><div class="cargando">Cargando calendario...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261004-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261004-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-1';
         import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -128,6 +130,7 @@
             incremento:  { nombre: 'Incrementos de renta',     color: '#ef6c00', auto: true, soloAdmin: true },
             pago:        { nombre: 'Límite de pago de renta',  color: '#ad1457', auto: true, soloAdmin: true },
             agua:        { nombre: 'Lecturas de agua',         color: '#0288d1', auto: true },
+            bitacora:    { nombre: 'Bitácora',                 color: '#d08a1e', auto: true },
             actividad:   { nombre: 'Actividades',              color: '#1f4e79' },
             vacaciones:  { nombre: 'Vacaciones',               color: '#8e24aa' },
             feriado:     { nombre: 'Feriados',                 color: '#2e7d32' }
@@ -135,6 +138,7 @@
         const MANUALES = ['actividad', 'vacaciones', 'feriado'];
 
         // ---------- Feriados oficiales (art. 74 de la Ley Federal del Trabajo) ----------
+        const esOficial = f => FERIADOS.some(([x]) => x === f);
         const FERIADOS = [
             ['2026-01-01', 'Año Nuevo'], ['2026-02-02', 'Día de la Constitución'], ['2026-03-16', 'Natalicio de Benito Juárez'],
             ['2026-05-01', 'Día del Trabajo'], ['2026-09-16', 'Día de la Independencia'], ['2026-11-16', 'Día de la Revolución'],
@@ -148,7 +152,7 @@
         let admin = false, user = null;
         // El admin edita cualquier evento capturado; el operario solo los que él capturó
         const puedeEditar = ev => admin || (!!ev?.creadoPor && ev.creadoPor === user?.email);
-        let manuales = [], contratos = [], lecturas = [];
+        let manuales = [], contratos = [], lecturas = [], bitacora = [];
         let mesVista = hoy.slice(0, 7), diaSel = hoy;
         let activos = new Set(Object.keys(TIPOS));
 
@@ -167,6 +171,8 @@
 
         async function cargar() {
             const tareas = [getDocs(collection(db, 'calendario_eventos')), getDocs(collection(db, 'agua_lecturas'))];
+            // Bitácora: si no se puede leer (reglas), el calendario se muestra sin ella
+            const tareaBitacora = getDocs(collection(db, 'bitacora')).then(sn => sn.docs.map(d => d.data())).catch(err => { console.warn('Sin bitácora en el calendario:', err.code || err); return []; });
             if (admin) tareas.push(getDocs(collection(db, 'contratos')), getDoc(doc(db, 'facturacion_config', 'general')).catch(() => null));
             const [snapEv, snapLec, snapC, snapCfg] = await Promise.all(tareas);
             const dia = snapCfg?.exists() ? snapCfg.data().diaLimitePago : null;
@@ -174,6 +180,7 @@
             manuales = snapEv.docs.map(d => ({ id: d.id, ...d.data() }));
             lecturas = snapLec.docs.map(d => d.data());
             contratos = snapC ? snapC.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+            bitacora = await tareaBitacora;
         }
 
         // ---------- Todos los eventos de un rango de fechas ----------
@@ -200,6 +207,12 @@
             const porFecha = {};
             lecturas.forEach(l => { if (dentro(l.fecha)) porFecha[l.fecha] = (porFecha[l.fecha] || 0) + 1; });
             Object.entries(porFecha).forEach(([f, n]) => ev.push({ tipo: 'agua', fecha: f, titulo: 'Lecturas de agua grabadas', det: `${n} tubo${n > 1 ? 's' : ''}`, link: '../agua/lecturas.html' }));
+            // Acciones registradas en la Bitácora (una por registro, en su fecha)
+            const normResp = r => r === 'Victor Navaro' ? 'Victor Navarro' : r;
+            bitacora.forEach(r => {
+                if (!r.fecha || !dentro(r.fecha)) return;
+                ev.push({ tipo: 'bitacora', fecha: r.fecha, hora: r.hora || '', titulo: `${r.hora ? r.hora + ' · ' : ''}${r.accion || 'Acción registrada'}`, det: [r.lugar, r.categoria, normResp(r.responsable)].filter(Boolean).join(' · '), link: '../bitacora/' });
+            });
             // Feriados oficiales
             FERIADOS.forEach(([f, t]) => { if (dentro(f)) ev.push({ tipo: 'feriado', fecha: f, titulo: t, det: 'Descanso obligatorio (art. 74 LFT)', oficial: true }); });
             // Eventos capturados (pueden durar varios días)
@@ -211,7 +224,7 @@
                 }
             });
             const orden = Object.keys(TIPOS);
-            return ev.filter(e => activos.has(e.tipo)).sort((a, b) => a.fecha.localeCompare(b.fecha) || orden.indexOf(a.tipo) - orden.indexOf(b.tipo));
+            return ev.filter(e => activos.has(e.tipo)).sort((a, b) => a.fecha.localeCompare(b.fecha) || orden.indexOf(a.tipo) - orden.indexOf(b.tipo) || (a.hora || '').localeCompare(b.hora || ''));
         }
 
         // ---------- Dibujo ----------
@@ -245,7 +258,7 @@
                         <div class="dias">
                             ${celdas.map(f => {
                                 const lista = delDia(f), d = deISO(f);
-                                const cls = [f.slice(0, 7) !== mesVista && 'fuera', f === hoy && 'hoy', f === diaSel && 'sel', (d.getDay() === 0 || d.getDay() === 6) && 'finde'].filter(Boolean).join(' ');
+                                const cls = [f.slice(0, 7) !== mesVista && 'fuera', f === hoy && 'hoy', f === diaSel && 'sel', (d.getDay() === 0 || d.getDay() === 6) && 'finde', esOficial(f) && 'oficial'].filter(Boolean).join(' ');
                                 return `<div class="dia ${cls}" data-f="${f}">
                                     <span class="n">${d.getDate()}</span>
                                     ${lista.slice(0, 3).map(e => `<span class="chip" style="border-color:${TIPOS[e.tipo].color};background:${TIPOS[e.tipo].color}14;color:${TIPOS[e.tipo].color}" title="${esc(e.titulo)}">${esc(e.titulo)}</span>`).join('')}

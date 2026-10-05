@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar historial de agua - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261004-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
     <style>
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
@@ -25,8 +25,8 @@
     <div class="main" id="app">Verificando acceso...</div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261004-1';
-        import { getCurrentUser, isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261004-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
+        import { getCurrentUser, isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261005-1';
         import { writeBatch, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');

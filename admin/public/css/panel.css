@@ -56,6 +56,7 @@
   --alto-control: 40px;
   --alto-control-compacto: 32px;
   --ancho-pagina: 1200px;
+  --trazo: 2px;
 }
 
 [data-theme="dark"] {
@@ -137,7 +138,7 @@ td.num { font-family: var(--font-mono); }
 .lf-btn-icono.lf-btn-compacto { width: var(--alto-control-compacto); }
 .lf-acciones { display: flex; gap: var(--espacio-2); align-items: center; flex-wrap: wrap; }
 .lf-btn:disabled { background: var(--fondo-hundido); border-color: var(--linea); color: var(--tinta-tenue); cursor: not-allowed; }
-.lf-btn:focus-visible, .lf-campo input:focus-visible, .lf-campo select:focus-visible, .lf-campo textarea:focus-visible, .lf-switch input:focus-visible + span, .lf-app:focus-visible, .lf-barra-link:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.lf-btn:focus-visible, .lf-campo input:focus-visible, .lf-campo select:focus-visible, .lf-campo textarea:focus-visible, .lf-switch input:focus-visible + span, .lf-app:focus-visible, .lf-barra-link:focus-visible { outline: var(--trazo) solid var(--foco); outline-offset: 2px; }
 
 /* ---------- Campos ---------- */
 .lf-campo { display: flex; flex-direction: column; gap: var(--espacio-1); min-width: 0; }
