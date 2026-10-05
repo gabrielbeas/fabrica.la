@@ -17,7 +17,7 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 - **GitHub Pages** con GitHub Actions (`.github/workflows/deploy.yml`) arma `dist/`: el sitio público sale de `fabrica/`, el panel de `admin/public/` se publica en `/admin/`. **Cada página nueva del panel hay que agregarla a `deploy.yml`.** El build falla si encuentra `_privado`, `data.json` o `.gs` en `dist/`.
 - `basePath()` en `js/auth.js`: `/admin/public/` en local y `/admin/` publicado. Usarlo para todos los enlaces internos.
 - Cloudflare solo maneja DNS (ya no hay Worker).
-- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 13:46 (Bitácora, con borrado solo para admin; incluye Caja Chica; la regla general para colecciones sin regla propia es solo admin).
+- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 18:01 (permisos del operario en lecturas y calendario; Bitácora con borrado solo para admin; la regla general para colecciones sin regla propia es solo admin).
 
 ### Archivos compartidos
 
@@ -106,7 +106,10 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 - `Historial.gs` redesplegado el 04/10/2026 como versión 2 del mismo deployment (la URL de `lecturas.html` no cambia). Para cambios futuros: Deploy → Manage deployments → editar → New version.
 - Apps Script (04/10/2026): «LFdC - Conector Panel» se mandó a la papelera. «lecturas» (prototipo ligado a un Sheet) tenía un despliegue web activo con acceso «Anyone» que corría como gabriel@ y leía/escribía su Sheet sin autenticación: se archivó (la URL ya no responde). Ese proyecto solo se puede borrar con «Delete forever»; queda a decisión de Gabriel.
 - App Check: no activado. Requiere registrar una clave de reCAPTCHA, cambiar el código del panel y tokens de depuración para probar en local; aporta poco mientras las reglas protegen los datos.
-- Pendiente de decidir: reglas más estrictas para el operario en `agua_lecturas` (hoy puede cambiar cualquier campo) y validar `creadoPor` en `calendario_eventos`.
+- Permisos del operario (decididos y publicados el 04/10/2026):
+  - Lecturas de agua: captura lecturas nuevas y corrige solo las que él capturó durante 24 h (las demás le aparecen bloqueadas). Al corregir se conservan `capturadoPor/capturadoPorUid/capturadoEn` y se agregan `corregidoPor/corregidoPorUid/corregidoEn`. El `costoM3` grabado debe ser el de `agua_config/general`. No ve costo por m³ ni importes (clase `sin-pesos` en `lecturas.html`).
+  - Calendario: agrega eventos (firmados con `creadoPor` = su correo) y edita o borra solo los suyos.
+  - Caja Chica: sin cambios (ve todos los movimientos, el saldo y los cortes).
 
 ## Seguridad (auditoría 01/10/2026)
 

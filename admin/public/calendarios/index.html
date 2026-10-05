@@ -145,6 +145,8 @@
 
         // ---------- Estado ----------
         let admin = false, user = null;
+        // El admin edita cualquier evento capturado; el operario solo los que él capturó
+        const puedeEditar = ev => admin || (!!ev?.creadoPor && ev.creadoPor === user?.email);
         let manuales = [], contratos = [], lecturas = [];
         let mesVista = hoy.slice(0, 7), diaSel = hoy;
         let activos = new Set(Object.keys(TIPOS));
@@ -288,7 +290,7 @@
                     ${e.det ? `<div class="det">${esc(e.det)}</div>` : ''}
                     <div class="det">${TIPOS[e.tipo].nombre}${e.manual?.creadoPor ? ' · capturado por ' + esc(e.manual.creadoPor) : ''}
                         ${e.link ? ` · <a href="${e.link}">Abrir</a>` : ''}
-                        ${e.manual && admin ? ` · <button class="editar" data-id="${esc(e.manual.id)}">Editar</button>` : ''}</div>
+                        ${e.manual && puedeEditar(e.manual) ? ` · <button class="editar" data-id="${esc(e.manual.id)}">Editar</button>` : ''}</div>
                 </div>
                 ${conFecha ? `<span class="cuando">${fechaCorta(e.fecha)}</span>` : ''}
             </div>`;
@@ -330,7 +332,7 @@
                         <div class="ancho"><label>Nota (opcional)</label><textarea id="e_nota" rows="3">${esc(e.nota || '')}</textarea></div>
                     </div>
                     <div class="acciones">
-                        ${!nuevo && admin ? '<button class="btn-borrar izq" id="e_borrar">Eliminar</button>' : ''}
+                        ${!nuevo && puedeEditar(e) ? '<button class="btn-borrar izq" id="e_borrar">Eliminar</button>' : ''}
                         <span class="msg" id="e_msg"></span>
                         <button class="btn-sec" data-cerrar>Cancelar</button>
                         <button class="btn" id="e_guardar">${nuevo ? 'Agregar' : 'Guardar'}</button>

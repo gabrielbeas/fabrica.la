@@ -22,6 +22,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
     }
 
+    function esOperario() {
+      return isRegistered()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'operario';
+    }
+
     function puedeUsarCajaChica() {
       return isRegistered()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol in ['admin', 'operario'];
@@ -42,9 +47,31 @@ service cloud.firestore {
       allow read: if isRegistered();
       allow write: if isAdmin();
     }
-    // Lecturas: cualquier usuario registrado captura; solo el admin borra
+    // Lecturas: el admin captura, corrige y borra cualquiera.
+    // El operario captura lecturas nuevas y corrige solo las que él capturó, durante 24 h;
+    // el costo por m³ tiene que ser el vigente en agua_config/general y no puede cambiar la autoría.
     match /agua_lecturas/{id} {
-      allow read, create, update: if isRegistered();
+      function lecturaValida() {
+        return request.resource.data.tubo is string
+          && request.resource.data.fecha is string
+          && request.resource.data.fecha.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && id == request.resource.data.tubo + '_' + request.resource.data.fecha
+          && request.resource.data.lectura is number
+          && request.resource.data.costoM3 == get(/databases/$(database)/documents/agua_config/general).data.costoM3;
+      }
+      allow read: if isRegistered();
+      allow create: if isAdmin()
+        || (esOperario()
+          && lecturaValida()
+          && request.resource.data.capturadoPorUid == request.auth.uid
+          && request.resource.data.capturadoEn == request.time);
+      allow update: if isAdmin()
+        || (esOperario()
+          && lecturaValida()
+          && resource.data.capturadoPorUid == request.auth.uid
+          && request.time < resource.data.capturadoEn + duration.value(24, 'h')
+          && request.resource.data.capturadoPorUid == resource.data.capturadoPorUid
+          && request.resource.data.capturadoEn == resource.data.capturadoEn);
       allow delete: if isAdmin();
     }
 
@@ -76,10 +103,18 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Calendario: cualquier usuario registrado ve y agrega eventos; solo el admin edita y borra
+    // Calendario: admin y operario ven y agregan eventos (firmados con su correo).
+    // El admin edita y borra cualquiera; el operario solo los que él capturó.
     match /calendario_eventos/{id} {
-      allow read, create: if isRegistered();
-      allow update, delete: if isAdmin();
+      allow read: if isRegistered();
+      allow create: if isRegistered()
+        && request.resource.data.creadoPor == request.auth.token.email;
+      allow update: if isAdmin()
+        || (esOperario()
+          && resource.data.creadoPor == request.auth.token.email
+          && request.resource.data.creadoPor == resource.data.creadoPor);
+      allow delete: if isAdmin()
+        || (esOperario() && resource.data.creadoPor == request.auth.token.email);
     }
 
     // Caja Chica: admin y operario consultan; operario agrega movimientos y cortes sin editar ni borrar.

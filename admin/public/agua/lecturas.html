@@ -96,6 +96,11 @@
         .barra-c { width: 120px; }
         .barra-c span { display: block; height: 8px; border-radius: 4px; background: #667eea; opacity: .6; }
         .nota-h { font-size: 12px; color: #888; margin: 14px 0 0; }
+        /* El operario no ve montos en pesos (costo por m³ ni importes) */
+        .sin-pesos .pesos { display: none !important; }
+        .resumen-h.cuatro { grid-template-columns: repeat(4, 1fr); }
+        input.bloqueada { background: #f5f5f5; color: #888; cursor: not-allowed; }
+        .nota-bloq { display: block; font-size: 11px; color: #999; margin-top: 3px; font-weight: 400; }
         @media (max-width: 700px) { .resumen-h { grid-template-columns: repeat(2, 1fr); } .barra-c { display: none; } }
     </style>
 </head>
@@ -130,6 +135,14 @@
                 return { ok: false, error: err.message };
             }
         }
+        // El operario corrige solo las lecturas que él capturó, durante 24 horas (lo mismo validan las reglas de Firestore)
+        const HORAS_CORRECCION = 24;
+        function puedeCorregir(existente) {
+            if (!existente || esAdmin()) return true;
+            const uid = getCurrentUser()?.uid;
+            const t = existente.capturadoEn?.toMillis ? existente.capturadoEn.toMillis() : null;
+            return !!uid && existente.capturadoPorUid === uid && t !== null && Date.now() - t < HORAS_CORRECCION * 3600000;
+        }
         const empresaDe = (tubo) => (medidores.find(m => m.id === tubo) || {}).empresa || '';
         const app = document.getElementById('app');
 
@@ -137,6 +150,7 @@
             window.location.href = '/login.html';
         } else {
             crearNavbar();
+            document.body.classList.toggle('sin-pesos', !esAdmin());
             iniciar().catch(err => {
                 console.error(err);
                 app.innerHTML = `<h1>Lecturas de Agua</h1><p class="err">No se pudieron cargar los datos: ${err.message}</p>`;
@@ -193,7 +207,7 @@
 
             app.innerHTML = `
                 <h1>Lecturas de Agua</h1>
-                <p class="sub">Captura la lectura de cada medidor. El consumo y el importe se calculan solos.${esAdmin() ? ' <a href="siapa.html" style="color:#667eea;text-decoration:none">Ver recibos de SIAPA →</a>' : ''}</p>
+                <p class="sub">Captura la lectura de cada medidor. ${admin ? 'El consumo y el importe se calculan solos.' : `El consumo se calcula solo. Puedes corregir las lecturas que capturaste durante ${HORAS_CORRECCION} horas; después, solo el administrador.`}${esAdmin() ? ' <a href="siapa.html" style="color:#667eea;text-decoration:none">Ver recibos de SIAPA →</a>' : ''}</p>
 
                 <div class="controles">
                     <div class="campo">
@@ -204,7 +218,7 @@
                             <div class="cal" id="cal" hidden></div>
                         </div>
                     </div>
-                    <div class="campo">
+                    <div class="campo pesos">
                         <label for="costo">Costo para lecturas nuevas (m³, IVA incluido)</label>
                         ${admin
                             ? `<input type="number" id="costo" step="0.01" min="0" value="${costoM3}" style="width:120px">`
@@ -212,7 +226,7 @@
                     </div>
                     ${admin ? `<button class="btn-sec" id="guardarCosto">Guardar costo</button>` : ''}
                 </div>
-                <p class="nota-costo">Se aplica a las lecturas que captures o corrijas. Las que ya están guardadas conservan su costo (columna «Costo m³»).</p>
+                <p class="nota-costo pesos">Se aplica a las lecturas que captures o corrijas. Las que ya están guardadas conservan su costo (columna «Costo m³»).</p>
                 <div class="aviso-costo" id="avisoCosto" hidden></div>
 
                 <div class="tabla-wrap">
@@ -224,8 +238,8 @@
                                 <th class="num">Lectura anterior (m³)</th>
                                 <th class="num">Lectura actual (m³)</th>
                                 <th class="num">Consumo (m³)</th>
-                                <th class="num">Costo m³</th>
-                                <th class="num">Importe</th>
+                                <th class="num pesos">Costo m³</th>
+                                <th class="num pesos">Importe</th>
                             </tr>
                         </thead>
                         <tbody id="filas"></tbody>
@@ -233,8 +247,8 @@
                             <tr>
                                 <td colspan="4">Total</td>
                                 <td class="num" id="totalConsumo">-</td>
-                                <td></td>
-                                <td class="num" id="totalImporte">-</td>
+                                <td class="pesos"></td>
+                                <td class="num pesos" id="totalImporte">-</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -268,16 +282,18 @@
             tbody.innerHTML = medidores.map(m => {
                 const ant = lecturaAnterior(m.id, fecha);
                 const existente = lecturaEnFecha(m.id, fecha);
+                const bloqueada = !puedeCorregir(existente);
                 return `
                     <tr id="fila-${m.id}" class="${existente ? 'capturado' : ''}">
                         <td class="tubo">${escape(m.tubo)}</td>
                         <td>${escape(m.empresa)}${existente ? '<span class="etiqueta">Capturada</span>' : ''}${existente && esAdmin() ? `<button class="btn-borrar" data-borrar="${existente.id}">Eliminar</button>` : ''}</td>
                         <td class="num">${ant ? fmt(ant.lectura) : '-'}<span class="fecha-ant">${ant ? ant.fecha : 'sin lecturas previas'}</span></td>
                         <td class="num"><input type="number" step="0.001" min="0" inputmode="decimal"
-                            data-tubo="${m.id}" value="${existente && typeof existente.lectura === 'number' ? existente.lectura : ''}" placeholder="0.000"></td>
+                            data-tubo="${m.id}" value="${existente && typeof existente.lectura === 'number' ? existente.lectura : ''}" placeholder="0.000"
+                            ${bloqueada ? 'disabled class="bloqueada" title="Solo el administrador puede corregir esta lectura"' : ''}>${bloqueada ? '<span class="nota-bloq">Solo el admin la corrige</span>' : ''}</td>
                         <td class="num consumo" id="consumo-${m.id}">-</td>
-                        <td class="num" id="costo-${m.id}">-</td>
-                        <td class="num" id="importe-${m.id}">-</td>
+                        <td class="num pesos" id="costo-${m.id}">-</td>
+                        <td class="num pesos" id="importe-${m.id}">-</td>
                     </tr>`;
             }).join('');
             tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
@@ -383,10 +399,10 @@
                         <td class="num">${fmt(f.lectura)}</td>
                         <td class="num">${f.consumo === null ? 'primera' : fmt(f.consumo)}</td>
                         <td class="barra-c">${f.anomala ? '<em class="anom-txt">anómala</em>' : `<span style="width:${Math.max(0, (f.consumo || 0) / maxC * 100)}%"></span>`}</td>
-                        <td class="num">${f.costo === null ? '-' : dinero(f.costo)}</td>
-                        <td class="num">${dinero(f.importe)}</td>
+                        <td class="num pesos">${f.costo === null ? '-' : dinero(f.costo)}</td>
+                        <td class="num pesos">${dinero(f.importe)}</td>
                     </tr>`).join('') +
-                    `<tr class="sub"><td colspan="3">Total ${a} (${del.length} lectura${del.length > 1 ? 's' : ''})</td><td class="num">${fmt(c)}</td><td></td><td></td><td class="num">${dinero(imp)}</td></tr>`;
+                    `<tr class="sub"><td colspan="3">Total ${a} (${del.length} lectura${del.length > 1 ? 's' : ''})</td><td class="num">${fmt(c)}</td><td></td><td class="pesos"></td><td class="num pesos">${dinero(imp)}</td></tr>`;
             }).join('');
 
             const fondo = document.createElement('div');
@@ -398,19 +414,18 @@
                         <button class="btn-sec" data-cerrar>Cerrar</button>
                     </div>
                     ${filas.length ? `
-                    <div class="resumen-h">
+                    <div class="resumen-h ${esAdmin() ? '' : 'cuatro'}">
                         <div><span>Lecturas</span><strong>${filas.length}</strong></div>
                         <div><span>Desde</span><strong>${fechaCorta(filas[0].fecha)}</strong></div>
                         <div><span>Consumo total</span><strong>${fmt(totalC)} m³</strong></div>
-                        <div><span>Importe total</span><strong>${dinero(totalI)}</strong></div>
+                        <div class="pesos"><span>Importe total</span><strong>${dinero(totalI)}</strong></div>
                         <div><span>Promedio por lectura</span><strong>${fmt(totalC / Math.max(1, filas.filter(f => f.consumo !== null).length))} m³</strong></div>
                     </div>
                     <table class="tabla-h">
-                        <thead><tr><th>Fecha</th><th>Periodo</th><th class="num">Lectura (m³)</th><th class="num">Consumo (m³)</th><th></th><th class="num">Costo m³</th><th class="num">Importe</th></tr></thead>
+                        <thead><tr><th>Fecha</th><th>Periodo</th><th class="num">Lectura (m³)</th><th class="num">Consumo (m³)</th><th></th><th class="num pesos">Costo m³</th><th class="num pesos">Importe</th></tr></thead>
                         <tbody>${cuerpo}</tbody>
                     </table>
-                    <p class="nota-h">Importes con IVA incluido, al costo por m³ vigente en cada lectura.
-                        En amarillo: consumo negativo (la lectura bajó).${anomalas ? ` <strong style="color:#c62828">En rojo: ${anomalas} lectura${anomalas > 1 ? 's' : ''} con consumo imposible (más de ${ANOMALO.toLocaleString('es-MX')} m³); no se suma${anomalas > 1 ? 'n' : ''} en los totales.</strong>` : ''}</p>` : '<p class="nota-h">Este tubo no tiene lecturas registradas.</p>'}
+                    <p class="nota-h"><span class="pesos">Importes con IVA incluido, al costo por m³ vigente en cada lectura. </span>En amarillo: consumo negativo (la lectura bajó).${anomalas ? ` <strong style="color:#c62828">En rojo: ${anomalas} lectura${anomalas > 1 ? 's' : ''} con consumo imposible (más de ${ANOMALO.toLocaleString('es-MX')} m³); no se suma${anomalas > 1 ? 'n' : ''} en los totales.</strong>` : ''}</p>` : '<p class="nota-h">Este tubo no tiene lecturas registradas.</p>'}
                 </div>`;
             const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
             const teclas = e => { if (e.key === 'Escape') cerrar(); };
@@ -554,7 +569,8 @@
 
             // Solo lecturas nuevas o corregidas; las que ya están guardadas sin cambios no se vuelven a grabar
             // (así no cambia su costo sin querer; para eso está "Recalcular a ...")
-            const capturas = medidores.map(m => calcular(m.id)).filter(r => r.valor !== null && !isNaN(r.valor) && !r.guardada);
+            const capturas = medidores.map(m => calcular(m.id))
+                .filter(r => r.valor !== null && !isNaN(r.valor) && !r.guardada && puedeCorregir(lecturaEnFecha(r.tubo, fecha)));
             if (!capturas.length) { mensaje('No hay lecturas nuevas o corregidas que guardar.', 'err'); return; }
 
             const negativas = capturas.filter(r => typeof r.consumo === 'number' && r.consumo < 0);
@@ -576,6 +592,18 @@
             try {
                 const batch = writeBatch(db);
                 capturas.forEach(r => {
+                    // Al corregir se conserva quién y cuándo la capturó (de eso depende la ventana de corrección del operario)
+                    const ex = lecturaEnFecha(r.tubo, fecha);
+                    const autoria = ex
+                        ? {
+                            capturadoPor: ex.capturadoPor ?? user.email,
+                            capturadoPorUid: ex.capturadoPorUid ?? user.uid,
+                            capturadoEn: ex.capturadoEn ?? serverTimestamp(),
+                            corregidoPor: user.email,
+                            corregidoPorUid: user.uid,
+                            corregidoEn: serverTimestamp()
+                        }
+                        : { capturadoPor: user.email, capturadoPorUid: user.uid, capturadoEn: serverTimestamp() };
                     batch.set(doc(db, 'agua_lecturas', `${r.tubo}_${fecha}`), {
                         tubo: r.tubo,
                         fecha,
@@ -589,9 +617,7 @@
                         observaciones: '',
                         revisar: (typeof r.consumo === 'number' && r.consumo < 0) ? ['consumo negativo'] : [],
                         origen: 'panel',
-                        capturadoPor: user.email,
-                        capturadoPorUid: user.uid,
-                        capturadoEn: serverTimestamp()
+                        ...autoria
                     });
                 });
                 await batch.commit();
