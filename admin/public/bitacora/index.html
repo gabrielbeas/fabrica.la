@@ -4,103 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitácora - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
-        .main { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
-        h1 { font-size: 26px; margin: 0 0 6px; }
-        .sub { color: #999; font-size: 14px; margin: 0 0 22px; }
-        .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
-        .btn-sec:hover { background: #ebebeb; }
-        .link { border: none; background: none; padding: 0; color: #667eea; font-size: 13px; cursor: pointer; }
-        .link:hover { text-decoration: underline; }
-
-        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; }
-        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
-        .tarjeta .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
-        .tarjeta .det { font-size: 12px; color: #999; margin-top: 2px; }
-        @media (max-width: 900px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
-
-        .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .filtros input, .filtros select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
-        .filtros input[type=search] { flex: 1 1 200px; }
-        .filtros input:focus, .filtros select:focus { outline: none; border-color: #667eea; }
-
-        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
-        tbody tr:last-child td { border-bottom: none; }
-        .fecha { white-space: nowrap; color: #555; }
-        .fecha small { display: block; color: #999; }
-        .accion { font-weight: 600; }
-        .detalle { color: #777; font-size: 13px; margin-top: 3px; white-space: pre-line; }
-        .pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 10px; background: #f3f4ff; color: #555; white-space: nowrap; }
-        .gris { color: #999; font-size: 12px; }
-        .acciones-f { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-        .vacio { color: #999; text-align: center; padding: 30px 10px; }
-        .aviso { margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
-        .aviso.ok { background: #e8f5e9; color: #2e7d32; }
-        .aviso.err { background: #fdecea; color: #c62828; }
-        .cargando { color: #999; padding: 40px 0; text-align: center; }
-
-        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 1000; overflow-y: auto; }
-        .modal-fondo.abierto { display: flex; }
-        .modal { background: white; border-radius: 12px; width: 100%; max-width: 600px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
-        .modal h3 { margin: 0 0 4px; font-size: 18px; }
-        .modal .sub { margin-bottom: 16px; }
-        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
-        .campos .ancho { grid-column: 1 / -1; }
-        .campos label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-        .campos input, .campos select, .campos textarea { width: 100%; padding: 9px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; background: white; }
-        .campos input:focus, .campos select:focus, .campos textarea:focus { outline: none; border-color: #667eea; }
-        .fotos-ops { display: flex; gap: 8px; flex-wrap: wrap; }
-        .fotos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-        .foto { position: relative; width: 84px; height: 84px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; text-align: center; background: #fafafa; }
-        .foto img { width: 100%; height: 100%; object-fit: cover; }
-        .foto button { position: absolute; top: 3px; right: 3px; border: none; background: rgba(0,0,0,.55); color: white; border-radius: 50%; width: 20px; height: 20px; line-height: 18px; font-size: 13px; cursor: pointer; padding: 0; }
-        .ayuda { font-size: 12px; color: #999; margin-top: 4px; }
-        .progreso { height: 4px; border-radius: 4px; background: #eee; margin-top: 8px; overflow: hidden; }
-        .progreso span { display: block; height: 100%; width: 0; background: #667eea; transition: width .15s; }
-        .pie { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 18px; flex-wrap: wrap; }
-        .msg { font-size: 13px; color: #c62828; margin-right: auto; }
+        /* Solo lo propio de Bitácora; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+        .main { max-width: var(--ancho-pagina); margin: 0 auto; padding: var(--espacio-6) var(--espacio-4) var(--espacio-7); display: flex; flex-direction: column; gap: var(--espacio-5); }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-3); flex-wrap: wrap; }
+        .filtros { display: flex; flex-wrap: wrap; gap: var(--espacio-2) var(--espacio-3); align-items: flex-end; }
+        .filtros .lf-campo { flex: 0 1 190px; }
+        .filtros .lf-campo.buscar { flex: 1 1 240px; }
+        .tabla-pie { display: flex; flex-direction: column; gap: var(--espacio-2); }
+        .cargando, .vacio { color: var(--tinta-suave); text-align: center; padding: var(--espacio-6) var(--espacio-4); }
+        .nota { color: var(--tinta-suave); font-size: 13px; line-height: 18px; margin: 0; }
         .oculto { display: none; }
-        .hist div { padding: 8px 0; border-top: 1px solid #f3f3f3; font-size: 13px; }
+        .lf-cifra .lf-valor.texto { font-family: var(--font-sans); font-size: 18px; line-height: 30px; font-weight: 700; }
+        .fecha { white-space: nowrap; }
+        .fecha strong { font-weight: 500; }
+        .accion { font-weight: 600; }
+        .detalle { color: var(--tinta-suave); font-size: 13px; line-height: 18px; margin-top: var(--espacio-1); white-space: pre-line; }
+        .enlace { font: inherit; font-size: 13px; line-height: 18px; border: none; background: none; padding: 0; color: var(--tinta); cursor: pointer; text-decoration: underline; text-decoration-color: var(--ambar); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+        .enlace:hover { text-decoration-color: var(--tinta); }
+        .enlace:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+        .lf-modal-fondo:not(.abierto) { display: none; }
+        .lf-modal .lf-subtitulo-pag { margin: calc(-1 * var(--espacio-3)) 0 0; }
+        .fotos-ops { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
+        .fotos { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
+        .foto { position: relative; width: 84px; height: 84px; border: 1px solid var(--linea); border-radius: var(--radio-md); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--tinta-suave); text-align: center; background: var(--fondo-hundido); }
+        .foto img { width: 100%; height: 100%; object-fit: cover; }
+        .foto button { position: absolute; top: 4px; right: 4px; border: none; background: var(--tinta); color: var(--fondo); border-radius: var(--radio-pill); width: 20px; height: 20px; line-height: 18px; font-size: 13px; cursor: pointer; padding: 0; }
+        .progreso { height: 4px; border-radius: var(--radio-pill); background: var(--linea); overflow: hidden; }
+        .progreso span { display: block; height: 100%; width: 0; background: var(--ambar); transition: width .15s; }
+        .msg { font-size: 13px; line-height: 18px; color: var(--peligro); margin-right: auto; }
+        .hist div { padding: var(--espacio-2) 0; border-top: 1px solid var(--linea); font-size: 14px; line-height: 20px; }
         .hist div:first-child { border-top: none; }
-        .btn-peligro { background: #c62828; }
-        .link.peligro { color: #c62828; }
-        .modal.visor { max-width: 900px; }
-        .modal.visor h3 { margin-bottom: 12px; overflow-wrap: anywhere; }
-        #vContenido img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; border-radius: 8px; }
-        #vContenido iframe { width: 100%; height: 75vh; border: 1px solid #eee; border-radius: 8px; }
-        @media (max-width: 700px) { .campos { grid-template-columns: 1fr; } .modal { padding: 18px 16px; } }
+        .lf-modal.visor { max-width: 900px; }
+        .lf-modal.visor h3 { overflow-wrap: anywhere; }
+        #vContenido img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; border-radius: var(--radio-md); }
+        #vContenido iframe { width: 100%; height: 75vh; border: 1px solid var(--linea); border-radius: var(--radio-md); }
+        @media (prefers-reduced-motion: reduce) { .progreso span { transition: none; } }
     </style>
 </head>
 <body>
-    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+    <main class="main" id="app"><div class="cargando">Cargando...</div></main>
 
-    <div class="modal-fondo" id="modal">
-        <div class="modal">
+    <div class="lf-modal-fondo" id="modal">
+        <div class="lf-modal">
             <h3 id="mTitulo">Registrar acción</h3>
-            <p class="sub" id="mSub">Anota lo que se hizo, dónde y quién lo hizo.</p>
-            <div class="campos">
-                <div><label for="fFecha">Fecha</label><input type="date" id="fFecha"></div>
-                <div><label for="fHora">Hora</label><input type="time" id="fHora"></div>
-                <div><label for="fCategoria">Categoría</label><select id="fCategoria"></select></div>
-                <div><label for="fLugar">Lugar</label><select id="fLugar"></select></div>
-                <div class="ancho"><label for="fAccion">Acción realizada</label><input id="fAccion" maxlength="160" placeholder="Ej. Limpieza de filtro de la bomba 2"></div>
-                <div class="ancho"><label for="fDetalle">Detalle (opcional)</label><textarea id="fDetalle" rows="3" maxlength="1500" placeholder="Observaciones, hallazgos, material usado..."></textarea></div>
-                <div><label for="fResponsable">Responsable</label><select id="fResponsable"></select></div>
-                <div class="ancho">
+            <p class="lf-subtitulo-pag" id="mSub">Anota lo que se hizo, dónde y quién lo hizo.</p>
+            <div class="lf-form">
+                <div class="lf-campo"><label for="fFecha">Fecha</label><input type="date" id="fFecha"></div>
+                <div class="lf-campo"><label for="fHora">Hora</label><input type="time" id="fHora"></div>
+                <div class="lf-campo"><label for="fCategoria">Categoría</label><select id="fCategoria"></select></div>
+                <div class="lf-campo"><label for="fLugar">Lugar</label><select id="fLugar"></select></div>
+                <div class="lf-campo lf-ancho"><label for="fAccion">Acción realizada</label><input id="fAccion" maxlength="160" placeholder="Ej. Limpieza de filtro de la bomba 2"></div>
+                <div class="lf-campo lf-ancho"><label for="fDetalle">Detalle (opcional)</label><textarea id="fDetalle" rows="3" maxlength="1500" placeholder="Observaciones, hallazgos, material usado..."></textarea></div>
+                <div class="lf-campo"><label for="fResponsable">Responsable</label><select id="fResponsable"></select></div>
+                <div class="lf-campo lf-ancho">
                     <label>Fotos (opcional, hasta 3; foto o PDF de máximo 10 MB)</label>
                     <div class="fotos-ops">
-                        <button type="button" class="btn-sec" id="bCamara">Tomar foto</button>
-                        <button type="button" class="btn-sec" id="bArchivo">Elegir archivo</button>
+                        <button type="button" class="lf-btn" id="bCamara">Tomar foto</button>
+                        <button type="button" class="lf-btn" id="bArchivo">Elegir archivo</button>
                     </div>
                     <input type="file" id="iCamara" accept="image/*" capture="environment" class="oculto">
                     <input type="file" id="iArchivo" accept="image/*,application/pdf" multiple class="oculto">
@@ -108,44 +73,44 @@
                     <div class="progreso"><span id="progreso"></span></div>
                 </div>
             </div>
-            <p class="ayuda" id="mNota"></p>
-            <div class="pie">
+            <p class="nota" id="mNota"></p>
+            <div class="lf-modal-pie">
                 <span class="msg" id="mMsg"></span>
-                <button class="btn-sec" data-cerrar>Cancelar</button>
-                <button class="btn" id="bGuardar">Registrar</button>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardar">Registrar</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-fondo" id="modalHist">
-        <div class="modal">
+    <div class="lf-modal-fondo" id="modalHist">
+        <div class="lf-modal">
             <h3>Historial de cambios</h3>
-            <p class="sub" id="hSub"></p>
+            <p class="lf-subtitulo-pag" id="hSub"></p>
             <div class="hist" id="hLista"></div>
-            <div class="pie"><button class="btn-sec" data-cerrar>Cerrar</button></div>
+            <div class="lf-modal-pie"><button class="lf-btn" data-cerrar>Cerrar</button></div>
         </div>
     </div>
 
-    <div class="modal-fondo" id="modalEliminar">
-        <div class="modal">
+    <div class="lf-modal-fondo" id="modalEliminar">
+        <div class="lf-modal">
             <h3>Eliminar registro</h3>
-            <p class="sub" id="eSub"></p>
-            <p style="font-size:14px;margin:0">Se borran el registro, sus fotos y su historial de correcciones. Queda una copia en la bitácora de eliminados (sin fotos). No se puede deshacer.</p>
-            <div class="pie">
+            <p class="lf-subtitulo-pag" id="eSub"></p>
+            <p style="margin:0">Se borran el registro, sus fotos y su historial de correcciones. Queda una copia en la bitácora de eliminados (sin fotos). No se puede deshacer.</p>
+            <div class="lf-modal-pie">
                 <span class="msg" id="eMsg"></span>
-                <button class="btn-sec" data-cerrar>Cancelar</button>
-                <button class="btn btn-peligro" id="bEliminar">Eliminar</button>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-peligro" id="bEliminar">Eliminar</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-fondo" id="modalFoto">
-        <div class="modal visor">
+    <div class="lf-modal-fondo" id="modalFoto">
+        <div class="lf-modal visor">
             <h3 id="vTitulo">Foto</h3>
             <div id="vContenido"></div>
-            <div class="pie">
-                <a class="btn-sec" id="vDescargar" style="text-decoration:none">Descargar</a>
-                <button class="btn-sec" data-cerrar>Cerrar</button>
+            <div class="lf-modal-pie">
+                <a class="lf-btn" id="vDescargar" style="text-decoration:none">Descargar</a>
+                <button class="lf-btn" data-cerrar>Cerrar</button>
             </div>
         </div>
     </div>
@@ -160,7 +125,9 @@
         // Listas fijas (las mismas que valida firestore.rules)
         const CATEGORIAS = ['Limpieza', 'Mantenimiento', 'Mantenimiento preventivo', 'Bombas y cisterna', 'Agua', 'Electricidad', 'Seguridad', 'Basura y recolección', 'Jardinería', 'Proveedor o servicio externo', 'Atención a locatario', 'Otro'];
         const LUGARES = [...Array.from({ length: 22 }, (_, i) => `Local ${i + 1}`), 'Oficinas', 'Áreas comunes', 'Baños', 'Estacionamiento', 'Azotea', 'Cuarto de bombas', 'Cisterna', 'Fachada', 'Otro'];
-        const RESPONSABLES = ['Claudio Del Angel', 'Victor Navaro', 'Admin LAFABDECHOC'];
+        const RESPONSABLES = ['Claudio Del Angel', 'Victor Navarro', 'Admin LAFABDECHOC'];
+        // Registros guardados antes del 04/10/2026 traen la grafía anterior «Victor Navaro»
+        const normResp = r => r === 'Victor Navaro' ? 'Victor Navarro' : r;
         const MAX_FOTOS = 3, MAX_BYTES = 10 * 1024 * 1024;
         const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
         const HORAS_EDICION = 24; // el operario corrige sus registros hasta 24 h después de capturarlos
@@ -194,21 +161,21 @@
             document.getElementById('iArchivo').addEventListener('change', agregarArchivos);
             document.getElementById('bGuardar').addEventListener('click', guardar);
             document.getElementById('bEliminar').addEventListener('click', eliminar);
-            document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.modal-fondo').id)));
-            document.querySelectorAll('.modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-fondo.abierto').forEach(m => cerrar(m.id)); });
+            document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.lf-modal-fondo').id)));
+            document.querySelectorAll('.lf-modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.lf-modal-fondo.abierto').forEach(m => cerrar(m.id)); });
             cargar();
         }
 
         async function cargar(aviso = '') {
             try {
                 const s = await getDocs(query(collection(db, 'bitacora'), orderBy('fecha', 'desc'), limit(1500)));
-                registros = s.docs.map(d => ({ id: d.id, ...d.data() }))
+                registros = s.docs.map(d => { const x = { id: d.id, ...d.data() }; x.responsable = normResp(x.responsable); x.registradoPorNombre = normResp(x.registradoPorNombre); return x; })
                     .sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || '')));
                 vista(aviso);
             } catch (err) {
                 console.error(err);
-                app.innerHTML = `<h1>Bitácora</h1><p class="aviso err">No se pudo cargar la bitácora (${esc(err.code || err.message)}). Si es un error de permisos, falta publicar las reglas de Firestore.</p>`;
+                app.innerHTML = `<h1 class="lf-titulo">Bitácora</h1><p class="lf-aviso lf-aviso-error">No se pudo cargar la bitácora (${esc(err.code || err.message)}). Si es un error de permisos, falta publicar las reglas de Firestore.</p>`;
             }
         }
 
@@ -219,32 +186,34 @@
             const topCat = Object.entries(delMes.reduce((a, r) => (a[r.categoria] = (a[r.categoria] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1])[0];
             const misMes = delMes.filter(r => r.creadoPor === auth.currentUser?.uid).length;
             app.innerHTML = `
-                <div class="barra">
-                    <div><h1>Bitácora</h1><p class="sub">Registro de acciones realizadas en la plaza: qué se hizo, dónde, cuándo y quién.</p></div>
-                    <button class="btn" id="bNuevo">Registrar acción</button>
+                <div class="cabeza">
+                    <div><h1 class="lf-titulo">Bitácora</h1><p class="lf-subtitulo-pag">Registro de acciones realizadas en la plaza: qué se hizo, dónde, cuándo y quién.</p></div>
+                    <button class="lf-btn lf-btn-primario" id="bNuevo">Registrar acción</button>
                 </div>
-                ${aviso ? `<p class="aviso ok">${aviso}</p>` : ''}
-                <div class="tarjetas">
-                    <div class="tarjeta"><div class="et">Hoy</div><div class="val">${deHoy.length}</div><div class="det">acciones registradas</div></div>
-                    <div class="tarjeta"><div class="et">Este mes</div><div class="val">${delMes.length}</div><div class="det">${misMes} capturadas por ti</div></div>
-                    <div class="tarjeta"><div class="et">Categoría más frecuente</div><div class="val" style="font-size:17px">${topCat ? esc(topCat[0]) : '-'}</div><div class="det">${topCat ? `${topCat[1]} este mes` : 'Sin registros este mes'}</div></div>
-                    <div class="tarjeta"><div class="et">Total</div><div class="val">${registros.length}</div><div class="det">en la bitácora</div></div>
+                ${aviso ? `<p class="lf-aviso lf-aviso-ok" style="margin:0">${aviso}</p>` : ''}
+                <div class="lf-cifras">
+                    <div class="lf-cifra"><div class="lf-etiqueta">Hoy</div><div class="lf-valor">${deHoy.length}</div><div class="lf-detalle">acciones registradas</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Este mes</div><div class="lf-valor">${delMes.length}</div><div class="lf-detalle">${misMes} capturadas por ti</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Categoría más frecuente</div><div class="lf-valor texto">${topCat ? esc(topCat[0]) : '-'}</div><div class="lf-detalle">${topCat ? `${topCat[1]} este mes` : 'Sin registros este mes'}</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Total</div><div class="lf-valor">${registros.length}</div><div class="lf-detalle">en la bitácora</div></div>
                 </div>
+                <div class="tabla-pie">
                 <div class="filtros">
-                    <input type="month" id="flMes" value="${mes}" title="Mes">
-                    <select id="flCategoria"><option value="">Todas las categorías</option>${CATEGORIAS.map(c => `<option>${esc(c)}</option>`).join('')}</select>
-                    <select id="flLugar"><option value="">Todos los lugares</option>${LUGARES.map(c => `<option>${esc(c)}</option>`).join('')}</select>
-                    <select id="flResponsable"><option value="">Todos los responsables</option>${RESPONSABLES.map(c => `<option>${esc(c)}</option>`).join('')}</select>
-                    <input type="search" id="flBuscar" placeholder="Buscar en acción o detalle">
+                    <div class="lf-campo"><label for="flMes">Mes</label><input type="month" id="flMes" value="${mes}"></div>
+                    <div class="lf-campo"><label for="flCategoria">Categoría</label><select id="flCategoria"><option value="">Todas</option>${CATEGORIAS.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+                    <div class="lf-campo"><label for="flLugar">Lugar</label><select id="flLugar"><option value="">Todos</option>${LUGARES.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+                    <div class="lf-campo"><label for="flResponsable">Responsable</label><select id="flResponsable"><option value="">Todos</option>${RESPONSABLES.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+                    <div class="lf-campo buscar"><label for="flBuscar">Buscar</label><input type="search" id="flBuscar" placeholder="En acción o detalle"></div>
                 </div>
-                <div class="tabla-wrap">
-                    <table class="tabla-movil">
+                <div class="tabla-wrap lf-tabla-wrap">
+                    <table class="lf-tabla tabla-movil">
                         <thead><tr><th>Fecha</th><th>Categoría</th><th>Lugar</th><th>Acción</th><th>Responsable</th><th>Fotos</th><th></th></tr></thead>
                         <tbody id="filas"></tbody>
                     </table>
                     <div class="vacio oculto" id="sinFilas">No hay registros con esos filtros.</div>
                 </div>
-                <p class="gris" style="margin-top:8px">${admin ? 'Como administrador puedes corregir o eliminar cualquier registro. Cada corrección queda en el historial y cada registro eliminado queda copiado en la bitácora de eliminados.' : `Puedes corregir tus registros hasta ${HORAS_EDICION} horas después de capturarlos. No se pueden borrar; cada corrección queda en el historial.`}</p>`;
+                <p class="nota">${admin ? 'Como administrador puedes corregir o eliminar cualquier registro. Cada corrección queda en el historial y cada registro eliminado queda copiado en la bitácora de eliminados.' : `Puedes corregir tus registros hasta ${HORAS_EDICION} horas después de capturarlos. No se pueden borrar; cada corrección queda en el historial.`}</p>
+                </div>`;
             document.getElementById('bNuevo').addEventListener('click', () => abrir());
             ['flMes', 'flCategoria', 'flLugar', 'flResponsable'].forEach(id => document.getElementById(id).addEventListener('change', filas));
             document.getElementById('flBuscar').addEventListener('input', filas);
@@ -263,13 +232,13 @@
                 && (!q || `${r.accion} ${r.detalle || ''}`.toLocaleLowerCase('es-MX').includes(q)));
             const tbody = document.getElementById('filas');
             tbody.innerHTML = lista.map(r => `<tr>
-                <td class="fecha"><strong>${fechaCorta(r.fecha)}</strong><small>${esc(r.hora || '')}</small></td>
-                <td><span class="pill">${esc(r.categoria)}</span></td>
+                <td class="fecha lf-num"><strong>${fechaCorta(r.fecha)}</strong><small>${esc(r.hora || '')}</small></td>
+                <td><span class="lf-estado">${esc(r.categoria)}</span></td>
                 <td>${esc(r.lugar)}</td>
                 <td><div class="accion">${esc(r.accion)}</div>${r.detalle ? `<div class="detalle">${esc(r.detalle)}</div>` : ''}</td>
-                <td>${esc(r.responsable)}<div class="gris">Capturó: ${esc(r.registradoPorNombre || '')}</div></td>
-                <td>${(r.fotos || []).length ? (r.fotos || []).map((f, i) => `<button class="link" data-foto="${esc(r.id)}" data-i="${i}">${f.tipo === 'application/pdf' ? 'PDF' : 'Foto'} ${i + 1}</button>`).join('<br>') : '<span class="gris">-</span>'}</td>
-                <td><div class="acciones-f">${puedeEditar(r) ? `<button class="link" data-editar="${esc(r.id)}">Corregir</button>` : ''}${r.ultimaEdicionHistorialId ? `<button class="link" data-hist="${esc(r.id)}">Historial</button>` : ''}${admin ? `<button class="link peligro" data-eliminar="${esc(r.id)}">Eliminar</button>` : ''}</div></td>
+                <td>${esc(r.responsable)}<small>Capturó: ${esc(r.registradoPorNombre || '')}</small></td>
+                <td>${(r.fotos || []).length ? (r.fotos || []).map((f, i) => `<button class="enlace" data-foto="${esc(r.id)}" data-i="${i}">${f.tipo === 'application/pdf' ? 'PDF' : 'Foto'} ${i + 1}</button>`).join('<br>') : '<span class="lf-vacio">-</span>'}</td>
+                <td><div class="lf-acciones">${puedeEditar(r) ? `<button class="lf-btn lf-btn-compacto" data-editar="${esc(r.id)}">Corregir</button>` : ''}${r.ultimaEdicionHistorialId ? `<button class="lf-btn lf-btn-compacto" data-hist="${esc(r.id)}">Historial</button>` : ''}${admin ? `<button class="lf-btn lf-btn-compacto lf-btn-icono lf-btn-peligro" data-eliminar="${esc(r.id)}" aria-label="Eliminar registro" title="Eliminar registro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>` : ''}</div></td>
             </tr>`).join('');
             document.getElementById('sinFilas').classList.toggle('oculto', lista.length > 0);
             tbody.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => abrir(registros.find(r => r.id === b.dataset.editar))));
@@ -443,7 +412,7 @@
                 visor.innerHTML = blob.type === 'application/pdf'
                     ? `<iframe src="${url}" title="PDF"></iframe>`
                     : blob.type.includes('hei')
-                        ? `<p class="gris">Este formato (HEIC) no se puede mostrar en el navegador. Usa "Descargar".</p>`
+                        ? `<p class="nota">Este formato (HEIC) no se puede mostrar en el navegador. Usa "Descargar".</p>`
                         : `<img src="${url}" alt="">`;
                 const bajar = document.getElementById('vDescargar');
                 bajar.href = url;
@@ -460,7 +429,7 @@
         async function verHistorial(r) {
             document.getElementById('hSub').textContent = `${fechaCorta(r.fecha)} ${r.hora || ''} · ${r.accion}`;
             const lista = document.getElementById('hLista');
-            lista.innerHTML = '<div class="gris">Cargando...</div>';
+            lista.innerHTML = '<div class="nota">Cargando...</div>';
             document.getElementById('modalHist').classList.add('abierto');
             try {
                 const s = await getDocs(query(collection(db, 'bitacora', r.id, 'historial'), orderBy('registradoEn', 'desc')));
@@ -470,10 +439,10 @@
                     const cambios = Object.keys(etq).filter(k => JSON.stringify(h.antes?.[k] ?? '') !== JSON.stringify(h.despues?.[k] ?? ''))
                         .map(k => k === 'fotos' ? `Fotos: ${(h.antes?.fotos || []).length} → ${(h.despues?.fotos || []).length}` : `${etq[k]}: «${esc(h.antes?.[k] || '')}» → «${esc(h.despues?.[k] || '')}»`);
                     const cuando = h.registradoEn?.toDate ? h.registradoEn.toDate().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '';
-                    return `<div><strong>${esc(h.registradoPorNombre || '')}</strong> <span class="gris">${esc(cuando)}</span><br>${cambios.join('<br>') || '<span class="gris">Sin cambios visibles</span>'}</div>`;
-                }).join('') || '<div class="gris">Sin cambios.</div>';
+                    return `<div><strong>${esc(h.registradoPorNombre || '')}</strong> <span class="nota">${esc(cuando)}</span><br>${cambios.join('<br>') || '<span class="nota">Sin cambios visibles</span>'}</div>`;
+                }).join('') || '<div class="nota">Sin cambios.</div>';
             } catch (err) {
-                lista.innerHTML = `<div class="gris">No se pudo cargar el historial (${esc(err.code || err.message)}).</div>`;
+                lista.innerHTML = `<div class="nota">No se pudo cargar el historial (${esc(err.code || err.message)}).</div>`;
             }
         }
     </script>

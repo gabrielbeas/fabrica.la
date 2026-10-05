@@ -4,56 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Locales - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 1250px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
-        .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 25px; }
 
         /* Tarjetas de resumen */
         .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
-        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
-        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
         .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
-        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; }
-        .tarjeta.roja .val { color: #c62828; }
-        .tarjeta.naranja .val { color: #ef6c00; }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; }
+        .tarjeta.roja .val { color: var(--peligro); }
+        .tarjeta.naranja .val { color: var(--atencion); }
         @media (max-width: 800px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
 
         /* Filtros */
         .filtros { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
-        .chip { background: white; border: 1px solid #ddd; border-radius: 16px; padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; }
-        .chip.activa { background: #667eea; border-color: #667eea; color: white; }
-        .leyenda { margin-left: auto; font-size: 12px; color: #999; display: flex; gap: 12px; align-items: center; }
+        .chip { background: var(--fondo); border: 1px solid var(--borde-control); border-radius: 16px; padding: 6px 14px; font-size: 13px; color: var(--tinta-suave); cursor: pointer; }
+        .chip.activa { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
+        .leyenda { margin-left: auto; font-size: 12px; color: var(--tinta-suave); display: flex; gap: 12px; align-items: center; }
         @media (max-width: 700px) { .filtros { flex-wrap: wrap; } .leyenda { margin-left: 0; width: 100%; } .tabla-movil tbody tr { position: relative; } .tabla-movil td.col-alerta { position: absolute; top: 11px; right: 14px; width: auto; padding: 0 !important; } .tabla-movil td.col-alerta:has(.punto) + td { padding-right: 22px !important; } }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 
         /* Tabla */
-        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        td { padding: 11px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
         tbody tr:last-child td { border-bottom: none; }
         tbody tr { cursor: pointer; }
-        tbody tr:hover td { background: #f8f9ff; }
+        tbody tr:hover td { background: var(--ambar-suave); }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .nw { white-space: nowrap; }
         .estado { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
-        .e-vigente { background: #e8f5e9; color: #2e7d32; }
-        .e-vencido { background: #fdecea; color: #c62828; }
-        .e-termina { background: #fff3e0; color: #ef6c00; }
-        .gris { color: #999; }
+        .e-vigente { background: var(--exito-suave); color: var(--exito); }
+        .e-vencido { background: var(--peligro-suave); color: var(--peligro); }
+        .e-termina { background: var(--atencion-suave); color: var(--atencion); }
+        .gris { color: var(--tinta-suave); }
 
         /* Punto de alerta (el detalle está en la carátula) */
         .col-alerta { width: 36px; text-align: center; padding-left: 8px; padding-right: 0; }
         .punto { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
 
-        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
-        .cargando { color: #999; padding: 40px 0; text-align: center; }
-        .err { color: #c62828; }
-        .vacio td { text-align: center; color: #999; padding: 30px; cursor: default; }
+        tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
+        .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
+        .err { color: var(--peligro); }
+        .vacio td { text-align: center; color: var(--tinta-suave); padding: 30px; cursor: default; }
     </style>
 </head>
 <body>
@@ -149,7 +150,7 @@
                         <span><i style="background:#c62828"></i>Vencido</span>
                         <span><i style="background:#ef6c00"></i>30 días</span>
                         <span><i style="background:#f9a825"></i>60 días</span>
-                        <span><i style="background:#667eea"></i>90 días</span>
+                        <span><i style="background:#1f4e79"></i>90 días</span>
                     </div>
                 </div>
 

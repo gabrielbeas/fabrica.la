@@ -4,53 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 1250px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
-        .sub { color: #999; font-size: 14px; margin: 0 0 26px; }
-        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 34px 0 12px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 26px; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 34px 0 12px; }
 
         .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
-        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
         .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
-        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; }
         @media (max-width: 800px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
 
-        .buscar { padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 280px; margin-bottom: 12px; }
-        .buscar:focus { outline: none; border-color: #667eea; }
-        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        .buscar { padding: 9px 12px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; width: 280px; margin-bottom: 12px; }
+        .buscar:focus { outline: none; border-color: var(--accion); }
+        .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
         tbody tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .gris { color: #999; font-size: 12px; }
-        .correos a { color: #667eea; text-decoration: none; display: block; }
+        .gris { color: var(--tinta-suave); font-size: 12px; }
+        .correos a { color: var(--accion); text-decoration: none; display: block; }
         .correos a:hover { text-decoration: underline; }
-        .correos .tipo { font-size: 11px; color: #aaa; }
-        a.loc { color: #333; text-decoration: none; font-weight: 600; }
-        a.loc:hover { color: #667eea; }
-        .vencido { color: #c62828; font-size: 11px; font-weight: 600; }
-        .barra-m2 { height: 8px; border-radius: 4px; background: #667eea; opacity: .55; }
-        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
+        .correos .tipo { font-size: 11px; color: var(--tinta-tenue); }
+        a.loc { color: var(--tinta); text-decoration: none; font-weight: 600; }
+        a.loc:hover { color: var(--accion); }
+        .vencido { color: var(--peligro); font-size: 11px; font-weight: 600; }
+        .barra-m2 { height: 8px; border-radius: 4px; background: var(--accion); opacity: .55; }
+        tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
         .dos { display: grid; grid-template-columns: 1fr; gap: 0; }
-        .cargando { color: #999; padding: 40px 0; text-align: center; }
-        .err { color: #c62828; }
+        .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
+        .err { color: var(--peligro); }
         /* Apps del inicio */
-        .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 10px; }
-        .app { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px 18px; border: 1px solid #eee; border-radius: 14px; background: white; color: #333; text-decoration: none; transition: transform .15s, box-shadow .15s, border-color .15s; }
-        .app:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(102,126,234,.15); border-color: #d9ddfa; }
-        .app .ico { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .app .ico svg { width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .apps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 10px; }
+        @media (max-width: 900px) { .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .app { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px 18px; border: 1px solid var(--linea); border-radius: 14px; background: var(--fondo); color: var(--tinta); text-decoration: none; transition: transform .15s, box-shadow .15s, border-color .15s; }
+        .app:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(208, 138, 30,.15); border-color: var(--ambar); }
+        .app .ico { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--accion-suave); }
+        .app .ico svg { width: 24px; height: 24px; stroke: var(--accion); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
         .app .nom { font-weight: 600; font-size: 15px; }
-        .app .des { font-size: 12px; color: #999; line-height: 1.4; }
+        .app .des { font-size: 12px; color: var(--tinta-suave); line-height: 1.4; }
         .app.pendiente { cursor: default; opacity: .6; }
-        .app.pendiente:hover { transform: none; box-shadow: none; border-color: #eee; }
-        .app.pendiente .ico { background: #c5c9d6; }
+        .app.pendiente:hover { transform: none; box-shadow: none; border-color: var(--linea); }
+        .app.pendiente .ico { background: var(--tinta-tenue); }
         @media (max-width: 700px) {
             .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
             .app { padding: 14px; gap: 8px; border-radius: 12px; }
@@ -59,14 +61,14 @@
             .app .nom { font-size: 14px; }
             .app:hover { transform: none; }
         }
-        .prox { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; background: #f1f1f1; color: #888; vertical-align: middle; }
+        .prox { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; background: var(--linea); color: var(--tinta-suave); vertical-align: middle; }
         th.ord { cursor: pointer; user-select: none; }
-        th.ord:hover { color: #333; }
-        th.ord.act { color: #667eea; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
         th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
         th.ord.act .flecha { opacity: 1; }
-        .volver { display: inline-block; color: #667eea; text-decoration: none; font-size: 14px; margin-bottom: 14px; }
-        .acceso { display: inline-block; margin-top: 10px; padding: 11px 20px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; font-weight: 600; font-size: 14px; }
+        .volver { display: inline-block; color: var(--accion); text-decoration: none; font-size: 14px; margin-bottom: 14px; }
+        .acceso { display: inline-block; margin-top: 10px; padding: 11px 20px; border-radius: 6px; background: var(--accion); color: var(--on-accion); text-decoration: none; font-weight: 600; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -99,17 +101,18 @@
             caja: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2M7 6V4h10v2"/></svg>',
             bitacora: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 10l1.5 1.5L13 8.5M8.5 15.5l1.5 1.5 3-3"/></svg>'
         };
+        // Orden de las tarjetas (Gabriel, 04/10/2026): 4 por fila en escritorio
         const APPS = [
             { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: teléfono y correos', href: '#directorio', soloAdmin: true },
-            { id: 'metrajes', nombre: 'Locales y metrajes', des: 'Superficie, renta y renta por m² de cada contrato', href: '#metrajes', soloAdmin: true },
             { id: 'locales', nombre: 'Contratos', des: 'Carátulas, vigencias y alertas', href: b + 'locales/', soloAdmin: true },
+            { id: 'metrajes', nombre: 'Locales y metrajes', des: 'Superficie, renta y renta por m² de cada contrato', href: '#metrajes', soloAdmin: true },
             { id: 'facturacion', nombre: 'Facturación', des: 'Facturas del mes y exportación para contadores', href: b + 'facturacion/', soloAdmin: true },
-            { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
-            { id: 'siapa', nombre: 'SIAPA', des: 'Recibos, pagos y consumo de la toma general', href: b + 'agua/siapa.html', soloAdmin: true },
-            { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
-            { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true },
             { id: 'caja', nombre: 'Caja Chica', des: 'Gastos, reposiciones y cortes de efectivo', href: b + 'caja-chica/', roles: ['admin', 'operario'] },
-            { id: 'bitacora', nombre: 'Bitácora', des: 'Registro de acciones realizadas en la plaza', href: b + 'bitacora/', roles: ['admin', 'operario'] }
+            { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
+            { id: 'bitacora', nombre: 'Bitácora', des: 'Registro de acciones realizadas en la plaza', href: b + 'bitacora/', roles: ['admin', 'operario'] },
+            { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
+            { id: 'siapa', nombre: 'SIAPA', des: 'Recibos, pagos y consumo de la toma general', href: b + 'agua/siapa.html', soloAdmin: true },
+            { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true }
         ];
         const tarjetaApp = a => a.pendiente
             ? `<div class="app pendiente" title="Este módulo todavía no está listo"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)} <span class="prox">Próximamente</span></span><span class="des">${esc(a.des)}</span></div>`

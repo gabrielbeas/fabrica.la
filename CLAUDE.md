@@ -5,7 +5,8 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 ## Reglas importantes
 
 - **El repo es público, incluido este archivo.** Nunca subir datos privados: RFCs, correos o teléfonos de inquilinos, montos de contratos, pagos o saldos, números de cuenta, recibos de CFE, escrituras. Todo eso vive en Firestore o en `_privado/` (ignorado en `.gitignore`); los pendientes con montos van en `_privado/pendientes.md`. Antes de cada commit, revisar que nada privado quede en el código.
-- **Interfaz:** fondo blanco, **sin emojis**, textos en español, estilo limpio (bordes `#eee`, morado `#667eea` / gradiente `#667eea → #764ba2`).
+- **Interfaz:** fondo blanco, **sin emojis**, textos en español, estilo limpio.
+- **Sistema de diseño «Panel LFdC»** (04/10/2026, propuesta de identidad nueva): referencia navegable en https://claude.ai/artifact/R1N2pLz1FhK8CrtbTY5wr6 (privada) y en el repo `admin/public/css/panel.css` (tokens + componentes `lf-…`, generado desde ese sistema: los cambios se hacen allá primero). Paleta «Acero» (elegida el 04/10/2026 entre tres propuestas): tinta `#1b2430`, acciones e íconos en azul acero `#1f4e79` (íconos sobre `accion-suave`), ámbar `#d08a1e` para sección activa y selección, foco en azul acero, grises fríos, azul cielo `agua` `#17739f` para el módulo de agua; Roboto en todo (títulos en Roboto Black 900) y Roboto Mono en números. Ya lo usa **todo el panel** (04/10/2026): cada página enlaza `panel.css`; Bitácora usa los componentes `lf-…`; las demás conservan sus clases pero con colores y letras de los tokens; la barra (`js/navbar.js`) y el login también. En HTML para imprimir y en gráficas los colores van en hex. Al pasar una página a componentes, ojo con los selectores de JS que buscan clases (p. ej. `.modal-fondo` → `.lf-modal-fondo`). `css/styles.css` y `css/responsive.css` son restos viejos que ninguna página enlaza.
 - No borrar datos de Firestore sin confirmarlo con Gabriel. Las ediciones de contratos deben dejar entrada en `contratos/{id}/historial`.
 - No inventar datos: si algo no está en Firestore o en los archivos, preguntar.
 - Los cambios se prueban en local antes de subir: desde la raíz del repo ejecutar `py -3 -m http.server 8000 --bind 127.0.0.1` y abrir `http://127.0.0.1:8000/login.html`. Usar loopback para no exponer el árbol del repo a la red local.
@@ -17,11 +18,11 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 - **GitHub Pages** con GitHub Actions (`.github/workflows/deploy.yml`) arma `dist/`: el sitio público sale de `fabrica/`, el panel de `admin/public/` se publica en `/admin/`. **Cada página nueva del panel hay que agregarla a `deploy.yml`.** El build falla si encuentra `_privado`, `data.json` o `.gs` en `dist/`.
 - `basePath()` en `js/auth.js`: `/admin/public/` en local y `/admin/` publicado. Usarlo para todos los enlaces internos.
 - Cloudflare solo maneja DNS (ya no hay Worker).
-- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 18:01 (permisos del operario en lecturas y calendario; Bitácora con borrado solo para admin; la regla general para colecciones sin regla propia es solo admin).
+- **Reglas de Firestore:** `firestore.rules` es solo una copia de referencia; las reglas activas se publican a mano en Firebase Console → Firestore → Reglas. Última publicación: 04/10/2026 18:45 (responsable «Victor Navarro», y acepta «Victor Navaro» en registros anteriores; permisos del operario en lecturas y calendario; Bitácora con borrado solo para admin; la regla general para colecciones sin regla propia es solo admin).
 
 ### Archivos compartidos
 
-- `js/auth.js`: login, roles, `basePath()`, `getSeccionesPermitidas()` (menú por rol), exporta `auth` y `db`.
+- `js/auth.js`: login, roles, `basePath()`, `getSeccionesPermitidas()` (menú por rol, en el orden de las tarjetas de Inicio y sin Configuración ni SIAPA, que se abren desde su tarjeta), exporta `auth` y `db`. El menú pasa a hamburguesa por debajo de 1180px (`js/navbar.js`).
 - `js/navbar.js`: barra superior con logo (`admin/public/css/logo.png`).
 - `js/facturacion.js`: lógica de facturas, agua, basura y el PDF para contadores. Se importa con `?v=AAAAMMDD-n` en `facturacion/index.html` y `ficha.html`: **cada vez que cambie este archivo, subir el número de versión** en ambos imports (si no, el navegador usa la copia vieja en caché y el PDF sale distinto a la pantalla).
 - `js/alertas-contrato.js`: alertas de contratos (fin de contrato, incremento de renta, saldo de depósito por pagar). El seguro NO genera alerta.
@@ -65,7 +66,7 @@ Código viejo (backend Node, Worker de Cloudflare, páginas de agua que usaban A
 
 - Ruta local: `http://127.0.0.1:8000/admin/public/caja-chica/`. Ruta publicada: `https://fabrica.la/admin/caja-chica/`. La página se incluye en `.github/workflows/deploy.yml`; la carpeta publicada es `dist/admin/caja-chica/`.
 - Archivo de interfaz: `admin/public/caja-chica/index.html`. Compartir enlace de navegación con `basePath()` cuando se agreguen enlaces internos nuevos.
-- El formulario pide tipo, fecha, importe, categoría, proveedor, descripción, responsable y método de pago; permite adjuntar foto/PDF (máximo 10 MB) o tomar foto desde móvil. El responsable es obligatorio y su lista, escrita exactamente como solicitó Gabriel, es `Claudio Del Angel`, `Victor Navaro`, `Admin LAFABDECHOC`. No corregir automáticamente “Navaro” a “Navarro”. Proveedor es texto libre con el nombre del establecimiento.
+- El formulario pide tipo, fecha, importe, categoría, proveedor, descripción, responsable y método de pago; permite adjuntar foto/PDF (máximo 10 MB) o tomar foto desde móvil. El responsable es obligatorio y su lista, escrita exactamente como solicitó Gabriel, es `Claudio Del Angel`, `Victor Navarro`, `Admin LAFABDECHOC` (Gabriel corrigió la grafía el 04/10/2026; los registros anteriores dicen «Victor Navaro»: las páginas los leen como «Victor Navarro» y las reglas aceptan las dos). Proveedor es texto libre con el nombre del establecimiento.
 - Orden visual del formulario: Proveedor a ancho completo, luego Descripción a ancho completo, debajo Responsable y Método de pago en dos columnas.
 - Los administradores pueden editar cualquier movimiento, incluso aprobado o rechazado; la edición conserva el estado del movimiento y escribe antes/después en una subcolección de historial mediante un batch atómico. Los operarios pueden editar únicamente sus propios movimientos pendientes. Al aprobar/rechazar el administrador, el operario ya no puede editarlo. Nadie borra movimientos desde el panel.
 - En movimientos anteriores a separar Responsable y Proveedor, al editar, si el antiguo `responsable` no coincide con la lista actual y falta `proveedor`, se migra visualmente ese valor al campo Proveedor para no perderlo. Se debe escoger un Responsable válido antes de guardar.
@@ -94,7 +95,7 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 - SIAPA: confirmar qué significan las notas 210 y 206 junto a la lectura (parecen consumo estimado: la lectura se repite del periodo anterior). Histórico completo de sep 2023 a sep 2026 (jul-ago 2023 no se buscan). Los pagos del banco (`_privado/siapa/pagos-banco.csv`) cuadran con los recibos salvo unos recargos de 2026; detalle en `_privado/pendientes.md`.
 
 - Tubo 10, lectura del 29/02/2024: en Firestore ya está en 0 m³ y $0 (04/10/2026); en el Sheet HIDRAULICO sigue con 99,997.531 m³. Gabriel quiere retomarlo después: no tocar el Sheet ni ese tubo hasta entonces.
-- Operario: cuenta `victor@fabrica.la` (Victor Navaro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
+- Operario: cuenta `victor@fabrica.la` (Victor Navarro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
 - Depósitos de los locales 6, 7 y 15 y un ajuste de Setter Bistro por revisar; montos en `_privado/pendientes.md`.
 
 ## Auditoría 04/10/2026

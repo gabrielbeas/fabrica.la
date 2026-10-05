@@ -3,7 +3,9 @@
 
 export const VENTANA_DIAS = 90;
 export const PESO_NIVEL = { vencido: 0, '30': 1, '60': 2, '90': 3 };
-export const COLOR_NIVEL = { vencido: '#c62828', '30': '#ef6c00', '60': '#f9a825', '90': '#667eea' };
+// Colores de la escala de alertas del sistema «Panel LFdC» (tokens alerta-*); en hex porque también se usan en estilos en línea
+export const COLOR_NIVEL = { vencido: '#b3261e', '30': '#d9661a', '60': '#b8860b', '90': '#3c78b4' };
+export const COLOR_OK = '#3d8a5a';
 export const TEXTO_NIVEL = { vencido: 'Vencido', '30': 'Próximos 30 días', '60': '31 a 60 días', '90': '61 a 90 días' };
 
 export const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };

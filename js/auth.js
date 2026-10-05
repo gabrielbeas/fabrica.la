@@ -150,20 +150,22 @@ export function getSeccionesPermitidas() {
   const role = getCurrentUserRole();
   const b = basePath();
 
+  // Mismo orden que las tarjetas de Inicio. Configuración y SIAPA no van en el menú: se entra desde su tarjeta.
   const todas = {
     inicio:      { id: 'inicio',      nombre: 'Inicio',           url: b },
+    directorio:  { id: 'directorio',  nombre: 'Directorio',       url: b + '#directorio' },
     locales:     { id: 'locales',     nombre: 'Contratos',        url: b + 'locales/' },
+    metrajes:    { id: 'metrajes',    nombre: 'Locales',          url: b + '#metrajes' },
     facturacion: { id: 'facturacion', nombre: 'Facturación',      url: b + 'facturacion/' },
-    agua:        { id: 'agua',        nombre: 'Lecturas de Agua', url: b + 'agua/lecturas.html' },
-    calendarios: { id: 'calendarios', nombre: 'Calendarios',      url: b + 'calendarios/' },
-    config:      { id: 'config',      nombre: 'Configuración',    url: b + 'config/' },
     cajaChica:   { id: 'cajaChica',   nombre: 'Caja Chica',       url: b + 'caja-chica/' },
-    bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' }
+    agua:        { id: 'agua',        nombre: 'Lecturas de agua', url: b + 'agua/lecturas.html' },
+    bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' },
+    calendarios: { id: 'calendarios', nombre: 'Calendario',       url: b + 'calendarios/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'locales', 'facturacion', 'agua', 'calendarios', 'config', 'cajaChica', 'bitacora'],
-    operario: ['inicio', 'agua', 'calendarios', 'cajaChica', 'bitacora']
+    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'cajaChica', 'agua', 'bitacora', 'calendarios'],
+    operario: ['inicio', 'cajaChica', 'agua', 'bitacora', 'calendarios']
   };
 
   return (porRol[role] || []).map(id => todas[id]);

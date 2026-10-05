@@ -1,0 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:wght@400;500&display=swap');
+
+/*
+ * Panel LFdC: sistema de diseño del panel (tokens + componentes).
+ * Referencia navegable: el artifact «Panel LFdC». Este archivo se genera desde ese sistema:
+ * los cambios se hacen allá primero y después se regenera aquí.
+ * Tema oscuro opcional: <html data-theme="dark">.
+ */
+
+:root {
+  --fondo: #ffffff;
+  --fondo-hundido: #f2f4f7;
+  --fondo-elevado: #ffffff;
+  --linea: #dfe3e8;
+  --borde-control: #8a929c;
+  --tinta: #1b2430;
+  --tinta-suave: #5f6670;
+  --tinta-tenue: #9aa1aa;
+  --accion: #1f4e79;
+  --accion-hover: #2a5f8f;
+  --accion-suave: #e6eef6;
+  --on-accion: #ffffff;
+  --ambar: #d08a1e;
+  --ambar-suave: #fbf0dd;
+  --foco: #1f4e79;
+  --peligro: #b3261e;
+  --on-peligro: #ffffff;
+  --peligro-suave: #fbe9e7;
+  --exito: #136c72;
+  --exito-suave: #e3f1f1;
+  --atencion: #8a5300;
+  --atencion-suave: #fbf1dc;
+  --agua: #17739f;
+  --agua-suave: #e3f1f8;
+  --alerta-vencido: #b3261e;
+  --alerta-30: #d9661a;
+  --alerta-60: #b8860b;
+  --alerta-90: #3c78b4;
+  --alerta-ok: #3d8a5a;
+  --sombra-modal: 0 12px 32px rgba(27, 36, 48, 0.18);
+  --font-display: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 24px;
+  --espacio-6: 32px;
+  --espacio-7: 48px;
+  --radio-sm: 4px;
+  --radio-md: 8px;
+  --radio-lg: 12px;
+  --radio-pill: 999px;
+  --alto-barra: 64px;
+  --alto-control: 40px;
+  --alto-control-compacto: 32px;
+  --ancho-pagina: 1200px;
+}
+
+[data-theme="dark"] {
+  --fondo: #11161c;
+  --fondo-hundido: #0b0f13;
+  --fondo-elevado: #19212a;
+  --linea: #2c3540;
+  --borde-control: #6f7882;
+  --tinta: #e8edf3;
+  --tinta-suave: #a9b2bd;
+  --tinta-tenue: #6f7882;
+  --accion: #8fb8e0;
+  --accion-hover: #a6c7e8;
+  --accion-suave: #1c2a38;
+  --on-accion: #0f1b27;
+  --ambar-suave: #3a2c14;
+  --foco: #8fb8e0;
+  --peligro: #f08a7e;
+  --on-peligro: #1f1915;
+  --peligro-suave: #3a1e1a;
+  --exito: #6cc3c0;
+  --exito-suave: #16302f;
+  --atencion: #e6b25e;
+  --atencion-suave: #3a2c12;
+  --agua: #7cc3e6;
+  --agua-suave: #13293a;
+  --alerta-vencido: #f08a7e;
+  --alerta-30: #f0965a;
+  --alerta-60: #e0b84a;
+  --alerta-90: #7fb2dd;
+  --alerta-ok: #7cc49a;
+  --sombra-modal: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+/* Panel LFdC: componentes. Todo color, medida y fuente sale de los tokens (var(--…)). */
+
+.lf-base { font-family: var(--font-sans); font-size: 15px; line-height: 22px; color: var(--tinta); background: var(--fondo); }
+.lf-base *, .lf-base *::before, .lf-base *::after { box-sizing: border-box; }
+.lf-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+[class*="lf-"], [class*="lf-"]::before, [class*="lf-"]::after, .lf-campo input, .lf-campo select, .lf-campo textarea, .lf-switch span { box-sizing: border-box; }
+
+/* ---------- Base de página: aplica a cualquier página que enlace panel.css ---------- */
+body { font-family: var(--font-sans); color: var(--tinta); background: var(--fondo); }
+h1 { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.01em; }
+button, input, select, textarea { font-family: inherit; }
+td.num, th.num { font-variant-numeric: tabular-nums; }
+td.num { font-family: var(--font-mono); }
+
+/* ---------- Títulos ---------- */
+.lf-titulo { font-family: var(--font-display); font-size: 28px; line-height: 32px; letter-spacing: -0.01em; font-weight: 900; margin: 0; color: var(--tinta); text-wrap: balance; }
+.lf-subtitulo-pag { font-size: 13px; line-height: 18px; color: var(--tinta-suave); margin: var(--espacio-1) 0 0; }
+.lf-seccion { font-size: 18px; line-height: 24px; font-weight: 700; margin: 0; }
+.lf-etiqueta { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+
+/* ---------- Barra superior ---------- */
+.lf-barra { position: sticky; top: 0; z-index: 10; background: var(--fondo); border-bottom: 1px solid var(--linea); }
+.lf-barra-in { max-width: var(--ancho-pagina); margin: 0 auto; height: var(--alto-barra); display: flex; align-items: center; gap: var(--espacio-5); padding: 0 var(--espacio-4); }
+.lf-barra-logo { height: 30px; width: auto; display: block; }
+.lf-barra-nav { display: flex; gap: var(--espacio-1); flex: 1; min-width: 0; overflow-x: auto; height: 100%; }
+.lf-barra-link { display: flex; align-items: center; height: 100%; padding: 0 var(--espacio-3); font-size: 14px; font-weight: 500; color: var(--tinta-suave); text-decoration: none; border-bottom: 3px solid transparent; border-top: 3px solid transparent; white-space: nowrap; }
+.lf-barra-link:hover { color: var(--tinta); }
+.lf-barra-link[aria-current="page"] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--ambar); }
+.lf-barra-usuario { display: flex; align-items: center; gap: var(--espacio-3); font-size: 13px; line-height: 16px; text-align: right; }
+.lf-barra-usuario small { display: block; color: var(--tinta-suave); font-size: 11px; }
+
+/* ---------- Botones ---------- */
+.lf-btn { font: inherit; font-size: 14px; font-weight: 600; height: var(--alto-control); padding: 0 var(--espacio-4); border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; display: inline-flex; align-items: center; gap: var(--espacio-2); white-space: nowrap; }
+.lf-btn:hover { background: var(--fondo-hundido); }
+.lf-btn-primario { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
+.lf-btn-primario:hover { background: var(--accion-hover); border-color: var(--accion-hover); }
+.lf-btn-peligro { background: var(--fondo); border-color: var(--peligro); color: var(--peligro); }
+.lf-btn-peligro:hover { background: var(--peligro); color: var(--on-peligro); }
+.lf-btn-enlace { background: none; border-color: transparent; color: var(--tinta); text-decoration: underline; text-decoration-color: var(--ambar); text-decoration-thickness: 2px; text-underline-offset: 4px; padding: 0 var(--espacio-1); }
+.lf-btn-enlace:hover { background: none; text-decoration-color: var(--tinta); }
+.lf-btn-compacto { height: var(--alto-control-compacto); padding: 0 var(--espacio-3); font-size: 13px; }
+.lf-btn svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lf-btn-icono { width: var(--alto-control); padding: 0; justify-content: center; }
+.lf-btn-icono.lf-btn-compacto { width: var(--alto-control-compacto); }
+.lf-acciones { display: flex; gap: var(--espacio-2); align-items: center; flex-wrap: wrap; }
+.lf-btn:disabled { background: var(--fondo-hundido); border-color: var(--linea); color: var(--tinta-tenue); cursor: not-allowed; }
+.lf-btn:focus-visible, .lf-campo input:focus-visible, .lf-campo select:focus-visible, .lf-campo textarea:focus-visible, .lf-switch input:focus-visible + span, .lf-app:focus-visible, .lf-barra-link:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+/* ---------- Campos ---------- */
+.lf-campo { display: flex; flex-direction: column; gap: var(--espacio-1); min-width: 0; }
+.lf-campo label { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+.lf-campo input, .lf-campo select, .lf-campo textarea { font: inherit; font-size: 15px; color: var(--tinta); background: var(--fondo); border: 1px solid var(--borde-control); border-radius: var(--radio-sm); padding: 0 var(--espacio-3); height: var(--alto-control); width: 100%; }
+.lf-campo textarea { height: auto; min-height: 88px; padding: var(--espacio-2) var(--espacio-3); resize: vertical; }
+.lf-campo input::placeholder, .lf-campo textarea::placeholder { color: var(--tinta-suave); }
+.lf-campo input:disabled { background: var(--fondo-hundido); color: var(--tinta-tenue); border-color: var(--linea); }
+.lf-campo input.lf-num { text-align: right; font-family: var(--font-mono); }
+.lf-campo .lf-ayuda { font-size: 13px; line-height: 18px; color: var(--tinta-suave); }
+.lf-campo.lf-error input, .lf-campo.lf-error select, .lf-campo.lf-error textarea { border-color: var(--peligro); }
+.lf-campo.lf-error .lf-ayuda { color: var(--peligro); }
+.lf-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espacio-3) var(--espacio-4); }
+.lf-form .lf-ancho { grid-column: 1 / -1; }
+@media (max-width: 640px) { .lf-form { grid-template-columns: 1fr; } }
+
+/* ---------- Interruptor ---------- */
+.lf-switch { display: inline-flex; align-items: center; gap: var(--espacio-2); font-size: 14px; cursor: pointer; }
+.lf-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.lf-switch span { width: 36px; height: 20px; border-radius: var(--radio-pill); background: var(--fondo); border: 1px solid var(--borde-control); position: relative; flex: none; }
+.lf-switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: var(--radio-pill); background: var(--borde-control); transition: transform .15s; }
+.lf-switch input:checked + span { background: var(--accion); border-color: var(--accion); }
+.lf-switch input:checked + span::after { transform: translateX(16px); background: var(--on-accion); }
+
+/* ---------- Tarjetas de cifra ---------- */
+.lf-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--espacio-3); }
+.lf-cifra { border: 1px solid var(--linea); border-radius: var(--radio-md); padding: var(--espacio-4); min-width: 0; }
+.lf-cifra .lf-valor { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 26px; line-height: 30px; font-weight: 500; margin-top: var(--espacio-2); }
+.lf-cifra .lf-detalle { font-size: 13px; line-height: 18px; color: var(--tinta-suave); margin-top: var(--espacio-1); }
+
+/* ---------- Tarjetas de app (inicio) ---------- */
+.lf-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--espacio-3); }
+.lf-app { display: flex; gap: var(--espacio-3); align-items: center; padding: var(--espacio-4); border: 1px solid var(--linea); border-radius: var(--radio-md); color: var(--tinta); text-decoration: none; background: var(--fondo); }
+.lf-app:hover { border-color: var(--tinta); }
+.lf-app-ico { width: 44px; height: 44px; flex: none; border-radius: var(--radio-md); background: var(--accion-suave); display: flex; align-items: center; justify-content: center; }
+.lf-app-ico svg { width: 22px; height: 22px; fill: none; stroke: var(--accion); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lf-app-nombre { font-weight: 600; font-size: 15px; line-height: 20px; }
+.lf-app-des { font-size: 13px; line-height: 18px; color: var(--tinta-suave); }
+
+/* ---------- Tablas ---------- */
+.lf-tabla-wrap { border: 1px solid var(--linea); border-radius: var(--radio-md); overflow-x: auto; }
+.lf-tabla { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.lf-tabla th { text-align: left; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); background: var(--fondo-hundido); padding: var(--espacio-3) var(--espacio-4); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+.lf-tabla td { padding: var(--espacio-3) var(--espacio-4); border-bottom: 1px solid var(--linea); vertical-align: top; }
+.lf-tabla tbody tr:last-child td { border-bottom: none; }
+.lf-tabla tbody tr:hover td { background: var(--ambar-suave); }
+.lf-tabla .lf-n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lf-tabla th.lf-n { font-family: var(--font-sans); }
+.lf-tabla .lf-vacio { color: var(--tinta-tenue); }
+.lf-tabla tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); border-bottom: none; }
+.lf-tabla small { display: block; font-size: 12px; color: var(--tinta-suave); }
+
+/* ---------- Pastillas de estado ---------- */
+.lf-estado { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 600; padding: 2px 10px; border-radius: var(--radio-pill); background: var(--fondo-hundido); color: var(--tinta); white-space: nowrap; }
+.lf-estado::before { content: ""; width: 6px; height: 6px; border-radius: var(--radio-pill); background: currentColor; }
+.lf-estado-pendiente { background: var(--atencion-suave); color: var(--atencion); }
+.lf-estado-aprobado { background: var(--exito-suave); color: var(--exito); }
+.lf-estado-rechazado { background: var(--peligro-suave); color: var(--peligro); }
+.lf-estado-agua { background: var(--agua-suave); color: var(--agua); }
+
+/* ---------- Punto de alerta (contratos) ---------- */
+.lf-alerta { display: inline-flex; align-items: center; gap: var(--espacio-2); font-size: 13px; line-height: 18px; }
+.lf-alerta::before { content: ""; width: 10px; height: 10px; border-radius: var(--radio-pill); background: var(--alerta-ok); flex: none; }
+.lf-alerta-vencido::before { background: var(--alerta-vencido); }
+.lf-alerta-30::before { background: var(--alerta-30); }
+.lf-alerta-60::before { background: var(--alerta-60); }
+.lf-alerta-90::before { background: var(--alerta-90); }
+
+/* ---------- Avisos ---------- */
+.lf-aviso { display: flex; gap: var(--espacio-3); align-items: flex-start; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-md); font-size: 14px; line-height: 20px; background: var(--fondo-hundido); color: var(--tinta); }
+.lf-aviso strong { font-weight: 700; }
+.lf-aviso-ok { background: var(--exito-suave); color: var(--exito); }
+.lf-aviso-error { background: var(--peligro-suave); color: var(--peligro); }
+.lf-aviso-atencion { background: var(--atencion-suave); color: var(--atencion); }
+.lf-aviso .lf-btn { margin-left: auto; }
+
+/* ---------- Modal ---------- */
+.lf-modal-fondo { position: fixed; inset: 0; background: rgba(17, 22, 28, 0.45); display: flex; align-items: flex-start; justify-content: center; padding: var(--espacio-6) var(--espacio-4); overflow-y: auto; z-index: 2000; }
+.lf-modal { background: var(--fondo-elevado); color: var(--tinta); border-radius: var(--radio-lg); box-shadow: var(--sombra-modal); width: 100%; max-width: 600px; padding: var(--espacio-5); display: flex; flex-direction: column; gap: var(--espacio-4); }
+.lf-modal h3 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 700; }
+.lf-modal-pie { display: flex; gap: var(--espacio-2); justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.lf-modal-pie .lf-izq { margin-right: auto; }
+
+@media (prefers-reduced-motion: reduce) { .lf-switch span::after { transition: none; } }

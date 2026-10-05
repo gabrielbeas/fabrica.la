@@ -4,59 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facturación - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 1300px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
-        .sub { color: #999; font-size: 14px; margin: 0 0 25px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 25px; }
         .controles { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 22px; }
-        .controles label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
-        .controles input { padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .controles label { display: block; font-size: 13px; color: var(--tinta-suave); margin-bottom: 6px; }
+        .controles input { padding: 9px 12px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 15px; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
 
         .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
-        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
         .tarjeta .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
-        .tarjeta .k { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .k { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
 
-        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 11px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        td { padding: 11px 14px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         tr.fila-f { cursor: pointer; }
-        tr.fila-f:hover td { background: #f8f9ff; }
+        tr.fila-f:hover td { background: var(--ambar-suave); }
         select.estado { padding: 5px 8px; border-radius: 12px; border: 1px solid transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
-        .e-pendiente { background: #f1f1f1; color: #555; } .e-proceso { background: #fff8e1; color: #b26a00; }
-        .e-pagado { background: #e8f5e9; color: #2e7d32; } .e-tarde { background: #fdecea; color: #c62828; }
-        .aviso { color: #b26a00; font-size: 12px; display: block; margin-top: 3px; }
-        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
-        .vacio { border: 1px dashed #ddd; border-radius: 10px; padding: 30px; text-align: center; color: #777; }
-        .ok { color: #2e7d32; } .err { color: #c62828; }
+        .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
+        .e-pagado { background: var(--exito-suave); color: var(--exito); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
+        .aviso { color: var(--atencion); font-size: 12px; display: block; margin-top: 3px; }
+        tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
+        .vacio { border: 1px dashed var(--borde-control); border-radius: 10px; padding: 30px; text-align: center; color: var(--tinta-suave); }
+        .ok { color: var(--exito); } .err { color: var(--peligro); }
 
         /* Interruptor de inclusión: verde = activa, negro = apagada (montos tachados) */
-        .sw-sel .slider { background: #111 !important; }
-        .sw-sel input:checked + .slider { background: #2e7d32 !important; }
-        tr.redactada td { color: #999; }
-        tr.redactada .monto { background: #111; color: transparent !important; border-radius: 3px; user-select: none; }
+        .sw-sel .slider { background: var(--tinta) !important; }
+        .sw-sel input:checked + .slider { background: var(--exito) !important; }
+        tr.redactada td { color: var(--tinta-suave); }
+        tr.redactada .monto { background: var(--tinta); color: transparent !important; border-radius: 3px; user-select: none; }
 
         /* Moratorios: interruptor + monto */
         th.mor-th { text-align: left; }
         td.mor-td { white-space: nowrap; }
         .switch { position: relative; display: inline-block; width: 38px; height: 22px; vertical-align: middle; cursor: pointer; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .switch .slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; transition: .2s; }
-        .switch .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-        .switch input:checked + .slider { background: #c62828; }
+        .switch .slider { position: absolute; inset: 0; background: var(--borde-control); border-radius: 22px; transition: .2s; }
+        .switch .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: var(--fondo); border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+        .switch input:checked + .slider { background: var(--peligro); }
         .switch input:checked + .slider::before { transform: translateX(16px); }
         .switch input:disabled + .slider { opacity: .5; }
-        .mor-monto { display: inline-block; margin-left: 8px; color: #c62828; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: middle; }
-        .mor-n { display: block; font-size: 11px; color: #c62828; margin-top: 2px; }
+        .mor-monto { display: inline-block; margin-left: 8px; color: var(--peligro); font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: middle; }
+        .mor-n { display: block; font-size: 11px; color: var(--peligro); margin-top: 2px; }
     </style>
 </head>
 <body>

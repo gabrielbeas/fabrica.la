@@ -4,128 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIAPA - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
-        .sub { color: #999; font-size: 14px; margin: 0 0 22px; }
-        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 34px 0 12px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 22px; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 34px 0 12px; }
         .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
         .barra .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
-        .volver { display: inline-block; color: #667eea; text-decoration: none; font-size: 14px; margin-bottom: 14px; }
+        .volver { display: inline-block; color: var(--accion); text-decoration: none; font-size: 14px; margin-bottom: 14px; }
 
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
-        .btn-sec:hover { background: #ebebeb; }
-        .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer; color: #555; }
-        .btn-mini:hover { border-color: #667eea; color: #667eea; }
-        .btn-mini.borrar:hover { border-color: #c62828; color: #c62828; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+        .btn-sec:hover { background: var(--linea); }
+        .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid var(--borde-control); background: var(--fondo); border-radius: 10px; cursor: pointer; color: var(--tinta-suave); }
+        .btn-mini:hover { border-color: var(--accion); color: var(--accion); }
+        .btn-mini.borrar:hover { border-color: var(--peligro); color: var(--peligro); }
 
         .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        .tarjeta { border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; }
-        .tarjeta .et { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
+        .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
         .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
-        .tarjeta .det { font-size: 12px; color: #999; margin-top: 4px; line-height: 1.4; }
-        .tarjeta.alerta .val { color: #c62828; }
-        .tarjeta.bien .val { color: #2e7d32; }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; line-height: 1.4; }
+        .tarjeta.alerta .val { color: var(--peligro); }
+        .tarjeta.bien .val { color: var(--exito); }
         @media (max-width: 900px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
 
         /* Gráficas: una por medida (nunca dos ejes) */
         .graficas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 900px) { .graficas { grid-template-columns: 1fr; } }
-        .grafica { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px 10px; position: relative; }
+        .grafica { border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px 10px; position: relative; }
         .grafica h3 { margin: 0 0 2px; font-size: 14px; }
-        .grafica .leyenda { font-size: 12px; color: #999; display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+        .grafica .leyenda { font-size: 12px; color: var(--tinta-suave); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
         .grafica .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
         .grafica svg { width: 100%; height: auto; display: block; overflow: visible; }
-        .grafica svg text { font-size: 10px; fill: #999; }
-        .grafica .barra-g { fill: #667eea; }
+        .grafica svg text { font-size: 10px; fill: var(--tinta-suave); }
+        .grafica .barra-g { fill: var(--accion); }
         .grafica .barra-g.nota { fill: url(#rayas); }
         .grafica .hit { fill: transparent; cursor: default; }
         .grafica .hit:hover + .barra-g, .grafica g.sel .barra-g { opacity: .75; }
         .grafica.linea .serie { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-        .grafica.linea .punto { stroke: white; stroke-width: 2; }
-        .grafica.linea svg text.etq { font-size: 11px; font-weight: 600; fill: #555; }
+        .grafica.linea .punto { stroke: var(--on-accion); stroke-width: 2; }
+        .grafica.linea svg text.etq { font-size: 11px; font-weight: 600; fill: var(--tinta-suave); }
         .grafica.linea .linea-s.fondo .serie { stroke-width: 1.5; }
         .grafica.linea .leyenda [data-k] { cursor: default; }
         .tabla-ley { margin-top: 14px; overflow-x: auto; }
         .tabla-ley table { font-size: 13px; }
         .tabla-ley th { padding: 8px 10px; cursor: pointer; user-select: none; white-space: normal; vertical-align: bottom; line-height: 1.3; }
-        .tabla-ley th:hover { color: #333; }
-        .tabla-ley th.act { color: #667eea; }
+        .tabla-ley th:hover { color: var(--tinta); }
+        .tabla-ley th.act { color: var(--accion); }
         .tabla-ley th .flecha { font-size: 9px; margin-left: 4px; opacity: .4; }
         .tabla-ley th.act .flecha { opacity: 1; }
         .tabla-ley td { padding: 6px 10px; white-space: nowrap; }
         .tabla-ley td:nth-child(4) { white-space: normal; min-width: 200px; }
         .tabla-ley tr.ley { cursor: pointer; }
-        .tabla-ley tr.ley:hover td { background: #f7f8ff; }
+        .tabla-ley tr.ley:hover td { background: var(--ambar-suave); }
         .tabla-ley tr.ley.off td { opacity: .4; text-decoration: line-through; }
         .tabla-ley .sw-th, .tabla-ley .sw-td { width: 46px; }
         .tabla-ley .sw-td .switch { pointer-events: none; }
         .reporte-barra { margin-top: 12px; display: flex; justify-content: flex-end; }
         .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; cursor: pointer; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .switch .slider { position: absolute; inset: 0; background: #ddd; border-radius: 20px; transition: .2s; }
-        .switch .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-        .switch input:checked + .slider { background: #667eea; }
+        .switch .slider { position: absolute; inset: 0; background: var(--borde-control); border-radius: 20px; transition: .2s; }
+        .switch .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: var(--fondo); border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+        .switch input:checked + .slider { background: var(--accion); }
         .switch input:checked + .slider::before { transform: translateX(14px); }
         .tabla-ley td i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: 3px; }
-        .grafica.linea .leyenda [data-k]:hover { color: #333; }
+        .grafica.linea .leyenda [data-k]:hover { color: var(--tinta); }
         .grafica.linea .leyenda [data-k][title] { cursor: pointer; user-select: none; }
         .grafica.linea .leyenda [data-k].off { opacity: .35; text-decoration: line-through; }
         .grafica.linea .mostrar-todos { margin: 0 0 6px; }
         .grafica.linea svg.foco .linea-s, .grafica.linea svg.foco .etq-g { opacity: .15; transition: opacity .15s; }
         .grafica.linea svg.foco .linea-s.activa, .grafica.linea svg.foco .etq-g.activa { opacity: 1; }
         .grafica.linea svg.foco .linea-s.activa .serie { stroke-width: 3; }
-        .grafica.linea svg.foco .linea-s.fondo.activa .serie { stroke: #555; }
+        .grafica.linea svg.foco .linea-s.fondo.activa .serie { stroke: var(--tinta-suave); }
         .tip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
-        .grafica.linea .guia { stroke: #bbb; stroke-width: 1; stroke-dasharray: 3 3; display: none; }
-        .grafica.linea .sub-g { font-size: 12px; color: #999; margin: 0 0 6px; line-height: 1.4; }
+        .grafica.linea .guia { stroke: var(--tinta-tenue); stroke-width: 1; stroke-dasharray: 3 3; display: none; }
+        .grafica.linea .sub-g { font-size: 12px; color: var(--tinta-suave); margin: 0 0 6px; line-height: 1.4; }
         .grafica.linea .leyenda i { height: 3px; width: 16px; border-radius: 2px; vertical-align: 3px; }
-        .tip { position: absolute; pointer-events: none; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 8px 10px; font-size: 12px; line-height: 1.5; color: #333; white-space: nowrap; z-index: 5; display: none; }
+        .tip { position: absolute; pointer-events: none; background: var(--fondo); border: 1px solid var(--linea); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 8px 10px; font-size: 12px; line-height: 1.5; color: var(--tinta); white-space: nowrap; z-index: 5; display: none; }
         .tip strong { display: block; font-size: 13px; }
-        .tip .gris { color: #999; }
+        .tip .gris { color: var(--tinta-suave); }
 
-        .tabla-wrap { border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; font-weight: 600; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: #fafafa; border-bottom: 1px solid #eee; white-space: nowrap; }
-        td { padding: 9px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 14px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        td { padding: 9px 14px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
         tbody tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         th.num { text-align: right; }
-        tfoot td { font-weight: 600; background: #fafafa; border-top: 1px solid #eee; }
-        .nota-pill { font-size: 11px; padding: 1px 7px; border-radius: 8px; background: #fff8e1; color: #8a5a00; }
-        .neg { color: #c62828; } .pos { color: #2e7d32; }
-        .gris { color: #999; font-size: 12px; }
-        .aviso { background: #fff8e1; color: #8a5a00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin: 10px 0 0; line-height: 1.5; }
-        .vacio { color: #999; font-size: 14px; padding: 16px 0; }
+        tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
+        .nota-pill { font-size: 11px; padding: 1px 7px; border-radius: 8px; background: var(--atencion-suave); color: var(--atencion); }
+        .neg { color: var(--peligro); } .pos { color: var(--exito); }
+        .gris { color: var(--tinta-suave); font-size: 12px; }
+        .aviso { background: var(--atencion-suave); color: var(--atencion); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin: 10px 0 0; line-height: 1.5; }
+        .vacio { color: var(--tinta-suave); font-size: 14px; padding: 16px 0; }
 
-        .recibo { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
+        .recibo { border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
         .recibo .tit { font-weight: 600; }
-        .recibo .det { font-size: 12px; color: #888; line-height: 1.6; }
+        .recibo .det { font-size: 12px; color: var(--tinta-suave); line-height: 1.6; }
         .recibo .tot { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-        .recibo .tot small { display: block; font-weight: 400; font-size: 12px; color: #888; }
+        .recibo .tot small { display: block; font-weight: 400; font-size: 12px; color: var(--tinta-suave); }
         .dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 900px) { .dos-col { grid-template-columns: 1fr; } }
 
         .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 1000; overflow-y: auto; }
-        .modal { background: white; border-radius: 12px; width: 100%; max-width: 640px; padding: 24px 26px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal { background: var(--fondo); border-radius: 12px; width: 100%; max-width: 640px; padding: 24px 26px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
         .modal h3 { margin: 0 0 4px; font-size: 18px; }
         .modal .sub { margin-bottom: 16px; }
-        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #667eea; margin: 18px 0 10px; }
+        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accion); margin: 18px 0 10px; }
         .campos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; }
         .campos .ancho { grid-column: 1 / -1; }
-        .campos label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-        .campos input, .campos select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
-        .campos input:focus { outline: none; border-color: #667eea; }
+        .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        .campos input, .campos select { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .campos input:focus { outline: none; border-color: var(--accion); }
         @media (max-width: 700px) { .campos { grid-template-columns: 1fr 1fr; } }
         .pie { display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 18px; flex-wrap: wrap; }
         .msg { font-size: 13px; margin-right: auto; }
-        .ok { color: #2e7d32; } .err { color: #c62828; }
-        .cargando { color: #999; padding: 40px 0; text-align: center; }
+        .ok { color: var(--exito); } .err { color: var(--peligro); }
+        .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
     </style>
 </head>
 <body>
@@ -395,7 +396,7 @@
         // Consumo de LAFABDECHOC (medidor general de SIAPA) contra la suma de locales y el tubo MTO.
         // Una medida por gráfica: acumulado y mes a mes (normalizado a 30 días por los periodos trimestrales de 2024).
         const SERIES = [
-            { k: 'siapa', nombre: 'LAFABDECHOC (SIAPA)', corto: 'LAFABDECHOC', color: '#667eea', dash: '' },
+            { k: 'siapa', nombre: 'LAFABDECHOC (SIAPA)', corto: 'LAFABDECHOC', color: '#1f4e79', dash: '' },
             { k: 'locales', nombre: 'Locales (suma)', corto: 'Locales', color: '#13855c', dash: '' },
             { k: 'propio', nombre: 'Servicios Generales', corto: 'Servicios Generales', color: '#a05195', dash: '' },
             { k: 'mto', nombre: 'Medidor MTO', corto: 'MTO', color: '#e8590c', dash: '5 4' }
@@ -656,9 +657,9 @@
             graficaLineas('gCosto', 'Costo por m³ (con IVA)',
                 `SIAPA: importe del periodo entre los m³ facturados (incluye alcantarillado, saneamiento, descarga e IVA). Tú: costo por m³ con que se grabaron las lecturas de los locales de ese periodo. Punteadas: promedio de todo el histórico, ponderado por m³ (SIAPA ${dinero(histSiapa)}, tú ${dinero(histCobro)}; ${dinero(histSiapa - histCobro)} menos por m³). Últimos 12 periodos: SIAPA ${dinero(imp12 / m3_12)} por m³; en Lecturas de agua el costo para lecturas nuevas es ${dinero(tarifa)}.`,
                 periodos, valores, v => dinero(v),
-                [{ k: 'siapa', nombre: 'Costo SIAPA por m³', corto: 'SIAPA', color: '#667eea', dash: '' },
+                [{ k: 'siapa', nombre: 'Costo SIAPA por m³', corto: 'SIAPA', color: '#1f4e79', dash: '' },
                  { k: 'cobro', nombre: 'Lo que cobras por m³', corto: 'Cobras', color: '#13855c', dash: '' },
-                 { k: 'histSiapa', nombre: `Promedio histórico SIAPA (${dinero(histSiapa)})`, corto: `Prom. SIAPA ${dinero(histSiapa)}`, color: '#667eea', dash: '6 4' },
+                 { k: 'histSiapa', nombre: `Promedio histórico SIAPA (${dinero(histSiapa)})`, corto: `Prom. SIAPA ${dinero(histSiapa)}`, color: '#1f4e79', dash: '6 4' },
                  { k: 'histCobro', nombre: `Promedio histórico cobrado (${dinero(histCobro)})`, corto: `Prom. cobrado ${dinero(histCobro)}`, color: '#13855c', dash: '6 4' }],
                 false, { alto: 360, mensual: true, base: 40, eje: v => '$' + numero(v) });
             // Por año
@@ -777,7 +778,7 @@
                         #reporte-impresion { display: block !important; }
                         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     }
-                    .rep { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; font-size: 11px; }
+                    .rep { font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #333; font-size: 11px; }
                     .rep-cab { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 14px; }
                     .rep-cab img { height: 30px; }
                     .rep-cab > div { text-align: right; }
@@ -785,7 +786,7 @@
                     .rep-fecha { font-size: 10px; color: #777; }
                     .rep h1 { font-size: 18px; margin: 0 0 2px; }
                     .rep-sub { color: #666; margin: 0 0 12px; }
-                    .rep h2 { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 16px 0 6px; }
+                    .rep h2 { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 16px 0 6px; }
                     .rep-tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
                     .rep-tarjetas div { border: 1px solid #ddd; border-radius: 6px; padding: 6px 9px; }
                     .rep-tarjetas span { display: block; font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .03em; }
@@ -849,9 +850,9 @@
             const y = v => arriba + (H - arriba - abajo) * (1 - v / tope);
             const etiquetaCada = Math.ceil(datos.length / 9);
             el.innerHTML = `<h3>${titulo}</h3>
-                <div class="leyenda"><span><i style="background:#667eea"></i>Lectura tomada</span><span><i style="background-image:repeating-linear-gradient(45deg,#667eea 0 2px,#c9d0f7 2px 4px)"></i>Con nota de SIAPA (210 / 206)</span></div>
+                <div class="leyenda"><span><i style="background:#1f4e79"></i>Lectura tomada</span><span><i style="background-image:repeating-linear-gradient(45deg,#1f4e79 0 2px,#fbf0dd 2px 4px)"></i>Con nota de SIAPA (210 / 206)</span></div>
                 <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
-                    <defs><pattern id="rayas" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#c9d0f7"/><rect width="2" height="4" fill="#667eea"/></pattern></defs>
+                    <defs><pattern id="rayas" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#c9d0f7"/><rect width="2" height="4" fill="#1f4e79"/></pattern></defs>
                     ${ticks.map(t => `<line x1="${izq}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#eee"/><text x="${izq - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t).replace(' m³', '')}</text>`).join('')}
                     ${datos.map((d, i) => {
                         const x = izq + i * ancho + (ancho - barra) / 2, top = y(d.v), alto = Math.max(0, H - abajo - top);

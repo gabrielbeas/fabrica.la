@@ -4,90 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carátula de contrato - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 900px; margin: 0 auto; padding: 30px 20px 60px; }
         .barra { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .barra a { color: #667eea; text-decoration: none; font-size: 14px; }
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .barra a { color: var(--accion); text-decoration: none; font-size: 14px; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: #f5f5f5; color: #555; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
-        .btn-sec:hover { background: #ebebeb; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+        .btn-sec:hover { background: var(--linea); }
         .btn-mini { margin-top: 12px; padding: 7px 14px; font-size: 13px; }
 
         /* Ventana de historial de depósitos */
         .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 1000; overflow-y: auto; }
-        .modal { background: white; border-radius: 12px; width: 100%; max-width: 820px; padding: 26px 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
-        .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid #333; padding-bottom: 14px; margin-bottom: 18px; }
-        .modal-cab .emp { font-size: 12px; color: #777; letter-spacing: .05em; text-transform: uppercase; }
+        .modal { background: var(--fondo); border-radius: 12px; width: 100%; max-width: 820px; padding: 26px 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--tinta); padding-bottom: 14px; margin-bottom: 18px; }
+        .modal-cab .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
         .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
-        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 20px 0 8px; }
-        .tabla-dep th { background: #fafafa; }
-        .tabla-dep tr.comp td { color: #777; }
-        .tabla-dep tr.sub td { font-weight: 600; border-top: 1px solid #ddd; color: #555; }
-        .nota-p { font-size: 12px; color: #999; }
+        .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 20px 0 8px; }
+        .tabla-dep th { background: var(--fondo-hundido); }
+        .tabla-dep tr.comp td { color: var(--tinta-suave); }
+        .tabla-dep tr.sub td { font-weight: 600; border-top: 1px solid var(--borde-control); color: var(--tinta-suave); }
+        .nota-p { font-size: 12px; color: var(--tinta-suave); }
         .resumen-dep { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
-        .resumen-dep div { border: 1px solid #eee; border-radius: 8px; padding: 12px 14px; }
-        .resumen-dep span { display: block; font-size: 12px; color: #888; }
+        .resumen-dep div { border: 1px solid var(--linea); border-radius: 8px; padding: 12px 14px; }
+        .resumen-dep span { display: block; font-size: 12px; color: var(--tinta-suave); }
         .resumen-dep strong { display: block; font-size: 18px; margin-top: 4px; font-variant-numeric: tabular-nums; }
-        tr.total.pagado td { border-top: none; color: #2e7d32; }
+        tr.total.pagado td { border-top: none; color: var(--exito); }
         tr.total.pagado .nota-p { font-weight: 400; }
-        .sub-cfe { font-size: 13px; font-weight: 600; color: #555; margin: 12px 0 6px; }
+        .sub-cfe { font-size: 13px; font-weight: 600; color: var(--tinta-suave); margin: 12px 0 6px; }
         .sub-cfe:first-of-type { margin-top: 0; }
-        .tabla-dep tr.tarde td { background: #fdecea; color: #c62828; }
-        .tabla-dep tr.tarde .nota-p { color: #d9534f; }
-        .tarde-txt { display: inline; font-size: 12px; font-weight: 600; color: #c62828; }
-        .nota-dep { font-size: 13px; color: #666; margin: 16px 0 0; line-height: 1.5; }
-        .aviso-dep { font-size: 13px; color: #c62828; margin: 14px 0 0; }
+        .tabla-dep tr.tarde td { background: var(--peligro-suave); color: var(--peligro); }
+        .tabla-dep tr.tarde .nota-p { color: var(--peligro); }
+        .tarde-txt { display: inline; font-size: 12px; font-weight: 600; color: var(--peligro); }
+        .nota-dep { font-size: 13px; color: var(--tinta-suave); margin: 16px 0 0; line-height: 1.5; }
+        .aviso-dep { font-size: 13px; color: var(--peligro); margin: 14px 0 0; }
 
-        .hoja { border: 1px solid #eee; border-radius: 10px; padding: 36px 40px; }
-        .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
-        .encabezado .emp { font-size: 12px; color: #777; letter-spacing: .05em; text-transform: uppercase; }
+        .hoja { border: 1px solid var(--linea); border-radius: 10px; padding: 36px 40px; }
+        .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--tinta); padding-bottom: 16px; margin-bottom: 24px; }
+        .encabezado .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
         .encabezado h1 { font-size: 22px; margin: 6px 0 4px; }
-        .encabezado .loc { font-size: 15px; color: #555; }
+        .encabezado .loc { font-size: 15px; color: var(--tinta-suave); }
         .estado { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 10px; }
-        .e-vigente { background: #e8f5e9; color: #2e7d32; } .e-vencido { background: #fdecea; color: #c62828; } .e-termina { background: #fff3e0; color: #ef6c00; }
+        .e-vigente { background: var(--exito-suave); color: var(--exito); } .e-vencido { background: var(--peligro-suave); color: var(--peligro); } .e-termina { background: var(--atencion-suave); color: var(--atencion); }
 
         .secciones { display: grid; grid-template-columns: 1fr; gap: 26px; }
-        .seccion h2 { border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .seccion h2 { border-bottom: 1px solid var(--linea); padding-bottom: 6px; }
         /* Numeración automática de secciones (1. Arrendatario, 2. Garantías...) */
         .secciones { counter-reset: sec; }
         .secciones > .seccion > h2::before { counter-increment: sec; content: counter(sec) ". "; }
-        .sin-dato { color: #bbb; font-weight: 400; }
+        .sin-dato { color: var(--tinta-tenue); font-weight: 400; }
         .vig-wrap { display: flex; flex-direction: row-reverse; gap: 30px; align-items: flex-start; }
         .vig-wrap dl { flex: 1; }
         .vig-cajas { flex: none; width: 280px; display: flex; flex-direction: column; gap: 10px; }
         .vig-alerta { width: 100%; display: flex; gap: 12px; align-items: center; border: 1px solid; border-radius: 10px; padding: 14px 16px; }
         .vig-punto { flex: none; width: 16px; height: 16px; border-radius: 50%; }
         .vig-titulo { font-weight: 700; font-size: 15px; }
-        .vig-det { font-size: 12px; color: #777; margin-top: 2px; }
+        .vig-det { font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
         @media (max-width: 700px) { .vig-wrap { flex-direction: column; } .vig-cajas { width: 100%; } }
-        .seccion h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 10px; }
+        .seccion h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 0 0 10px; }
         .seccion.ancha { grid-column: 1 / -1; }
         dl { margin: 0; display: grid; grid-template-columns: 220px 1fr; gap: 7px 16px; font-size: 14px; }
-        dt { color: #888; }
+        dt { color: var(--tinta-suave); }
         dd { margin: 0; font-weight: 500; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; color: #888; font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid #eee; }
-        td { padding: 7px 8px; border-bottom: 1px solid #f5f5f5; }
+        th { text-align: left; color: var(--tinta-suave); font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--linea); }
+        td { padding: 7px 8px; border-bottom: 1px solid var(--fondo-hundido); }
         .num { text-align: right; font-variant-numeric: tabular-nums; }
-        .total td { font-weight: 700; border-top: 1px solid #ddd; border-bottom: none; }
-        .notas { font-size: 13px; color: #666; }
+        .total td { font-weight: 700; border-top: 1px solid var(--borde-control); border-bottom: none; }
+        .notas { font-size: 13px; color: var(--tinta-suave); }
         .notas li { margin-bottom: 3px; }
-        .pie { margin-top: 28px; font-size: 11px; color: #aaa; }
-        .err { color: #c62828; }
+        .pie { margin-top: 28px; font-size: 11px; color: var(--tinta-tenue); }
+        .err { color: var(--peligro); }
 
         /* Alertas del contrato */
-        .alertas-caja { border: 1px solid #eee; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
-        .alertas-caja h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #c62828; margin: 0 0 12px; }
-        .alerta-fila { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid #f5f5f5; font-size: 14px; }
+        .alertas-caja { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+        .alertas-caja h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--peligro); margin: 0 0 12px; }
+        .alerta-fila { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--fondo-hundido); font-size: 14px; }
         .alerta-fila:first-of-type { border-top: none; padding-top: 0; }
         .alerta-fila .punto { flex: none; width: 10px; height: 10px; border-radius: 50%; position: relative; top: 1px; }
         .alerta-fila .que { flex: 1; }
         .alerta-fila .que strong { font-weight: 600; }
-        .alerta-fila .que span { color: #888; font-size: 13px; }
+        .alerta-fila .que span { color: var(--tinta-suave); font-size: 13px; }
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
         @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 8px; } }
@@ -155,7 +156,7 @@
             const d = diasHasta(fecha);
             let color, titulo, detalle;
             if (d > VENTANA_DIAS) {
-                color = '#2e7d32'; titulo = t.ok;
+                color = '#3d8a5a'; titulo = t.ok;
                 detalle = `Faltan ${plural(d)} ${t.para}`;
             } else {
                 color = COLOR_NIVEL[nivelDe(d)];
@@ -560,15 +561,15 @@
             const secciones = [...new Set(CAMPOS.map(x => x[3]))];
             app.innerHTML = `
                 <style>
-                    .form-sec { border: 1px solid #eee; border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
-                    .form-sec h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #667eea; margin: 0 0 14px; }
+                    .form-sec { border: 1px solid var(--linea); border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+                    .form-sec h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 0 0 14px; }
                     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
-                    .form-grid label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
-                    .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font: inherit; font-size: 14px; }
+                    .form-grid label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+                    .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font: inherit; font-size: 14px; }
                     .form-grid .ancho { grid-column: 1 / -1; }
-                    .extra { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
-                    .extra.quitado span { text-decoration: line-through; color: #bbb; }
-                    .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer; }
+                    .extra { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--fondo-hundido); font-size: 14px; }
+                    .extra.quitado span { text-decoration: line-through; color: var(--tinta-tenue); }
+                    .btn-mini { font-size: 12px; padding: 3px 10px; border: 1px solid var(--borde-control); background: var(--fondo); border-radius: 10px; cursor: pointer; }
                     @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
                 </style>
                 <div class="barra">

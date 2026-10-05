@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar facturación - La Fábrica de Chocolate</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; color: #333; margin: 0; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
         .main { max-width: 1000px; margin: 0 auto; padding: 30px 20px; }
         h1 { font-size: 24px; margin-bottom: 6px; }
-        .sub { color: #999; font-size: 14px; margin-bottom: 30px; }
-        .card { border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin-bottom: 30px; }
+        .card { border: 1px solid var(--linea); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
-        th { color: #666; font-weight: 600; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--linea); }
+        th { color: var(--tinta-suave); font-weight: 600; }
         .num { text-align: right; }
-        .ok { color: #2e7d32; } .err { color: #c62828; }
-        #log { font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #f8f9fa; padding: 12px; border-radius: 6px; min-height: 40px; }
+        .ok { color: var(--exito); } .err { color: var(--peligro); }
+        #log { font-family:  var(--font-mono); font-size: 13px; white-space: pre-wrap; background: var(--fondo-hundido); padding: 12px; border-radius: 6px; min-height: 40px; }
     </style>
 </head>
 <body>
