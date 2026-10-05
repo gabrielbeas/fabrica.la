@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitácora - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4e79'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>F</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css">
+    <link rel="stylesheet" href="../css/panel.css?v=20261004-1">
     <style>
         /* Solo lo propio de Bitácora; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
@@ -116,8 +116,8 @@
     </div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js';
-        import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261004-1';
+        import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261004-1';
         import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { collection, doc, getDocs, setDoc, writeBatch, deleteDoc, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';

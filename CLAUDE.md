@@ -24,7 +24,8 @@ Panel interno para administrar la plaza comercial La Fábrica de Chocolate (Guad
 
 - `js/auth.js`: login, roles, `basePath()`, `getSeccionesPermitidas()` (menú por rol, en el orden de las tarjetas de Inicio y sin Configuración ni SIAPA, que se abren desde su tarjeta), exporta `auth` y `db`. El menú pasa a hamburguesa por debajo de 1180px (`js/navbar.js`).
 - `js/navbar.js`: barra superior con logo (`admin/public/css/logo.png`).
-- `js/facturacion.js`: lógica de facturas, agua, basura y el PDF para contadores. Se importa con `?v=AAAAMMDD-n` en `facturacion/index.html` y `ficha.html`: **cada vez que cambie este archivo, subir el número de versión** en ambos imports (si no, el navegador usa la copia vieja en caché y el PDF sale distinto a la pantalla).
+- **Versiones contra la caché** (GitHub Pages deja guardar los archivos 4 horas): `auth.js`, `navbar.js` y `alertas-contrato.js` se importan con `?v=AAAAMMDD-n` en todas las páginas, en `js/navbar.js`, `js/facturacion.js` y `login.html`, y `panel.css` se enlaza con la misma versión. **Cada vez que cambie uno de esos archivos, subir la versión en todas las referencias a la vez**: si dos URLs distintas apuntan a `auth.js`, Firebase se inicializa dos veces. Versión actual: `20261004-1`.
+- `js/facturacion.js`: lógica de facturas, agua, basura y el PDF para contadores. Se importa con `?v=AAAAMMDD-n` en `facturacion/index.html`, `ficha.html` y `herramientas/importar-facturas.html`: **cada vez que cambie este archivo, subir el número de versión** en todos (si no, el navegador usa la copia vieja en caché y el PDF sale distinto a la pantalla). Versión actual: `20261004-1`.
 - `js/alertas-contrato.js`: alertas de contratos (fin de contrato, incremento de renta, saldo de depósito por pagar). El seguro NO genera alerta.
 
 ### Secciones (`admin/public/`)
