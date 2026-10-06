@@ -279,6 +279,22 @@
             const despues = recibos.some(x => x.servicioId === r.servicioId && x.periodoInicio > r.periodoFin && x.suPago < 0 && Math.abs((x.adeudoAnterior || 0) + x.suPago) < 1);
             return despues ? { importe: null, segun: 'posterior' } : null;
         };
+        // Total pagado a CFE: cada «Su pago» de un recibo es el pago del recibo anterior. Si falta el recibo siguiente
+        // pero un recibo posterior confirma que se pagó, se toma su total a pagar sin centavos (CFE cobra en pesos cerrados
+        // y deja los centavos para el siguiente). Los pagos registrados a mano solo cuentan si no hay recibo siguiente.
+        function pagadoHistorico() {
+            let total = 0, estimados = 0, desde = null;
+            recibos.forEach(r => {
+                if (r.suPago < 0) total += -r.suPago;
+                const p = pagoDe(r);
+                if (!p || p.segun === 'siguiente') return;
+                if (p.segun === 'posterior') { total += Math.floor(r.totalAPagar ?? r.total); estimados++; }
+                else total += p.importe || 0;
+                if (!desde || r.periodoFin < desde) desde = r.periodoFin;
+            });
+            recibos.forEach(r => { if (pagoDe(r) && (!desde || r.periodoFin < desde)) desde = r.periodoFin; });
+            return { total, estimados, desde };
+        }
         const domiciliado = r => servicios.find(s => s.id === r.servicioId)?.pago !== 'manual';
         const estadoDe = r => pagoDe(r) ? 'pagado' : (r.fechaLimite && r.fechaLimite < hoyISO() ? (domiciliado(r) ? 'porConfirmar' : 'vencido') : 'porPagar');
         const ESTADO = {
@@ -298,6 +314,7 @@
             const anio = recibos.filter(r => r.periodoFin > desde);
             const kwhAnio = anio.reduce((a, r) => a + (r.kwh || 0), 0), subAnio = anio.reduce((a, r) => a + (r.subtotal || 0), 0);
             const pendientes = recibos.filter(r => !pagoDe(r));
+            const pagado = pagadoHistorico();
             const proxLimite = pendientes.map(r => r.fechaLimite).filter(Boolean).sort()[0];
 
             app.innerHTML = `
@@ -313,6 +330,7 @@
                     <div class="lf-cifra"><div class="lf-etiqueta">Último periodo</div><div class="lf-valor">${ultimos.length ? dinero(ultimos.reduce((a, r) => a + (r.total || 0), 0)) : '-'}</div><div class="lf-detalle">${ultimos.length ? `${ultimos.length} servicio${ultimos.length > 1 ? 's' : ''} · al ${fechaCorta(ultimos.map(r => r.periodoFin).sort().pop())}` : 'Sin recibos'}</div></div>
                     <div class="lf-cifra"><div class="lf-etiqueta">Consumo del último periodo</div><div class="lf-valor">${ultimos.length ? entero(ultimos.reduce((a, r) => a + (r.kwh || 0), 0)) : '-'}</div><div class="lf-detalle">kWh</div></div>
                     <div class="lf-cifra"><div class="lf-etiqueta">Costo por kWh</div><div class="lf-valor">${kwhAnio ? dinero(subAnio / kwhAnio) : '-'}</div><div class="lf-detalle">promedio de 12 meses, sin IVA</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Pagado en total</div><div class="lf-valor">${dinero(pagado.total)}</div><div class="lf-detalle">${pagado.desde ? `desde ${fechaCorta(pagado.desde)}, incluye depósitos de garantía` : 'Sin pagos'}${pagado.estimados ? ` · ${pagado.estimados} estimado${pagado.estimados > 1 ? 's' : ''} sin recibo siguiente` : ''}</div></div>
                     <div class="lf-cifra"><div class="lf-etiqueta">Por pagar</div><div class="lf-valor">${dinero(pendientes.reduce((a, r) => a + (r.total || 0), 0))}</div><div class="lf-detalle">${pendientes.length ? `${pendientes.length} recibo${pendientes.length > 1 ? 's' : ''} sin pago confirmado${proxLimite ? ` · límite ${fechaCorta(proxLimite)}` : ''}` : 'Todo pagado'}</div></div>
                 </div>
                 <div class="bloque">

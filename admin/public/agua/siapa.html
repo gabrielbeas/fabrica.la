@@ -25,7 +25,7 @@
         .btn-mini:hover { border-color: var(--accion); color: var(--accion); }
         .btn-mini.borrar:hover { border-color: var(--peligro); color: var(--peligro); }
 
-        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
         .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
         .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
         .tarjeta .val { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
@@ -259,6 +259,10 @@
             const pagadoComp = comp.reduce((s, x) => s + (x.p.importe || 0), 0);
             const cobradoComp = comp.reduce((s, x) => s + x.c.importe, 0);
             const recuperado = pagadoComp ? cobradoComp / pagadoComp : null;
+            // Histórico: todo lo pagado a SIAPA menos todo lo cobrado a locatarios por agua = lo que costó el agua propia (y la que no pasa por medidor)
+            const pagadoTotal = pagos.reduce((s, g) => s + (g.monto || 0), 0);
+            const cobradoTotal = Object.values(cobrado).reduce((s, c) => s + (c.importe || 0), 0);
+            const propioTotal = pagadoTotal - cobradoTotal;
             const recibo = recibos.find(r => r.totalAPagar !== undefined && r.tipo !== 'recibo de pago');
             const cuenta = recibos.find(r => r.cuenta)?.cuenta;
 
@@ -297,6 +301,16 @@
                         <div class="et">Recuperado con locatarios</div>
                         <div class="val">${recuperado !== null ? Math.round(recuperado * 100) + '%' : '-'}</div>
                         <div class="det">${recuperado !== null ? `Cobrado ${pesos(cobradoComp)} de ${pesos(pagadoComp)} pagados a SIAPA (${comp.length} meses con lecturas)` : 'Sin lecturas de locatarios en esos meses'}</div>
+                    </div>
+                    <div class="tarjeta">
+                        <div class="et">Pagado en total</div>
+                        <div class="val">${pesos(pagadoTotal)}</div>
+                        <div class="det">${pagos.length ? `${pagos.length} pago${pagos.length > 1 ? 's' : ''} registrado${pagos.length > 1 ? 's' : ''}, del ${fechaCorta(pagos[pagos.length - 1].fecha)} al ${fechaCorta(pagos[0].fecha)}` : 'Sin pagos registrados'}</div>
+                    </div>
+                    <div class="tarjeta" title="Todo lo pagado a SIAPA menos todo lo cobrado a los locatarios por agua (sus lecturas por la tarifa). Es lo que costó el agua de Servicios Generales, la que no pasa por ningún medidor y la diferencia entre la tarifa y el costo real.">
+                        <div class="et">Pagado por consumo propio</div>
+                        <div class="val">${pesos(propioTotal)}</div>
+                        <div class="det">${pesos(pagadoTotal)} pagado − ${pesos(cobradoTotal)} cobrado a locatarios (histórico)</div>
                     </div>
                 </div>
                 ${recibo ? `<p class="aviso">Último recibo (emitido ${fechaCorta(recibo.emision)}): total a pagar <strong>${dinero(recibo.totalAPagar)}</strong>, vence ${fechaCorta(recibo.vence)}${recibo.recargos ? ` · incluye ${dinero(recibo.recargos)} de recargos` : ''}.</p>` : ''}
