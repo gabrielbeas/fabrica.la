@@ -44,7 +44,7 @@ jobs:
           cp -r fabrica/. dist/
           cp CNAME dist/CNAME
           # Login y código compartido del panel
-          cp login.html firebase-config.js dist/
+          cp login.html firebase-config.js apple-touch-icon.png dist/
           cp -r js dist/js
           # Panel (solo archivos nuevos)
           mkdir -p dist/admin/agua dist/admin/locales dist/admin/facturacion dist/admin/calendarios dist/admin/config dist/admin/caja-chica dist/admin/bitacora dist/admin/personal dist/admin/cfe
