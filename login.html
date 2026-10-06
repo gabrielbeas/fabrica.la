@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;900&display=swap">
     <style>
         /* Colores del sistema «Panel LFdC» (el login no carga panel.css: vive fuera del panel) */
-        :root { --fondo: #ffffff; --fondo-hundido: #f2f4f7; --linea: #dfe3e8; --borde-control: #8a929c; --tinta: #1b2430; --tinta-suave: #5f6670; --accion: #1f4e79; --accion-hover: #2a5f8f; --on-accion: #ffffff; --foco: #1f4e79; --peligro: #b3261e; --peligro-suave: #fbe9e7; --exito: #136c72; --exito-suave: #e3f1f1; }
+        :root { --fondo: #ffffff; --fondo-hundido: #f2f4f7; --linea: #dfe3e8; --borde-control: #8a929c; --tinta: #1b2430; --tinta-suave: #5f6670; --accion: #1f4e79; --accion-hover: #2a5f8f; --on-accion: #ffffff; --foco: #1f4e79; --peligro: #b3261e; --peligro-suave: #fbe9e7; --exito: #2e7d32; --exito-suave: #e8f5e9; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--fondo-hundido); color: var(--tinta); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .login-container { background: var(--fondo); border: 1px solid var(--linea); border-radius: 12px; width: 100%; max-width: 400px; padding: 40px 32px; }
@@ -80,7 +80,7 @@
     </div>
 
     <script type="module">
-        import { login } from './js/auth.js?v=20261005-1';
+        import { login } from './js/auth.js?v=20261005-4';
 
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');

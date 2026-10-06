@@ -3,8 +3,11 @@
 
 export const VENTANA_DIAS = 90;
 export const PESO_NIVEL = { vencido: 0, '30': 1, '60': 2, '90': 3 };
-// Colores de la escala de alertas del sistema «Panel LFdC» (tokens alerta-*); en hex porque también se usan en estilos en línea
-export const COLOR_NIVEL = { vencido: '#b3261e', '30': '#d9661a', '60': '#b8860b', '90': '#3c78b4' };
+// Fin de contrato: círculo con color según cuánto falta (la leyenda de Contratos usa estos mismos colores).
+// Las demás alertas (incremento de renta, depósito por pagar): cuadrito de un solo color, sin escala de tiempo.
+// En hex porque también se usan en estilos en línea.
+export const COLOR_NIVEL = { vencido: '#c62828', '30': '#ef6c00', '60': '#f9a825', '90': '#1f4e79' };
+export const COLOR_OTRA = '#1b2430';
 export const COLOR_OK = '#3d8a5a';
 export const TEXTO_NIVEL = { vencido: 'Vencido', '30': 'Próximos 30 días', '60': '31 a 60 días', '90': '61 a 90 días' };
 
@@ -28,5 +31,8 @@ export function alertasContrato(c) {
         .sort((a, b) => a.dias - b.dias);
     const saldo = typeof c.porPagar === 'number' && c.porPagar > 0 ? c.porPagar : 0;
     const peor = lista.length ? lista[0].nivel : (saldo ? '60' : null);
-    return { lista, saldo, peor, total: lista.length + (saldo ? 1 : 0) };
+    // contrato: nivel del fin de contrato (círculo); otras: cuántas alertas de incremento o depósito (cuadrito)
+    const fin = lista.find(e => e.tipo === 'Fin de contrato');
+    const otras = lista.filter(e => e.tipo !== 'Fin de contrato').length + (saldo ? 1 : 0);
+    return { lista, saldo, peor, total: lista.length + (saldo ? 1 : 0), contrato: fin ? fin.nivel : null, otras };
 }

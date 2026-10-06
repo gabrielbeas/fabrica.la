@@ -38,5 +38,14 @@ service firebase.storage {
       allow delete: if puedeUsarCajaChica() && (uid == request.auth.uid || esAdmin());
       allow list, update: if false;
     }
+
+    // Documentos del expediente de Personal: solo el administrador
+    match /personal/{personaId}/{fileName} {
+      allow get, delete: if esAdmin();
+      allow create: if esAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow list, update: if false;
+    }
   }
 }

@@ -26,8 +26,8 @@
   --peligro: #b3261e;
   --on-peligro: #ffffff;
   --peligro-suave: #fbe9e7;
-  --exito: #136c72;
-  --exito-suave: #e3f1f1;
+  --exito: #2e7d32;
+  --exito-suave: #e8f5e9;
   --atencion: #8a5300;
   --atencion-suave: #fbf1dc;
   --agua: #17739f;
@@ -77,8 +77,8 @@
   --peligro: #f08a7e;
   --on-peligro: #1f1915;
   --peligro-suave: #3a1e1a;
-  --exito: #6cc3c0;
-  --exito-suave: #16302f;
+  --exito: #7cc48a;
+  --exito-suave: #17301c;
   --atencion: #e6b25e;
   --atencion-suave: #3a2c12;
   --agua: #7cc3e6;
@@ -160,7 +160,7 @@ td.num { font-family: var(--font-mono); }
 .lf-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .lf-switch span { width: 36px; height: 20px; border-radius: var(--radio-pill); background: var(--fondo); border: 1px solid var(--borde-control); position: relative; flex: none; }
 .lf-switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: var(--radio-pill); background: var(--borde-control); transition: transform .15s; }
-.lf-switch input:checked + span { background: var(--accion); border-color: var(--accion); }
+.lf-switch input:checked + span { background: var(--exito); border-color: var(--exito); }
 .lf-switch input:checked + span::after { transform: translateX(16px); background: var(--on-accion); }
 
 /* ---------- Tarjetas de cifra ---------- */

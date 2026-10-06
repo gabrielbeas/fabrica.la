@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
+    <style>
+        /* Solo lo propio de Personal; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+        .main { max-width: var(--ancho-pagina); margin: 0 auto; padding: var(--espacio-6) var(--espacio-4) var(--espacio-7); display: flex; flex-direction: column; gap: var(--espacio-5); }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-3); flex-wrap: wrap; }
+        .cabeza .lf-acciones { flex-wrap: wrap; }
+        .cargando, .vacio { color: var(--tinta-suave); text-align: center; padding: var(--espacio-6) var(--espacio-4); }
+        .nota { color: var(--tinta-suave); font-size: 13px; line-height: 18px; margin: 0; }
+        .oculto { display: none !important; }
+        .bloque { display: flex; flex-direction: column; gap: var(--espacio-3); }
+        .bloque-cabeza { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; }
+
+        /* Tarjetas de personas */
+        .personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--espacio-3); }
+        .persona { border: 1px solid var(--linea); border-radius: var(--radio-lg); padding: var(--espacio-4); display: flex; flex-direction: column; gap: var(--espacio-2); background: var(--fondo); }
+        .persona.baja { background: var(--fondo-hundido); }
+        .persona h3 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 700; }
+        .persona .puesto { color: var(--tinta-suave); font-size: 14px; }
+        .persona dl { margin: var(--espacio-1) 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--espacio-3); font-size: 14px; line-height: 20px; }
+        .persona dt { color: var(--tinta-suave); }
+        .persona dd { margin: 0; }
+        .persona .lf-acciones { margin-top: auto; padding-top: var(--espacio-2); flex-wrap: wrap; }
+
+        /* Expediente */
+        .volver { font: inherit; font-size: 14px; border: none; background: none; padding: 0; color: var(--accion); cursor: pointer; align-self: flex-start; }
+        .volver:hover { text-decoration: underline; }
+        .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--espacio-3); }
+        .caja { border: 1px solid var(--linea); border-radius: var(--radio-lg); padding: var(--espacio-4); display: flex; flex-direction: column; gap: var(--espacio-2); }
+        .caja h2 { margin: 0; font-size: 13px; line-height: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-suave); }
+        .caja dl { margin: 0; display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 6px var(--espacio-3); font-size: 14px; line-height: 20px; }
+        .caja dt { color: var(--tinta-suave); }
+        .caja dd { margin: 0; overflow-wrap: anywhere; }
+        .caja .grande { font-family: var(--font-mono); font-size: 28px; line-height: 34px; font-weight: 600; }
+        .notas { white-space: pre-line; font-size: 14px; line-height: 20px; margin: 0; }
+        .docs { display: flex; flex-direction: column; }
+        .docs .doc { display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-2) 0; border-top: 1px solid var(--linea); font-size: 14px; line-height: 20px; }
+        .docs .doc:first-child { border-top: none; }
+        .docs .doc .que { flex: 1; min-width: 0; }
+        .docs .doc small { display: block; color: var(--tinta-suave); font-size: 12px; overflow-wrap: anywhere; }
+        .subir { display: flex; flex-wrap: wrap; gap: var(--espacio-2); align-items: flex-end; }
+        .subir .lf-campo { flex: 1 1 200px; }
+        .progreso { height: 4px; border-radius: var(--radio-pill); background: var(--linea); overflow: hidden; }
+        .progreso span { display: block; height: 100%; width: 0; background: var(--ambar); transition: width .15s; }
+
+        /* Tabla de ausencias */
+        .filtros { display: flex; flex-wrap: wrap; gap: var(--espacio-2) var(--espacio-3); align-items: flex-end; }
+        .filtros .lf-campo { flex: 0 1 180px; }
+        .t-vacaciones { background: var(--accion-suave); color: var(--accion); }
+        .t-falta { background: var(--peligro-suave); color: var(--peligro); }
+        .t-permiso { background: var(--ambar-suave); color: var(--tinta); }
+        .t-incapacidad { background: var(--agua-suave); color: var(--agua); }
+        .fecha { white-space: nowrap; }
+        .lf-tabla th.der, .lf-tabla td.der { text-align: right; }
+        .dias-descanso { display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 4px; }
+        .dias-descanso label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--tinta); }
+        .dias-descanso input { width: 16px; height: 16px; margin: 0; accent-color: var(--accion); }
+        .cuenta-vac { margin: 0; font-size: 14px; line-height: 20px; }
+
+        .enlace { font: inherit; font-size: 13px; line-height: 18px; border: none; background: none; padding: 0; color: var(--tinta); cursor: pointer; text-decoration: underline; text-decoration-color: var(--ambar); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+        .enlace:hover { text-decoration-color: var(--tinta); }
+        .lf-modal-fondo:not(.abierto) { display: none; }
+        .lf-modal .lf-subtitulo-pag { margin: calc(-1 * var(--espacio-3)) 0 0; }
+        .lf-modal .grupo { grid-column: 1 / -1; margin: var(--espacio-2) 0 0; font-size: 13px; line-height: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-suave); }
+        .msg { font-size: 13px; line-height: 18px; color: var(--peligro); margin-right: auto; }
+        .hist div { padding: var(--espacio-2) 0; border-top: 1px solid var(--linea); font-size: 14px; line-height: 20px; }
+        .hist div:first-child { border-top: none; }
+        .lf-modal.visor { max-width: 900px; }
+        .lf-modal.visor h3 { overflow-wrap: anywhere; }
+        #vContenido img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; border-radius: var(--radio-md); }
+        #vContenido iframe { width: 100%; height: 75vh; border: 1px solid var(--linea); border-radius: var(--radio-md); }
+        @media (prefers-reduced-motion: reduce) { .progreso span { transition: none; } }
+    </style>
+</head>
+<body>
+    <main class="main" id="app"><div class="cargando">Cargando...</div></main>
+
+    <!-- Datos de la persona -->
+    <div class="lf-modal-fondo" id="modalPersona">
+        <div class="lf-modal">
+            <h3 id="pTitulo">Agregar persona</h3>
+            <p class="lf-subtitulo-pag">Solo el nombre es obligatorio; lo demás se puede completar después.</p>
+            <div class="lf-form">
+                <p class="grupo">Trabajo</p>
+                <div class="lf-campo lf-ancho"><label for="p_nombre">Nombre completo</label><input id="p_nombre" maxlength="120"></div>
+                <div class="lf-campo"><label for="p_puesto">Puesto</label><input id="p_puesto" maxlength="80" list="puestos"></div>
+                <div class="lf-campo"><label for="p_fechaIngreso">Fecha de ingreso</label><input type="date" id="p_fechaIngreso"></div>
+                <div class="lf-campo lf-ancho"><label for="p_uid">Usuario del panel</label><select id="p_uid"></select></div>
+                <div class="lf-campo lf-ancho"><label>Días de descanso (no cuentan como vacaciones)</label>
+                    <div class="dias-descanso" id="p_descanso">
+                        <label><input type="checkbox" value="1">Lunes</label><label><input type="checkbox" value="2">Martes</label><label><input type="checkbox" value="3">Miércoles</label><label><input type="checkbox" value="4">Jueves</label><label><input type="checkbox" value="5">Viernes</label><label><input type="checkbox" value="6">Sábado</label><label><input type="checkbox" value="0">Domingo</label>
+                    </div>
+                </div>
+                <p class="grupo">Datos personales</p>
+                <div class="lf-campo"><label for="p_telefono">Teléfono</label><input id="p_telefono" type="tel" maxlength="30"></div>
+                <div class="lf-campo"><label for="p_correo">Correo personal</label><input id="p_correo" type="email" maxlength="120"></div>
+                <div class="lf-campo"><label for="p_fechaNacimiento">Fecha de nacimiento</label><input type="date" id="p_fechaNacimiento"></div>
+                <div class="lf-campo"><label for="p_curp">CURP</label><input id="p_curp" maxlength="18" style="text-transform:uppercase"></div>
+                <div class="lf-campo"><label for="p_rfc">RFC</label><input id="p_rfc" maxlength="13" style="text-transform:uppercase"></div>
+                <div class="lf-campo"><label for="p_nss">NSS (IMSS)</label><input id="p_nss" maxlength="11" inputmode="numeric"></div>
+                <div class="lf-campo lf-ancho"><label for="p_direccion">Domicilio</label><input id="p_direccion" maxlength="200"></div>
+                <p class="grupo">Contacto de emergencia</p>
+                <div class="lf-campo"><label for="p_emergenciaNombre">Nombre</label><input id="p_emergenciaNombre" maxlength="120"></div>
+                <div class="lf-campo"><label for="p_emergenciaParentesco">Parentesco</label><input id="p_emergenciaParentesco" maxlength="40"></div>
+                <div class="lf-campo"><label for="p_emergenciaTelefono">Teléfono</label><input id="p_emergenciaTelefono" type="tel" maxlength="30"></div>
+                <div class="lf-campo lf-ancho"><label for="p_notas">Notas (opcional)</label><textarea id="p_notas" rows="3" maxlength="2000"></textarea></div>
+            </div>
+            <datalist id="puestos"><option>Mantenimiento</option><option>Limpieza</option><option>Vigilancia</option><option>Administración</option></datalist>
+            <div class="lf-modal-pie">
+                <span class="msg" id="pMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarPersona">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ausencia -->
+    <div class="lf-modal-fondo" id="modalAusencia">
+        <div class="lf-modal">
+            <h3 id="aTitulo">Registrar ausencia</h3>
+            <p class="lf-subtitulo-pag">Faltas, permisos e incapacidades. Aparecen en el Calendario (solo para el administrador). Las vacaciones se programan en la sección Vacaciones.</p>
+            <div class="lf-form">
+                <div class="lf-campo"><label for="a_persona">Persona</label><select id="a_persona"></select></div>
+                <div class="lf-campo"><label for="a_tipo">Tipo</label><select id="a_tipo"></select></div>
+                <div class="lf-campo"><label for="a_inicio">Del</label><input type="date" id="a_inicio"></div>
+                <div class="lf-campo"><label for="a_fin">Al</label><input type="date" id="a_fin"></div>
+                <div class="lf-campo"><label for="a_dias">Días que cuenta</label><input type="number" id="a_dias" min="0.5" step="0.5"></div>
+                <div class="lf-campo"><label for="a_goce">Sueldo</label><select id="a_goce"><option value="si">Con goce de sueldo</option><option value="no">Sin goce de sueldo</option></select></div>
+                <div class="lf-campo lf-ancho"><label for="a_nota">Nota (opcional)</label><input id="a_nota" maxlength="300"></div>
+            </div>
+            <p class="nota">«Días que cuenta» se llena con los días naturales del rango; corrígelo si hay días de descanso en medio.</p>
+            <div class="lf-modal-pie">
+                <span class="msg" id="aMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarAusencia">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vacaciones: se guardan en calendario_eventos (tipo vacaciones, con personaId) -->
+    <div class="lf-modal-fondo" id="modalVac">
+        <div class="lf-modal">
+            <h3 id="vcTitulo">Programar vacaciones</h3>
+            <p class="lf-subtitulo-pag">Quedan en el Calendario como vacaciones de la persona.</p>
+            <div class="lf-form">
+                <div class="lf-campo lf-ancho"><label for="vc_persona">Persona</label><select id="vc_persona"></select></div>
+                <div class="lf-campo"><label for="vc_inicio">Del</label><input type="date" id="vc_inicio"></div>
+                <div class="lf-campo"><label for="vc_fin">Al</label><input type="date" id="vc_fin"></div>
+                <div class="lf-campo lf-ancho"><label for="vc_nota">Nota (opcional)</label><input id="vc_nota" maxlength="300"></div>
+            </div>
+            <p class="cuenta-vac" id="vcCuenta"></p>
+            <div class="lf-modal-pie">
+                <span class="msg" id="vcMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarVac">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmación (eliminar ausencia o vacaciones, quitar documento, baja) -->
+    <div class="lf-modal-fondo" id="modalConfirmar">
+        <div class="lf-modal">
+            <h3 id="cTitulo"></h3>
+            <p style="margin:0" id="cTexto"></p>
+            <div class="lf-modal-pie">
+                <span class="msg" id="cMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-peligro" id="bConfirmar"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lf-modal-fondo" id="modalHist">
+        <div class="lf-modal">
+            <h3>Historial de cambios</h3>
+            <p class="lf-subtitulo-pag" id="hSub"></p>
+            <div class="hist" id="hLista"></div>
+            <div class="lf-modal-pie"><button class="lf-btn" data-cerrar>Cerrar</button></div>
+        </div>
+    </div>
+
+    <div class="lf-modal-fondo" id="modalArchivo">
+        <div class="lf-modal visor">
+            <h3 id="vTitulo">Documento</h3>
+            <div id="vContenido"></div>
+            <div class="lf-modal-pie">
+                <a class="lf-btn" id="vDescargar" style="text-decoration:none">Descargar</a>
+                <button class="lf-btn" data-cerrar>Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="iArchivo" accept="image/*,application/pdf" class="oculto">
+    <input type="file" id="iCamara" accept="image/*" capture="environment" class="oculto">
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { auth, db, isAuthenticated, esAdmin, getCurrentUser } from '../../../js/auth.js?v=20261005-4';
+        import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261005-4';
+        import { personaDeVacacion, diasDeVacacion, descansoDe } from '../../../js/vacaciones.js?v=20261005-4';
+        import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // Personal: solo el administrador. Firestore: personal (+ historial) y personal_ausencias (regla general: solo admin).
+        // Las vacaciones viven en el Calendario (calendario_eventos tipo vacaciones, con personaId); aquí se cuentan.
+        // Documentos en Storage: personal/{personaId}/{archivo} (storage.rules: solo admin).
+        const CAMPOS = {
+            nombre: 'Nombre', puesto: 'Puesto', fechaIngreso: 'Fecha de ingreso', uid: 'Usuario del panel',
+            telefono: 'Teléfono', correo: 'Correo personal', fechaNacimiento: 'Fecha de nacimiento', curp: 'CURP', rfc: 'RFC', nss: 'NSS',
+            direccion: 'Domicilio', emergenciaNombre: 'Contacto de emergencia', emergenciaParentesco: 'Parentesco', emergenciaTelefono: 'Teléfono de emergencia',
+            notas: 'Notas', descanso: 'Días de descanso', activo: 'Activo', fechaBaja: 'Fecha de baja', documentos: 'Documentos'
+        };
+        const EDITABLES = ['nombre', 'puesto', 'fechaIngreso', 'uid', 'telefono', 'correo', 'fechaNacimiento', 'curp', 'rfc', 'nss', 'direccion', 'emergenciaNombre', 'emergenciaParentesco', 'emergenciaTelefono', 'notas'];
+        const TIPOS_AUS = { vacaciones: 'Vacaciones', falta: 'Falta', permiso: 'Permiso', incapacidad: 'Incapacidad' };
+        const TIPOS_AUS_CAPTURA = ['falta', 'permiso', 'incapacidad']; // las vacaciones se capturan como evento del Calendario
+        const DIA_SEMANA = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+        const descansoTxt = p => descansoDe(p).map(d => DIA_SEMANA[d]).join(', ');
+        const TIPOS_DOC = ['INE', 'CURP', 'Acta de nacimiento', 'Comprobante de domicilio', 'Constancia de situación fiscal', 'Alta en el IMSS', 'Contrato laboral', 'Otro'];
+        const ARCHIVOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
+        const MAX_BYTES = 10 * 1024 * 1024;
+
+        const app = document.getElementById('app');
+        const user = getCurrentUser();
+        const storage = getStorage(getApp());
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => { if (!f) return '-'; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const deISO = f => { const [y, m, d] = f.split('-').map(Number); return new Date(y, m - 1, d); };
+        const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const diasEntre = (a, b) => Math.round((deISO(b) - deISO(a)) / 86400000) + 1;
+        const num = n => Number.isInteger(n) ? String(n) : n.toFixed(1);
+        const yo = () => ({ uid: auth.currentUser.uid, nombre: user.nombre || user.email });
+
+        let personas = [], ausencias = [], usuarios = [], vacEventos = [], mostrarBajas = false;
+
+        if (!isAuthenticated() || !esAdmin()) {
+            window.location.href = isAuthenticated() ? '../' : '/login.html';
+        } else {
+            crearNavbar();
+            iniciar();
+        }
+
+        function iniciar() {
+            document.getElementById('a_tipo').innerHTML = TIPOS_AUS_CAPTURA.map(k => `<option value="${k}">${TIPOS_AUS[k]}</option>`).join('');
+            document.getElementById('bGuardarVac').addEventListener('click', guardarVacacion);
+            ['vc_persona', 'vc_inicio', 'vc_fin'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+                const i = document.getElementById('vc_inicio').value, f = document.getElementById('vc_fin');
+                if (i && (!f.value || f.value < i)) f.value = i;
+                cuentaVacacion();
+            }));
+            document.getElementById('bGuardarPersona').addEventListener('click', guardarPersona);
+            document.getElementById('bGuardarAusencia').addEventListener('click', guardarAusencia);
+            ['a_inicio', 'a_fin'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+                const i = document.getElementById('a_inicio').value, f = document.getElementById('a_fin');
+                if (i && (!f.value || f.value < i)) f.value = i;
+                if (i && f.value) document.getElementById('a_dias').value = diasEntre(i, f.value);
+            }));
+            document.getElementById('iArchivo').addEventListener('change', subirDocumento);
+            document.getElementById('iCamara').addEventListener('change', subirDocumento);
+            document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.lf-modal-fondo').id)));
+            document.querySelectorAll('.lf-modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.lf-modal-fondo.abierto').forEach(m => cerrar(m.id)); });
+            window.addEventListener('hashchange', pintar);
+            cargar();
+        }
+
+        async function cargar(aviso = '') {
+            try {
+                const [sp, sa, su, se] = await Promise.all([
+                    getDocs(collection(db, 'personal')),
+                    getDocs(collection(db, 'personal_ausencias')),
+                    getDocs(collection(db, 'users')),
+                    getDocs(collection(db, 'calendario_eventos'))
+                ]);
+                personas = sp.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.activo === false) - (b.activo === false) || (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+                ausencias = sa.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.inicio || '').localeCompare(a.inicio || ''));
+                usuarios = su.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.email || '').localeCompare(b.nombre || b.email || '', 'es'));
+                // Vacaciones: eventos del Calendario con su persona (ligada o reconocida por el nombre en el título)
+                vacEventos = se.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.tipo === 'vacaciones' && e.inicio)
+                    .map(e => { const pv = personaDeVacacion(e, personas, usuarios); return { ...e, fin: e.fin || e.inicio, persona: pv?.persona || null, adivinada: !!pv?.adivinada }; })
+                    .map(e => ({ ...e, dias: diasDeVacacion(e, e.persona) }))
+                    .sort((a, b) => b.inicio.localeCompare(a.inicio));
+                pintar(aviso);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<h1 class="lf-titulo">Personal</h1><p class="lf-aviso lf-aviso-error">No se pudo cargar (${esc(err.code || err.message)}).</p>`;
+            }
+        }
+
+        function pintar(aviso) {
+            const id = decodeURIComponent(location.hash.slice(1));
+            const p = personas.find(x => x.id === id);
+            window.scrollTo(0, 0);
+            if (p) vistaExpediente(p, typeof aviso === 'string' ? aviso : '');
+            else vistaLista(typeof aviso === 'string' ? aviso : '');
+        }
+
+        // ---------- Antigüedad y vacaciones (art. 76 LFT, reforma 2023) ----------
+        // 1 año: 12 días; +2 por año hasta 20 (5 años); de ahí +2 cada 5 años.
+        const diasLFT = n => n <= 0 ? 0 : n <= 5 ? 10 + 2 * n : 20 + 2 * Math.ceil((n - 5) / 5);
+        const aniversario = (ingreso, n) => { const d = deISO(ingreso); d.setFullYear(d.getFullYear() + n); return iso(d); };
+        function antiguedad(ingreso) {
+            if (!ingreso) return null;
+            const hoy = hoyISO();
+            let n = 0;
+            while (aniversario(ingreso, n + 1) <= hoy) n++;
+            const desde = aniversario(ingreso, n);
+            const meses = Math.floor((deISO(hoy) - deISO(desde)) / (30.44 * 86400000));
+            return { anios: n, meses, texto: n || meses ? `${n ? `${n} año${n > 1 ? 's' : ''}` : ''}${n && meses ? ' y ' : ''}${meses ? `${meses} mes${meses > 1 ? 'es' : ''}` : ''}` : 'Menos de un mes' };
+        }
+        // Periodo vigente: del último aniversario al siguiente; los días ganados al cumplir ese año se toman en ese periodo.
+        // Sin fecha de ingreso se cuenta el año calendario y no se sabe cuántos le corresponden.
+        // Tomados = días hábiles de vacaciones hasta hoy; programados = los que siguen en el Calendario.
+        function vacaciones(p) {
+            const a = antiguedad(p.fechaIngreso), hoy = hoyISO(), y = +hoy.slice(0, 4);
+            const desde = a ? aniversario(p.fechaIngreso, a.anios) : `${y}-01-01`;
+            const hasta = a ? aniversario(p.fechaIngreso, a.anios + 1) : `${y + 1}-01-01`;
+            let tomados = 0, programados = 0;
+            vacEventos.filter(e => e.persona?.id === p.id).forEach(e => e.dias.forEach(d => { if (d >= desde && d < hasta) { if (d <= hoy) tomados++; else programados++; } }));
+            const corresponden = a ? diasLFT(a.anios) : null;
+            return { anios: a ? a.anios : null, desde, hasta, corresponden, tomados, programados, quedan: corresponden === null ? null : corresponden - tomados - programados, siguientes: a ? diasLFT(a.anios + 1) : null };
+        }
+        const vacHoy = p => { const h = hoyISO(); return vacEventos.find(e => e.persona?.id === p.id && e.inicio <= h && e.fin >= h); };
+        const estadoVac = e => { const h = hoyISO(); return e.fin < h ? '<span class="lf-estado lf-estado-aprobado">Tomadas</span>' : e.inicio <= h ? '<span class="lf-estado lf-estado-pendiente">En curso</span>' : '<span class="lf-estado t-vacaciones">Programadas</span>'; };
+
+        const usuarioDe = p => usuarios.find(u => u.uid === p.uid);
+        const ausenteHoy = p => { const h = hoyISO(); const v = vacHoy(p); return v ? { tipo: 'vacaciones', inicio: v.inicio, fin: v.fin } : ausencias.find(x => x.personaId === p.id && x.inicio <= h && (x.fin || x.inicio) >= h); };
+        const etiquetaTipo = t => `<span class="lf-estado t-${esc(t)}">${esc(TIPOS_AUS[t] || t)}</span>`;
+        const usuarioTxt = u => u ? `${esc(u.email || u.nombre)} <span class="nota">(${u.rol === 'admin' ? 'administrador' : 'operario'}${u.activo === false ? ', inactivo' : ''})</span>` : '<span class="lf-vacio">Sin cuenta en el panel</span>';
+
+        // ---------- Lista ----------
+        function vistaLista(aviso) {
+            const activos = personas.filter(p => p.activo !== false);
+            const anio = hoyISO().slice(0, 4);
+            const delAnio = ausencias.filter(x => (x.inicio || '').startsWith(anio));
+            const suma = t => delAnio.filter(x => x.tipo === t).reduce((s, x) => s + (Number(x.dias) || 0), 0);
+            const hoy = hoyISO();
+            const vacAnio = vacEventos.filter(e => e.persona).flatMap(e => e.dias.filter(d => d.startsWith(anio)));
+            const vacTomadas = vacAnio.filter(d => d <= hoy).length, vacProgramadas = vacAnio.length - vacTomadas;
+            const ausentes = activos.filter(ausenteHoy);
+            const visibles = personas.filter(p => mostrarBajas || p.activo !== false);
+            const bajas = personas.length - activos.length;
+            app.innerHTML = `
+                <div class="cabeza">
+                    <div><h1 class="lf-titulo">Personal</h1><p class="lf-subtitulo-pag">Expedientes, vacaciones y ausencias del personal de la plaza.</p></div>
+                    <div class="lf-acciones">
+                        <button class="lf-btn" id="bNuevaAus" ${activos.length ? '' : 'disabled'}>Registrar ausencia</button>
+                        <button class="lf-btn lf-btn-primario" id="bNueva">Agregar persona</button>
+                    </div>
+                </div>
+                ${aviso ? `<p class="lf-aviso lf-aviso-ok" style="margin:0">${aviso}</p>` : ''}
+                <div class="lf-cifras">
+                    <div class="lf-cifra"><div class="lf-etiqueta">Personal activo</div><div class="lf-valor">${activos.length}</div><div class="lf-detalle">${bajas ? `${bajas} de baja` : 'personas'}</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Ausentes hoy</div><div class="lf-valor">${ausentes.length}</div><div class="lf-detalle">${ausentes.length ? esc(ausentes.map(p => p.nombre).join(', ')) : 'Todos presentes'}</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Vacaciones ${anio}</div><div class="lf-valor">${vacTomadas}</div><div class="lf-detalle">días tomados · ${vacProgramadas} programados</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Faltas ${anio}</div><div class="lf-valor">${num(suma('falta'))}</div><div class="lf-detalle">${num(suma('permiso'))} de permiso · ${num(suma('incapacidad'))} de incapacidad</div></div>
+                </div>
+                <div class="bloque">
+                    ${bajas ? `<label class="nota" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="verBajas" ${mostrarBajas ? 'checked' : ''}> Mostrar personas dadas de baja</label>` : ''}
+                    ${visibles.length ? `<div class="personas">${visibles.map(tarjeta).join('')}</div>` : '<div class="vacio">Todavía no hay personas. Usa «Agregar persona».</div>'}
+                </div>
+                ${seccionVacaciones(null)}
+                <div class="bloque">
+                    <div class="bloque-cabeza"><h2 class="lf-seccion">Ausencias</h2></div>
+                    ${tablaAusencias(null)}
+                </div>`;
+            enlazarVacaciones();
+            document.getElementById('bNueva').addEventListener('click', () => abrirPersona());
+            document.getElementById('bNuevaAus').addEventListener('click', () => abrirAusencia());
+            document.getElementById('verBajas')?.addEventListener('change', e => { mostrarBajas = e.target.checked; vistaLista(''); });
+            app.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => { location.hash = encodeURIComponent(b.dataset.ver); }));
+            app.querySelectorAll('[data-aus-persona]').forEach(b => b.addEventListener('click', () => abrirAusencia(null, b.dataset.ausPersona)));
+            enlazarTabla(null);
+        }
+
+        function tarjeta(p) {
+            const a = antiguedad(p.fechaIngreso), v = vacaciones(p), aus = ausenteHoy(p);
+            return `<div class="persona${p.activo === false ? ' baja' : ''}">
+                <h3>${esc(p.nombre)}</h3>
+                <div class="puesto">${esc(p.puesto || 'Sin puesto capturado')}${p.activo === false ? ` · <strong>Baja ${fechaCorta(p.fechaBaja)}</strong>` : ''}</div>
+                ${aus && p.activo !== false ? `<div>${etiquetaTipo(aus.tipo)} <span class="nota">hasta el ${fechaCorta(aus.fin || aus.inicio)}</span></div>` : ''}
+                <dl>
+                    <dt>Ingreso</dt><dd>${p.fechaIngreso ? `${fechaCorta(p.fechaIngreso)} <span class="nota">(${a.texto})</span>` : '<span class="lf-vacio">Sin capturar</span>'}</dd>
+                    <dt>Vacaciones</dt><dd>${resumenVac(v)}</dd>
+                    <dt>Teléfono</dt><dd>${p.telefono ? telefonoWhatsApp(p.telefono) : '<span class="lf-vacio">-</span>'}</dd>
+                    <dt>Panel</dt><dd>${usuarioTxt(usuarioDe(p))}</dd>
+                </dl>
+                <div class="lf-acciones">
+                    <button class="lf-btn lf-btn-compacto lf-btn-primario" data-ver="${esc(p.id)}">Ver expediente</button>
+                    ${p.activo !== false ? `<button class="lf-btn lf-btn-compacto" data-aus-persona="${esc(p.id)}">Registrar ausencia</button>` : ''}
+                </div>
+            </div>`;
+        }
+
+        // ---------- Vacaciones (eventos del Calendario) ----------
+        function resumenVac(v) {
+            const prog = v.programados ? ` · ${v.programados} programados` : '';
+            if (v.corresponden === null) return `${v.tomados} tomados en ${v.desde.slice(0, 4)}${prog}<br><span class="lf-vacio">Falta la fecha de ingreso</span>`;
+            if (!v.anios) return `Le tocan ${v.siguientes} días al cumplir el año (${fechaCorta(v.hasta)})`;
+            return `<strong>${v.quedan}</strong> de ${v.corresponden} días por tomar${prog}`;
+        }
+
+        // persona: null = todas (lista), o la persona del expediente
+        function seccionVacaciones(persona) {
+            const gente = persona ? [persona] : personas.filter(p => p.activo !== false);
+            const eventos = persona ? vacEventos.filter(e => e.persona?.id === persona.id) : vacEventos;
+            const filaResumen = p => {
+                const v = vacaciones(p);
+                return `<tr>
+                    <td><button class="enlace" data-ver="${esc(p.id)}">${esc(p.nombre)}</button></td>
+                    <td class="fecha">${v.corresponden === null ? `Año ${v.desde.slice(0, 4)} <small class="nota">sin fecha de ingreso</small>` : `${fechaCorta(v.desde)} al ${fechaCorta(v.hasta)}`}</td>
+                    <td class="der lf-num">${v.corresponden === null ? '-' : v.corresponden}</td>
+                    <td class="der lf-num">${v.tomados}</td>
+                    <td class="der lf-num">${v.programados}</td>
+                    <td class="der lf-num"><strong>${v.quedan === null ? '-' : v.quedan}</strong></td>
+                </tr>`;
+            };
+            return `<div class="bloque">
+                <div class="bloque-cabeza"><h2 class="lf-seccion">Vacaciones</h2>${gente.length ? `<button class="lf-btn" data-vac-nueva="${persona ? esc(persona.id) : ''}">Programar vacaciones</button>` : ''}</div>
+                ${persona ? '' : `<div class="lf-tabla-wrap"><table class="lf-tabla tabla-movil">
+                    <thead><tr><th>Persona</th><th>Periodo</th><th class="der">Corresponden</th><th class="der">Tomados</th><th class="der">Programados</th><th class="der">Por tomar</th></tr></thead>
+                    <tbody>${gente.map(filaResumen).join('')}</tbody>
+                </table></div>`}
+                <div class="lf-tabla-wrap"><table class="lf-tabla tabla-movil">
+                    <thead><tr>${persona ? '' : '<th>Persona</th>'}<th>Del</th><th>Al</th><th class="der">Días</th><th>Estado</th><th>Nota</th><th></th></tr></thead>
+                    <tbody>${eventos.map(e => `<tr>
+                        ${persona ? '' : `<td>${e.persona ? esc(e.persona.nombre) + (e.adivinada ? '<small class="nota">reconocida por el título o por quien la capturó; Corregir la deja ligada</small>' : '') : `<span class="lf-estado lf-estado-rechazado">Sin identificar</span><small class="nota">${esc(e.titulo)}</small>`}</td>`}
+                        <td class="fecha">${fechaCorta(e.inicio)}</td>
+                        <td class="fecha">${fechaCorta(e.fin)}</td>
+                        <td class="der lf-num">${e.persona ? e.dias.length : '-'}</td>
+                        <td>${estadoVac(e)}</td>
+                        <td>${esc(e.nota || '')}</td>
+                        <td><div class="lf-acciones">
+                            <button class="lf-btn lf-btn-compacto" data-vac-editar="${esc(e.id)}">Corregir</button>
+                            <button class="lf-btn lf-btn-compacto lf-btn-icono lf-btn-peligro" data-vac-borrar="${esc(e.id)}" aria-label="Eliminar vacaciones" title="Eliminar vacaciones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+                        </div></td>
+                    </tr>`).join('')}</tbody>
+                </table>${eventos.length ? '' : '<div class="vacio">Sin vacaciones en el Calendario.</div>'}</div>
+                <p class="nota">Las vacaciones se guardan en el Calendario. Los días que cuentan no incluyen los días de descanso de cada persona ni los feriados oficiales.</p>
+            </div>`;
+        }
+
+        function enlazarVacaciones() {
+            app.querySelectorAll('[data-vac-nueva]').forEach(b => b.addEventListener('click', () => abrirVacacion(null, b.dataset.vacNueva)));
+            app.querySelectorAll('[data-vac-editar]').forEach(b => b.addEventListener('click', () => abrirVacacion(vacEventos.find(e => e.id === b.dataset.vacEditar))));
+            app.querySelectorAll('[data-vac-borrar]').forEach(b => b.addEventListener('click', () => {
+                const e = vacEventos.find(x => x.id === b.dataset.vacBorrar);
+                confirmar('Eliminar vacaciones', `${e.persona ? e.persona.nombre : e.titulo}: del ${fechaCorta(e.inicio)} al ${fechaCorta(e.fin)}. Se borran también del Calendario. No se puede deshacer.`, 'Eliminar', async () => {
+                    try {
+                        await deleteDoc(doc(db, 'calendario_eventos', e.id));
+                        cerrar('modalConfirmar');
+                        await cargar('Vacaciones eliminadas.');
+                    } catch (err) {
+                        console.error(err);
+                        document.getElementById('cMsg').textContent = 'No se pudieron eliminar.';
+                    }
+                });
+            }));
+        }
+
+        function abrirVacacion(e = null, personaId = '') {
+            const activas = personas.filter(p => p.activo !== false || p.id === e?.persona?.id);
+            const sel = document.getElementById('vc_persona');
+            sel.innerHTML = '<option value="">Selecciona</option>' + activas.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
+            sel.value = e?.persona?.id || personaId || (activas.length === 1 ? activas[0].id : '');
+            document.getElementById('vc_inicio').value = e?.inicio || hoyISO();
+            document.getElementById('vc_fin').value = e?.fin || e?.inicio || hoyISO();
+            document.getElementById('vc_nota').value = e?.nota || '';
+            document.getElementById('vcTitulo').textContent = e ? 'Corregir vacaciones' : 'Programar vacaciones';
+            document.getElementById('vcMsg').textContent = '';
+            document.getElementById('modalVac').dataset.id = e?.id || '';
+            cuentaVacacion();
+            abrir('modalVac');
+        }
+
+        function cuentaVacacion() {
+            const p = personas.find(x => x.id === document.getElementById('vc_persona').value);
+            const i = document.getElementById('vc_inicio').value, f = document.getElementById('vc_fin').value || i;
+            const el = document.getElementById('vcCuenta');
+            if (!p || !i || f < i) { el.textContent = ''; return; }
+            const n = diasDeVacacion({ inicio: i, fin: f }, p).length;
+            const id = document.getElementById('modalVac').dataset.id;
+            const v = vacaciones(p), antes = vacEventos.find(x => x.id === id && x.persona?.id === p.id);
+            const yaContados = antes ? antes.dias.filter(d => d >= v.desde && d < v.hasta).length : 0;
+            const nuevos = diasDeVacacion({ inicio: i, fin: f }, p).filter(d => d >= v.desde && d < v.hasta).length;
+            const quedarian = v.quedan === null ? null : v.quedan + yaContados - nuevos;
+            el.innerHTML = `Cuentan <strong>${n} día${n === 1 ? '' : 's'}</strong> de vacaciones (sin ${esc(descansoTxt(p))} ni feriados oficiales).${quedarian === null ? '' : ` Le quedarían ${quedarian} de ${v.corresponden} en su año de servicio.`}`;
+        }
+
+        async function guardarVacacion() {
+            const id = document.getElementById('modalVac').dataset.id;
+            const msg = document.getElementById('vcMsg'), btn = document.getElementById('bGuardarVac');
+            const p = personas.find(x => x.id === document.getElementById('vc_persona').value);
+            const inicio = document.getElementById('vc_inicio').value, fin = document.getElementById('vc_fin').value || inicio;
+            const nota = document.getElementById('vc_nota').value.trim();
+            if (!p) { msg.textContent = 'Selecciona a la persona.'; return; }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio) || fin < inicio) { msg.textContent = 'Revisa las fechas.'; return; }
+            if (!diasDeVacacion({ inicio, fin }, p).length) { msg.textContent = 'En esas fechas no hay días de trabajo.'; return; }
+            const choca = vacEventos.find(x => x.id !== id && x.persona?.id === p.id && x.inicio <= fin && x.fin >= inicio)
+                || ausencias.find(x => x.personaId === p.id && x.inicio <= fin && (x.fin || x.inicio) >= inicio);
+            if (choca) { msg.textContent = `Se encima con ${choca.tipo === 'vacaciones' ? 'vacaciones' : TIPOS_AUS[choca.tipo].toLowerCase()} del ${fechaCorta(choca.inicio)}.`; return; }
+            const anterior = vacEventos.find(x => x.id === id);
+            const datos = { tipo: 'vacaciones', titulo: `Vacaciones ${p.nombre}`, inicio, fin: fin === inicio ? '' : fin, local: anterior?.local || '', nota, personaId: p.id, persona: p.nombre };
+            btn.disabled = true; msg.textContent = '';
+            try {
+                const correo = auth.currentUser.email;
+                if (id) await setDoc(doc(db, 'calendario_eventos', id), { ...datos, editadoPor: correo, editadoEn: serverTimestamp() }, { merge: true });
+                else await setDoc(doc(collection(db, 'calendario_eventos')), { ...datos, creadoPor: correo, creadoEn: serverTimestamp() });
+                cerrar('modalVac');
+                await cargar(id ? 'Vacaciones corregidas.' : `Vacaciones de ${esc(p.nombre)} programadas; ya están en el Calendario.`);
+            } catch (err) {
+                console.error(err);
+                msg.textContent = 'No se pudo guardar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        // ---------- Tabla de ausencias (todas o de una persona) ----------
+        function tablaAusencias(personaId) {
+            const anios = [...new Set(ausencias.map(x => (x.inicio || '').slice(0, 4)).filter(Boolean).concat(hoyISO().slice(0, 4)))].sort().reverse();
+            return `<div class="filtros">
+                    <div class="lf-campo"><label for="fAnio">Año</label><select id="fAnio"><option value="">Todos</option>${anios.map(y => `<option ${y === hoyISO().slice(0, 4) ? 'selected' : ''}>${y}</option>`).join('')}</select></div>
+                    ${personaId ? '' : `<div class="lf-campo"><label for="fPersona">Persona</label><select id="fPersona"><option value="">Todas</option>${personas.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('')}</select></div>`}
+                    <div class="lf-campo"><label for="fTipo">Tipo</label><select id="fTipo"><option value="">Todos</option>${Object.entries(TIPOS_AUS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+                </div>
+                <div class="lf-tabla-wrap">
+                    <table class="lf-tabla tabla-movil">
+                        <thead><tr>${personaId ? '' : '<th>Persona</th>'}<th>Tipo</th><th>Del</th><th>Al</th><th class="der">Días</th><th>Sueldo</th><th>Nota</th><th></th></tr></thead>
+                        <tbody id="filasAus"></tbody>
+                    </table>
+                    <div class="vacio oculto" id="sinAus">Sin ausencias con esos filtros.</div>
+                </div>`;
+        }
+
+        function enlazarTabla(personaId) {
+            const pinta = () => {
+                const v = id => document.getElementById(id)?.value || '';
+                const pid = personaId || v('fPersona');
+                const lista = ausencias.filter(x => (!v('fAnio') || (x.inicio || '').startsWith(v('fAnio'))) && (!pid || x.personaId === pid) && (!v('fTipo') || x.tipo === v('fTipo')));
+                const nombre = id => personas.find(p => p.id === id)?.nombre || '(persona eliminada)';
+                const tbody = document.getElementById('filasAus');
+                tbody.innerHTML = lista.map(x => `<tr>
+                    ${personaId ? '' : `<td>${esc(nombre(x.personaId))}</td>`}
+                    <td>${etiquetaTipo(x.tipo)}</td>
+                    <td class="fecha">${fechaCorta(x.inicio)}</td>
+                    <td class="fecha">${fechaCorta(x.fin || x.inicio)}</td>
+                    <td class="der lf-num">${num(Number(x.dias) || 0)}</td>
+                    <td>${x.goce === 'no' ? 'Sin goce' : 'Con goce'}</td>
+                    <td>${esc(x.nota || '')}</td>
+                    <td><div class="lf-acciones">
+                        <button class="lf-btn lf-btn-compacto" data-editar-aus="${esc(x.id)}">Corregir</button>
+                        <button class="lf-btn lf-btn-compacto lf-btn-icono lf-btn-peligro" data-borrar-aus="${esc(x.id)}" aria-label="Eliminar ausencia" title="Eliminar ausencia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+                    </div></td>
+                </tr>`).join('');
+                document.getElementById('sinAus').classList.toggle('oculto', lista.length > 0);
+                tbody.querySelectorAll('[data-editar-aus]').forEach(b => b.addEventListener('click', () => abrirAusencia(ausencias.find(x => x.id === b.dataset.editarAus))));
+                tbody.querySelectorAll('[data-borrar-aus]').forEach(b => b.addEventListener('click', () => pedirBorrarAusencia(ausencias.find(x => x.id === b.dataset.borrarAus))));
+            };
+            ['fAnio', 'fPersona', 'fTipo'].forEach(id => document.getElementById(id)?.addEventListener('change', pinta));
+            pinta();
+        }
+
+        // ---------- Expediente ----------
+        function vistaExpediente(p, aviso) {
+            const a = antiguedad(p.fechaIngreso), v = vacaciones(p), u = usuarioDe(p);
+            const dato = (k, val) => `<dt>${CAMPOS[k]}</dt><dd>${val ?? (p[k] ? esc(p[k]) : '<span class="lf-vacio">-</span>')}</dd>`;
+            const docs = p.documentos || [];
+            app.innerHTML = `
+                <button class="volver" id="bVolver">← Personal</button>
+                <div class="cabeza">
+                    <div><h1 class="lf-titulo">${esc(p.nombre)}</h1><p class="lf-subtitulo-pag">${esc(p.puesto || 'Sin puesto capturado')}${p.activo === false ? ` · dado de baja el ${fechaCorta(p.fechaBaja)}` : ''}</p></div>
+                    <div class="lf-acciones">
+                        ${p.ultimaEdicionHistorialId ? '<button class="lf-btn" id="bHist">Historial</button>' : ''}
+                        ${p.activo === false ? '<button class="lf-btn" id="bReactivar">Reactivar</button>' : '<button class="lf-btn" id="bBaja">Dar de baja</button>'}
+                        ${p.activo !== false ? '<button class="lf-btn" id="bAus">Registrar ausencia</button>' : ''}
+                        <button class="lf-btn lf-btn-primario" id="bEditar">Editar datos</button>
+                    </div>
+                </div>
+                ${aviso ? `<p class="lf-aviso lf-aviso-ok" style="margin:0">${aviso}</p>` : ''}
+                <div class="ficha">
+                    <section class="caja"><h2>Trabajo</h2><dl>
+                        ${dato('puesto')}
+                        ${dato('fechaIngreso', p.fechaIngreso ? `${fechaCorta(p.fechaIngreso)}<br><span class="nota">${a.texto} de antigüedad</span>` : null)}
+                        ${dato('uid', usuarioTxt(u))}
+                    </dl></section>
+                    <section class="caja"><h2>Vacaciones</h2>
+                        ${v.corresponden === null ? `<div class="grande">${v.tomados} <span class="nota">tomados en ${v.desde.slice(0, 4)}</span></div><p class="nota">${v.programados ? `${v.programados} programados. ` : ''}Captura la fecha de ingreso para saber cuántos le corresponden.</p>`
+                            : v.anios ? `<div class="grande">${v.quedan} <span class="nota">de ${v.corresponden} días por tomar</span></div>
+                                <p class="nota">Año de servicio ${v.anios}: del ${fechaCorta(v.desde)} al ${fechaCorta(v.hasta)}. Tomados: ${v.tomados}. Programados: ${v.programados}. Al cumplir ${v.anios + 1} años le corresponderán ${v.siguientes}.</p>`
+                            : `<div class="grande">0</div><p class="nota">Todavía no cumple su primer año. Al cumplirlo (${fechaCorta(v.hasta)}) le corresponden ${v.siguientes} días.${v.tomados + v.programados ? ` Ya tiene ${v.tomados + v.programados} días tomados o programados en el Calendario.` : ''}</p>`}
+                        <p class="nota">Días según el art. 76 de la Ley Federal del Trabajo (reforma 2023). No se cuentan sus días de descanso (${esc(descansoTxt(p))}) ni los feriados oficiales.</p>
+                    </section>
+                    <section class="caja"><h2>Datos personales</h2><dl>
+                        ${dato('telefono', p.telefono ? telefonoWhatsApp(p.telefono) : null)}
+                        ${dato('correo', p.correo ? `<a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>` : null)}
+                        ${dato('fechaNacimiento', p.fechaNacimiento ? fechaCorta(p.fechaNacimiento) : null)}
+                        ${dato('curp')}${dato('rfc')}${dato('nss')}${dato('direccion')}
+                    </dl></section>
+                    <section class="caja"><h2>Contacto de emergencia</h2><dl>
+                        <dt>Nombre</dt><dd>${p.emergenciaNombre ? esc(p.emergenciaNombre) : '<span class="lf-vacio">-</span>'}</dd>
+                        <dt>Parentesco</dt><dd>${p.emergenciaParentesco ? esc(p.emergenciaParentesco) : '<span class="lf-vacio">-</span>'}</dd>
+                        <dt>Teléfono</dt><dd>${p.emergenciaTelefono ? telefonoWhatsApp(p.emergenciaTelefono) : '<span class="lf-vacio">-</span>'}</dd>
+                    </dl></section>
+                </div>
+                ${p.notas ? `<section class="caja"><h2>Notas</h2><p class="notas">${esc(p.notas)}</p></section>` : ''}
+                <section class="caja">
+                    <h2>Documentos</h2>
+                    <div class="docs">${docs.length ? docs.map((d, i) => `<div class="doc">
+                        <div class="que"><strong>${esc(d.etiqueta || 'Documento')}</strong><small>${esc(d.nombre || '')} · ${d.tipo === 'application/pdf' ? 'PDF' : 'Foto'} · ${Math.max(1, Math.round((d.bytes || 0) / 1024))} KB${d.subidoEn ? ' · ' + fechaCorta(d.subidoEn) : ''}</small></div>
+                        <button class="lf-btn lf-btn-compacto" data-doc="${i}">Ver</button>
+                        <button class="lf-btn lf-btn-compacto lf-btn-icono lf-btn-peligro" data-quitar-doc="${i}" aria-label="Quitar documento" title="Quitar documento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+                    </div>`).join('') : '<p class="nota">Sin documentos.</p>'}</div>
+                    <div class="subir">
+                        <div class="lf-campo"><label for="dEtiqueta">Agregar documento</label><select id="dEtiqueta">${TIPOS_DOC.map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
+                        <button class="lf-btn" id="bElegir">Elegir archivo</button>
+                        <button class="lf-btn" id="bFoto">Tomar foto</button>
+                    </div>
+                    <div class="progreso"><span id="progreso"></span></div>
+                    <p class="nota" id="dMsg">Foto o PDF de máximo 10 MB. Los documentos son privados: solo los ve el administrador.</p>
+                </section>
+                ${seccionVacaciones(p)}
+                <div class="bloque">
+                    <div class="bloque-cabeza"><h2 class="lf-seccion">Ausencias</h2></div>
+                    ${tablaAusencias(p.id)}
+                </div>`;
+            enlazarVacaciones();
+            document.getElementById('bVolver').addEventListener('click', () => { history.pushState('', '', location.pathname); pintar(''); });
+            document.getElementById('bEditar').addEventListener('click', () => abrirPersona(p));
+            document.getElementById('bAus')?.addEventListener('click', () => abrirAusencia(null, p.id));
+            document.getElementById('bHist')?.addEventListener('click', () => verHistorial(p));
+            document.getElementById('bBaja')?.addEventListener('click', () => confirmar('Dar de baja', `${p.nombre} deja de aparecer en la lista de personal activo. Su expediente, documentos y ausencias se conservan y se puede reactivar.`, 'Dar de baja', () => cambiarEstado(p, false)));
+            document.getElementById('bReactivar')?.addEventListener('click', () => cambiarEstado(p, true));
+            document.getElementById('bElegir').addEventListener('click', () => { document.getElementById('iArchivo').dataset.persona = p.id; document.getElementById('iArchivo').click(); });
+            document.getElementById('bFoto').addEventListener('click', () => { document.getElementById('iCamara').dataset.persona = p.id; document.getElementById('iCamara').click(); });
+            app.querySelectorAll('[data-doc]').forEach(b => b.addEventListener('click', () => verArchivo(docs[+b.dataset.doc])));
+            app.querySelectorAll('[data-quitar-doc]').forEach(b => b.addEventListener('click', () => {
+                const d = docs[+b.dataset.quitarDoc];
+                confirmar('Quitar documento', `Se borra el archivo «${d.nombre}» (${d.etiqueta}) del expediente de ${p.nombre}. No se puede deshacer.`, 'Quitar', () => quitarDocumento(p, d));
+            }));
+            enlazarTabla(p.id);
+        }
+
+        // ---------- Guardar persona (cada cambio deja entrada en personal/{id}/historial) ----------
+        function abrirPersona(p = null) {
+            document.getElementById('pTitulo').textContent = p ? 'Editar datos' : 'Agregar persona';
+            const ligados = new Set(personas.filter(x => x.uid && x.id !== p?.id).map(x => x.uid));
+            document.getElementById('p_uid').innerHTML = '<option value="">Sin cuenta en el panel</option>' + usuarios.filter(u => !ligados.has(u.uid)).map(u => `<option value="${esc(u.uid)}">${esc(u.nombre || u.email)} · ${esc(u.email || '')}${u.activo === false ? ' (inactivo)' : ''}</option>`).join('');
+            EDITABLES.forEach(k => { document.getElementById('p_' + k).value = p?.[k] || ''; });
+            const descanso = descansoDe(p);
+            document.querySelectorAll('#p_descanso input').forEach(c => { c.checked = descanso.includes(+c.value); });
+            document.getElementById('pMsg').textContent = '';
+            document.getElementById('modalPersona').dataset.id = p?.id || '';
+            abrir('modalPersona');
+            document.getElementById('p_nombre').focus();
+        }
+
+        async function guardarPersona() {
+            const id = document.getElementById('modalPersona').dataset.id;
+            const p = personas.find(x => x.id === id);
+            const msg = document.getElementById('pMsg'), btn = document.getElementById('bGuardarPersona');
+            const datos = Object.fromEntries(EDITABLES.map(k => [k, document.getElementById('p_' + k).value.trim()]));
+            ['curp', 'rfc'].forEach(k => { datos[k] = datos[k].toUpperCase(); });
+            datos.descanso = [...document.querySelectorAll('#p_descanso input:checked')].map(c => +c.value).sort();
+            if (datos.descanso.length > 5) { msg.textContent = 'Deja al menos dos días de trabajo a la semana.'; return; }
+            if (!datos.nombre) { msg.textContent = 'Escribe el nombre.'; return; }
+            if (personas.some(x => x.id !== id && (x.nombre || '').toLocaleLowerCase('es') === datos.nombre.toLocaleLowerCase('es'))) { msg.textContent = 'Ya hay una persona con ese nombre.'; return; }
+            if (datos.curp && !/^[A-Z0-9]{18}$/.test(datos.curp)) { msg.textContent = 'La CURP debe tener 18 caracteres.'; return; }
+            if (datos.nss && !/^\d{11}$/.test(datos.nss)) { msg.textContent = 'El NSS debe tener 11 dígitos.'; return; }
+            if (p && EDITABLES.every(k => (p[k] || '') === datos[k]) && JSON.stringify(descansoDe(p)) === JSON.stringify(datos.descanso)) { cerrar('modalPersona'); return; }
+            btn.disabled = true; msg.textContent = '';
+            try {
+                const quien = yo();
+                const refDoc = p ? doc(db, 'personal', p.id) : doc(collection(db, 'personal'));
+                const hist = doc(collection(db, 'personal', refDoc.id, 'historial'));
+                const b = writeBatch(db);
+                if (p) {
+                    b.update(refDoc, { ...datos, editadoPor: quien.uid, editadoPorNombre: quien.nombre, editadoEn: serverTimestamp(), ultimaEdicionHistorialId: hist.id });
+                    b.set(hist, { accion: 'editado', antes: { ...Object.fromEntries(EDITABLES.map(k => [k, p[k] || ''])), descanso: descansoDe(p) }, despues: datos, registradoPor: quien.uid, registradoPorNombre: quien.nombre, registradoEn: serverTimestamp() });
+                } else {
+                    b.set(refDoc, { ...datos, activo: true, documentos: [], creadoPor: quien.uid, creadoPorNombre: quien.nombre, creadoEn: serverTimestamp(), ultimaEdicionHistorialId: hist.id });
+                    b.set(hist, { accion: 'alta', antes: {}, despues: datos, registradoPor: quien.uid, registradoPorNombre: quien.nombre, registradoEn: serverTimestamp() });
+                }
+                await b.commit();
+                cerrar('modalPersona');
+                if (!p) history.replaceState('', '', '#' + encodeURIComponent(refDoc.id));
+                await cargar(p ? 'Datos guardados; el cambio quedó en el historial.' : `${esc(datos.nombre)} agregado al personal.`);
+            } catch (err) {
+                console.error(err);
+                msg.textContent = err.code === 'permission-denied' ? 'Permiso denegado.' : 'No se pudo guardar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        // Cambios del expediente fuera del formulario (baja, documentos) con su entrada de historial
+        async function actualizarConHistorial(p, cambios, accion) {
+            const quien = yo();
+            const hist = doc(collection(db, 'personal', p.id, 'historial'));
+            const antes = Object.fromEntries(Object.keys(cambios).map(k => [k, p[k] ?? null]));
+            const b = writeBatch(db);
+            b.update(doc(db, 'personal', p.id), { ...cambios, editadoPor: quien.uid, editadoPorNombre: quien.nombre, editadoEn: serverTimestamp(), ultimaEdicionHistorialId: hist.id });
+            b.set(hist, { accion, antes, despues: cambios, registradoPor: quien.uid, registradoPorNombre: quien.nombre, registradoEn: serverTimestamp() });
+            await b.commit();
+        }
+
+        async function cambiarEstado(p, activo) {
+            try {
+                await actualizarConHistorial(p, { activo, fechaBaja: activo ? '' : hoyISO() }, activo ? 'reactivado' : 'baja');
+                cerrar('modalConfirmar');
+                await cargar(activo ? `${esc(p.nombre)} reactivado.` : `${esc(p.nombre)} dado de baja.`);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('cMsg').textContent = 'No se pudo guardar.';
+            }
+        }
+
+        // ---------- Documentos ----------
+        const nombreSeguro = n => n.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'archivo';
+
+        async function subirDocumento(e) {
+            const input = e.target, file = input.files?.[0];
+            input.value = '';
+            const p = personas.find(x => x.id === input.dataset.persona);
+            const msg = document.getElementById('dMsg');
+            if (!file || !p) return;
+            if (!ARCHIVOS.includes(file.type)) { msg.textContent = 'Solo fotos (JPG, PNG, WEBP, HEIC) o PDF.'; return; }
+            if (file.size > MAX_BYTES) { msg.textContent = 'El archivo pasa de 10 MB.'; return; }
+            const etiqueta = document.getElementById('dEtiqueta').value;
+            const path = `personal/${p.id}/${Date.now()}_${nombreSeguro(file.name)}`;
+            ['bElegir', 'bFoto'].forEach(id => { document.getElementById(id).disabled = true; });
+            msg.textContent = 'Subiendo...';
+            try {
+                await new Promise((ok, mal) => {
+                    const t = uploadBytesResumable(ref(storage, path), file, { contentType: file.type, customMetadata: { uploadedBy: auth.currentUser.uid } });
+                    t.on('state_changed', s => { document.getElementById('progreso').style.width = `${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`; }, mal, ok);
+                });
+                const nuevo = { path, nombre: file.name, tipo: file.type, bytes: file.size, etiqueta, subidoEn: hoyISO() };
+                try {
+                    await actualizarConHistorial(p, { documentos: [...(p.documentos || []), nuevo] }, 'documento agregado');
+                } catch (err) {
+                    try { await deleteObject(ref(storage, path)); } catch { /* el archivo se queda sin registro */ }
+                    throw err;
+                }
+                await cargar(`${esc(etiqueta)} agregado al expediente.`);
+            } catch (err) {
+                console.error(err);
+                msg.textContent = err.code === 'storage/unauthorized' ? 'Permiso denegado en Storage: falta publicar la regla de la carpeta personal/.' : 'No se pudo subir el archivo. Inténtalo de nuevo.';
+                ['bElegir', 'bFoto'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+                document.getElementById('progreso').style.width = '0%';
+            }
+        }
+
+        async function quitarDocumento(p, d) {
+            try {
+                await actualizarConHistorial(p, { documentos: (p.documentos || []).filter(x => x.path !== d.path) }, 'documento quitado');
+                try { await deleteObject(ref(storage, d.path)); } catch (err) { console.warn('No se borró', d.path, err); }
+                cerrar('modalConfirmar');
+                await cargar('Documento quitado.');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('cMsg').textContent = 'No se pudo quitar.';
+            }
+        }
+
+        async function verArchivo(f) {
+            if (!f?.path) return;
+            try {
+                // getBlob no trae el tipo del archivo: sin él el navegador muestra la foto como texto
+                const datos = await getBlob(ref(storage, f.path), MAX_BYTES);
+                const blob = new Blob([datos], { type: f.tipo || datos.type || 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                document.getElementById('vContenido').innerHTML = blob.type === 'application/pdf'
+                    ? `<iframe src="${url}" title="PDF"></iframe>`
+                    : blob.type.includes('hei') ? '<p class="nota">Este formato (HEIC) no se puede mostrar en el navegador. Usa «Descargar».</p>' : `<img src="${url}" alt="">`;
+                const bajar = document.getElementById('vDescargar');
+                bajar.href = url;
+                bajar.download = f.nombre || 'documento';
+                document.getElementById('vTitulo').textContent = `${f.etiqueta || 'Documento'} · ${f.nombre || ''}`;
+                document.getElementById('modalArchivo').dataset.url = url;
+                abrir('modalArchivo');
+            } catch (err) {
+                console.error(err);
+                alert('No se pudo abrir el archivo. Revisa las reglas de Storage.');
+            }
+        }
+
+        // ---------- Ausencias ----------
+        function abrirAusencia(x = null, personaId = '') {
+            const activas = personas.filter(p => p.activo !== false || p.id === x?.personaId);
+            document.getElementById('a_persona').innerHTML = activas.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
+            const hoy = hoyISO();
+            const set = (id, v) => { document.getElementById(id).value = v; };
+            set('a_persona', x?.personaId || personaId || activas[0]?.id || '');
+            set('a_tipo', x?.tipo || 'falta');
+            set('a_inicio', x?.inicio || hoy);
+            set('a_fin', x?.fin || x?.inicio || hoy);
+            set('a_dias', x?.dias ?? 1);
+            set('a_goce', x?.goce || 'si');
+            set('a_nota', x?.nota || '');
+            document.getElementById('aTitulo').textContent = x ? 'Corregir ausencia' : 'Registrar ausencia';
+            document.getElementById('aMsg').textContent = '';
+            document.getElementById('modalAusencia').dataset.id = x?.id || '';
+            abrir('modalAusencia');
+        }
+
+        async function guardarAusencia() {
+            const id = document.getElementById('modalAusencia').dataset.id;
+            const v = k => document.getElementById(k).value.trim();
+            const msg = document.getElementById('aMsg'), btn = document.getElementById('bGuardarAusencia');
+            const datos = { personaId: v('a_persona'), tipo: v('a_tipo'), inicio: v('a_inicio'), fin: v('a_fin') || v('a_inicio'), dias: Number(v('a_dias')), goce: v('a_goce'), nota: v('a_nota') };
+            if (!datos.personaId) { msg.textContent = 'Selecciona a la persona.'; return; }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.inicio) || datos.fin < datos.inicio) { msg.textContent = 'Revisa las fechas.'; return; }
+            if (!(datos.dias > 0) || datos.dias > diasEntre(datos.inicio, datos.fin)) { msg.textContent = `Los días deben estar entre 0.5 y ${diasEntre(datos.inicio, datos.fin)}.`; return; }
+            const choca = ausencias.find(x => x.id !== id && x.personaId === datos.personaId && x.inicio <= datos.fin && (x.fin || x.inicio) >= datos.inicio);
+            if (choca) { msg.textContent = `Se encima con ${TIPOS_AUS[choca.tipo].toLowerCase()} del ${fechaCorta(choca.inicio)}.`; return; }
+            const chocaVac = vacEventos.find(x => x.persona?.id === datos.personaId && x.inicio <= datos.fin && x.fin >= datos.inicio);
+            if (chocaVac) { msg.textContent = `Se encima con vacaciones del ${fechaCorta(chocaVac.inicio)}.`; return; }
+            datos.nombre = personas.find(p => p.id === datos.personaId)?.nombre || '';
+            btn.disabled = true; msg.textContent = '';
+            try {
+                const quien = yo();
+                if (id) await setDoc(doc(db, 'personal_ausencias', id), { ...datos, editadoPor: quien.uid, editadoPorNombre: quien.nombre, editadoEn: serverTimestamp() }, { merge: true });
+                else await setDoc(doc(collection(db, 'personal_ausencias')), { ...datos, creadoPor: quien.uid, creadoPorNombre: quien.nombre, creadoEn: serverTimestamp() });
+                cerrar('modalAusencia');
+                await cargar(id ? 'Ausencia corregida.' : `Ausencia registrada: ${TIPOS_AUS[datos.tipo].toLowerCase()} de ${esc(datos.nombre)}.`);
+            } catch (err) {
+                console.error(err);
+                msg.textContent = 'No se pudo guardar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        function pedirBorrarAusencia(x) {
+            const nombre = personas.find(p => p.id === x.personaId)?.nombre || '';
+            const d = Number(x.dias) || 0, fin = x.fin || x.inicio;
+            const cuando = fin === x.inicio ? `el ${fechaCorta(x.inicio)}` : `del ${fechaCorta(x.inicio)} al ${fechaCorta(fin)}`;
+            confirmar('Eliminar ausencia', `${TIPOS_AUS[x.tipo]} de ${nombre} ${cuando} (${num(d)} día${d === 1 ? '' : 's'}). No se puede deshacer.`, 'Eliminar', async () => {
+                try {
+                    await deleteDoc(doc(db, 'personal_ausencias', x.id));
+                    cerrar('modalConfirmar');
+                    await cargar('Ausencia eliminada.');
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('cMsg').textContent = 'No se pudo eliminar.';
+                }
+            });
+        }
+
+        // ---------- Historial ----------
+        async function verHistorial(p) {
+            document.getElementById('hSub').textContent = p.nombre;
+            const lista = document.getElementById('hLista');
+            lista.innerHTML = '<div class="nota">Cargando...</div>';
+            abrir('modalHist');
+            try {
+                const s = await getDocs(query(collection(db, 'personal', p.id, 'historial'), orderBy('registradoEn', 'desc')));
+                const valor = (k, x) => k === 'descanso' ? (x || []).map(d => DIA_SEMANA[d]).join(', ') || 'ninguno' : k === 'documentos' ? `${(x || []).length} documento${(x || []).length === 1 ? '' : 's'}` : k === 'uid' ? (usuarios.find(u => u.uid === x)?.email || (x ? 'otro usuario' : 'sin cuenta')) : k === 'activo' ? (x === false ? 'no' : 'sí') : (x || '');
+                lista.innerHTML = s.docs.map(d => {
+                    const h = d.data();
+                    const cambios = Object.keys(CAMPOS).filter(k => k in (h.despues || {}) && JSON.stringify(h.antes?.[k] ?? '') !== JSON.stringify(h.despues?.[k] ?? ''))
+                        .map(k => h.accion === 'alta' ? `${CAMPOS[k]}: «${esc(valor(k, h.despues[k]))}»` : `${CAMPOS[k]}: «${esc(valor(k, h.antes?.[k]))}» → «${esc(valor(k, h.despues[k]))}»`);
+                    const cuando = h.registradoEn?.toDate ? h.registradoEn.toDate().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+                    return `<div><strong>${esc(h.registradoPorNombre || '')}</strong> · ${esc(h.accion)} <span class="nota">${esc(cuando)}</span><br>${cambios.join('<br>') || '<span class="nota">Sin cambios visibles</span>'}</div>`;
+                }).join('') || '<div class="nota">Sin cambios.</div>';
+            } catch (err) {
+                lista.innerHTML = `<div class="nota">No se pudo cargar el historial (${esc(err.code || err.message)}).</div>`;
+            }
+        }
+
+        // ---------- Modales ----------
+        let alConfirmar = null;
+        function confirmar(titulo, texto, boton, accion) {
+            document.getElementById('cTitulo').textContent = titulo;
+            document.getElementById('cTexto').textContent = texto;
+            document.getElementById('bConfirmar').textContent = boton;
+            document.getElementById('cMsg').textContent = '';
+            alConfirmar = accion;
+            abrir('modalConfirmar');
+        }
+        document.getElementById('bConfirmar').addEventListener('click', async e => {
+            if (!alConfirmar) return;
+            e.target.disabled = true;
+            try { await alConfirmar(); } finally { e.target.disabled = false; }
+        });
+        function abrir(id) { document.getElementById(id).classList.add('abierto'); }
+        function cerrar(id) {
+            document.getElementById(id).classList.remove('abierto');
+            if (id === 'modalArchivo') {
+                const m = document.getElementById('modalArchivo');
+                document.getElementById('vContenido').innerHTML = '';
+                if (m.dataset.url) { URL.revokeObjectURL(m.dataset.url); delete m.dataset.url; }
+            }
+        }
+    </script>
+</body>
+</html>

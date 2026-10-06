@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carátula de contrato - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -62,6 +62,7 @@
         .vig-cajas { flex: none; width: 280px; display: flex; flex-direction: column; gap: 10px; }
         .vig-alerta { width: 100%; display: flex; gap: 12px; align-items: center; border: 1px solid; border-radius: 10px; padding: 14px 16px; }
         .vig-punto { flex: none; width: 16px; height: 16px; border-radius: 50%; }
+        .vig-punto.cuadro { border-radius: 3px; }
         .vig-titulo { font-weight: 700; font-size: 15px; }
         .vig-det { font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
         @media (max-width: 700px) { .vig-wrap { flex-direction: column; } .vig-cajas { width: 100%; } }
@@ -86,6 +87,7 @@
         .alerta-fila { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--fondo-hundido); font-size: 14px; }
         .alerta-fila:first-of-type { border-top: none; padding-top: 0; }
         .alerta-fila .punto { flex: none; width: 10px; height: 10px; border-radius: 50%; position: relative; top: 1px; }
+        .alerta-fila .punto.cuadro { border-radius: 2px; }
         .alerta-fila .que { flex: 1; }
         .alerta-fila .que strong { font-weight: 600; }
         .alerta-fila .que span { color: var(--tinta-suave); font-size: 13px; }
@@ -104,10 +106,11 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-4';
         import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261005-1';
+        import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261005-4';
+        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261005-4';
 
         const app = document.getElementById('app');
         let diaLimitePago = 10; // Configuración → facturacion_config/general; pagos después de ese día son tarde
@@ -159,18 +162,19 @@
                 color = '#3d8a5a'; titulo = t.ok;
                 detalle = `Faltan ${plural(d)} ${t.para}`;
             } else {
-                color = COLOR_NIVEL[nivelDe(d)];
+                // Fin de contrato: color según cuánto falta. Incremento: un solo color, sin escala de tiempo.
+                color = t.escala ? COLOR_NIVEL[nivelDe(d)] : COLOR_OTRA;
                 titulo = d < 0 ? t.pasado : d === 0 ? `${t.verbo} hoy` : `${t.verbo} en ${plural(d)}`;
                 detalle = d < 0 ? `${t.hace} hace ${plural(-d)} (${fechaTxt(fecha)})` : `${t.etiqueta}: ${fechaTxt(fecha)}`;
             }
             return `<div class="vig-alerta" style="border-color:${color}">
-                <span class="vig-punto" style="background:${color}"></span>
+                <span class="vig-punto${t.escala ? '' : ' cuadro'}" style="background:${color}"></span>
                 <div><div class="vig-titulo" style="color:${color}">${titulo}</div><div class="vig-det">${detalle}</div></div>
             </div>`;
         }
         function alertaVigencia(c) {
             const cajas = [
-                cajaFecha(c.fin, { ok: 'Vigente', para: 'para el vencimiento', verbo: 'Vence', pasado: 'Contrato vencido', hace: 'Venció', etiqueta: 'Fin del contrato' }),
+                cajaFecha(c.fin, { escala: true, ok: 'Vigente', para: 'para el vencimiento', verbo: 'Vence', pasado: 'Contrato vencido', hace: 'Venció', etiqueta: 'Fin del contrato' }),
                 cajaFecha(c.incremento, { ok: 'Sin incremento próximo', para: 'para el incremento de renta', verbo: 'Incremento', pasado: 'Incremento pendiente', hace: 'Tocaba', etiqueta: 'Incremento de renta' + (c.incrementoTipo ? ` (${esc(c.incrementoTipo)})` : '') })
             ].filter(Boolean);
             return cajas.length ? `<div class="vig-cajas">${cajas.join('')}</div>` : '';
@@ -182,13 +186,15 @@
             if (!a.total) return '';
             const filas = a.lista.map(e => `
                 <div class="alerta-fila">
-                    <span class="punto" style="background:${COLOR_NIVEL[e.nivel]}" title="${TEXTO_NIVEL[e.nivel]}"></span>
+                    ${e.tipo === 'Fin de contrato'
+                        ? `<span class="punto" style="background:${COLOR_NIVEL[e.nivel]}" title="${TEXTO_NIVEL[e.nivel]}"></span>`
+                        : `<span class="punto cuadro" style="background:${COLOR_OTRA}"></span>`}
                     <div class="que"><strong>${esc(e.tipo)}</strong> · ${fechaTxt(e.fecha)}${e.det ? `<br><span>${esc(e.det)}</span>` : ''}</div>
-                    <div class="cuando" style="color:${COLOR_NIVEL[e.nivel]}">${e.dias < 0 ? 'Vencido ' : ''}${cuandoTxt(e.dias)}</div>
+                    <div class="cuando" style="color:${e.tipo === 'Fin de contrato' && e.nivel !== '60' ? COLOR_NIVEL[e.nivel] : 'var(--tinta)'}">${e.dias < 0 ? 'Vencido ' : ''}${cuandoTxt(e.dias)}</div>
                 </div>`);
             if (a.saldo) filas.push(`
                 <div class="alerta-fila">
-                    <span class="punto" style="background:${COLOR_NIVEL['60']}"></span>
+                    <span class="punto cuadro" style="background:${COLOR_OTRA}"></span>
                     <div class="que"><strong>Saldo por pagar</strong>${c.porPagarNota ? `<br><span>${esc(c.porPagarNota)}</span>` : ''}</div>
                     <div class="cuando">${dinero(a.saldo)}</div>
                 </div>`);
@@ -237,7 +243,7 @@
                                 ${fila('Superficie', c.m2 ? `${esc(c.m2)} m²` : '')}
                                 ${fila('Giro', esc(c.giro))}
                                 ${fila('Representante', esc(c.representante))}
-                                ${fila('Teléfono', esc(c.telefono))}
+                                ${fila('Teléfono', telefonoWhatsApp(c.telefono))}
                                 ${fila('Dirección', (c.direccion || []).map(esc).join('<br>'))}
                                 ${fila('Acceso al local', esc(c.acceso))}
                             </dl>
@@ -464,7 +470,7 @@
                     <div class="resumen-dep">
                         <div><span>Pagado</span><strong>${dinero(pagado)}</strong></div>
                         <div><span>Depósito requerido</span><strong>${dinero(requerido)}</strong></div>
-                        <div><span>${saldo > 0 ? 'Debe' : saldo < 0 ? 'Saldo a favor' : 'Saldo'}</span><strong style="color:${saldo > 0 ? '#c62828' : '#2e7d32'}">${dinero(Math.abs(saldo))}</strong></div>
+                        <div><span>${saldo > 0 ? 'Debe' : saldo < 0 ? 'Saldo a favor' : 'Saldo'}</span><strong style="color:${saldo > 0 ? 'var(--peligro)' : 'var(--exito)'}">${dinero(Math.abs(saldo))}</strong></div>
                     </div>
                     ${Math.abs(pagado - (c.deposito || 0)) > 0.01 ? `<p class="aviso-dep">El total pagado (${dinero(pagado)}) no coincide con el depósito registrado en la carátula (${dinero(c.deposito)}).</p>` : ''}
                     ${c.historialDepositosNota ? `<p class="nota-dep">${esc(c.historialDepositosNota)}</p>` : ''}
@@ -683,7 +689,7 @@
                     por: user.email, en: serverTimestamp()
                 });
                 const snap = await getDoc(doc(db, 'contratos', contratoId));
-                avisoPendiente = `<p class="ok" style="background:#e8f5e9;color:#2e7d32;padding:10px 14px;border-radius:6px;font-size:14px">Cambios guardados (${Object.keys(cambios).length} campo(s)).</p>`;
+                avisoPendiente = `<p class="ok" style="background:var(--exito-suave);color:var(--exito);padding:10px 14px;border-radius:6px;font-size:14px">Cambios guardados (${Object.keys(cambios).length} campo(s)).</p>`;
                 vista(snap.data());
             } catch (err) {
                 console.error(err);

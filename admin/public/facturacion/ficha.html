@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ficha de facturación - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -44,7 +44,7 @@
         .hist a.act { background: var(--ambar-suave); border-radius: 6px; }
         .pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
         .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
-        .e-pagado { background: var(--exito-suave); color: var(--exito); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
+        .e-pagado { background: var(--exito); color: var(--fondo); } select.estado option { background: var(--fondo); color: var(--tinta); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
         .ok { color: var(--exito); } .err { color: var(--peligro); }
         #msg { font-size: 14px; }
 
@@ -58,14 +58,14 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-4';
         import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
             documentoContadores, imprimirHojas, normalizarConceptos
-        } from '../../../js/facturacion.js?v=20261005-1';
+        } from '../../../js/facturacion.js?v=20261005-4';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);

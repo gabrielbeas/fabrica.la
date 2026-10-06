@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Locales - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -50,6 +50,9 @@
         /* Punto de alerta (el detalle está en la carátula) */
         .col-alerta { width: 36px; text-align: center; padding-left: 8px; padding-right: 0; }
         .punto { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
+        .cuadro { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-top: 4px; }
+        .marcas { display: inline-flex; gap: 5px; align-items: center; }
+        .leyenda i.cuadro-ley { border-radius: 2px; }
 
         tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
         .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
@@ -61,10 +64,10 @@
     <div class="main" id="app"><div class="cargando">Cargando contratos...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
-        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261005-4';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261005-1';
+        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261005-4';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -89,11 +92,13 @@
             return { clase: 'e-vigente', txt: 'Vigente' };
         }
 
-        // Solo un punto de color; el detalle se ve en la carátula
+        // Círculo: fin de contrato, con color según cuánto falta. Cuadrito: incremento o depósito (un solo color).
+        // El detalle se ve en la carátula.
         function punto(a) {
-            if (!a.peor) return '';
-            const tip = `${a.total} alerta${a.total > 1 ? 's' : ''} · ${TEXTO_NIVEL[a.peor]} · ver detalle en la carátula`;
-            return `<span class="punto" style="background:${COLOR_NIVEL[a.peor]}" title="${esc(tip)}"></span>`;
+            if (!a.total) return '';
+            const circulo = a.contrato ? `<span class="punto" style="background:${COLOR_NIVEL[a.contrato]}" title="${esc('Fin de contrato · ' + TEXTO_NIVEL[a.contrato] + ' · ver detalle en la carátula')}"></span>` : '';
+            const cuadro = a.otras ? `<span class="cuadro" style="background:${COLOR_OTRA}" title="${esc(a.otras + ' alerta' + (a.otras > 1 ? 's' : '') + ' de incremento o depósito · ver detalle en la carátula')}"></span>` : '';
+            return `<span class="marcas">${circulo}${cuadro}</span>`;
         }
 
         async function iniciar() {
@@ -147,10 +152,9 @@
                     <button class="chip activa" data-f="todos">Todos (${contratos.length})</button>
                     <button class="chip" data-f="alertas">Con alertas (${conAlertas})</button>
                     <div class="leyenda">
-                        <span><i style="background:#c62828"></i>Vencido</span>
-                        <span><i style="background:#ef6c00"></i>30 días</span>
-                        <span><i style="background:#f9a825"></i>60 días</span>
-                        <span><i style="background:#1f4e79"></i>90 días</span>
+                        <span>Fin de contrato:</span>
+                        ${['vencido', '30', '60', '90'].map(n => `<span><i style="background:${COLOR_NIVEL[n]}"></i>${n === 'vencido' ? 'Vencido' : n + ' días'}</span>`).join('')}
+                        <span><i class="cuadro-ley" style="background:${COLOR_OTRA}"></i>Incremento o depósito</span>
                     </div>
                 </div>
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -30,8 +30,18 @@
         tbody tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .gris { color: var(--tinta-suave); font-size: 12px; }
-        .correos a { color: var(--accion); text-decoration: none; display: block; }
+        .correos label { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; cursor: pointer; }
+        .correos input[type=checkbox] { flex: none; width: 16px; height: 16px; margin: 0; position: relative; top: 3px; accent-color: var(--accion); cursor: pointer; }
+        .correos a { color: var(--accion); text-decoration: none; overflow-wrap: anywhere; }
         .correos a:hover { text-decoration: underline; }
+        /* Barra para escribir a los correos marcados */
+        .barra-correo { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 10px 14px; margin-bottom: 12px; border: 1px solid var(--linea); border-radius: var(--radio-md); background: var(--fondo-hundido); font-size: 13px; }
+        .barra-correo .cuenta { font-weight: 600; margin-right: 4px; }
+        .barra-correo .marcar { font: inherit; font-size: 13px; border: none; background: none; padding: 0; color: var(--accion); cursor: pointer; text-decoration: underline; text-decoration-color: var(--linea); }
+        .barra-correo select { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: var(--fondo); color: var(--tinta); margin-left: auto; }
+        .barra-correo .escribir { font: inherit; font-size: 13px; font-weight: 600; height: 34px; padding: 0 14px; border: none; border-radius: var(--radio-sm); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .barra-correo .escribir:disabled { background: var(--linea); color: var(--tinta-tenue); cursor: not-allowed; }
+        .barra-correo .aviso-largo { flex-basis: 100%; color: var(--atencion); font-size: 12px; }
         .correos .tipo { font-size: 11px; color: var(--tinta-tenue); }
         a.loc { color: var(--tinta); text-decoration: none; font-weight: 600; }
         a.loc:hover { color: var(--accion); }
@@ -75,9 +85,10 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../js/navbar.js?v=20261005-1';
-        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../js/navbar.js?v=20261005-4';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261005-4';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261005-4';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -99,7 +110,8 @@
             calendario: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
             config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
             caja: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2M7 6V4h10v2"/></svg>',
-            bitacora: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 10l1.5 1.5L13 8.5M8.5 15.5l1.5 1.5 3-3"/></svg>'
+            bitacora: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 10l1.5 1.5L13 8.5M8.5 15.5l1.5 1.5 3-3"/></svg>',
+            personal: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.4c2.1.7 3.5 2.8 3.5 5.6"/></svg>'
         };
         // Orden de las tarjetas (Gabriel, 04/10/2026): 4 por fila en escritorio
         const APPS = [
@@ -111,6 +123,7 @@
             { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
             { id: 'bitacora', nombre: 'Bitácora', des: 'Registro de acciones realizadas en la plaza', href: b + 'bitacora/', roles: ['admin', 'operario'] },
             { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
+            { id: 'personal', nombre: 'Personal', des: 'Expedientes, vacaciones y ausencias', href: b + 'personal/', soloAdmin: true },
             { id: 'siapa', nombre: 'SIAPA', des: 'Recibos, pagos y consumo de la toma general', href: b + 'agua/siapa.html', soloAdmin: true },
             { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true }
         ];
@@ -186,6 +199,9 @@
         };
         let ordenDir = { col: 'locales', dir: 1 };
         let busquedaDir = '';
+        // Correos marcados para escribirles (se conservan al ordenar o buscar)
+        const marcados = new Set();
+        let modoCorreo = 'bcc';
 
         // Encabezado ordenable (sirve para ambas tablas)
         const thOrden = (orden, col, txt, cls = '') => {
@@ -207,6 +223,20 @@
                 <h1>Directorio</h1>
                 <p class="sub">Contactos de cada local. Haz clic en el título de una columna para ordenar.</p>
                 <input class="buscar" id="buscar" placeholder="Buscar local, nombre o correo..." value="${esc(busquedaDir)}">
+                <div class="barra-correo" id="barraCorreo">
+                    <span class="cuenta" id="cuentaCorreos"></span>
+                    <span>Marcar:</span>
+                    <button class="marcar" data-marcar="todos">todos los visibles</button>
+                    <button class="marcar" data-marcar="Contrato">solo de contrato</button>
+                    <button class="marcar" data-marcar="Facturación">solo de facturación</button>
+                    <button class="marcar" data-marcar="ninguno">ninguno</button>
+                    <select id="modoCorreo" aria-label="Cómo enviar">
+                        <option value="bcc" ${modoCorreo === 'bcc' ? 'selected' : ''}>Copia oculta (CCO)</option>
+                        <option value="to" ${modoCorreo === 'to' ? 'selected' : ''}>Para (todos se ven)</option>
+                    </select>
+                    <button class="escribir" id="escribirCorreo">Escribir correo</button>
+                    <span class="aviso-largo" id="avisoLargo" hidden></span>
+                </div>
                 <div class="tabla-wrap">
                     <table class="tabla-movil">
                         <thead><tr>${thOrden(ordenDir, 'locales', 'Locales')}${thOrden(ordenDir, 'nombre', 'Nombre comercial')}${thOrden(ordenDir, 'razon', 'Razón social')}${thOrden(ordenDir, 'telefono', 'Teléfono')}${thOrden(ordenDir, 'correos', 'Correos')}</tr></thead>
@@ -218,20 +248,54 @@
                                     <td><a class="loc" href="${caratula(c.id)}">${esc((c.locales || []).join(', '))}</a>${c.vencido ? '<div class="vencido">Contrato vencido</div>' : ''}</td>
                                     <td>${esc(c.nombreComercial || '-')}</td>
                                     <td>${esc(c.razonSocial)}</td>
-                                    <td>${c.telefono ? `<a href="tel:${esc(String(c.telefono).replace(/[^\d+]/g, ''))}">${esc(c.telefono)}</a>` : '<span class="gris">Sin registrar</span>'}</td>
-                                    <td class="correos">${correos.length ? correos.map(x => `<a href="mailto:${esc(x.correo)}">${esc(x.correo)} <span class="tipo">${esc(x.tipo)}</span></a>`).join('') : '<span class="gris">Sin registrar</span>'}</td>
+                                    <td>${c.telefono ? telefonoWhatsApp(c.telefono) : '<span class="gris">Sin registrar</span>'}</td>
+                                    <td class="correos">${correos.length ? correos.map(x => `<label><input type="checkbox" data-correo="${esc(x.correo)}" data-tipo="${esc(x.tipo)}" ${marcados.has(x.correo.toLowerCase()) ? 'checked' : ''}><span><a href="mailto:${esc(x.correo)}">${esc(x.correo)}</a> <span class="tipo">${esc(x.tipo)}</span></span></label>`).join('') : '<span class="gris">Sin registrar</span>'}</td>
                                 </tr>`;
                             }).join('')}
                         </tbody>
                     </table>
                 </div>
-                <p class="gris" style="margin-top:8px">El teléfono se captura en la carátula de cada contrato (Editar → Arrendatario).</p>`;
+                <p class="gris" style="margin-top:8px">El teléfono se captura en la carátula de cada contrato (Editar → Arrendatario). Al darle clic se abre WhatsApp.</p>`;
             const filtrar = () => {
                 const q = busquedaDir.trim().toLowerCase();
                 document.querySelectorAll('#dir tr').forEach(tr => { tr.style.display = !q || tr.dataset.texto.includes(q) ? '' : 'none'; });
             };
             document.getElementById('buscar').addEventListener('input', e => { busquedaDir = e.target.value; filtrar(); });
             filtrar();
+
+            // ---------- Correo a los marcados ----------
+            const cajas = () => [...document.querySelectorAll('#dir input[data-correo]')];
+            const visible = cb => cb.closest('tr').style.display !== 'none';
+            const actualizarBarra = () => {
+                const n = marcados.size;
+                document.getElementById('cuentaCorreos').textContent = n ? `${n} correo${n === 1 ? '' : 's'} marcado${n === 1 ? '' : 's'}` : 'Marca los correos a los que quieres escribir';
+                document.getElementById('escribirCorreo').disabled = !n;
+            };
+            cajas().forEach(cb => cb.addEventListener('change', () => {
+                const c = cb.dataset.correo.toLowerCase();
+                cb.checked ? marcados.add(c) : marcados.delete(c);
+                // El mismo correo puede salir en dos contratos: se marca o desmarca en todos
+                cajas().filter(x => x.dataset.correo.toLowerCase() === c).forEach(x => { x.checked = cb.checked; });
+                actualizarBarra();
+            }));
+            app.querySelectorAll('[data-marcar]').forEach(b => b.addEventListener('click', () => {
+                const que = b.dataset.marcar;
+                if (que === 'ninguno') marcados.clear();
+                else cajas().filter(visible).filter(cb => que === 'todos' || cb.dataset.tipo === que).forEach(cb => marcados.add(cb.dataset.correo.toLowerCase()));
+                cajas().forEach(cb => { cb.checked = marcados.has(cb.dataset.correo.toLowerCase()); });
+                actualizarBarra();
+            }));
+            document.getElementById('modoCorreo').addEventListener('change', e => { modoCorreo = e.target.value; });
+            document.getElementById('escribirCorreo').addEventListener('click', () => {
+                const lista = [...marcados].map(c => encodeURIComponent(c).replace(/%40/g, '@')).join(',');
+                const url = modoCorreo === 'to' ? `mailto:${lista}` : `mailto:?bcc=${lista}`;
+                const aviso = document.getElementById('avisoLargo');
+                // Algunos programas de correo cortan enlaces muy largos
+                aviso.hidden = url.length <= 1900;
+                aviso.textContent = `Son muchas direcciones (${url.length} caracteres); si tu programa de correo no las muestra todas, envía en dos partes.`;
+                window.location.href = url;
+            });
+            actualizarBarra();
             app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
                 const col = t.dataset.col;
                 ordenDir = ordenDir.col === col ? { col, dir: -ordenDir.dir } : { col, dir: 1 };

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facturación - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -34,7 +34,7 @@
         tr.fila-f:hover td { background: var(--ambar-suave); }
         select.estado { padding: 5px 8px; border-radius: 12px; border: 1px solid transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
         .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
-        .e-pagado { background: var(--exito-suave); color: var(--exito); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
+        .e-pagado { background: var(--exito); color: var(--fondo); } select.estado option { background: var(--fondo); color: var(--tinta); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
         .aviso { color: var(--atencion); font-size: 12px; display: block; margin-top: 3px; }
         tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
         .vacio { border: 1px dashed var(--borde-control); border-radius: 10px; padding: 30px; text-align: center; color: var(--tinta-suave); }
@@ -64,14 +64,14 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-4';
         import { collection, getDocs, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
             documentoContadores, imprimirHojas, totalesFactura
-        } from '../../../js/facturacion.js?v=20261005-1';
+        } from '../../../js/facturacion.js?v=20261005-4';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
@@ -126,7 +126,7 @@
                   !facturas.length ? `<div class="vacio">No hay facturas de <strong>${mesTxt(mes)}</strong>.<br><br>"Generar" las prellena con la renta de cada contrato, el agua de las lecturas y la recolección de basura. Después revisas y ajustas cada una.</div>` : `
                 <div class="resumen">
                     <div class="tarjeta"><div class="k">Facturado ${mesTxt(mes)}</div><div class="v">${dinero(total)}</div></div>
-                    <div class="tarjeta"><div class="k">Cobrado</div><div class="v" style="color:#2e7d32">${dinero(cobrado)}</div></div>
+                    <div class="tarjeta"><div class="k">Cobrado</div><div class="v" style="color:var(--exito)">${dinero(cobrado)}</div></div>
                     <div class="tarjeta"><div class="k">Por cobrar</div><div class="v" style="color:#b26a00">${dinero(total - cobrado)}</div></div>
                 </div>
                 <div class="tabla-wrap">

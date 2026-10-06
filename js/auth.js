@@ -160,11 +160,12 @@ export function getSeccionesPermitidas() {
     cajaChica:   { id: 'cajaChica',   nombre: 'Caja Chica',       url: b + 'caja-chica/' },
     agua:        { id: 'agua',        nombre: 'Lecturas de agua', url: b + 'agua/lecturas.html' },
     bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' },
-    calendarios: { id: 'calendarios', nombre: 'Calendario',       url: b + 'calendarios/' }
+    calendarios: { id: 'calendarios', nombre: 'Calendario',       url: b + 'calendarios/' },
+    personal:    { id: 'personal',    nombre: 'Personal',         url: b + 'personal/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'cajaChica', 'agua', 'bitacora', 'calendarios'],
+    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'cajaChica', 'agua', 'bitacora', 'calendarios', 'personal'],
     operario: ['inicio', 'cajaChica', 'agua', 'bitacora', 'calendarios']
   };
 

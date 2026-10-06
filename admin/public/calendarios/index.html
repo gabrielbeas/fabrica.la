@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="../css/panel.css?v=20261005-1">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -72,9 +72,10 @@
         .dia { min-height: 108px; border-right: 1px solid var(--linea); border-bottom: 1px solid var(--linea); padding: 6px 6px 4px; cursor: pointer; position: relative; background: var(--fondo); }
         .dia:nth-child(7n) { border-right: none; }
         .dia:hover { background: var(--ambar-suave); }
-        .dia.fuera { background: var(--fondo-hundido); }
+        /* Tres tonos: días hábiles (blanco), fines de semana del mes (gris neutro sutil), días de otro mes (gris azulado) */
+        .dia.finde { background: color-mix(in srgb, #000 4%, var(--fondo)); }
+        .dia.fuera { background: color-mix(in srgb, var(--accion) 7%, var(--fondo-hundido)); }
         .dia.fuera .n { color: var(--tinta-tenue); }
-        .dia.finde { background: var(--fondo-hundido); }
         .dia.sel { outline: var(--trazo) solid var(--accion); outline-offset: calc(-1 * var(--trazo)); z-index: 1; }
         /* Feriado oficial (art. 74 LFT): tachado rojo de esquina a esquina, con el grosor de trazo del sistema */
         .dia.oficial::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - var(--trazo) / 2), var(--peligro) calc(50% - var(--trazo) / 2), var(--peligro) calc(50% + var(--trazo) / 2), transparent calc(50% + var(--trazo) / 2)); }
@@ -117,9 +118,11 @@
     <div class="main" id="app"><div class="cargando">Cargando calendario...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261005-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-4';
         import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { FERIADOS } from '../../../js/feriados.js?v=20261005-4';
+        import { personaDeVacacion, diasDeVacacion } from '../../../js/vacaciones.js?v=20261005-4';
 
         const app = document.getElementById('app');
         let diaLimitePago = 10; // Configuración → facturacion_config/general
@@ -141,6 +144,7 @@
             pago:        { nombre: 'Límite de pago de renta',  color: '#ad1457', auto: true, soloAdmin: true },
             agua:        { nombre: 'Lecturas de agua',         color: '#0288d1', auto: true },
             bitacora:    { nombre: 'Bitácora',                 color: '#d08a1e', auto: true },
+            personal:    { nombre: 'Ausencias del personal',   color: '#5e35b1', auto: true, soloAdmin: true },
             actividad:   { nombre: 'Actividades',              color: '#1f4e79' },
             vacaciones:  { nombre: 'Vacaciones',               color: '#8e24aa' },
             feriado:     { nombre: 'Feriados',                 color: '#2e7d32' }
@@ -149,20 +153,13 @@
 
         // ---------- Feriados oficiales (art. 74 de la Ley Federal del Trabajo) ----------
         const esOficial = f => FERIADOS.some(([x]) => x === f);
-        const FERIADOS = [
-            ['2026-01-01', 'Año Nuevo'], ['2026-02-02', 'Día de la Constitución'], ['2026-03-16', 'Natalicio de Benito Juárez'],
-            ['2026-05-01', 'Día del Trabajo'], ['2026-09-16', 'Día de la Independencia'], ['2026-11-16', 'Día de la Revolución'],
-            ['2026-12-25', 'Navidad'],
-            ['2027-01-01', 'Año Nuevo'], ['2027-02-01', 'Día de la Constitución'], ['2027-03-15', 'Natalicio de Benito Juárez'],
-            ['2027-05-01', 'Día del Trabajo'], ['2027-06-06', 'Jornada electoral federal'], ['2027-09-16', 'Día de la Independencia'],
-            ['2027-11-15', 'Día de la Revolución'], ['2027-12-25', 'Navidad']
-        ];
+        // La lista está en js/feriados.js (también la usa Personal para contar vacaciones)
 
         // ---------- Estado ----------
         let admin = false, user = null;
         // El admin edita cualquier evento capturado; el operario solo los que él capturó
         const puedeEditar = ev => admin || (!!ev?.creadoPor && ev.creadoPor === user?.email);
-        let manuales = [], contratos = [], lecturas = [], bitacora = [];
+        let manuales = [], contratos = [], lecturas = [], bitacora = [], ausencias = [], personal = [];
         let mesVista = hoy.slice(0, 7), diaSel = hoy;
         let activos = new Set(Object.keys(TIPOS));
 
@@ -191,6 +188,10 @@
             lecturas = snapLec.docs.map(d => d.data());
             contratos = snapC ? snapC.docs.map(d => ({ id: d.id, ...d.data() })) : [];
             bitacora = await tareaBitacora;
+            // Ausencias del personal (vacaciones, faltas, permisos, incapacidades): solo admin
+            // Personal (solo admin): para ligar cada vacación a su persona
+            if (admin) personal = await getDocs(collection(db, 'personal')).then(sn => sn.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.activo !== false).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))).catch(() => []);
+            if (admin) ausencias = await getDocs(collection(db, 'personal_ausencias')).then(sn => sn.docs.map(d => d.data())).catch(err => { console.warn('Sin ausencias en el calendario:', err.code || err); return []; });
         }
 
         // ---------- Todos los eventos de un rango de fechas ----------
@@ -223,6 +224,14 @@
                 if (!r.fecha || !dentro(r.fecha)) return;
                 ev.push({ tipo: 'bitacora', fecha: r.fecha, hora: r.hora || '', titulo: `${r.hora ? r.hora + ' · ' : ''}${r.accion || 'Acción registrada'}`, det: [r.lugar, r.categoria, normResp(r.responsable)].filter(Boolean).join(' · '), link: '../bitacora/' });
             });
+            // Ausencias del personal, un evento por día
+            const TIPO_AUS = { vacaciones: 'Vacaciones', falta: 'Falta', permiso: 'Permiso', incapacidad: 'Incapacidad' };
+            ausencias.forEach(a => {
+                const fin = a.fin && a.fin >= a.inicio ? a.fin : a.inicio;
+                for (let f = a.inicio; f && f <= fin && f <= hasta; f = sumarDias(f, 1)) {
+                    if (dentro(f)) ev.push({ tipo: 'personal', fecha: f, titulo: `${TIPO_AUS[a.tipo] || 'Ausencia'}: ${a.nombre || ''}`, det: [fin !== a.inicio && `del ${fechaCorta(a.inicio)} al ${fechaCorta(fin)}`, `${a.dias} día${a.dias === 1 ? '' : 's'}`, a.goce === 'no' && 'sin goce de sueldo', a.nota].filter(Boolean).join(' · '), link: '../personal/#' + encodeURIComponent(a.personaId || '') });
+                }
+            });
             // Feriados oficiales
             FERIADOS.forEach(([f, t]) => { if (dentro(f)) ev.push({ tipo: 'feriado', fecha: f, titulo: t, det: 'Descanso obligatorio (art. 74 LFT)', oficial: true }); });
             // Eventos capturados (pueden durar varios días)
@@ -230,7 +239,9 @@
                 const fin = m.fin && m.fin >= m.inicio ? m.fin : m.inicio;
                 for (let f = m.inicio; f <= fin; f = sumarDias(f, 1)) {
                     if (f > hasta) break;
-                    if (dentro(f)) ev.push({ tipo: m.tipo, fecha: f, titulo: m.titulo, det: [m.local && 'Local ' + m.local, fin !== m.inicio && `del ${fechaCorta(m.inicio)} al ${fechaCorta(fin)}`, m.nota].filter(Boolean).join(' · '), manual: m });
+                    const vac = m.tipo === 'vacaciones' && admin ? personaDeVacacion(m, personal) : null;
+                    const vacDet = vac ? `${vac.persona.nombre}: ${diasDeVacacion(m, vac.persona).length} días de vacaciones` : '';
+                    if (dentro(f)) ev.push({ tipo: m.tipo, fecha: f, titulo: m.titulo, det: [vacDet, m.local && 'Local ' + m.local, fin !== m.inicio && `del ${fechaCorta(m.inicio)} al ${fechaCorta(fin)}`, m.nota].filter(Boolean).join(' · '), manual: m, link: vac ? '../personal/#' + encodeURIComponent(vac.persona.id) : undefined });
                 }
             });
             const orden = Object.keys(TIPOS);
@@ -249,7 +260,7 @@
 
             app.innerHTML = `
                 <h1>Calendario</h1>
-                <p class="sub">Vencimientos, incrementos, pagos y lecturas salen solos de lo capturado en el panel. Las actividades, vacaciones y feriados se agregan aquí.</p>
+                <p class="sub">Vencimientos, incrementos, pagos y lecturas salen solos de lo capturado en el panel. Las actividades, vacaciones y feriados se agregan aquí; las vacaciones ligadas a una persona se cuentan en Personal.</p>
                 <div class="barra">
                     <div class="nav-mes">
                         <button id="ant" aria-label="Mes anterior">‹</button>
@@ -406,6 +417,7 @@
                         <div class="ancho"><label>Título</label><input id="e_tit" value="${esc(e.titulo)}" placeholder="Ej. Fumigación, junta con locatarios, vacaciones de..."></div>
                         <div><label>Tipo</label><select id="e_tipo">${MANUALES.map(k => `<option value="${k}" ${k === e.tipo ? 'selected' : ''}>${TIPOS[k].nombre.replace(/s$/, '').replace('Actividade', 'Actividad')}</option>`).join('')}</select></div>
                         <div><label>Local relacionado (opcional)</label><input id="e_local" value="${esc(e.local || '')}" placeholder="Ej. 7, 15"></div>
+                        ${admin && personal.length ? `<div class="ancho" id="e_persona_fila"><label>Persona de vacaciones</label><select id="e_persona"><option value="">Selecciona</option>${personal.map(p => `<option value="${esc(p.id)}" ${p.id === (personaDeVacacion(e, personal)?.persona.id) ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></div>` : ''}
                         <div><label>Desde</label><input type="date" id="e_ini" value="${esc(e.inicio)}"></div>
                         <div><label>Hasta (opcional)</label><input type="date" id="e_fin" value="${esc(e.fin || '')}"></div>
                         <div class="ancho"><label>Nota (opcional)</label><textarea id="e_nota" rows="3">${esc(e.nota || '')}</textarea></div>
@@ -423,6 +435,11 @@
             document.addEventListener('keydown', teclas);
             document.body.appendChild(fondo);
             document.getElementById('e_tit').focus();
+            // El campo Persona solo aplica a vacaciones; las vacaciones ligadas se cuentan en Personal
+            const filaPersona = document.getElementById('e_persona_fila');
+            const verPersona = () => { if (filaPersona) filaPersona.style.display = document.getElementById('e_tipo').value === 'vacaciones' ? '' : 'none'; };
+            document.getElementById('e_tipo').addEventListener('change', verPersona);
+            verPersona();
 
             document.getElementById('e_guardar').addEventListener('click', async () => {
                 const msg = document.getElementById('e_msg');
@@ -434,9 +451,19 @@
                     fin: document.getElementById('e_fin').value,
                     nota: document.getElementById('e_nota').value.trim()
                 };
-                if (!datos.titulo || !datos.inicio) { msg.className = 'msg err'; msg.textContent = 'Falta el título o la fecha.'; return; }
+                // En vacaciones capturadas por el admin el título se arma con el nombre de la persona
+                const tituloAuto = datos.tipo === 'vacaciones' && !!document.getElementById('e_persona_fila');
+                if ((!datos.titulo && !tituloAuto) || !datos.inicio) { msg.className = 'msg err'; msg.textContent = 'Falta el título o la fecha.'; return; }
                 if (datos.fin && datos.fin < datos.inicio) { msg.className = 'msg err'; msg.textContent = '"Hasta" no puede ser antes de "Desde".'; return; }
                 if (datos.fin === datos.inicio) datos.fin = '';
+                if (filaPersona) {
+                    const pid = datos.tipo === 'vacaciones' ? document.getElementById('e_persona').value : '';
+                    // Toda vacación queda ligada a su persona para que Personal la cuente
+                    if (datos.tipo === 'vacaciones' && !pid) { msg.className = 'msg err'; msg.textContent = 'Selecciona la persona de vacaciones.'; return; }
+                    if (datos.tipo === 'vacaciones' && !datos.titulo) datos.titulo = `Vacaciones ${personal.find(p => p.id === pid).nombre}`;
+                    datos.personaId = pid;
+                    datos.persona = personal.find(p => p.id === pid)?.nombre || '';
+                }
                 const btn = document.getElementById('e_guardar'); btn.disabled = true;
                 try {
                     if (nuevo) await addDoc(collection(db, 'calendario_eventos'), { ...datos, creadoPor: user.email, creadoEn: serverTimestamp() });
