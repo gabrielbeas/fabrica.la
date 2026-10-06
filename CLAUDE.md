@@ -105,7 +105,7 @@ Costo de agua, basura, % de moratorios y día límite de pago se editan en Confi
 
 - Tubo 10, lectura del 29/02/2024: en Firestore ya está en 0 m³ y $0 (04/10/2026); en el Sheet HIDRAULICO sigue con 99,997.531 m³. Gabriel quiere retomarlo después: no tocar el Sheet ni ese tubo hasta entonces.
 - Operario: cuenta `victor@fabrica.la` (Victor Navarro, rol operario) creada el 04/10/2026; ese correo no existe como buzón, así que no usar "Restablecer contraseña". Falta probar el panel con esa cuenta.
-- CFE: capturados el 05/10/2026 los recibos escaneados de `_privado/cfe/` (M1 desde jun 2023 y M2 desde abr 2023, los dos PDBT; un PDF por recibo en `_privado/cfe/recibos/` y en Storage). Faltan los recibos del 22/10/2024 al 20/12/2024 de los dos medidores, el de M2 del 21/04/2023 al 22/06/2023 y los posteriores a abril de 2026. Preguntar a Gabriel qué alimenta cada medidor para ponerle nombre.
+- CFE: capturados el 05/10/2026 los recibos escaneados de `_privado/cfe/` (M1 desde jun 2023 y M2 desde abr 2023, los dos PDBT; un PDF por recibo en `_privado/cfe/recibos/` y en Storage). Los del 22/10/2024 al 20/12/2024 se agregaron después con los PDF digitales de CFE. Faltan el de M2 del 21/04/2023 al 22/06/2023 y los posteriores a abril de 2026. Los medidores se llaman así, M1 y M2 (en el panel: «Medidor M1» y «Medidor M2»); no hace falta otro nombre.
 - Depósitos de los locales 6, 7 y 15 y un ajuste de Setter Bistro por revisar; montos en `_privado/pendientes.md`.
 
 ## Auditoría 04/10/2026
