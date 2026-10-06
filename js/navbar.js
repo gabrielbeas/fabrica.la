@@ -8,7 +8,7 @@ import {
   isAuthenticated,
   basePath,
   onAuthChange
-} from './auth.js?v=20261005-4';
+} from './auth.js?v=20261005-5';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFE - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-5">
+    <style>
+        /* Solo lo propio de CFE; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+        .main { max-width: var(--ancho-pagina); margin: 0 auto; padding: var(--espacio-6) var(--espacio-4) var(--espacio-7); display: flex; flex-direction: column; gap: var(--espacio-5); }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-3); flex-wrap: wrap; }
+        .cargando, .vacio { color: var(--tinta-suave); text-align: center; padding: var(--espacio-6) var(--espacio-4); }
+        .nota { color: var(--tinta-suave); font-size: 13px; line-height: 18px; margin: 0; }
+        .oculto { display: none !important; }
+        .bloque { display: flex; flex-direction: column; gap: var(--espacio-3); }
+        .bloque-cabeza { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; }
+
+        /* Servicios */
+        .servicios { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: var(--espacio-3); }
+        @media (max-width: 560px) { .servicios { grid-template-columns: 1fr; } }
+        .servicio { border: 1px solid var(--linea); border-radius: var(--radio-md); padding: var(--espacio-4); display: flex; flex-direction: column; gap: var(--espacio-3); min-width: 0; }
+        .servicio h3 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 700; }
+        .servicio dl { margin: 0; display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 4px var(--espacio-3); font-size: 14px; line-height: 20px; }
+        .servicio dt { color: var(--tinta-suave); }
+        .servicio dd { margin: 0; overflow-wrap: anywhere; }
+        @media (max-width: 560px) { .servicio dl { grid-template-columns: auto 1fr; } }
+        .servicio .cabeza-s { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--espacio-2); }
+
+        /* Gráficas de líneas: una línea por medidor más el total (mismo estilo que SIAPA) */
+        .lineas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-3); }
+        @media (max-width: 900px) { .lineas { grid-template-columns: 1fr; } }
+        .graf-lineas { border: 1px solid var(--linea); border-radius: var(--radio-md); padding: var(--espacio-4); position: relative; min-width: 0; }
+        .graf-lineas h3 { margin: 0; font-size: 15px; line-height: 20px; font-weight: 700; }
+        .graf-lineas .sub-g { font-size: 13px; line-height: 18px; color: var(--tinta-suave); margin: 2px 0 8px; }
+        .graf-lineas .leyenda { font-size: 12px; color: var(--tinta-suave); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+        .graf-lineas .leyenda span:hover { color: var(--tinta); }
+        .graf-lineas i.m { display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
+        .graf-lineas svg { width: 100%; height: auto; display: block; overflow: visible; }
+        .graf-lineas svg text { font-size: 10px; fill: var(--tinta-suave); font-family: var(--font-sans); }
+        .graf-lineas svg text.etq { font-size: 11px; font-weight: 600; }
+        .graf-lineas .rejilla { stroke: var(--linea); }
+        .graf-lineas .serie { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+        .graf-lineas .guia { stroke: var(--tinta-tenue); stroke-width: 1; stroke-dasharray: 3 3; display: none; }
+        .graf-lineas .punto { stroke: var(--fondo); stroke-width: 2; }
+        .graf-lineas .hit { fill: transparent; }
+        .graf-lineas svg.foco .linea-s, .graf-lineas svg.foco .etq-g { opacity: .15; transition: opacity .15s; }
+        .graf-lineas svg.foco .activa { opacity: 1; }
+        .graf-lineas .tip { position: absolute; pointer-events: none; background: var(--fondo-elevado); color: var(--tinta); border: 1px solid var(--linea); border-radius: var(--radio-md); box-shadow: var(--sombra-modal); padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; z-index: 5; display: none; }
+        .graf-lineas .tip strong { display: block; font-size: 13px; }
+        .graf-lineas .tip b { font-family: var(--font-mono); font-weight: 500; }
+        .graf-lineas .tip .gris { color: var(--tinta-suave); }
+        @media (prefers-reduced-motion: reduce) { .graf-lineas svg.foco .linea-s { transition: none; } }
+
+        /* Tabla */
+        .filtros { display: flex; flex-wrap: wrap; gap: var(--espacio-2) var(--espacio-3); align-items: flex-end; }
+        .filtros .lf-campo { flex: 0 1 200px; }
+        .lf-tabla th.der, .lf-tabla td.der { text-align: right; }
+        #filas .lf-acciones { flex-wrap: nowrap; }
+        #filas td { padding-left: 10px; padding-right: 10px; }
+        .fecha { white-space: nowrap; }
+        .enlace { font: inherit; font-size: 13px; line-height: 18px; border: none; background: none; padding: 0; color: var(--tinta); cursor: pointer; text-decoration: underline; text-decoration-color: var(--ambar); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+        .enlace:hover { text-decoration-color: var(--tinta); }
+
+        .lf-modal-fondo:not(.abierto) { display: none; }
+        .lf-modal .lf-subtitulo-pag { margin: calc(-1 * var(--espacio-3)) 0 0; }
+        .lf-modal .grupo { grid-column: 1 / -1; margin: var(--espacio-2) 0 0; font-size: 13px; line-height: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-suave); }
+        .msg { font-size: 13px; line-height: 18px; color: var(--peligro); margin-right: auto; }
+        .archivo { display: flex; gap: var(--espacio-2); align-items: center; flex-wrap: wrap; font-size: 14px; }
+        .progreso { height: 4px; border-radius: var(--radio-pill); background: var(--linea); overflow: hidden; }
+        .progreso span { display: block; height: 100%; width: 0; background: var(--ambar); transition: width .15s; }
+        .suma { font-size: 13px; line-height: 18px; color: var(--tinta-suave); grid-column: 1 / -1; margin: 0; }
+        .lf-modal.visor { max-width: 900px; }
+        #vContenido iframe { width: 100%; height: 75vh; border: 1px solid var(--linea); border-radius: var(--radio-md); }
+        #vContenido img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; }
+        @media (prefers-reduced-motion: reduce) { .progreso span { transition: none; } }
+    </style>
+</head>
+<body>
+    <main class="main" id="app"><div class="cargando">Cargando...</div></main>
+
+    <!-- Servicio -->
+    <div class="lf-modal-fondo" id="modalServicio">
+        <div class="lf-modal">
+            <h3 id="sTitulo">Agregar servicio</h3>
+            <p class="lf-subtitulo-pag">Un servicio por cada contrato de CFE del edificio (los datos vienen en el recibo).</p>
+            <div class="lf-form">
+                <div class="lf-campo lf-ancho"><label for="s_nombre">Nombre</label><input id="s_nombre" maxlength="80" placeholder="Ej. Áreas comunes, Bombas"></div>
+                <div class="lf-campo"><label for="s_numeroServicio">Número de servicio</label><input id="s_numeroServicio" maxlength="20" inputmode="numeric"></div>
+                <div class="lf-campo"><label for="s_rmu">RMU</label><input id="s_rmu" maxlength="40"></div>
+                <div class="lf-campo"><label for="s_cuenta">Cuenta</label><input id="s_cuenta" maxlength="40"></div>
+                <div class="lf-campo"><label for="s_tarifa">Tarifa</label><input id="s_tarifa" maxlength="20" placeholder="Ej. PDBT, GDMTO" style="text-transform:uppercase"></div>
+                <div class="lf-campo"><label for="s_medidor">Medidor</label><input id="s_medidor" maxlength="30"></div>
+                <div class="lf-campo"><label for="s_periodicidad">Facturación</label><select id="s_periodicidad"><option value="bimestral">Bimestral</option><option value="mensual">Mensual</option></select></div>
+                <div class="lf-campo"><label for="s_pago">Forma de pago</label><select id="s_pago"><option value="domiciliado">Domiciliado (cargo a cuenta)</option><option value="manual">Se paga a mano</option></select></div>
+                <div class="lf-campo lf-ancho"><label for="s_titular">Titular (como viene en el recibo)</label><input id="s_titular" maxlength="120"></div>
+                <div class="lf-campo lf-ancho"><label for="s_notas">Notas (opcional)</label><input id="s_notas" maxlength="300" placeholder="Qué alimenta: pasillos, bombas, estacionamiento..."></div>
+            </div>
+            <div class="lf-modal-pie">
+                <span class="msg" id="sMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarServicio">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recibo -->
+    <div class="lf-modal-fondo" id="modalRecibo">
+        <div class="lf-modal">
+            <h3 id="rTitulo">Capturar recibo</h3>
+            <p class="lf-subtitulo-pag">Copia los datos del recibo y adjunta el PDF.</p>
+            <div class="lf-form">
+                <div class="lf-campo lf-ancho"><label for="r_servicio">Servicio</label><select id="r_servicio"></select></div>
+                <p class="grupo">Periodo</p>
+                <div class="lf-campo"><label for="r_inicio">Del</label><input type="date" id="r_inicio"></div>
+                <div class="lf-campo"><label for="r_fin">Al</label><input type="date" id="r_fin"></div>
+                <div class="lf-campo"><label for="r_fechaLimite">Fecha límite de pago</label><input type="date" id="r_fechaLimite"></div>
+                <p class="grupo">Lecturas</p>
+                <div class="lf-campo"><label for="r_lecturaAnterior">Lectura anterior</label><input id="r_lecturaAnterior" class="lf-num" inputmode="numeric"></div>
+                <div class="lf-campo"><label for="r_lecturaActual">Lectura actual</label><input id="r_lecturaActual" class="lf-num" inputmode="numeric"></div>
+                <div class="lf-campo"><label for="r_kwh">Consumo (kWh)</label><input id="r_kwh" class="lf-num" inputmode="decimal"></div>
+                <p class="grupo">Desglose del periodo</p>
+                <div class="lf-campo"><label for="r_cargoFijo">Cargo fijo</label><input id="r_cargoFijo" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_energia">Energía</label><input id="r_energia" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_subtotal">Subtotal</label><input id="r_subtotal" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_iva">IVA 16%</label><input id="r_iva" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_total">Fac. del periodo</label><input id="r_total" class="lf-num" inputmode="decimal"></div>
+                <p class="grupo">Cuenta</p>
+                <div class="lf-campo"><label for="r_adeudoAnterior">Adeudo anterior</label><input id="r_adeudoAnterior" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_suPago">Su pago (negativo)</label><input id="r_suPago" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo lf-ancho"><label for="r_ajustes">Otros renglones (opcional)</label><input id="r_ajustes" maxlength="200" placeholder="Ej. Depósito 3623.00; Crédito aplicado -187.12"></div>
+                <div class="lf-campo"><label for="r_totalAPagar">Total a pagar</label><input id="r_totalAPagar" class="lf-num" inputmode="decimal"></div>
+                <p class="suma" id="rSuma"></p>
+                <div class="lf-campo lf-ancho">
+                    <label>Recibo (PDF o foto, máximo 10 MB)</label>
+                    <div class="archivo"><button type="button" class="lf-btn lf-btn-compacto" id="bElegirPdf">Elegir archivo</button><span id="rArchivo" class="nota">Sin archivo</span></div>
+                    <input type="file" id="iPdf" accept="application/pdf,image/*" class="oculto">
+                    <div class="progreso"><span id="progreso"></span></div>
+                </div>
+                <div class="lf-campo lf-ancho"><label for="r_notas">Notas (opcional)</label><input id="r_notas" maxlength="300"></div>
+            </div>
+            <div class="lf-modal-pie">
+                <span class="msg" id="rMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarRecibo">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pago -->
+    <div class="lf-modal-fondo" id="modalPago">
+        <div class="lf-modal">
+            <h3>Registrar pago</h3>
+            <p class="lf-subtitulo-pag" id="pSub"></p>
+            <div class="lf-form">
+                <div class="lf-campo"><label for="p_fecha">Fecha de pago</label><input type="date" id="p_fecha"></div>
+                <div class="lf-campo"><label for="p_importe">Importe pagado</label><input id="p_importe" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo lf-ancho"><label for="p_nota">Nota (opcional)</label><input id="p_nota" maxlength="200" placeholder="Ej. transferencia, referencia"></div>
+            </div>
+            <div class="lf-modal-pie">
+                <span class="msg" id="pMsg"></span>
+                <button class="lf-btn lf-izq lf-btn-peligro oculto" id="bQuitarPago">Quitar pago</button>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-primario" id="bGuardarPago">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="lf-modal-fondo" id="modalConfirmar">
+        <div class="lf-modal">
+            <h3 id="cTitulo"></h3>
+            <p style="margin:0" id="cTexto"></p>
+            <div class="lf-modal-pie">
+                <span class="msg" id="cMsg"></span>
+                <button class="lf-btn" data-cerrar>Cancelar</button>
+                <button class="lf-btn lf-btn-peligro" id="bConfirmar"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lf-modal-fondo" id="modalArchivo">
+        <div class="lf-modal visor">
+            <h3 id="vTitulo">Recibo</h3>
+            <div id="vContenido"></div>
+            <div class="lf-modal-pie">
+                <a class="lf-btn" id="vDescargar" style="text-decoration:none">Descargar</a>
+                <button class="lf-btn" data-cerrar>Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
+        import { auth, db, isAuthenticated, esAdmin, getCurrentUser } from '../../../js/auth.js?v=20261005-5';
+        import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // CFE del edificio (no de los locales): solo el administrador.
+        // Firestore: cfe_servicios y cfe_recibos (regla general: solo admin). Recibos en Storage: cfe/{servicioId}/{archivo}.
+        const ARCHIVOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        const MAX_BYTES = 10 * 1024 * 1024;
+        const CAMPOS_S = ['nombre', 'numeroServicio', 'rmu', 'cuenta', 'tarifa', 'medidor', 'periodicidad', 'pago', 'titular', 'notas'];
+
+        const app = document.getElementById('app');
+        const user = getCurrentUser();
+        const storage = getStorage(getApp());
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => { if (!f) return '-'; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const mesCorto = f => { const [y, m] = f.split('-'); return `${MESES[+m - 1]} ${y.slice(2)}`; };
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const dinero = n => (n < 0 ? '-' : '') + '$' + Math.abs(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const entero = n => Math.round(n || 0).toLocaleString('es-MX');
+        const leerNum = v => { const n = Number(String(v ?? '').replace(/[$,\s]/g, '')); return String(v ?? '').trim() === '' || !Number.isFinite(n) ? null : n; };
+        const r2 = n => Math.round(n * 100) / 100;
+        const yo = () => ({ uid: auth.currentUser.uid, nombre: user.nombre || user.email });
+
+        let servicios = [], recibos = [], archivoNuevo = null;
+
+        if (!isAuthenticated() || !esAdmin()) {
+            window.location.href = isAuthenticated() ? '../' : '/login.html';
+        } else {
+            crearNavbar();
+            iniciar();
+        }
+
+        function iniciar() {
+            document.getElementById('bGuardarServicio').addEventListener('click', guardarServicio);
+            document.getElementById('bGuardarRecibo').addEventListener('click', guardarRecibo);
+            document.getElementById('bGuardarPago').addEventListener('click', guardarPago);
+            document.getElementById('bQuitarPago').addEventListener('click', quitarPago);
+            document.getElementById('bElegirPdf').addEventListener('click', () => document.getElementById('iPdf').click());
+            document.getElementById('iPdf').addEventListener('change', elegirArchivo);
+            ['r_cargoFijo', 'r_energia', 'r_subtotal', 'r_iva', 'r_total', 'r_adeudoAnterior', 'r_suPago', 'r_ajustes', 'r_totalAPagar'].forEach(id => document.getElementById(id).addEventListener('input', revisarSuma));
+            ['r_lecturaAnterior', 'r_lecturaActual'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+                // Consumo = lectura actual - lectura anterior (multiplicador 1)
+                const a = leerNum(document.getElementById('r_lecturaAnterior').value), b = leerNum(document.getElementById('r_lecturaActual').value);
+                if (a !== null && b !== null && b >= a) document.getElementById('r_kwh').value = b - a;
+            }));
+            document.getElementById('r_subtotal').addEventListener('change', () => {
+                // IVA sugerido (16%) si todavía no se capturó
+                const s = leerNum(document.getElementById('r_subtotal').value), iva = document.getElementById('r_iva');
+                if (s !== null && !iva.value) { iva.value = r2(s * 0.16).toFixed(2); revisarSuma(); }
+            });
+            document.getElementById('bConfirmar').addEventListener('click', async e => {
+                if (!alConfirmar) return;
+                e.target.disabled = true;
+                try { await alConfirmar(); } finally { e.target.disabled = false; }
+            });
+            document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => cerrar(b.closest('.lf-modal-fondo').id)));
+            document.querySelectorAll('.lf-modal-fondo').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrar(m.id); }));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.lf-modal-fondo.abierto').forEach(m => cerrar(m.id)); });
+            cargar();
+        }
+
+        async function cargar(aviso = '') {
+            try {
+                const [ss, sr] = await Promise.all([getDocs(collection(db, 'cfe_servicios')), getDocs(collection(db, 'cfe_recibos'))]);
+                servicios = ss.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+                recibos = sr.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.periodoFin || '').localeCompare(a.periodoFin || ''));
+                vista(aviso);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<h1 class="lf-titulo">CFE</h1><p class="lf-aviso lf-aviso-error">No se pudo cargar (${esc(err.code || err.message)}).</p>`;
+            }
+        }
+
+        // ---------- Estado de pago ----------
+        // Pago de un recibo: el registrado a mano o, si no, el «Su pago» del recibo siguiente del mismo servicio (periodo contiguo)
+        const siguienteDe = r => recibos.find(x => x.servicioId === r.servicioId && x.periodoInicio === r.periodoFin);
+        const pagoDe = r => {
+            if (r.pago) return r.pago;
+            const sig = siguienteDe(r);
+            if (sig && sig.suPago < 0) return { importe: -sig.suPago, segun: 'siguiente' };
+            // Falta el recibo siguiente: si un recibo posterior muestra la cuenta al corriente (adeudo pagado), este también quedó pagado
+            const despues = recibos.some(x => x.servicioId === r.servicioId && x.periodoInicio > r.periodoFin && x.suPago < 0 && Math.abs((x.adeudoAnterior || 0) + x.suPago) < 1);
+            return despues ? { importe: null, segun: 'posterior' } : null;
+        };
+        const domiciliado = r => servicios.find(s => s.id === r.servicioId)?.pago !== 'manual';
+        const estadoDe = r => pagoDe(r) ? 'pagado' : (r.fechaLimite && r.fechaLimite < hoyISO() ? (domiciliado(r) ? 'porConfirmar' : 'vencido') : 'porPagar');
+        const ESTADO = {
+            pagado: r => { const p = pagoDe(r); return `<span class="lf-estado lf-estado-aprobado">Pagado</span><small>${p.segun === 'siguiente' ? `${dinero(p.importe)} según el recibo siguiente` : p.segun ? 'según recibos posteriores' : `${fechaCorta(p.fecha)}${p.importe ? ' · ' + dinero(p.importe) : ''}`}</small>`; },
+            porPagar: () => '<span class="lf-estado lf-estado-pendiente">Por pagar</span>',
+            porConfirmar: () => '<span class="lf-estado lf-estado-pendiente">Domiciliado</span><small>se confirma con el recibo siguiente</small>',
+            vencido: () => '<span class="lf-estado lf-estado-rechazado">Vencido</span>'
+        };
+        const costoKwh = r => r.kwh > 0 && r.subtotal != null ? r.subtotal / r.kwh : null;
+
+        // ---------- Vista ----------
+        function vista(aviso) {
+            const nombreS = id => servicios.find(s => s.id === id)?.nombre || '(servicio eliminado)';
+            // Último periodo: el recibo más reciente de cada servicio
+            const ultimos = servicios.map(s => recibos.find(r => r.servicioId === s.id)).filter(Boolean);
+            const desde = (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().slice(0, 10); })();
+            const anio = recibos.filter(r => r.periodoFin > desde);
+            const kwhAnio = anio.reduce((a, r) => a + (r.kwh || 0), 0), subAnio = anio.reduce((a, r) => a + (r.subtotal || 0), 0);
+            const pendientes = recibos.filter(r => !pagoDe(r));
+            const proxLimite = pendientes.map(r => r.fechaLimite).filter(Boolean).sort()[0];
+
+            app.innerHTML = `
+                <div class="cabeza">
+                    <div><h1 class="lf-titulo">CFE</h1><p class="lf-subtitulo-pag">Consumo y recibos de luz del edificio (servicios a nombre de la plaza, no los de los locales).</p></div>
+                    <div class="lf-acciones">
+                        <button class="lf-btn" id="bServicio">Agregar servicio</button>
+                        <button class="lf-btn lf-btn-primario" id="bRecibo" ${servicios.length ? '' : 'disabled title="Primero agrega un servicio"'}>Capturar recibo</button>
+                    </div>
+                </div>
+                ${aviso ? `<p class="lf-aviso lf-aviso-ok" style="margin:0">${aviso}</p>` : ''}
+                <div class="lf-cifras">
+                    <div class="lf-cifra"><div class="lf-etiqueta">Último periodo</div><div class="lf-valor">${ultimos.length ? dinero(ultimos.reduce((a, r) => a + (r.total || 0), 0)) : '-'}</div><div class="lf-detalle">${ultimos.length ? `${ultimos.length} servicio${ultimos.length > 1 ? 's' : ''} · al ${fechaCorta(ultimos.map(r => r.periodoFin).sort().pop())}` : 'Sin recibos'}</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Consumo del último periodo</div><div class="lf-valor">${ultimos.length ? entero(ultimos.reduce((a, r) => a + (r.kwh || 0), 0)) : '-'}</div><div class="lf-detalle">kWh</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Costo por kWh</div><div class="lf-valor">${kwhAnio ? dinero(subAnio / kwhAnio) : '-'}</div><div class="lf-detalle">promedio de 12 meses, sin IVA</div></div>
+                    <div class="lf-cifra"><div class="lf-etiqueta">Por pagar</div><div class="lf-valor">${dinero(pendientes.reduce((a, r) => a + (r.total || 0), 0))}</div><div class="lf-detalle">${pendientes.length ? `${pendientes.length} recibo${pendientes.length > 1 ? 's' : ''} sin pago confirmado${proxLimite ? ` · límite ${fechaCorta(proxLimite)}` : ''}` : 'Todo pagado'}</div></div>
+                </div>
+                <div class="bloque">
+                    <h2 class="lf-seccion">Servicios</h2>
+                    ${servicios.length ? `<div class="servicios">${servicios.map(tarjetaServicio).join('')}</div>` : '<div class="vacio">Todavía no hay servicios. Agrega cada contrato de CFE del edificio con «Agregar servicio».</div>'}
+                </div>
+                ${recibos.length ? `<div class="bloque">
+                    <h2 class="lf-seccion">Consumo de los medidores</h2>
+                    <div class="lineas"><div class="graf-lineas" id="gAcum"></div><div class="graf-lineas" id="gKwh"></div><div class="graf-lineas" id="gImporte"></div><div class="graf-lineas" id="gCosto"></div></div>
+                </div>` : ''}
+                <div class="bloque">
+                    <div class="bloque-cabeza"><h2 class="lf-seccion">Recibos</h2></div>
+                    <div class="filtros">
+                        <div class="lf-campo"><label for="fServicio">Servicio</label><select id="fServicio"><option value="">Todos</option>${servicios.map(s => `<option value="${esc(s.id)}">${esc(s.nombre)}</option>`).join('')}</select></div>
+                        <div class="lf-campo"><label for="fEstado">Estado</label><select id="fEstado"><option value="">Todos</option><option value="porPagar">Por pagar</option><option value="porConfirmar">Domiciliado por confirmar</option><option value="vencido">Vencido</option><option value="pagado">Pagado</option></select></div>
+                    </div>
+                    <div class="lf-tabla-wrap">
+                        <table class="lf-tabla tabla-movil">
+                            <thead><tr><th>Servicio</th><th>Periodo</th><th class="der">kWh</th><th class="der">$/kWh</th><th class="der">Subtotal</th><th class="der">Del periodo</th><th class="der">A pagar</th><th>Límite</th><th>Estado</th><th>Recibo</th><th></th></tr></thead>
+                            <tbody id="filas"></tbody>
+                        </table>
+                        <div class="vacio oculto" id="sinFilas">Sin recibos con esos filtros.</div>
+                    </div>
+                    <p class="nota">«Del periodo» es lo que costó ese periodo (Fac. del periodo, con IVA; el desglose está en «Corregir» y en el PDF). «A pagar» es lo que pedía el recibo: suma el adeudo anterior y resta el último pago. $/kWh = subtotal sin IVA entre kWh. En recibos domiciliados el pago se confirma con «Su pago» del recibo siguiente.</p>
+                </div>`;
+            document.getElementById('bServicio').addEventListener('click', () => abrirServicio());
+            document.getElementById('bRecibo').addEventListener('click', () => abrirRecibo());
+            app.querySelectorAll('[data-editar-s]').forEach(b => b.addEventListener('click', () => abrirServicio(servicios.find(s => s.id === b.dataset.editarS))));
+            app.querySelectorAll('[data-recibo-s]').forEach(b => b.addEventListener('click', () => abrirRecibo(null, b.dataset.reciboS)));
+            if (recibos.length) graficasMedidores();
+            ['fServicio', 'fEstado'].forEach(id => document.getElementById(id).addEventListener('change', () => filas(nombreS)));
+            filas(nombreS);
+        }
+
+        function tarjetaServicio(s) {
+            const suyos = recibos.filter(r => r.servicioId === s.id);
+            const dato = (k, v) => `<dt>${k}</dt><dd>${v ? esc(v) : '<span class="lf-vacio">-</span>'}</dd>`;
+            return `<section class="servicio">
+                <div class="cabeza-s">
+                    <div><h3>${esc(s.nombre)}</h3>${s.notas ? `<p class="nota">${esc(s.notas)}</p>` : ''}</div>
+                    <div class="lf-acciones"><button class="lf-btn lf-btn-compacto" data-recibo-s="${esc(s.id)}">Capturar recibo</button><button class="lf-btn lf-btn-compacto" data-editar-s="${esc(s.id)}">Editar</button></div>
+                </div>
+                <dl>${dato('Servicio', s.numeroServicio)}${dato('RMU', s.rmu)}${dato('Tarifa', s.tarifa)}${dato('Medidor', s.medidor)}${dato('Cuenta', s.cuenta)}${dato('Facturación', `${s.periodicidad === 'mensual' ? 'Mensual' : 'Bimestral'}${s.pago === 'manual' ? '' : ', domiciliado'}`)}</dl>
+                ${suyos.length ? `<p class="nota">${suyos.length} recibo${suyos.length > 1 ? 's' : ''} · último: ${fechaCorta(suyos[0].periodoInicio)} al ${fechaCorta(suyos[0].periodoFin)}, ${entero(suyos[0].kwh)} kWh, ${dinero(suyos[0].total)}</p>` : '<p class="sin-datos">Sin recibos capturados para este servicio.</p>'}
+            </section>`;
+        }
+
+        // ---------- Consumo de los medidores: una línea por servicio más el total ----------
+        // Los periodos sin recibo se calculan con las lecturas (la lectura del medidor es continua): solo kWh, el importe no se sabe.
+        const COLORES_S = ['#1f4e79', '#13855c', '#a05195', '#eb6834'];
+        const diasDe = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+        function graficasMedidores() {
+            const series = servicios.map((s, i) => ({ k: s.id, nombre: s.nombre, corto: s.nombre.replace(/^Medidor\s+/i, ''), color: COLORES_S[i % COLORES_S.length], dash: '' }));
+            const porS = {};
+            series.forEach(se => {
+                const lst = recibos.filter(r => r.servicioId === se.k).sort((a, b) => a.periodoFin.localeCompare(b.periodoFin));
+                porS[se.k] = [];
+                lst.forEach((r, i) => {
+                    const ant = lst[i - 1];
+                    if (ant && ant.periodoFin !== r.periodoInicio) {
+                        // Recibo que falta: kWh con las lecturas si el medidor es el mismo; si no (cambio de medidor), queda hueco
+                        const ok = r.lecturaAnterior != null && ant.lecturaActual != null && r.lecturaAnterior >= ant.lecturaActual;
+                        porS[se.k].push({ ini: ant.periodoFin, fin: r.periodoInicio, kwh: ok ? r.lecturaAnterior - ant.lecturaActual : null, total: null, subtotal: null, falta: ok });
+                    }
+                    porS[se.k].push({ ini: r.periodoInicio, fin: r.periodoFin, kwh: r.kwh, total: r.total, subtotal: r.subtotal, falta: false });
+                });
+            });
+            const fines = [...new Set(Object.values(porS).flat().map(p => p.fin))].sort();
+            const per = (k, f) => porS[k].find(p => p.fin === f) || null;
+            const conTotal = series.length > 1;
+            const todas = conTotal ? [...series, { k: 'total', nombre: 'Total', corto: 'Total', color: '#e8590c', dash: '5 4' }] : series;
+            // valores[k][i] y si ese dato salió de las lecturas (falta el recibo)
+            const armar = calc => {
+                const val = {}, falta = {};
+                series.forEach(se => { val[se.k] = fines.map(f => { const p = per(se.k, f); return p ? calc(p) : null; }); falta[se.k] = fines.map(f => !!per(se.k, f)?.falta); });
+                if (conTotal) {
+                    val.total = fines.map((f, i) => series.every(se => val[se.k][i] !== null) ? calc.total(series.map(se => per(se.k, f))) : null);
+                    falta.total = fines.map((f, i) => series.some(se => falta[se.k][i]));
+                }
+                return { val, falta };
+            };
+            const por30 = (p, v) => v === null ? null : v / diasDe(p.ini, p.fin) * 30;
+            const kwh30 = Object.assign(p => por30(p, p.kwh), { total: ps => ps.some(p => p.kwh === null) ? null : ps.reduce((a, p) => a + por30(p, p.kwh), 0) });
+            const imp30 = Object.assign(p => por30(p, p.total), { total: ps => ps.some(p => p.total === null) ? null : ps.reduce((a, p) => a + por30(p, p.total), 0) });
+            const costo = Object.assign(p => p.subtotal === null || !p.kwh ? null : p.subtotal / p.kwh, { total: ps => ps.some(p => p.subtotal === null) ? null : ps.reduce((a, p) => a + p.subtotal, 0) / ps.reduce((a, p) => a + p.kwh, 0) });
+
+            // Acumulado desde el primer periodo en que todos los medidores tienen dato
+            const kwh = armar(Object.assign(p => p.kwh, { total: ps => ps.some(p => p.kwh === null) ? null : ps.reduce((a, p) => a + p.kwh, 0) }));
+            const ini = Math.max(0, fines.findIndex((f, i) => todas.every(se => kwh.val[se.k][i] !== null)));
+            const acum = { val: {}, falta: {} };
+            todas.forEach(se => {
+                let suma = 0, cortada = false;
+                acum.val[se.k] = kwh.val[se.k].slice(ini).map(v => { if (cortada || v === null) { cortada = true; return null; } return suma += v; });
+                acum.falta[se.k] = kwh.falta[se.k].slice(ini);
+            });
+            const kwhTxt = v => `${entero(v)} kWh`;
+            graficaLineas('gAcum', 'Consumo acumulado (kWh)', `Suma de kWh desde el periodo que cierra el ${fechaCorta(fines[ini])}, el primero con dato de todos los medidores.`, fines.slice(ini), acum, kwhTxt, todas);
+            graficaLineas('gKwh', 'Consumo por periodo (kWh por 30 días)', 'Cada periodo llevado a 30 días, porque los periodos de CFE no duran lo mismo. Donde falta el recibo, el consumo sale de las lecturas.', fines, armar(kwh30), kwhTxt, todas);
+            graficaLineas('gImporte', 'Importe por periodo ($ por 30 días)', 'Fac. del periodo (con IVA) llevada a 30 días. Los huecos son recibos que faltan.', fines, armar(imp30), v => dinero(v), todas, { eje: v => '$' + entero(v) });
+            graficaLineas('gCosto', 'Costo por kWh (sin IVA)', 'Subtotal entre kWh de cada periodo; incluye el cargo fijo, por eso sube cuando el consumo es bajo.', fines, armar(costo), v => dinero(v), todas, { eje: v => '$' + v.toFixed(2) });
+        }
+
+        // Gráfica de líneas con eje de tiempo (fecha de fin de cada periodo). Pasar el mouse por un nombre de la leyenda resalta su línea;
+        // sobre la gráfica, una guía muestra los valores de ese periodo.
+        function graficaLineas(id, titulo, subtitulo, fines, datos, fmt, series, opc = {}) {
+            const el = document.getElementById(id), { val, falta } = datos;
+            const W = 560, H = 250, izq = 54, der = 78, abajo = 22, arriba = 10;
+            const t = fines.map(f => Date.parse(f)), t0 = t[0], t1 = t[t.length - 1];
+            const x = v => izq + (W - izq - der) * (v - t0) / ((t1 - t0) || 1);
+            const todos = series.flatMap(s => val[s.k].filter(v => v !== null));
+            const max = Math.max(...todos, 0.01), min = opc.eje && todos.length && Math.min(...todos) > max * 0.5 ? Math.min(...todos) : 0;
+            const paso = Math.pow(10, Math.floor(Math.log10(max - min || 1))) / 2;
+            const tope = Math.ceil(max / paso) * paso, base = Math.floor(min / paso) * paso;
+            const y = v => arriba + (H - arriba - abajo) * (1 - (v - base) / ((tope - base) || 1));
+            const ticks = [0, 1, 2, 3, 4].map(j => base + (tope - base) * j / 4);
+            const tramos = vals => { const out = []; let cur = []; vals.forEach((v, i) => { if (v === null) { if (cur.length) out.push(cur); cur = []; } else cur.push([x(t[i]), y(v)]); }); if (cur.length) out.push(cur); return out; };
+            // Nombre al final de cada línea, separados 13 px
+            const finales = series.map(s => { const v = val[s.k]; let i = v.length - 1; while (i >= 0 && v[i] === null) i--; return i >= 0 ? { s, i, yy: y(v[i]) } : null; }).filter(Boolean).sort((a, b) => a.yy - b.yy);
+            finales.forEach((f, j) => { if (j && f.yy - finales[j - 1].yy < 13) f.yy = finales[j - 1].yy + 13; });
+            const cada = Math.ceil(fines.length / 6);
+            const muestra = s => `<i class="m" style="background:${s.dash ? `repeating-linear-gradient(90deg,${s.color} 0 5px,transparent 5px 8px)` : s.color}"></i>`;
+            el.innerHTML = `<h3>${esc(titulo)}</h3><p class="sub-g">${esc(subtitulo)}</p>
+                <div class="leyenda">${series.map(s => `<span data-k="${esc(s.k)}">${muestra(s)}${esc(s.nombre)}</span>`).join('')}</div>
+                <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
+                    ${ticks.map(v => `<line class="rejilla" x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}"/><text x="${izq - 6}" y="${y(v) + 3}" text-anchor="end">${opc.eje ? opc.eje(v) : entero(v)}</text>`).join('')}
+                    ${fines.map((f, i) => (i % cada === 0 && x(t[t.length - 1]) - x(t[i]) > 40) || i === fines.length - 1 ? `<text x="${x(t[i])}" y="${H - 6}" text-anchor="middle">${mesCorto(f)}</text>` : '').join('')}
+                    <line class="guia" x1="0" x2="0" y1="${arriba}" y2="${H - abajo}"/>
+                    ${series.map(s => `<g class="linea-s" data-k="${esc(s.k)}">${tramos(val[s.k]).map(tr => tr.length === 1
+                        ? `<circle cx="${tr[0][0]}" cy="${tr[0][1]}" r="3" fill="${s.color}"/>`
+                        : `<polyline class="serie" points="${tr.map(q => q.join(',')).join(' ')}" stroke="${s.color}"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`).join('')}</g>`).join('')}
+                    ${finales.map(f => `<g class="etq-g" data-k="${esc(f.s.k)}"><circle cx="${x(t[f.i]) + 9}" cy="${f.yy}" r="3.5" fill="${f.s.color}"/><text class="etq" x="${x(t[f.i]) + 16}" y="${f.yy + 4}">${esc(f.s.corto)}</text></g>`).join('')}
+                    <g class="marcas"></g>
+                    <rect class="hit" x="${izq}" y="${arriba}" width="${W - izq - der}" height="${H - abajo - arriba}"/>
+                </svg>
+                <div class="tip"></div>`;
+            const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), guia = el.querySelector('.guia'), marcas = el.querySelector('.marcas');
+            el.querySelectorAll('.leyenda [data-k]').forEach(sp => {
+                sp.addEventListener('mouseenter', () => { svg.classList.add('foco'); svg.querySelectorAll(`[data-k="${CSS.escape(sp.dataset.k)}"]`).forEach(g => g.classList.add('activa')); });
+                sp.addEventListener('mouseleave', () => { svg.classList.remove('foco'); svg.querySelectorAll('.activa').forEach(g => g.classList.remove('activa')); });
+            });
+            const hit = el.querySelector('.hit');
+            hit.addEventListener('mousemove', e => {
+                const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+                let i = 0;
+                t.forEach((v, j) => { if (Math.abs(x(v) - px) < Math.abs(x(t[i]) - px)) i = j; });
+                const xi = x(t[i]);
+                guia.setAttribute('x1', xi); guia.setAttribute('x2', xi); guia.style.display = 'block';
+                marcas.innerHTML = series.map(s => val[s.k][i] === null ? '' : `<circle class="punto" cx="${xi}" cy="${y(val[s.k][i])}" r="4.5" fill="${s.color}"/>`).join('');
+                const algunaFalta = series.some(s => falta[s.k][i] && val[s.k][i] !== null);
+                tip.innerHTML = `<strong>Periodo al ${fechaCorta(fines[i])}</strong>`
+                    + series.map(s => `${muestra(s)}${esc(s.nombre)}: ${val[s.k][i] === null ? '<span class="gris">sin dato</span>' : `<b>${fmt(val[s.k][i])}</b>${falta[s.k][i] ? ' *' : ''}`}`).join('<br>')
+                    + (algunaFalta ? '<br><span class="gris">* sin recibo: calculado con las lecturas</span>' : '');
+                tip.style.display = 'block';
+                const caja = el.getBoundingClientRect();
+                let left = e.clientX - caja.left + 14;
+                if (left + tip.offsetWidth > caja.width) left = e.clientX - caja.left - tip.offsetWidth - 14;
+                tip.style.left = Math.max(4, left) + 'px';
+                tip.style.top = Math.max(4, e.clientY - caja.top - tip.offsetHeight - 12) + 'px';
+            });
+            hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; guia.style.display = 'none'; marcas.innerHTML = ''; });
+        }
+
+        // ---------- Tabla de recibos ----------
+        function filas(nombreS) {
+            const fs = document.getElementById('fServicio').value, fe = document.getElementById('fEstado').value;
+            const lista = recibos.filter(r => (!fs || r.servicioId === fs) && (!fe || estadoDe(r) === fe));
+            const tbody = document.getElementById('filas');
+            tbody.innerHTML = lista.map(r => {
+                const c = costoKwh(r);
+                return `<tr>
+                    <td>${esc(nombreS(r.servicioId))}</td>
+                    <td class="fecha">${fechaCorta(r.periodoInicio)}<small>al ${fechaCorta(r.periodoFin)}</small></td>
+                    <td class="der lf-num">${r.kwh != null ? entero(r.kwh) : '-'}</td>
+                    <td class="der lf-num">${c !== null ? dinero(c) : '-'}</td>
+                    <td class="der lf-num">${r.subtotal != null ? dinero(r.subtotal) : '-'}</td>
+                    <td class="der lf-num"><strong>${dinero(r.total)}</strong>${(r.ajustes || []).length ? `<small>${esc(ajustesTxt(r.ajustes))}</small>` : ''}</td>
+                    <td class="der lf-num">${dinero(r.totalAPagar ?? r.total)}</td>
+                    <td class="fecha">${fechaCorta(r.fechaLimite)}</td>
+                    <td>${ESTADO[estadoDe(r)](r)}</td>
+                    <td>${r.archivo?.path ? `<button class="enlace" data-ver="${esc(r.id)}">${r.archivo.tipo === 'application/pdf' ? 'PDF' : 'Foto'}</button>` : '<span class="lf-vacio">-</span>'}</td>
+                    <td><div class="lf-acciones">
+                        ${pagoDe(r)?.segun ? '' : `<button class="lf-btn lf-btn-compacto" data-pago="${esc(r.id)}" title="${r.pago ? 'Ver o corregir el pago' : 'Registrar pago'}">Pago</button>`}
+                        <button class="lf-btn lf-btn-compacto" data-editar-r="${esc(r.id)}">Corregir</button>
+                        <button class="lf-btn lf-btn-compacto lf-btn-icono lf-btn-peligro" data-borrar-r="${esc(r.id)}" aria-label="Eliminar recibo" title="Eliminar recibo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+                    </div></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('sinFilas').classList.toggle('oculto', lista.length > 0);
+            const de = id => recibos.find(r => r.id === id);
+            tbody.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => verArchivo(de(b.dataset.ver))));
+            tbody.querySelectorAll('[data-pago]').forEach(b => b.addEventListener('click', () => abrirPago(de(b.dataset.pago))));
+            tbody.querySelectorAll('[data-editar-r]').forEach(b => b.addEventListener('click', () => abrirRecibo(de(b.dataset.editarR))));
+            tbody.querySelectorAll('[data-borrar-r]').forEach(b => b.addEventListener('click', () => pedirBorrar(de(b.dataset.borrarR), nombreS)));
+        }
+
+        // ---------- Servicio ----------
+        function abrirServicio(s = null) {
+            document.getElementById('sTitulo').textContent = s ? 'Editar servicio' : 'Agregar servicio';
+            CAMPOS_S.forEach(k => { document.getElementById('s_' + k).value = s?.[k] || ({ periodicidad: 'bimestral', pago: 'domiciliado' }[k] || ''); });
+            document.getElementById('sMsg').textContent = '';
+            document.getElementById('modalServicio').dataset.id = s?.id || '';
+            abrir('modalServicio');
+            document.getElementById('s_nombre').focus();
+        }
+
+        async function guardarServicio() {
+            const id = document.getElementById('modalServicio').dataset.id;
+            const msg = document.getElementById('sMsg'), btn = document.getElementById('bGuardarServicio');
+            const datos = Object.fromEntries(CAMPOS_S.map(k => [k, document.getElementById('s_' + k).value.trim()]));
+            datos.tarifa = datos.tarifa.toUpperCase();
+            if (!datos.nombre) { msg.textContent = 'Escribe un nombre para el servicio.'; return; }
+            if (datos.numeroServicio && servicios.some(s => s.id !== id && s.numeroServicio === datos.numeroServicio)) { msg.textContent = 'Ya hay un servicio con ese número.'; return; }
+            btn.disabled = true; msg.textContent = '';
+            try {
+                const quien = yo();
+                if (id) await updateDoc(doc(db, 'cfe_servicios', id), { ...datos, editadoPor: quien.uid, editadoPorNombre: quien.nombre, editadoEn: serverTimestamp() });
+                else await setDoc(doc(collection(db, 'cfe_servicios')), { ...datos, creadoPor: quien.uid, creadoPorNombre: quien.nombre, creadoEn: serverTimestamp() });
+                cerrar('modalServicio');
+                await cargar(id ? 'Servicio actualizado.' : `Servicio «${esc(datos.nombre)}» agregado.`);
+            } catch (err) {
+                console.error(err);
+                msg.textContent = 'No se pudo guardar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        // ---------- Recibo ----------
+        // total = «Fac. del periodo» (lo que costó ese periodo); totalAPagar = lo que pedía el recibo (con adeudo, pago y ajustes)
+        const CAMPOS_R = { r_inicio: 'periodoInicio', r_fin: 'periodoFin', r_fechaLimite: 'fechaLimite', r_lecturaAnterior: 'lecturaAnterior', r_lecturaActual: 'lecturaActual', r_kwh: 'kwh', r_cargoFijo: 'cargoFijo', r_energia: 'energia', r_subtotal: 'subtotal', r_iva: 'iva', r_total: 'total', r_adeudoAnterior: 'adeudoAnterior', r_suPago: 'suPago', r_totalAPagar: 'totalAPagar', r_notas: 'notas' };
+        const NUMERICOS = ['lecturaAnterior', 'lecturaActual', 'kwh', 'cargoFijo', 'energia', 'subtotal', 'iva', 'total', 'adeudoAnterior', 'suPago', 'totalAPagar'];
+        // «Depósito 3623.00; Crédito aplicado -187.12» <-> [{ concepto, importe }]
+        const leerAjustes = t => String(t || '').split(';').map(x => x.trim()).filter(Boolean).map(x => { const m = x.match(/^(.*?)\s*(-?[\d,]+(?:\.\d+)?)$/); return m ? { concepto: m[1].trim() || 'Ajuste', importe: leerNum(m[2]) } : null; }).filter(a => a && a.importe !== null);
+        const ajustesTxt = a => (a || []).map(x => `${x.concepto} ${x.importe.toFixed(2)}`).join('; ');
+
+        function abrirRecibo(r = null, servicioId = '') {
+            document.getElementById('r_servicio').innerHTML = servicios.map(s => `<option value="${esc(s.id)}">${esc(s.nombre)}${s.numeroServicio ? ' · ' + esc(s.numeroServicio) : ''}</option>`).join('');
+            document.getElementById('r_servicio').value = r?.servicioId || servicioId || servicios[0]?.id || '';
+            Object.entries(CAMPOS_R).forEach(([id, k]) => { const v = r?.[k]; document.getElementById(id).value = v == null ? '' : (NUMERICOS.includes(k) ? String(v) : v); });
+            document.getElementById('r_ajustes').value = ajustesTxt(r?.ajustes);
+            archivoNuevo = null;
+            document.getElementById('rArchivo').textContent = r?.archivo?.nombre || 'Sin archivo';
+            document.getElementById('progreso').style.width = '0%';
+            document.getElementById('rTitulo').textContent = r ? 'Corregir recibo' : 'Capturar recibo';
+            document.getElementById('rMsg').textContent = '';
+            document.getElementById('modalRecibo').dataset.id = r?.id || '';
+            revisarSuma();
+            abrir('modalRecibo');
+        }
+
+        // Revisa que las sumas del recibo cuadren (centavo de tolerancia por redondeos)
+        function revisarSuma() {
+            const v = id => leerNum(document.getElementById(id).value);
+            const avisos = [], cuadra = (a, b) => Math.abs(r2(a - b)) < 0.05;
+            const cf = v('r_cargoFijo'), en = v('r_energia'), sub = v('r_subtotal'), iva = v('r_iva'), fac = v('r_total');
+            const ad = v('r_adeudoAnterior') || 0, pago = v('r_suPago') || 0, tot = v('r_totalAPagar');
+            const aj = leerAjustes(document.getElementById('r_ajustes').value).reduce((a, x) => a + x.importe, 0);
+            if (cf !== null && en !== null && sub !== null && !cuadra(cf + en, sub)) avisos.push(`cargo fijo + energía = ${dinero(cf + en)}, no ${dinero(sub)}`);
+            if (sub !== null && iva !== null && fac !== null && !cuadra(sub + iva, fac)) avisos.push(`subtotal + IVA = ${dinero(sub + iva)}, no ${dinero(fac)}`);
+            if (fac !== null && tot !== null && !cuadra(fac + ad + pago + aj, tot)) avisos.push(`periodo + adeudo + pago${aj ? ' + otros' : ''} = ${dinero(fac + ad + pago + aj)}, no ${dinero(tot)}`);
+            document.getElementById('rSuma').textContent = fac === null || tot === null ? '' : avisos.length ? 'Revisa: ' + avisos.join('; ') + '.' : 'Las sumas cuadran.';
+        }
+
+        function elegirArchivo(e) {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            const msg = document.getElementById('rMsg');
+            if (!f) return;
+            if (!ARCHIVOS.includes(f.type)) { msg.textContent = 'Solo PDF o foto (JPG, PNG, WEBP).'; return; }
+            if (f.size > MAX_BYTES) { msg.textContent = 'El archivo pasa de 10 MB.'; return; }
+            archivoNuevo = f;
+            msg.textContent = '';
+            document.getElementById('rArchivo').textContent = `${f.name} (se sube al guardar)`;
+        }
+
+        const nombreSeguro = n => n.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'recibo';
+
+        async function guardarRecibo() {
+            const id = document.getElementById('modalRecibo').dataset.id;
+            const anterior = recibos.find(r => r.id === id);
+            const msg = document.getElementById('rMsg'), btn = document.getElementById('bGuardarRecibo');
+            const datos = { servicioId: document.getElementById('r_servicio').value };
+            Object.entries(CAMPOS_R).forEach(([cid, k]) => { const v = document.getElementById(cid).value.trim(); datos[k] = NUMERICOS.includes(k) ? leerNum(v) : v; });
+            datos.ajustes = leerAjustes(document.getElementById('r_ajustes').value);
+            const fecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f);
+            if (!datos.servicioId) { msg.textContent = 'Selecciona el servicio.'; return; }
+            if (!fecha(datos.periodoInicio) || !fecha(datos.periodoFin) || datos.periodoFin <= datos.periodoInicio) { msg.textContent = 'Revisa las fechas del periodo.'; return; }
+            if (datos.fechaLimite && !fecha(datos.fechaLimite)) { msg.textContent = 'Revisa la fecha límite.'; return; }
+            if (datos.kwh === null || datos.kwh < 0) { msg.textContent = 'Captura el consumo en kWh.'; return; }
+            if (datos.total === null || datos.total < 0) { msg.textContent = 'Captura la facturación del periodo.'; return; }
+            if (datos.totalAPagar === null) datos.totalAPagar = datos.total;
+            if (NUMERICOS.some(k => k !== 'suPago' && datos[k] !== null && datos[k] < 0)) { msg.textContent = 'Solo «Su pago» puede ser negativo.'; return; }
+            // Un recibo por servicio y periodo: el id lo garantiza
+            const nuevoId = `${datos.servicioId}_${datos.periodoFin}`;
+            if (nuevoId !== id && recibos.some(r => r.id === nuevoId)) { msg.textContent = 'Ya hay un recibo de ese servicio con el mismo fin de periodo.'; return; }
+            btn.disabled = true; msg.textContent = '';
+            let subido = null;
+            try {
+                const quien = yo();
+                if (archivoNuevo) {
+                    const path = `cfe/${datos.servicioId}/${datos.periodoFin}_${Date.now()}_${nombreSeguro(archivoNuevo.name)}`;
+                    await new Promise((ok, mal) => {
+                        const t = uploadBytesResumable(ref(storage, path), archivoNuevo, { contentType: archivoNuevo.type, customMetadata: { uploadedBy: quien.uid } });
+                        t.on('state_changed', s => { document.getElementById('progreso').style.width = `${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`; }, mal, ok);
+                    });
+                    subido = { path, nombre: archivoNuevo.name, tipo: archivoNuevo.type, bytes: archivoNuevo.size };
+                }
+                const registro = { ...datos, archivo: subido || anterior?.archivo || null, pago: anterior?.pago || null };
+                if (anterior) {
+                    registro.creadoPor = anterior.creadoPor || quien.uid;
+                    registro.creadoPorNombre = anterior.creadoPorNombre || quien.nombre;
+                    registro.creadoEn = anterior.creadoEn || serverTimestamp();
+                    registro.editadoPor = quien.uid; registro.editadoPorNombre = quien.nombre; registro.editadoEn = serverTimestamp();
+                } else {
+                    registro.creadoPor = quien.uid; registro.creadoPorNombre = quien.nombre; registro.creadoEn = serverTimestamp();
+                }
+                await setDoc(doc(db, 'cfe_recibos', nuevoId), registro);
+                if (anterior && nuevoId !== anterior.id) await deleteDoc(doc(db, 'cfe_recibos', anterior.id));
+                // El archivo anterior se reemplazó: se borra de Storage
+                if (subido && anterior?.archivo?.path) { try { await deleteObject(ref(storage, anterior.archivo.path)); } catch (err) { console.warn('No se borró', anterior.archivo.path, err); } }
+                cerrar('modalRecibo');
+                await cargar(anterior ? 'Recibo corregido.' : 'Recibo capturado.');
+            } catch (err) {
+                console.error(err);
+                if (subido) { try { await deleteObject(ref(storage, subido.path)); } catch { /* el archivo se queda sin registro */ } }
+                msg.textContent = err.code === 'storage/unauthorized' ? 'Permiso denegado en Storage: falta publicar la regla de la carpeta cfe/.' : 'No se pudo guardar. Inténtalo de nuevo.';
+            } finally { btn.disabled = false; }
+        }
+
+        function pedirBorrar(r, nombreS) {
+            confirmar('Eliminar recibo', `${nombreS(r.servicioId)}, periodo del ${fechaCorta(r.periodoInicio)} al ${fechaCorta(r.periodoFin)} (${dinero(r.total)}). Se borra también el archivo del recibo. No se puede deshacer.`, 'Eliminar', async () => {
+                try {
+                    await deleteDoc(doc(db, 'cfe_recibos', r.id));
+                    if (r.archivo?.path) { try { await deleteObject(ref(storage, r.archivo.path)); } catch (err) { console.warn('No se borró', r.archivo.path, err); } }
+                    cerrar('modalConfirmar');
+                    await cargar('Recibo eliminado.');
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('cMsg').textContent = 'No se pudo eliminar.';
+                }
+            });
+        }
+
+        // ---------- Pago ----------
+        function abrirPago(r) {
+            const m = document.getElementById('modalPago');
+            m.dataset.id = r.id;
+            document.getElementById('pSub').textContent = `${servicios.find(s => s.id === r.servicioId)?.nombre || ''} · ${fechaCorta(r.periodoInicio)} al ${fechaCorta(r.periodoFin)} · total ${dinero(r.total)}`;
+            document.getElementById('p_fecha').value = r.pago?.fecha || hoyISO();
+            document.getElementById('p_importe').value = r.pago?.importe ?? (r.total ?? '');
+            document.getElementById('p_nota').value = r.pago?.nota || '';
+            document.getElementById('bQuitarPago').classList.toggle('oculto', !r.pago);
+            document.getElementById('pMsg').textContent = '';
+            abrir('modalPago');
+        }
+
+        async function guardarPago() {
+            const id = document.getElementById('modalPago').dataset.id, msg = document.getElementById('pMsg'), btn = document.getElementById('bGuardarPago');
+            const fecha = document.getElementById('p_fecha').value, importe = leerNum(document.getElementById('p_importe').value), nota = document.getElementById('p_nota').value.trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || fecha > hoyISO()) { msg.textContent = 'Revisa la fecha de pago (no puede ser futura).'; return; }
+            if (importe === null || importe <= 0) { msg.textContent = 'Captura el importe pagado.'; return; }
+            btn.disabled = true; msg.textContent = '';
+            try {
+                const quien = yo();
+                await updateDoc(doc(db, 'cfe_recibos', id), { pago: { fecha, importe, nota, registradoPor: quien.uid, registradoPorNombre: quien.nombre } });
+                cerrar('modalPago');
+                await cargar('Pago registrado.');
+            } catch (err) {
+                console.error(err);
+                msg.textContent = 'No se pudo guardar.';
+            } finally { btn.disabled = false; }
+        }
+
+        async function quitarPago() {
+            const id = document.getElementById('modalPago').dataset.id;
+            try {
+                await updateDoc(doc(db, 'cfe_recibos', id), { pago: null });
+                cerrar('modalPago');
+                await cargar('Pago quitado; el recibo vuelve a «Por pagar».');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('pMsg').textContent = 'No se pudo quitar.';
+            }
+        }
+
+        async function verArchivo(r) {
+            const f = r?.archivo;
+            if (!f?.path) return;
+            try {
+                const datos = await getBlob(ref(storage, f.path), MAX_BYTES);
+                const blob = new Blob([datos], { type: f.tipo || datos.type || 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                document.getElementById('vContenido').innerHTML = blob.type === 'application/pdf' ? `<iframe src="${url}" title="Recibo"></iframe>` : `<img src="${url}" alt="">`;
+                const bajar = document.getElementById('vDescargar');
+                bajar.href = url;
+                bajar.download = f.nombre || 'recibo-cfe.pdf';
+                document.getElementById('vTitulo').textContent = f.nombre || 'Recibo';
+                document.getElementById('modalArchivo').dataset.url = url;
+                abrir('modalArchivo');
+            } catch (err) {
+                console.error(err);
+                alert('No se pudo abrir el recibo. Revisa las reglas de Storage.');
+            }
+        }
+
+        // ---------- Modales ----------
+        let alConfirmar = null;
+        function confirmar(titulo, texto, boton, accion) {
+            document.getElementById('cTitulo').textContent = titulo;
+            document.getElementById('cTexto').textContent = texto;
+            document.getElementById('bConfirmar').textContent = boton;
+            document.getElementById('cMsg').textContent = '';
+            alConfirmar = accion;
+            abrir('modalConfirmar');
+        }
+        function abrir(id) { document.getElementById(id).classList.add('abierto'); }
+        function cerrar(id) {
+            document.getElementById(id).classList.remove('abierto');
+            if (id === 'modalArchivo') {
+                const m = document.getElementById('modalArchivo');
+                document.getElementById('vContenido').innerHTML = '';
+                if (m.dataset.url) { URL.revokeObjectURL(m.dataset.url); delete m.dataset.url; }
+            }
+        }
+    </script>
+</body>
+</html>

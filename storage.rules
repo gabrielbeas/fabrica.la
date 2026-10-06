@@ -47,5 +47,14 @@ service firebase.storage {
         && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
       allow list, update: if false;
     }
+
+    // Recibos de CFE del edificio: solo el administrador
+    match /cfe/{servicioId}/{fileName} {
+      allow get, delete: if esAdmin();
+      allow create: if esAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow list, update: if false;
+    }
   }
 }

@@ -1,5 +1,5 @@
 // Facturación mensual a locatarios: cálculo y utilidades compartidas
-import { db } from './auth.js?v=20261005-4';
+import { db } from './auth.js?v=20261005-5';
 import {
   collection, getDocs, getDoc, doc, query, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';

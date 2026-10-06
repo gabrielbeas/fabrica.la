@@ -161,11 +161,12 @@ export function getSeccionesPermitidas() {
     agua:        { id: 'agua',        nombre: 'Lecturas de agua', url: b + 'agua/lecturas.html' },
     bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' },
     calendarios: { id: 'calendarios', nombre: 'Calendario',       url: b + 'calendarios/' },
-    personal:    { id: 'personal',    nombre: 'Personal',         url: b + 'personal/' }
+    personal:    { id: 'personal',    nombre: 'Personal',         url: b + 'personal/' },
+    cfe:         { id: 'cfe',         nombre: 'CFE',              url: b + 'cfe/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'cajaChica', 'agua', 'bitacora', 'calendarios', 'personal'],
+    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'cajaChica', 'agua', 'bitacora', 'calendarios', 'personal', 'cfe'],
     operario: ['inicio', 'cajaChica', 'agua', 'bitacora', 'calendarios']
   };
 

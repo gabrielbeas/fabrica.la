@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
-    <link rel="stylesheet" href="css/panel.css?v=20261005-4">
+    <link rel="stylesheet" href="css/panel.css?v=20261005-5">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -85,10 +85,10 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../js/navbar.js?v=20261005-4';
-        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261005-4';
+        import { crearNavbar } from '../../js/navbar.js?v=20261005-5';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261005-5';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261005-4';
+        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261005-5';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -111,6 +111,7 @@
             config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
             caja: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2M7 6V4h10v2"/></svg>',
             bitacora: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 10l1.5 1.5L13 8.5M8.5 15.5l1.5 1.5 3-3"/></svg>',
+            cfe: '<svg viewBox="0 0 24 24"><path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z"/></svg>',
             personal: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.4c2.1.7 3.5 2.8 3.5 5.6"/></svg>'
         };
         // Orden de las tarjetas (Gabriel, 04/10/2026): 4 por fila en escritorio
@@ -124,6 +125,7 @@
             { id: 'bitacora', nombre: 'Bitácora', des: 'Registro de acciones realizadas en la plaza', href: b + 'bitacora/', roles: ['admin', 'operario'] },
             { id: 'calendario', nombre: 'Calendario', des: 'Actividades, vacaciones y días feriados', href: b + 'calendarios/' },
             { id: 'personal', nombre: 'Personal', des: 'Expedientes, vacaciones y ausencias', href: b + 'personal/', soloAdmin: true },
+            { id: 'cfe', nombre: 'CFE', des: 'Consumo y recibos de luz del edificio', href: b + 'cfe/', soloAdmin: true },
             { id: 'siapa', nombre: 'SIAPA', des: 'Recibos, pagos y consumo de la toma general', href: b + 'agua/siapa.html', soloAdmin: true },
             { id: 'config', nombre: 'Configuración', des: 'Usuarios y valores de facturación', href: b + 'config/', soloAdmin: true }
         ];
