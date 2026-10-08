@@ -33,6 +33,12 @@
         tr:last-child td { border-bottom: none; }
         .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         tr.fila-f { cursor: pointer; }
+        /* Encabezados para ordenar (mismas flechas que el Directorio) */
+        th.ord { cursor: pointer; user-select: none; white-space: nowrap; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
+        th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
         tr.fila-f:hover td { background: var(--ambar-suave); }
         select.estado { padding: 5px 8px; border-radius: 12px; border: 1px solid transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
         .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
@@ -77,6 +83,8 @@
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
+        // Orden de la tabla (se conserva al cambiar de mes o recargar los datos)
+        let ordenF = { col: 'locales', dir: 1 };
 
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
@@ -133,7 +141,7 @@
                 </div>
                 <div class="tabla-wrap">
                     <table class="tabla-movil">
-                        <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th><th>Locales</th><th>Locatario</th><th class="mor-th" title="Intereses moratorios: 5% sobre la renta sin IVA">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
+                        <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th>${thOrd('locales', 'Locales')}${thOrd('locatario', 'Locatario')}${thOrd('moratorios', 'Moratorios', 'mor-th', 'Intereses moratorios: 5% sobre la renta sin IVA')}${thOrd('subtotal', 'Subtotal', 'num')}${thOrd('iva', 'IVA', 'num')}${thOrd('total', 'Total', 'num')}${thOrd('estado', 'Estado de pago')}</tr></thead>
                         <tbody>
                             ${filas.map(f => `
                                 <tr class="fila-f" data-id="${esc(f.id)}" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
@@ -188,7 +196,7 @@
                 const ids = new Set(seleccion());
                 // Vuelve a leer las facturas para exportar lo último guardado (por si se editaron en otra pestaña)
                 const frescas = (await cargarFacturasMes(mes)).map(f => ({ ...f, ...totalesFactura(f) }));
-                const orden = filas.map(f => f.id);
+                const orden = [...app.querySelectorAll('tbody tr.fila-f')].map(tr => tr.dataset.id);
                 // Todas salen en el PDF; las apagadas van tachadas (redacted) y no suman
                 const elegidas = frescas.map(f => ({ ...f, _redactada: !ids.has(f.id) })).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
                 if (!ids.size) { alert('Activa al menos una factura.'); return; }
@@ -204,6 +212,47 @@
                 if (e.ctrlKey || e.metaKey) window.open(tr.dataset.href, '_blank'); else location.href = tr.dataset.href;
             }));
             app.querySelectorAll('input.mor-switch').forEach(x => x.addEventListener('change', () => cambiarMoratorios(x, facturas)));
+
+            // ---------- Ordenar por columna: reacomoda los renglones sin volver a dibujar (no se pierden los interruptores) ----------
+            const posLocales = Object.fromEntries(filas.map((f, i) => [f.id, i]));
+            const ORDEN_ESTADO = Object.keys(ESTADOS);
+            const CLAVE = {
+                locales: f => posLocales[f.id],
+                locatario: f => (f.razonSocial || '').toLocaleLowerCase('es-MX'),
+                moratorios: f => montoMoratorios(f),
+                subtotal: f => f.subtotal || 0,
+                iva: f => f.iva || 0,
+                total: f => f.total || 0,
+                // El estado se lee del select por si se cambió sin recargar
+                estado: f => ORDEN_ESTADO.indexOf(app.querySelector(`select.estado[data-id="${CSS.escape(f.id)}"]`)?.value ?? f.estadoPago)
+            };
+            const ordenar = () => {
+                const tbody = app.querySelector('tbody');
+                if (!tbody) return;
+                const k = CLAVE[ordenF.col] || CLAVE.locales;
+                const lista = [...filas].sort((a, b) => {
+                    const x = k(a), y = k(b);
+                    const c = typeof x === 'string' ? x.localeCompare(y, 'es') : x - y;
+                    return c * ordenF.dir || posLocales[a.id] - posLocales[b.id];
+                });
+                lista.forEach(f => { const tr = tbody.querySelector(`tr.fila-f[data-id="${CSS.escape(f.id)}"]`); if (tr) tbody.appendChild(tr); });
+                app.querySelectorAll('th.ord').forEach(th => {
+                    const act = th.dataset.col === ordenF.col;
+                    th.classList.toggle('act', act);
+                    th.querySelector('.flecha').textContent = act ? (ordenF.dir > 0 ? '▲' : '▼') : '▲▼';
+                });
+            };
+            app.querySelectorAll('th.ord').forEach(th => th.addEventListener('click', () => {
+                const col = th.dataset.col;
+                // Montos: primer clic de mayor a menor; texto y locales: de A a Z
+                ordenF = ordenF.col === col ? { col, dir: -ordenF.dir } : { col, dir: ['moratorios', 'subtotal', 'iva', 'total'].includes(col) ? -1 : 1 };
+                ordenar();
+            }));
+            ordenar();
+        }
+
+        function thOrd(col, txt, cls = '', title = '') {
+            return `<th class="ord ${cls}" data-col="${col}" title="${esc(title || 'Ordenar por ' + txt.toLowerCase())}">${txt}<span class="flecha">▲▼</span></th>`;
         }
 
         async function generar(faltan, contratos) {
