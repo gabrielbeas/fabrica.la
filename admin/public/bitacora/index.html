@@ -16,6 +16,29 @@
         .filtros { display: flex; flex-wrap: wrap; gap: var(--espacio-2) var(--espacio-3); align-items: flex-end; }
         .filtros .lf-campo { flex: 0 1 190px; }
         .filtros .lf-campo.buscar { flex: 1 1 240px; }
+        /* Selector de mes propio: punto rojo en los meses con acciones registradas */
+        .selmes { position: relative; }
+        .selmes-btn { font: inherit; font-size: 15px; color: var(--tinta); background: var(--fondo); border: 1px solid var(--borde-control); border-radius: var(--radio-sm); height: var(--alto-control); width: 100%; padding: 0 var(--espacio-3); display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-2); cursor: pointer; text-align: left; }
+        .selmes-btn svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .selmes-btn:focus-visible, .selmes-pop button:focus-visible { outline: var(--trazo) solid var(--foco); outline-offset: 2px; }
+        .selmes-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; width: 280px; background: var(--fondo-elevado); border: 1px solid var(--linea); border-radius: var(--radio-md); box-shadow: var(--sombra-modal); padding: var(--espacio-3); }
+        .selmes-pop[hidden] { display: none; }
+        .selmes-cab { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--espacio-2); }
+        .selmes-cab strong { font-size: 15px; }
+        .selmes-cab button { font: inherit; width: 32px; height: 32px; border: none; background: none; border-radius: var(--radio-sm); cursor: pointer; color: var(--tinta); font-size: 18px; line-height: 1; }
+        .selmes-cab button:hover { background: var(--fondo-hundido); }
+        .selmes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .selmes-grid button { position: relative; font: inherit; font-size: 14px; height: 40px; border: none; background: none; border-radius: var(--radio-sm); cursor: pointer; color: var(--tinta); }
+        .selmes-grid button:hover { background: var(--fondo-hundido); }
+        .selmes-grid button.sel { background: var(--accion); color: var(--on-accion); font-weight: 600; }
+        .selmes-grid button.hoy:not(.sel) { box-shadow: inset 0 0 0 1px var(--accion); }
+        .selmes-grid .punto { position: absolute; left: 50%; bottom: 4px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: var(--radio-pill); background: var(--peligro); }
+        .selmes-grid button.sel .punto { box-shadow: 0 0 0 1.5px var(--on-accion); }
+        .selmes-pie { display: flex; justify-content: space-between; margin-top: var(--espacio-2); padding-top: var(--espacio-2); border-top: 1px solid var(--linea); }
+        .selmes-pie button { font: inherit; font-size: 13px; border: none; background: none; padding: 4px 2px; color: var(--accion); cursor: pointer; }
+        .selmes-pie button:hover { text-decoration: underline; }
+        .selmes-nota { font-size: 12px; line-height: 16px; color: var(--tinta-suave); margin: var(--espacio-2) 0 0; display: flex; align-items: center; gap: 6px; }
+        .selmes-nota i { width: 6px; height: 6px; border-radius: var(--radio-pill); background: var(--peligro); display: inline-block; }
         .tabla-pie { display: flex; flex-direction: column; gap: var(--espacio-2); }
         .cargando, .vacio { color: var(--tinta-suave); text-align: center; padding: var(--espacio-6) var(--espacio-4); }
         .nota { color: var(--tinta-suave); font-size: 13px; line-height: 18px; margin: 0; }
@@ -201,7 +224,18 @@
                 </div>
                 <div class="tabla-pie">
                 <div class="filtros">
-                    <div class="lf-campo"><label for="flMes">Mes</label><input type="month" id="flMes" value="${mes}"></div>
+                    <div class="lf-campo"><label for="flMesBtn">Mes</label>
+                        <input type="hidden" id="flMes" value="${mes}">
+                        <div class="selmes">
+                            <button type="button" class="selmes-btn" id="flMesBtn" aria-haspopup="dialog" aria-expanded="false"><span id="flMesTxt"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button>
+                            <div class="selmes-pop" id="flMesPop" role="dialog" aria-label="Elegir mes" hidden>
+                                <div class="selmes-cab"><button type="button" data-anio="-1" aria-label="Año anterior">‹</button><strong id="flAnio"></strong><button type="button" data-anio="1" aria-label="Año siguiente">›</button></div>
+                                <div class="selmes-grid" id="flMeses"></div>
+                                <p class="selmes-nota"><i></i> Meses con acciones registradas</p>
+                                <div class="selmes-pie"><button type="button" id="flTodos">Todos los meses</button><button type="button" id="flEste">Este mes</button></div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="lf-campo"><label for="flCategoria">Categoría</label><select id="flCategoria"><option value="">Todas</option>${CATEGORIAS.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
                     <div class="lf-campo"><label for="flLugar">Lugar</label><select id="flLugar"><option value="">Todos</option>${LUGARES.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
                     <div class="lf-campo"><label for="flResponsable">Responsable</label><select id="flResponsable"><option value="">Todos</option>${RESPONSABLES.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
@@ -218,8 +252,44 @@
                 </div>`;
             document.getElementById('bNuevo').addEventListener('click', () => abrir());
             ['flMes', 'flCategoria', 'flLugar', 'flResponsable'].forEach(id => document.getElementById(id).addEventListener('change', filas));
+            selectorMes(mes);
             document.getElementById('flBuscar').addEventListener('input', filas);
             filas();
+        }
+
+        // ---------- Selector de mes con punto rojo en los meses que tienen acciones ----------
+        const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        let cierreSelMes = null;
+        function selectorMes(mesHoy) {
+            const campo = document.getElementById('flMes'), btn = document.getElementById('flMesBtn'), pop = document.getElementById('flMesPop');
+            const porMes = registros.reduce((a, r) => { const m = (r.fecha || '').slice(0, 7); if (m) a[m] = (a[m] || 0) + 1; return a; }, {});
+            let anio = +(campo.value || mesHoy).slice(0, 4);
+            const texto = () => { const v = campo.value; document.getElementById('flMesTxt').textContent = v ? `${MESES_L[+v.slice(5, 7) - 1]} ${v.slice(0, 4)}` : 'Todos los meses'; };
+            const pintar = () => {
+                document.getElementById('flAnio').textContent = anio;
+                document.getElementById('flMeses').innerHTML = MESES.map((m, i) => {
+                    const k = `${anio}-${String(i + 1).padStart(2, '0')}`, n = porMes[k] || 0;
+                    const titulo = `${MESES_L[i]} ${anio}: ${n ? `${n} ${n > 1 ? 'acciones' : 'acción'}` : 'sin acciones'}`;
+                    return `<button type="button" data-mes="${k}" class="${k === campo.value ? 'sel' : ''} ${k === mesHoy ? 'hoy' : ''}" title="${titulo}">${m[0].toUpperCase() + m.slice(1)}${n ? '<span class="punto"></span>' : ''}</button>`;
+                }).join('');
+            };
+            const abrirPop = abierto => {
+                pop.hidden = !abierto;
+                btn.setAttribute('aria-expanded', String(abierto));
+                if (abierto) { anio = +(campo.value || mesHoy).slice(0, 4); pintar(); }
+            };
+            const elegir = v => { campo.value = v; texto(); abrirPop(false); campo.dispatchEvent(new Event('change')); btn.focus(); };
+            btn.addEventListener('click', () => abrirPop(pop.hidden));
+            pop.querySelectorAll('[data-anio]').forEach(b => b.addEventListener('click', () => { anio += +b.dataset.anio; pintar(); }));
+            document.getElementById('flMeses').addEventListener('click', e => { const b = e.target.closest('[data-mes]'); if (b) elegir(b.dataset.mes); });
+            document.getElementById('flTodos').addEventListener('click', () => elegir(''));
+            document.getElementById('flEste').addEventListener('click', () => elegir(mesHoy));
+            pop.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); abrirPop(false); btn.focus(); } });
+            // Clic fuera lo cierra (un solo listener aunque la vista se vuelva a dibujar)
+            if (cierreSelMes) document.removeEventListener('click', cierreSelMes);
+            cierreSelMes = e => { const p = document.getElementById('flMesPop'); if (p && !p.hidden && !e.target.closest('.selmes')) { p.hidden = true; document.getElementById('flMesBtn')?.setAttribute('aria-expanded', 'false'); } };
+            document.addEventListener('click', cierreSelMes);
+            texto();
         }
 
         const puedeEditar = r => admin || (operario && r.creadoPor === auth.currentUser?.uid && r.creadoEn?.toMillis && Date.now() - r.creadoEn.toMillis() < HORAS_EDICION * 3600000);
