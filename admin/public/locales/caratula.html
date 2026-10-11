@@ -26,6 +26,15 @@
         .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--tinta); padding-bottom: 14px; margin-bottom: 18px; }
         .modal-cab .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
         .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
+        .inc-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+        .inc-form label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        .inc-form input { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font: inherit; font-size: 14px; box-sizing: border-box; }
+        .inc-form .ancho { grid-column: 1 / -1; }
+        .inc-vista { border: 1px solid var(--linea); border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 14px; line-height: 22px; background: var(--fondo-hundido); }
+        .inc-vista strong { font-family: var(--font-mono); font-weight: 500; }
+        .inc-vista .dif { color: var(--tinta-suave); font-size: 13px; }
+        .inc-pie { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; }
+        .inc-pie .err { margin-right: auto; font-size: 13px; }
         .modal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 20px 0 8px; }
         .tabla-dep th { background: var(--fondo-hundido); }
         .tabla-dep tr.comp td { color: var(--tinta-suave); }
@@ -110,7 +119,8 @@
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
-        import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { actualizarRentaEnFactura, mesTxt } from '../../../js/facturacion.js?v=20261011-2';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261005-5';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261005-5';
 
@@ -290,12 +300,15 @@
                             <table>
                                 <thead><tr><th>Concepto</th><th>Periodo</th><th>Incremento / nota</th><th class="num">Monto mensual</th></tr></thead>
                                 <tbody>
-                                    ${c.rentas.map(r => `<tr><td>${esc(r.concepto)}</td><td>${esc(r.periodo)}</td><td>${esc(String(r.nota ?? '').replace(/[☀-➿️]/g, '').trim())}</td><td class="num">${dinero(r.monto)}</td></tr>`).join('')}
+                                    ${c.rentas.map(r => `<tr><td>${esc(r.concepto)}</td><td>${esc(periodoRenta(r))}</td><td>${esc(notaRenta(r))}</td><td class="num">${dinero(r.monto)}</td></tr>`).join('')}
                                     <tr class="total"><td colspan="3">Renta mensual vigente</td><td class="num">${dinero(c.total)}</td></tr>
                                     ${filaTotalPagado(c)}
                                 </tbody>
                             </table>
-                            ${(c.pagosRenta || []).length ? `<button class="btn-sec btn-mini no-print" id="btnPagosRenta">Ver historial de pagos de renta</button>` : ''}
+                            <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap">
+                                ${typeof c.total === 'number' ? `<button class="btn btn-mini" id="btnIncremento">Aplicar incremento de renta</button>` : ''}
+                                ${(c.pagosRenta || []).length ? `<button class="btn-sec btn-mini" id="btnPagosRenta">Ver historial de pagos de renta</button>` : ''}
+                            </div>
                         </div>` : ''}
                         <div class="seccion">
                             <h2>CFE</h2>
@@ -349,11 +362,149 @@
             document.getElementById('btnEditar').addEventListener('click', () => edicion(c));
             document.getElementById('btnDepositos')?.addEventListener('click', () => ventanaDepositos(c));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
+            document.getElementById('btnIncremento')?.addEventListener('click', () => ventanaIncremento(c));
             if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
         }
 
         let contratoActual = null;
         let avisoPendiente = '';
+
+        // ---------------- HISTORIAL DE RENTA: periodos e incrementos ----------------
+        // c.rentas: [{ concepto, anio, monto, nota, periodo, desde, hasta, incrementoPct }]
+        //   desde / hasta (YYYY-MM-DD): vigencia de esa renta; hasta = null mientras sigue abierta.
+        //   incrementoPct: fracción (0.0419 = 4.19%) con la que se calculó respecto al periodo anterior.
+        // Sin fechas se muestra el texto `periodo` original (contratos que todavía no se especifican).
+        const r2 = n => Math.round(n * 100) / 100;
+        const mesAnio = f => { const [y, m] = f.split('-'); return `${MESES[+m - 1].toUpperCase()} ${y}`; };
+        const periodoRenta = r => r.desde ? `${mesAnio(r.desde)} – ${r.hasta ? mesAnio(r.hasta) : 'VIGENTE'}` : (r.periodo || '');
+        const pctTxt = f => `${+(f * 100).toFixed(4)}%`;
+        const notaRenta = r => {
+            const nota = String(r.nota ?? '').replace(/[☀-➿️]/g, '').trim();
+            const pct = typeof r.incrementoPct === 'number' ? pctTxt(r.incrementoPct) : '';
+            return nota && nota !== pct ? (pct ? `${pct} · ${nota}` : nota) : (pct || nota);
+        };
+        const sumarDias = (f, n) => { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+        // Renta que rige hoy: la que tiene el `desde` más reciente (o, sin fechas, la última de la lista)
+        const idxVigente = rentas => {
+            let idx = -1;
+            rentas.forEach((r, i) => { if (r.desde && (idx < 0 || r.desde > rentas[idx].desde)) idx = i; });
+            return idx >= 0 ? idx : rentas.length - 1;
+        };
+
+        function ventanaIncremento(c) {
+            const actual = c.total;
+            const sugerida = /^\d{4}-\d{2}-\d{2}$/.test(c.incremento || '') ? c.incremento : hoyISO();
+            abrirVentana(`
+                <div class="modal-cab">
+                    <div><div class="emp">${esc(c.razonSocial)}</div><h3>Aplicar incremento de renta</h3></div>
+                    <button class="btn-sec" data-cerrar>Cerrar</button>
+                </div>
+                <div class="inc-form">
+                    <div><label for="incPct">% de incremento${c.incrementoTipo ? ` (${esc(c.incrementoTipo)})` : ''}</label><input id="incPct" type="number" step="any" min="-50" max="100" placeholder="Ej. 3.57" autofocus></div>
+                    <div><label for="incDesde">Vigente desde</label><input id="incDesde" type="date" value="${sugerida}"></div>
+                </div>
+                <div class="inc-vista" id="incVista">Escribe el porcentaje para ver la nueva renta.</div>
+                <p class="nota-dep" id="incFacturas"></p>
+                <p class="nota-dep">Se calcula sobre la renta mensual vigente (sin IVA, ${dinero(actual)}). Cierra el periodo actual el día anterior, agrega el nuevo periodo, actualiza la renta mensual en todo el panel y mueve el próximo incremento un año. Las facturas pendientes de ese mes en adelante se actualizan con la renta nueva; las ya pagadas no cambian. Queda registrado en el historial del contrato.</p>
+                <div class="inc-pie"><span class="err" id="incMsg"></span><button class="btn-sec" data-cerrar>Cancelar</button><button class="btn" id="incAplicar" disabled>Aplicar incremento</button></div>`,
+                'Aplicar incremento de renta');
+            const pct = document.getElementById('incPct'), desde = document.getElementById('incDesde'), vista_ = document.getElementById('incVista'), btn = document.getElementById('incAplicar');
+            const calc = () => {
+                const p = parseFloat(pct.value);
+                if (!Number.isFinite(p)) { vista_.textContent = 'Escribe el porcentaje para ver la nueva renta.'; btn.disabled = true; return null; }
+                const nuevo = r2(actual * (1 + p / 100));
+                vista_.innerHTML = `Renta mensual sin IVA: ${dinero(actual)} → <strong>${dinero(nuevo)}</strong><br>Con IVA (16%): ${dinero(c.totalIva ?? r2(actual * 1.16))} → <strong>${dinero(r2(nuevo * 1.16))}</strong><br><span class="dif">${nuevo >= actual ? '+' : '−'}${dinero(Math.abs(r2(nuevo - actual)))} al mes sin IVA${/^\d{4}-\d{2}-\d{2}$/.test(desde.value) ? ` · desde ${fechaTxt(desde.value)}` : ''}</span>`;
+                btn.disabled = false;
+                return { p, nuevo };
+            };
+            // Facturas del contrato que se verían afectadas (se leen una vez; si falla, la ventana sigue igual)
+            let facturas = [];
+            const avisoFacturas = () => {
+                const mes = /^\d{4}-\d{2}-\d{2}$/.test(desde.value) ? desde.value.slice(0, 7) : null;
+                const el = document.getElementById('incFacturas');
+                if (!el || !mes) return;
+                const afect = facturas.filter(f => f.mes >= mes);
+                const pend = afect.filter(f => !esPagada(f)), pag = afect.filter(esPagada);
+                el.innerHTML = !afect.length ? `No hay facturas generadas de ${mesTxt(mes)} en adelante: las nuevas saldrán con la renta nueva.`
+                    : `Se actualizará${pend.length > 1 ? 'n' : ''} <strong>${pend.length}</strong> factura${pend.length === 1 ? '' : 's'} pendiente${pend.length === 1 ? '' : 's'} (${pend.map(f => mesTxt(f.mes)).join(', ') || 'ninguna'}).${pag.length ? ` Sin cambios por estar pagada${pag.length > 1 ? 's' : ''}: ${pag.map(f => mesTxt(f.mes)).join(', ')}.` : ''}`;
+            };
+            getDocs(query(collection(db, 'facturas'), where('contratoId', '==', contratoId)))
+                .then(sn => { facturas = sn.docs.map(d => ({ id: d.id, ...d.data() })); avisoFacturas(); })
+                .catch(err => console.warn('No se pudieron leer las facturas del contrato', err));
+            pct.addEventListener('input', calc);
+            desde.addEventListener('input', () => { calc(); avisoFacturas(); });
+            btn.addEventListener('click', async () => {
+                const r = calc(), msg = document.getElementById('incMsg');
+                if (!r) return;
+                msg.textContent = '';
+                try {
+                    btn.disabled = true;
+                    await aplicarIncremento(c, r.p, r.nuevo, desde.value);
+                } catch (err) {
+                    console.error(err);
+                    msg.textContent = err.message || 'No se pudo guardar.';
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        async function aplicarIncremento(c, p, nuevoMonto, desde) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(desde)) throw new Error('Elige la fecha desde la que rige la nueva renta.');
+            if (p < -50 || p > 100) throw new Error('El porcentaje debe estar entre -50 y 100.');
+            const antesRentas = JSON.parse(JSON.stringify(c.rentas || []));
+            const rentas = JSON.parse(JSON.stringify(c.rentas || []));
+            if (rentas.some(r => r.desde === desde)) throw new Error('Ya hay un periodo de renta que empieza ese día.');
+            const i = idxVigente(rentas);
+            if (i >= 0 && rentas[i]?.desde) {
+                if (desde <= rentas[i].desde) throw new Error(`La fecha debe ser posterior al inicio del periodo vigente (${fechaTxt(rentas[i].desde)}).`);
+                rentas[i].hasta = sumarDias(desde, -1);
+                rentas[i].periodo = periodoRenta(rentas[i]);
+            }
+            const nuevo = { concepto: `RENTA MENSUAL ${desde.slice(0, 4)}`, anio: +desde.slice(0, 4), monto: nuevoMonto, nota: '', desde, hasta: null, incrementoPct: +(p / 100).toFixed(6) };
+            nuevo.periodo = periodoRenta(nuevo);
+            rentas.push(nuevo);
+            const [y, m, d] = desde.split('-');
+            const cambios = { rentas, total: nuevoMonto, totalIva: r2(nuevoMonto * 1.16), incremento: `${+y + 1}-${m}-${d}` };
+            const antes = { rentas: antesRentas, total: c.total ?? null, totalIva: c.totalIva ?? null, incremento: c.incremento ?? null };
+            const user = getCurrentUser();
+            await updateDoc(doc(db, 'contratos', contratoId), { ...cambios, editadoPor: user.email, editadoEn: serverTimestamp() });
+            await addDoc(collection(db, 'contratos', contratoId, 'historial'), {
+                antes: JSON.parse(JSON.stringify(antes)), despues: JSON.parse(JSON.stringify(cambios)),
+                por: user.email, en: serverTimestamp()
+            });
+            const snap = await getDoc(doc(db, 'contratos', contratoId));
+            // Derrame a Facturación: las facturas pendientes de ese mes en adelante toman la renta nueva
+            let facturas = { actualizadas: [], pagadas: [], error: null };
+            try { facturas = await propagarRentaAFacturas({ id: contratoId, ...snap.data() }, desde); }
+            catch (err) { console.error(err); facturas.error = err.message; }
+            document.querySelector('.modal-fondo')?.remove();
+            const lista = ms => ms.map(mesTxt).join(', ');
+            avisoPendiente = `<p class="ok" style="background:var(--exito-suave);color:var(--exito);padding:10px 14px;border-radius:6px;font-size:14px">Incremento de ${pctTxt(p / 100)} aplicado: renta mensual ${dinero(nuevoMonto)} sin IVA desde ${fechaTxt(desde)}. Próximo incremento: ${fechaTxt(cambios.incremento)}.
+                ${facturas.actualizadas.length ? `<br>Facturas actualizadas: ${esc(lista(facturas.actualizadas))}.` : '<br>No había facturas pendientes de ese mes en adelante; las nuevas saldrán con la renta nueva.'}
+                ${facturas.pagadas.length ? `<br>Sin cambios por estar pagadas: ${esc(lista(facturas.pagadas))}.` : ''}
+                ${facturas.error ? `<br><span style="color:var(--peligro)">No se pudieron actualizar las facturas (${esc(facturas.error)}). Usa «Actualizar» desde Facturación o avísame.</span>` : ''}</p>`;
+            vista(snap.data());
+        }
+
+        const esPagada = f => f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde';
+        // Pone la renta que rige en cada mes en las facturas del contrato desde el mes de `desde`.
+        // Las pagadas no se tocan (se reportan). Devuelve { actualizadas: [mes], pagadas: [mes] }.
+        async function propagarRentaAFacturas(contrato, desde) {
+            const mesDesde = desde.slice(0, 7);
+            const sn = await getDocs(query(collection(db, 'facturas'), where('contratoId', '==', contrato.id)));
+            const facturas = sn.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => f.mes >= mesDesde).sort((a, b) => a.mes.localeCompare(b.mes));
+            const out = { actualizadas: [], pagadas: [] };
+            const batch = writeBatch(db), user = getCurrentUser();
+            facturas.forEach(f => {
+                if (esPagada(f)) { out.pagadas.push(f.mes); return; }
+                const nuevo = actualizarRentaEnFactura(f, contrato);
+                if (JSON.stringify(nuevo.conceptos) === JSON.stringify(f.conceptos || [])) return;
+                batch.update(doc(db, 'facturas', f.id), { ...nuevo, actualizadoPor: user.email, actualizadoEn: serverTimestamp(), notaRenta: `Renta actualizada por incremento desde ${desde}` });
+                out.actualizadas.push(f.mes);
+            });
+            if (out.actualizadas.length) await batch.commit();
+            return out;
+        }
 
         // Servicios de CFE: el principal (cfe*) y, si existe, un segundo servicio (cfe2*)
         function bloquesCFE(c) {

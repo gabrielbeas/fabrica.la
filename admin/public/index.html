@@ -259,7 +259,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="gris" style="margin-top:8px">El teléfono se captura en la carátula de cada contrato (Editar → Arrendatario). Al darle clic se abre WhatsApp.</p>`;
+                <p class="gris" style="margin-top:8px">El teléfono se captura en la carátula de cada contrato (Editar → Arrendatario). Al darle clic se abre WhatsApp. Los correos de «Facturación» se editan en Facturación (clic en el locatario → Datos de facturación → Editar) y los de «Contrato» en la carátula (Editar → Condiciones).</p>`;
             const filtrar = () => {
                 const q = busquedaDir.trim().toLowerCase();
                 document.querySelectorAll('#dir tr').forEach(tr => { tr.style.display = !q || tr.dataset.texto.includes(q) ? '' : 'none'; });

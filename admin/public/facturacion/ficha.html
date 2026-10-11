@@ -36,6 +36,16 @@
         td input[type=number] { width: 120px; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 5px; text-align: right; font-size: 14px; }
         td input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 5px; font-size: 13px; }
         .det { display: block; font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
+        .cor-fila { display: block; }
+        .cor-fila a { color: var(--tinta); text-decoration: none; }
+        .cor-fila a:hover { color: var(--accion); text-decoration: underline; }
+        .cor-tipo { margin-left: 8px; font-size: 11px; color: var(--tinta-tenue); }
+        .cor-nota { display: block; margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--tinta-suave); }
+        .cor-nota a { color: var(--accion); }
+        .cor-sug { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+        .cor-sug .cor-nota { display: inline; margin: 0; }
+        .cor-chip { font: inherit; font-size: 12px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--accion); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+        .cor-chip:hover { background: var(--accion-suave); }
         .tot td { font-weight: 700; border-top: 1px solid var(--borde-control); border-bottom: none; }
         .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 16px; }
         .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
@@ -62,12 +72,12 @@
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
-        import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
-            documentoContadores, imprimirHojas, normalizarConceptos
-        } from '../../../js/facturacion.js?v=20261005-5';
+            documentoContadores, imprimirHojas, normalizarConceptos, normalizarCorreos, correoValido, CORREO_COPIA
+        } from '../../../js/facturacion.js?v=20261011-2';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);
@@ -142,7 +152,7 @@
                     <h2>Datos de facturación <button class="btn-mini" id="editDatos">Editar</button></h2>
                     <dl class="datos-dl">
                         <dt>Factura a</dt><dd>${esc(cfg.razonSocialFactura || contrato.razonSocial)}</dd>
-                        <dt>Enviar a</dt><dd>${(cfg.correos || []).map(esc).join('<br>') || '-'}</dd>
+                        <dt>Enviar a</dt><dd>${correosVista(cfg)}</dd>
                         <dt>Método</dt><dd>${esc(cfg.metodoPago || 'PUE')}</dd>
                         <dt>Concepto</dt><dd>${esc(cfg.conceptoRenta || 'RENTA')}</dd>
                         <dt>Basura</dt><dd>${cfg.basura ? 'Sí' : 'No'}</dd>
@@ -157,7 +167,9 @@
                 <h2>Datos de facturación</h2>
                 <div class="campos" style="margin-top:0">
                     <div><label>Factura a (razón social)</label><input id="d_rs" value="${esc(cfg.razonSocialFactura || contrato.razonSocial)}"></div>
-                    <div><label>Correos (uno por renglón)</label><textarea id="d_correos" rows="4">${esc((cfg.correos || []).join('\n'))}</textarea></div>
+                    <div><label>Correos para enviar la factura (uno por renglón)</label><textarea id="d_correos" rows="4">${esc(normalizarCorreos(cfg.correos || []).join('\n'))}</textarea>
+                        <div class="cor-sug" id="d_sug"></div>
+                        <span class="cor-nota">Son los mismos que ve el Directorio como «Facturación». ${CORREO_COPIA} siempre va en copia.</span></div>
                     <div><label>Método de pago</label><input id="d_metodo" value="${esc(cfg.metodoPago || 'PUE')}"></div>
                     <div><label>Nombre del concepto de renta</label><input id="d_concepto" value="${esc(cfg.conceptoRenta || 'RENTA')}"></div>
                     <div><label><input type="checkbox" id="d_basura" ${cfg.basura ? 'checked' : ''} style="width:auto"> Cobra recolección de basura</label></div>
@@ -170,6 +182,28 @@
                 </div>`;
             document.getElementById('d_cancel').addEventListener('click', () => renderDatos(false));
             document.getElementById('d_save').addEventListener('click', guardarDatos);
+            // Correos del contrato (Directorio) que todavía no están en la lista: un clic los agrega
+            const area = document.getElementById('d_correos'), sug = document.getElementById('d_sug');
+            const pintarSug = () => {
+                const en = new Set(area.value.split('\n').map(x => x.replace(/\(.*?\)/g, '').trim().toLowerCase()));
+                const faltan = normalizarCorreos(contrato.correosNotificacion || []).filter(x => !en.has(x.toLowerCase()));
+                sug.innerHTML = faltan.length ? `<span class="cor-nota">Del Directorio, en el contrato:</span> ${faltan.map(x => `<button type="button" class="cor-chip" data-correo="${esc(x)}">+ ${esc(x)}</button>`).join('')}` : '';
+                sug.querySelectorAll('[data-correo]').forEach(b => b.addEventListener('click', () => {
+                    area.value = (area.value.trim() ? area.value.trim() + '\n' : '') + b.dataset.correo;
+                    pintarSug();
+                }));
+            };
+            area.addEventListener('input', pintarSug);
+            pintarSug();
+        }
+
+        // «Enviar a» con la etiqueta de dónde viene cada correo en el Directorio (Facturación, y Contrato si también es de notificación)
+        function correosVista(cfg) {
+            const lista = normalizarCorreos(cfg.correos || []);
+            if (!lista.length) return '<span style="color:#999">Sin correos. Usa Editar para agregarlos.</span>';
+            const deContrato = new Set(normalizarCorreos(contrato.correosNotificacion || []).map(x => x.toLowerCase()));
+            return lista.map(x => `<span class="cor-fila"><a href="mailto:${esc(x)}">${esc(x)}</a>${deContrato.has(x.toLowerCase()) ? '<span class="cor-tipo">Facturación · Contrato</span>' : '<span class="cor-tipo">Facturación</span>'}</span>`).join('')
+                + `<span class="cor-nota">En copia siempre: ${CORREO_COPIA} · <a href="../#directorio">Ver en Directorio</a></span>`;
         }
 
         async function guardarDatos() {
@@ -178,10 +212,13 @@
                 return { tubo: tubo.toUpperCase(), proporcion: pct ? parseFloat(pct) / 100 : 1 };
             });
             if (tubos.some(t => isNaN(t.proporcion) || t.proporcion <= 0 || t.proporcion > 1)) { alert('Revisa los porcentajes de los tubos (entre 1% y 100%).'); return; }
+            const renglones = document.getElementById('d_correos').value.split('\n').map(s => s.trim()).filter(Boolean);
+            const malos = renglones.filter(x => !correoValido(x.replace(/\(.*?\)/g, '')));
+            if (malos.length) { alert('Revisa estos correos, no parecen válidos:\n\n' + malos.join('\n')); return; }
             const facturacion = {
                 ...(contrato.facturacion || {}),
                 razonSocialFactura: document.getElementById('d_rs').value.trim(),
-                correos: document.getElementById('d_correos').value.split('\n').map(s => s.trim()).filter(Boolean),
+                correos: normalizarCorreos(renglones),
                 metodoPago: document.getElementById('d_metodo').value.trim() || 'PUE',
                 conceptoRenta: document.getElementById('d_concepto').value.trim() || 'RENTA',
                 basura: document.getElementById('d_basura').checked,
@@ -189,7 +226,16 @@
                 notas: document.getElementById('d_notas').value.trim()
             };
             try {
-                await updateDoc(doc(db, 'contratos', contrato.id), { facturacion, editadoPor: getCurrentUser().email, editadoEn: serverTimestamp() });
+                const user = getCurrentUser();
+                const antes = contrato.facturacion || {};
+                await updateDoc(doc(db, 'contratos', contrato.id), { facturacion, editadoPor: user.email, editadoEn: serverTimestamp() });
+                // Los contratos dejan entrada en su historial cuando se editan
+                if (JSON.stringify(antes) !== JSON.stringify(facturacion)) {
+                    await addDoc(collection(db, 'contratos', contrato.id, 'historial'), {
+                        antes: JSON.parse(JSON.stringify({ facturacion: antes })), despues: JSON.parse(JSON.stringify({ facturacion })),
+                        por: user.email, en: serverTimestamp()
+                    });
+                }
                 contrato.facturacion = facturacion;
                 renderDatos(false);
             } catch (err) { alert('No se pudo guardar: ' + err.message); }
@@ -354,7 +400,7 @@
         async function imprimir() {
             const ok = await guardarFactura('<span class="ok">Factura guardada y exportada.</span>');
             if (!ok) return;
-            const f = { ...factura, correos: factura.correos || (contrato.facturacion || {}).correos || [] };
+            const f = { ...factura, correos: normalizarCorreos((contrato.facturacion || {}).correos || factura.correos || []) };
             imprimirHojas(documentoContadores(mes, [f], { [contrato.id]: contrato }), `Factura ${mesTxt(mes)} - ${f.razonSocial}`);
         }
 

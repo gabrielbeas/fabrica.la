@@ -147,6 +147,25 @@ export function actualizarAguaEnFactura(factura, contrato, lecturas, facturadas)
 }
 
 /**
+ * Renta mensual que rige en un mes, según los periodos con fechas de `contrato.rentas` (desde/hasta):
+ * la del periodo con el `desde` más reciente que no pase del primer día del mes (la renta sigue igual
+ * mientras no se aplique un incremento). Sin periodos con fechas, o para un mes anterior al primero,
+ * la renta vigente del contrato (`total` / `totalIva`).
+ * Devuelve { renta (sin IVA), rentaIva (con IVA), periodo }.
+ */
+export function rentaDelMes(contrato, mes) {
+  const vigente = r2(Number(contrato.total) || 0);
+  const vigenteIva = typeof contrato.totalIva === 'number' ? r2(contrato.totalIva) : r2(vigente * (1 + IVA));
+  const periodos = (contrato.rentas || []).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.desde || '') && typeof r.monto === 'number')
+    .sort((a, b) => a.desde.localeCompare(b.desde));
+  const p = [...periodos].reverse().find(r => r.desde <= `${mes}-01`);
+  if (!p) return { renta: vigente, rentaIva: vigenteIva, periodo: null };
+  const renta = r2(p.monto);
+  // Si es la renta vigente se respeta su «con IVA» tal cual (como en el Sheet); si no, +16%
+  return { renta, rentaIva: renta === vigente ? vigenteIva : r2(renta * (1 + IVA)), periodo: p };
+}
+
+/**
  * Genera (prellena) la factura de un contrato para un mes.
  * Renta: del contrato. Agua: de las lecturas. Basura: monto fijo. Moratorios: 0.
  */
@@ -157,8 +176,7 @@ export function generarFactura(contrato, mes, lecturas, general, facturadas = ne
   if (contratoVencidoEn(contrato, mes)) avisos.push(`El contrato venció el ${contrato.fin}: revisa si ya se renovó.`);
 
   // Renta: si el contrato tiene "con IVA", se respeta tal cual (como en el Sheet)
-  const renta = Number(contrato.total) || 0;
-  const rentaIva = typeof contrato.totalIva === 'number' ? contrato.totalIva : r2(renta * (1 + IVA));
+  const { renta, rentaIva } = rentaDelMes(contrato, mes);
   conceptos.push({ concepto: cfg.conceptoRenta || 'RENTA', subtotal: r2(renta), iva: r2(rentaIva - renta), total: r2(rentaIva), tipo: 'renta' });
   conceptos.push({ concepto: 'EXTRAORDINARIO', subtotal: 0, iva: 0, total: 0, tipo: 'extraordinario', descripcion: '' });
   conceptos.push({ concepto: 'INTERESES MORATORIOS', subtotal: 0, iva: 0, total: 0, tipo: 'moratorios' });
@@ -229,13 +247,56 @@ export function normalizarConceptos(conceptos = []) {
 export function totalesFactura(f) {
   return totales(normalizarConceptos(f.conceptos || []));
 }
+/**
+ * Pone en una factura existente la renta que rige en su mes (`rentaDelMes`) y deja lo demás como está
+ * (agua, basura, extraordinarios, notas). Si la factura cobra moratorios, los recalcula sobre la renta nueva.
+ * Devuelve { conceptos, subtotal, iva, total } listo para guardar.
+ */
+export function actualizarRentaEnFactura(factura, contrato) {
+  const { renta, rentaIva } = rentaDelMes(contrato, factura.mes);
+  const conceptos = (factura.conceptos || []).map(c => ({ ...c }));
+  const nueva = { subtotal: r2(renta), iva: r2(rentaIva - renta), total: r2(rentaIva) };
+  const i = conceptos.findIndex((c, k) => tipoDe(c, k) === 'renta');
+  if (i >= 0) conceptos[i] = { ...conceptos[i], ...nueva };
+  else conceptos.unshift({ concepto: ((contrato.facturacion || {}).conceptoRenta) || 'RENTA', ...nueva, tipo: 'renta' });
+  const pct = Number(factura.moratoriosPct) || 0;
+  const j = conceptos.findIndex((c, k) => tipoDe(c, k) === 'moratorios');
+  if (pct > 0 && j >= 0) {
+    const sub = r2(renta * pct);
+    conceptos[j] = { ...conceptos[j], subtotal: sub, iva: r2(sub * IVA), total: r2(sub * (1 + IVA)) };
+  }
+  return { conceptos, ...totales(conceptos) };
+}
+
 // Fin del periodo de renta vigente = día anterior al próximo incremento
 function finPeriodoRenta(contrato = {}) {
   if (!contrato.incremento) return contrato.fin || '';
   const d = new Date(contrato.incremento + 'T12:00:00'); d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0, 10);
 }
-const correosDe = f => ['facturas@fabrica.la', ...(f.correos || []).filter(c => c.toLowerCase() !== 'facturas@fabrica.la')];
+/**
+ * Limpia una lista de correos: quita anotaciones entre paréntesis («x@y.com (obligado solidario)»), espacios,
+ * renglones sin @ y repetidos (sin importar mayúsculas). Es la misma limpieza que usa el Directorio.
+ */
+export function normalizarCorreos(lista = []) {
+  const vistos = new Set();
+  return lista.map(x => String(x || '').replace(/\(.*?\)/g, '').trim()).filter(x => {
+    const k = x.toLowerCase();
+    if (!/@/.test(x) || vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+}
+export const correoValido = x => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x || '').trim());
+export const CORREO_COPIA = 'facturas@fabrica.la';
+// Destinatarios del CFDI: los del contrato (`facturacion.correos`, los mismos que muestra el Directorio y que se editan en la
+// ficha de factura), así un cambio llega a todas las facturas, también a las ya generadas. Si el contrato no tiene, los guardados
+// en la factura. facturas@fabrica.la va siempre en copia.
+const correosDe = (f, c = {}) => {
+  const delContrato = normalizarCorreos((c.facturacion || {}).correos || []);
+  const base = delContrato.length ? delContrato : normalizarCorreos(f.correos || []);
+  return [CORREO_COPIA, ...base.filter(x => x.toLowerCase() !== CORREO_COPIA)];
+};
 const localesDe = (f, c = {}) => (f.locales && f.locales.length ? f.locales : c.locales || []).join(', ');
 
 export const ESTILO_HOJA = `
@@ -371,7 +432,7 @@ export function hojaFacturaHTML(f, contrato = {}, numero = '') {
         </tbody>
       </table>
       <div class="ficha-pie">
-        <div><span class="k">Enviar CFDI a</span>${correosDe(f).map(esc).join(' · ')}</div>
+        <div><span class="k">Enviar CFDI a</span>${correosDe(f, contrato).map(esc).join(' · ')}</div>
         <div><span class="k">Notas</span>${f.notas ? (red ? tapar(f.notas) : esc(f.notas).replace(/\n/g, ' · ')) : '–'}</div>
       </div>
     </div>`;
