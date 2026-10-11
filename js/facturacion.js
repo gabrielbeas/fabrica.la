@@ -442,10 +442,14 @@ export function hojaFacturaHTML(f, contrato = {}, numero = '') {
 export function documentoContadores(mes, facturas, contratosPorId = {}, { resumen = true } = {}) {
   const activas = facturas.filter(f => !f._redactada);
   const tot = r2(activas.reduce((s, f) => s + (totalesFactura(f).total || 0), 0));
+  // El resumen lleva todos los locales (los apagados tachados); el detalle solo los prendidos.
+  // Con resumen, cada ficha conserva el número que tiene en esa lista; sin resumen se numeran seguidas.
+  const fichas = facturas.map((f, i) => ({ f, i })).filter(({ f }) => !f._redactada)
+    .map(({ f, i }, k, todas) => ({ f, n: facturas.length > 1 ? (resumen ? i + 1 : (todas.length > 1 ? k + 1 : '')) : '' }));
   return `<div class="hc">
     ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}`)}
     ${facturas.length > 1 && resumen ? resumenHTML(facturas, contratosPorId) + '<h2 class="salto">Detalle por receptor</h2>' : ''}
-    <div class="fichas">${facturas.map((f, i) => hojaFacturaHTML(f, contratosPorId[f.contratoId], facturas.length > 1 ? i + 1 : '')).join('')}</div>
+    <div class="fichas">${fichas.map(({ f, n }) => hojaFacturaHTML(f, contratosPorId[f.contratoId], n)).join('')}</div>
   </div>`;
 }
 
