@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos mensuales - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261012-4">
+    <style>
+        /* Solo lo propio de Pagos mensuales; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+        .main { max-width: 1500px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 22px; }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .anio { display: inline-flex; align-items: center; gap: 4px; }
+        .anio button { font: inherit; width: 34px; height: 34px; border: 1px solid var(--borde-control); background: var(--fondo); border-radius: var(--radio-sm); cursor: pointer; color: var(--tinta); font-size: 18px; line-height: 1; }
+        .anio button:hover { background: var(--fondo-hundido); }
+        .anio strong { min-width: 64px; text-align: center; font-size: 18px; }
+        .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
+        .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; }
+        .tarjeta.alerta .val { color: var(--peligro); } .tarjeta.bien .val { color: var(--exito); }
+        .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--tinta-suave); margin: 0 0 10px; }
+        .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 999px; margin-right: 6px; vertical-align: -1px; }
+
+        .tabla-wrap { overflow-x: auto; border: 1px solid var(--linea); border-radius: 10px; }
+        table.pm { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1180px; }
+        table.pm th { text-align: center; font-size: 12px; font-weight: 600; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; padding: 10px 4px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); }
+        table.pm th:first-child { text-align: left; padding-left: 14px; }
+        table.pm td { padding: 6px 4px; border-bottom: 1px solid var(--fondo-hundido); text-align: center; height: 40px; }
+        table.pm td.nombre { text-align: left; padding-left: 14px; white-space: nowrap; width: 200px; }
+        table.pm td.nombre button { font: inherit; border: none; background: none; padding: 0; cursor: pointer; color: var(--tinta); text-align: left; }
+        table.pm td.nombre button:hover { color: var(--accion); text-decoration: underline; }
+        table.pm tr.grupo td { background: var(--fondo-hundido); text-align: left; padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accion); height: auto; }
+        table.pm th.actual, table.pm td.actual { background: var(--ambar-suave); }
+        table.pm tr.grupo td { background: var(--fondo-hundido); }
+        .na { color: var(--tinta-tenue); }
+        select.pm { font: inherit; font-size: 12px; width: 92%; max-width: 104px; border: none; border-radius: 999px; padding: 5px 4px; cursor: pointer; text-align: center; text-align-last: center; appearance: none; -webkit-appearance: none; }
+        select.pm:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+        select.pm option { background: var(--fondo); color: var(--tinta); }
+        .e-pendiente { background: var(--atencion-suave); color: var(--atencion); }
+        .e-pagado { background: var(--exito); color: var(--fondo); }
+        select.pm.atrasado { box-shadow: 0 0 0 2px var(--peligro); }
+        .cargando, .vacio { color: var(--tinta-suave); text-align: center; padding: 40px 16px; }
+        .err { color: var(--peligro); } .ok { color: var(--exito); }
+        .pie { color: var(--tinta-suave); font-size: 13px; margin-top: 12px; }
+        .meses-chk { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px 10px; }
+        .meses-chk label { display: flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261012-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261012-4';
+        import { collection, getDocs, doc, setDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const ESTADOS = {
+            pendiente: { txt: 'Por pagar', largo: 'Por pagar' },
+            pagado: { txt: 'Pagado', largo: 'Pagado' }
+        };
+        // Valores viejos (cuando había más estados) se leen como los dos actuales
+        const normaliza = e => (e === 'pagado' || e === 'pago_tarde' ? 'pagado' : 'pendiente');
+        const hoy = new Date(), anioHoy = hoy.getFullYear(), mesHoy = hoy.getMonth() + 1;
+        const params = new URLSearchParams(location.search);
+        let anio = +params.get('anio') || anioHoy;
+        let conceptos = [], pagos = {};
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        const clave = (cid, m) => `${cid}_${anio}-${String(m).padStart(2, '0')}`;
+        const estadoDe = (cid, m) => normaliza(pagos[clave(cid, m)]?.estado);
+        // Un mes está atrasado si ya pasó y no se pagó
+        const atrasado = (m, est) => (anio < anioHoy || (anio === anioHoy && m < mesHoy)) && est === 'pendiente';
+
+        async function cargar(msg = '') {
+            try {
+                const [sc, sp] = await Promise.all([
+                    getDocs(collection(db, 'pagos_mensuales_conceptos')),
+                    getDocs(query(collection(db, 'pagos_mensuales'), where('anio', '==', anio)))
+                ]);
+                conceptos = sc.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.activo !== false)
+                    .sort((a, b) => (a.grupoOrden ?? 99) - (b.grupoOrden ?? 99) || (a.orden ?? 99) - (b.orden ?? 99) || a.nombre.localeCompare(b.nombre, 'es'));
+                pagos = Object.fromEntries(sp.docs.map(d => [d.id, d.data()]));
+                render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        function resumenMes(m) {
+            const celdas = conceptos.filter(c => (c.meses || []).includes(m)).map(c => estadoDe(c.id, m));
+            return { total: celdas.length, pagados: celdas.filter(e => e === 'pagado').length, pendientes: celdas.filter(e => e === 'pendiente').length };
+        }
+
+        function render(msg = '') {
+            const verMes = anio === anioHoy ? mesHoy : null;
+            const rm = verMes ? resumenMes(verMes) : null;
+            // Atrasados: meses ya pasados sin pagar
+            let nAtr = 0;
+            conceptos.forEach(c => (c.meses || []).forEach(m => { if (atrasado(m, estadoDe(c.id, m))) nAtr++; }));
+            const grupos = [...new Set(conceptos.map(c => c.grupo))];
+            app.innerHTML = `
+                <div class="cabeza">
+                    <div><h1>Pagos mensuales</h1><p class="sub" style="margin:0">Control de lo que hay que pagar cada mes: impuestos, rentas, seguros y servicios.</p></div>
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                        <span id="msg">${msg}</span>
+                        <div class="anio"><button type="button" data-anio="-1" aria-label="Año anterior">‹</button><strong>${anio}</strong><button type="button" data-anio="1" aria-label="Año siguiente">›</button></div>
+                        <button class="lf-btn lf-btn-primario" id="nuevo">Agregar concepto</button>
+                    </div>
+                </div>
+                <div class="tarjetas">
+                    ${rm ? `<div class="tarjeta ${rm.pendientes ? '' : 'bien'}"><div class="et">${MESES[verMes - 1]} ${anio}</div><div class="val">${rm.pagados} de ${rm.total} pagados</div><div class="det">${rm.pendientes} por pagar</div></div>` : `<div class="tarjeta"><div class="et">Año ${anio}</div><div class="val">${conceptos.length} conceptos</div><div class="det">Elige el año actual para ver el resumen del mes</div></div>`}
+                    <div class="tarjeta ${nAtr ? 'alerta' : 'bien'}"><div class="et">Atrasados</div><div class="val">${nAtr}</div><div class="det">${nAtr ? 'Meses anteriores que siguen por pagar (borde rojo)' : 'Todo lo de meses anteriores está pagado'}</div></div>
+                </div>
+                <div class="leyenda">${Object.entries(ESTADOS).map(([k, v]) => `<span><i class="e-${k}"></i>${esc(v.largo)}</span>`).join('')}<span><i style="background:var(--ambar-suave);border:1px solid var(--linea)"></i>Mes actual</span><span class="na">– No aplica ese mes</span></div>
+                ${!conceptos.length ? '<div class="vacio">Todavía no hay conceptos. Usa «Agregar concepto» para empezar.</div>' : `
+                <div class="tabla-wrap"><table class="pm">
+                    <thead><tr><th>Concepto</th>${MESES.map((m, i) => `<th class="${anio === anioHoy && i + 1 === mesHoy ? 'actual' : ''}">${m.slice(0, 3)}</th>`).join('')}</tr></thead>
+                    <tbody>
+                        ${grupos.map(g => `<tr class="grupo"><td colspan="13">${esc(g)}</td></tr>` + conceptos.filter(c => c.grupo === g).map(c => `<tr>
+                            <td class="nombre"><button type="button" data-editar="${esc(c.id)}" title="Editar concepto">${esc(c.nombre)}</button></td>
+                            ${MESES.map((_, i) => {
+                                const m = i + 1, act = anio === anioHoy && m === mesHoy ? 'actual' : '';
+                                if (!(c.meses || []).includes(m)) return `<td class="${act}"><span class="na">–</span></td>`;
+                                const est = estadoDe(c.id, m), p = pagos[clave(c.id, m)];
+                                return `<td class="${act}"><select class="pm e-${est} ${atrasado(m, est) ? 'atrasado' : ''}" data-c="${esc(c.id)}" data-m="${m}" title="${esc(ESTADOS[est].largo + (p?.actualizadoPor ? ' · ' + p.actualizadoPor : ''))}" aria-label="${esc(c.nombre)}, ${MESES[i]}">
+                                    ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === est ? 'selected' : ''}>${v.txt}</option>`).join('')}</select></td>`;
+                            }).join('')}
+                        </tr>`).join('')).join('')}
+                    </tbody>
+                </table></div>
+                <p class="pie">Cada casilla se guarda al cambiarla. Los meses sin marcar cuentan como por pagar. Clic en el nombre de un concepto para editarlo o cambiar los meses en que aplica.</p>`}`;
+            app.querySelectorAll('[data-anio]').forEach(b => b.addEventListener('click', () => { anio += +b.dataset.anio; history.replaceState(null, '', '?anio=' + anio); cargar(); }));
+            document.getElementById('nuevo').addEventListener('click', () => editarConcepto(null));
+            app.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => editarConcepto(conceptos.find(c => c.id === b.dataset.editar))));
+            app.querySelectorAll('select.pm').forEach(sel => sel.addEventListener('change', async () => {
+                const cid = sel.dataset.c, m = +sel.dataset.m, id = clave(cid, m), previo = estadoDe(cid, m);
+                sel.disabled = true;
+                try {
+                    const datos = { conceptoId: cid, anio, mes: `${anio}-${String(m).padStart(2, '0')}`, estado: sel.value, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() };
+                    await setDoc(doc(db, 'pagos_mensuales', id), datos, { merge: true });
+                    pagos[id] = { ...(pagos[id] || {}), ...datos };
+                    render();
+                } catch (err) { console.error(err); sel.value = previo; sel.disabled = false; alert('No se pudo guardar: ' + err.message); }
+            }));
+        }
+
+        // Alta y edición de un concepto (nombre, grupo y meses en que aplica). No se borra: se archiva.
+        function editarConcepto(c) {
+            const grupos = [...new Set(conceptos.map(x => x.grupo))];
+            const fondo = document.createElement('div');
+            fondo.className = 'lf-modal-fondo';
+            const meses = new Set(c ? c.meses || [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+            fondo.innerHTML = `<div class="lf-modal" role="dialog" aria-label="${c ? 'Editar' : 'Agregar'} concepto" style="max-width:620px">
+                <h3>${c ? 'Editar concepto' : 'Agregar concepto'}</h3>
+                <div class="lf-form">
+                    <div class="lf-campo lf-ancho"><label for="pc_nombre">Nombre</label><input id="pc_nombre" value="${esc(c?.nombre || '')}" placeholder="Ej. Seguro de oficina"></div>
+                    <div class="lf-campo lf-ancho"><label for="pc_grupo">Grupo</label><input id="pc_grupo" list="pc_grupos" value="${esc(c?.grupo || '')}" placeholder="Elige uno o escribe uno nuevo"><datalist id="pc_grupos">${grupos.map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
+                    <div class="lf-campo lf-ancho"><label>Meses en que se paga</label>
+                        <div class="meses-chk">${MESES.map((m, i) => `<label><input type="checkbox" class="pc_mes" value="${i + 1}" ${meses.has(i + 1) ? 'checked' : ''}> ${m.slice(0, 3)}</label>`).join('')}</div>
+                        <div style="margin-top:8px;font-size:13px"><button type="button" class="lf-btn lf-btn-compacto" id="pc_todos">Todos</button> <button type="button" class="lf-btn lf-btn-compacto" id="pc_ninguno">Ninguno</button></div>
+                    </div>
+                </div>
+                <div class="lf-modal-pie"><span id="pc_msg" class="err" style="margin-right:auto;font-size:13px"></span>
+                    ${c ? '<button class="lf-btn" id="pc_archivar" title="Deja de mostrarse; sus pagos quedan guardados">Archivar</button>' : ''}
+                    <button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="pc_guardar">Guardar</button></div>
+            </div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+            const chk = () => [...fondo.querySelectorAll('.pc_mes')];
+            document.getElementById('pc_todos').addEventListener('click', () => chk().forEach(x => { x.checked = true; }));
+            document.getElementById('pc_ninguno').addEventListener('click', () => chk().forEach(x => { x.checked = false; }));
+            const guardar = async extra => {
+                const msg = document.getElementById('pc_msg');
+                const nombre = document.getElementById('pc_nombre').value.trim(), grupo = document.getElementById('pc_grupo').value.trim();
+                const ms = chk().filter(x => x.checked).map(x => +x.value);
+                if (!extra && (!nombre || !grupo)) { msg.textContent = 'Escribe el nombre y el grupo.'; return; }
+                if (!extra && !ms.length) { msg.textContent = 'Marca al menos un mes.'; return; }
+                const id = c?.id || 'c_' + Date.now().toString(36);
+                const gOrden = conceptos.find(x => x.grupo === grupo)?.grupoOrden ?? (Math.max(0, ...conceptos.map(x => x.grupoOrden ?? 0)) + 1);
+                const datos = extra || { nombre, grupo, grupoOrden: gOrden, meses: ms, activo: true, ...(c ? {} : { orden: Math.max(0, ...conceptos.filter(x => x.grupo === grupo).map(x => x.orden ?? 0)) + 1 }) };
+                try {
+                    await setDoc(doc(db, 'pagos_mensuales_conceptos', id), { ...datos, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() }, { merge: true });
+                    cerrar();
+                    await cargar(`<span class="ok">${extra ? 'Concepto archivado.' : 'Concepto guardado.'}</span>`);
+                } catch (err) { console.error(err); msg.textContent = 'No se pudo guardar: ' + err.message; }
+            };
+            document.getElementById('pc_guardar').addEventListener('click', () => guardar(null));
+            document.getElementById('pc_archivar')?.addEventListener('click', () => { if (confirm(`¿Archivar «${c.nombre}»? Deja de mostrarse, pero sus pagos quedan guardados.`)) guardar({ activo: false }); });
+        }
+    </script>
+</body>
+</html>
