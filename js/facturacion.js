@@ -243,6 +243,25 @@ export function normalizarConceptos(conceptos = []) {
     return { ...c, subtotal: sub, iva, total: r2(sub + iva) };
   });
 }
+/**
+ * Datos del corte de un mes: totales y lo que conviene revisar antes de cerrarlo.
+ * `facturables` = contratos que se facturan (para detectar los que no tienen factura ese mes).
+ */
+export function resumenCorte(facturas, facturables = []) {
+  const pagada = f => f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde';
+  const total = f => totalesFactura(f).total || 0;
+  const facturado = r2(facturas.reduce((s, f) => s + total(f), 0));
+  const cobrado = r2(facturas.filter(pagada).reduce((s, f) => s + total(f), 0));
+  const quien = f => ({ contratoId: f.contratoId, razonSocial: f.razonSocial || '', locales: (f.locales || []).join(', ') });
+  const conFactura = new Set(facturas.map(f => f.contratoId));
+  return {
+    facturas: facturas.length, facturado, cobrado, porCobrar: r2(facturado - cobrado),
+    pendientes: facturas.filter(f => !pagada(f)).map(f => ({ ...quien(f), estadoPago: f.estadoPago || 'pendiente', total: total(f) })),
+    conAvisos: facturas.filter(f => (f.avisos || []).length).map(f => ({ ...quien(f), avisos: f.avisos })),
+    sinFactura: facturables.filter(c => !conFactura.has(c.id)).map(c => ({ contratoId: c.id, razonSocial: c.razonSocial || '', locales: (c.locales || []).join(', ') }))
+  };
+}
+
 /** Totales de una factura: siempre la suma de sus conceptos normalizados (mismo número en pantalla, resumen y detalle) */
 export function totalesFactura(f) {
   return totales(normalizarConceptos(f.conceptos || []));

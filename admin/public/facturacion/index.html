@@ -66,6 +66,13 @@
         .switch input:disabled + .slider { opacity: .5; }
         .mor-monto { display: inline-block; margin-left: 8px; color: var(--peligro); font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: middle; }
         .mor-n { display: block; font-size: 11px; color: var(--peligro); margin-top: 2px; }
+        /* Corte del mes */
+        .pie-corte { display: flex; justify-content: flex-end; margin-top: 16px; }
+        .btn-corte { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 12px 22px; font-size: 14px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+        .btn-corte:hover { background: var(--accion-hover); }
+        .tag-corte { font-size: 12px; color: var(--exito); background: var(--exito-suave); padding: 3px 10px; border-radius: 999px; margin-bottom: 10px; white-space: nowrap; }
+        .corte-lista { margin: 4px 0 0; padding-left: 18px; font-size: 13px; line-height: 19px; }
+        .corte-pasos { font-size: 13px; line-height: 19px; color: var(--tinta-suave); margin: 0; }
     </style>
 </head>
 <body>
@@ -74,17 +81,20 @@
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
-        import { collection, getDocs, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { collection, getDocs, getDoc, setDoc, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
-            ESTADOS, mesTxt, mesActual, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
-            cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura,
+            ESTADOS, mesTxt, mesActual, mesMas, resumenCorte, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
+            cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura, conceptoAgua,
             documentoContadores, imprimirHojas, totalesFactura
-        } from '../../../js/facturacion.js?v=20261011-3';
+        } from '../../../js/facturacion.js?v=20261011-4';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
         // Orden de la tabla (se conserva al cambiar de mes o recargar los datos)
         let ordenF = { col: 'locales', dir: 1 };
+        let corteMes = null;              // registro del corte de `mes` (facturacion_cortes/{mes}), si ya se hizo
+        let prefijoMsg = '';              // texto que se antepone al próximo mensaje (aviso del corte)
+        let generarSinConfirmar = false;  // el corte genera las facturas del mes siguiente sin preguntar otra vez
 
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
@@ -97,7 +107,10 @@
         async function cargar(msg = '') {
             app.innerHTML = '<p style="color:#999">Cargando...</p>';
             try {
-                const [snapC, facturas, general] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes), cargarConfigGeneral()]);
+                const [snapC, facturas, general, snapCorte] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes), cargarConfigGeneral(),
+                    getDoc(doc(db, 'facturacion_cortes', mes)).catch(() => null)]);
+                corteMes = snapCorte?.exists() ? snapCorte.data() : null;
+                msg = prefijoMsg + msg; prefijoMsg = '';
                 PCT_MORATORIOS = general.moratoriosPct;
                 const contratos = snapC.docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
                 render(contratos, facturas, msg);
@@ -130,6 +143,8 @@
                         <button class="btn-sec" id="exportar">Exportar PDF (<span id="nSel">${facturas.length}</span>)</button>
                         <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555;margin:0 0 10px">
                             <input type="checkbox" id="conResumen" checked> Incluir resumen</label>` : ''}
+                    <button class="btn-sec" id="histCortes" title="Cortes anteriores: consultarlos y volver a exportarlos">Historial de cortes</button>
+                    ${corteMes ? `<span class="tag-corte" title="Registrado por ${esc(corteMes.hechoPor || '')}">Corte hecho el ${esc(corteMes.hechoEn?.toDate?.().toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) || '')}</span>` : ''}
                     <span id="msg">${msg}</span>
                 </div>
                 ${!facturables.length ? `<div class="vacio">Ningún contrato tiene datos de facturación todavía. Se importan con la herramienta local <code>herramientas/importar-facturas.html</code> (no está publicada).</div>` :
@@ -163,7 +178,8 @@
                             <td class="num" id="totIva">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
                             <td class="num" id="totTot">${dinero(total)}</td><td></td></tr></tfoot>
                     </table>
-                </div>`}`;
+                </div>
+                <div class="pie-corte"><button class="btn-corte" id="corte" title="Exporta el reporte, guarda el corte y pasa al mes siguiente">CORTE DEL MES</button></div>`}`;
 
             document.getElementById('mes').addEventListener('change', e => {
                 mes = e.target.value || mesActual();
@@ -171,6 +187,7 @@
                 cargar();
             });
             document.getElementById('generar')?.addEventListener('click', () => generar(faltan, contratos));
+            document.getElementById('histCortes')?.addEventListener('click', abrirHistorialCortes);
             document.getElementById('actAgua')?.addEventListener('click', () => actualizarAgua(facturas, contratos));
             const seleccion = () => [...app.querySelectorAll('input.sel:checked')].map(x => x.dataset.id);
             // Interruptor apagado = la factura se "tacha" (redacted): montos ocultos y fuera de los totales
@@ -192,19 +209,114 @@
                 app.querySelectorAll('input.sel').forEach(x => { x.checked = e.target.checked; });
                 actualizarSel();
             });
-            document.getElementById('exportar')?.addEventListener('click', async () => {
+            const exportarPDF = async () => {
                 const ids = new Set(seleccion());
                 // Vuelve a leer las facturas para exportar lo último guardado (por si se editaron en otra pestaña)
                 const frescas = (await cargarFacturasMes(mes)).map(f => ({ ...f, ...totalesFactura(f) }));
                 const orden = [...app.querySelectorAll('tbody tr.fila-f')].map(tr => tr.dataset.id);
                 // Todas salen en el PDF; las apagadas van tachadas (redacted) y no suman
                 const elegidas = frescas.map(f => ({ ...f, _redactada: !ids.has(f.id) })).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
-                if (!ids.size) { alert('Activa al menos una factura.'); return; }
+                if (!ids.size) { alert('Activa al menos una factura.'); return false; }
                 const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
                 const conResumen = document.getElementById('conResumen').checked;
+                // window.print() espera a que se cierre el diálogo de impresión
                 imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen }),
                     `Facturas LAFABDECHOC ${mesTxt(mes)}${ids.size < filas.length ? ` (${ids.size} de ${filas.length})` : ''}`);
-            });
+                return true;
+            };
+            document.getElementById('exportar')?.addEventListener('click', exportarPDF);
+
+            // ---------- CORTE DEL MES: exporta el reporte, guarda el corte y deja el mes siguiente listo ----------
+            const abrirCorte = () => {
+                const r = resumenCorte(facturas, facturables);
+                const siguiente = mesMas(mes, 1);
+                const apagadas = filas.length - seleccion().length;
+                const lista = (items, txt) => items.map(x => esc(x.locales ? `${x.locales} ${txt(x)}` : txt(x))).join('; ');
+                const avisos = [];
+                if (r.pendientes.length) avisos.push(`<strong>${r.pendientes.length}</strong> factura${r.pendientes.length > 1 ? 's' : ''} sin pagar (${dinero(r.porCobrar)}): <ul class="corte-lista">${r.pendientes.map(p => `<li>${esc(p.locales)} · ${esc(p.razonSocial)} · ${esc(ESTADOS[p.estadoPago]?.txt || p.estadoPago)} · ${dinero(p.total)}</li>`).join('')}</ul>Se quedan en ${mesTxt(mes)}; las puedes seguir marcando desde ahí.`);
+                if (r.sinFactura.length) avisos.push(`Sin factura este mes: ${lista(r.sinFactura, x => x.razonSocial)}.`);
+                if (r.conAvisos.length) avisos.push(`${r.conAvisos.length} factura${r.conAvisos.length > 1 ? 's' : ''} con avisos (agua sin lectura, contrato vencido...): ${lista(r.conAvisos, x => x.razonSocial)}.`);
+                if (apagadas) avisos.push(`${apagadas} local${apagadas > 1 ? 'es' : ''} apagado${apagadas > 1 ? 's' : ''}: salen tachados en el resumen y sin detalle.`);
+                if (corteMes) avisos.push(`Ya hay un corte de este mes. Puedes repetirlo; se actualiza el registro.`);
+                const fondo = document.createElement('div');
+                fondo.className = 'lf-modal-fondo';
+                fondo.innerHTML = `<div class="lf-modal" role="dialog" aria-label="Corte del mes" style="max-width:640px">
+                    <h3>Corte de ${esc(mesTxt(mes))}</h3>
+                    <div class="lf-cifras">
+                        <div class="lf-cifra"><div class="lf-etiqueta">Facturado</div><div class="lf-valor" style="font-size:20px">${dinero(r.facturado)}</div></div>
+                        <div class="lf-cifra"><div class="lf-etiqueta">Cobrado</div><div class="lf-valor" style="font-size:20px;color:var(--exito)">${dinero(r.cobrado)}</div></div>
+                        <div class="lf-cifra"><div class="lf-etiqueta">Por cobrar</div><div class="lf-valor" style="font-size:20px">${dinero(r.porCobrar)}</div></div>
+                    </div>
+                    ${avisos.length ? `<div class="lf-aviso lf-aviso-atencion" style="flex-direction:column;gap:8px">${avisos.map(a => `<div>${a}</div>`).join('')}</div>` : ''}
+                    <div class="lf-aviso" id="cAgua" style="flex-direction:column;gap:6px">Revisando las lecturas de agua para las facturas de ${esc(mesTxt(siguiente))}...</div>
+                    <label class="lf-switch"><input type="checkbox" id="cGenerar" checked><span></span>Generar las facturas de ${esc(mesTxt(siguiente))} al terminar</label>
+                    <p class="corte-pasos">Al confirmar: 1) se exporta el reporte con lo que está prendido; 2) se guarda el corte; 3) se pasa a ${esc(mesTxt(siguiente))} con los interruptores prendidos y el orden por locales${'' }. Si dejas marcada la casilla, las facturas nuevas toman la renta del periodo y el agua de las lecturas. No se borra nada: ${esc(mesTxt(mes))} sigue en el selector de mes.</p>
+                    <div class="lf-modal-pie"><span id="cMsg" style="margin-right:auto;font-size:13px;color:var(--peligro)"></span><button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="cHacer">Hacer corte y exportar</button></div>
+                </div>`;
+                const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+                const teclas = e => { if (e.key === 'Escape') cerrar(); };
+                fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+                document.addEventListener('keydown', teclas);
+                document.body.appendChild(fondo);
+                // El agua de las facturas de `siguiente` sale de las lecturas de `mes`: si falta alguna, se avisa antes de generar
+                (async () => {
+                    const el = document.getElementById('cAgua');
+                    try {
+                        const [lecturas, todas] = await Promise.all([cargarLecturas(), cargarTodasLasFacturas()]);
+                        if (!document.body.contains(fondo)) return;
+                        const problemas = [];
+                        facturables.filter(c => ((c.facturacion || {}).tubos || []).length).forEach(c => {
+                            const { avisos: av } = conceptoAgua(c, siguiente, lecturas, lecturasFacturadas(todas, c, lecturas, facturaId(c.id, siguiente)));
+                            if (av.length) problemas.push({ locales: (c.locales || []).join(', '), razonSocial: c.razonSocial, aviso: av[0] });
+                        });
+                        // Agrupa por tipo de problema para que la lista no se alargue con 12 renglones casi iguales
+                        const tipo = t => /ya se cobró/.test(t) ? `Sin lectura nueva de ${mesTxt(mes)} (la última ya se cobró)` : /no hay lectura de/.test(t) ? `Sin lectura de ${mesTxt(mes)} (se usaría una anterior)` : 'Sin ninguna lectura del medidor';
+                        const grupos = new Map();
+                        problemas.forEach(x => { const k = tipo(x.aviso); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(x.locales); });
+                        if (!problemas.length) { el.className = 'lf-aviso lf-aviso-ok'; el.innerHTML = `Agua: hay lectura de ${esc(mesTxt(mes))} para todos los locatarios con medidor.`; return; }
+                        el.className = 'lf-aviso lf-aviso-atencion';
+                        el.innerHTML = `<div><strong>Agua: falta la lectura de ${esc(mesTxt(mes))} de ${problemas.length} locatario${problemas.length > 1 ? 's' : ''}.</strong> Sus facturas de ${esc(mesTxt(siguiente))} saldrían sin agua o con una lectura que ya se cobró.</div>
+                            <ul class="corte-lista">${[...grupos].map(([k, l]) => `<li><strong>${esc(k)}:</strong> locales ${esc(l.join(' · '))}</li>`).join('')}</ul>
+                            <div>Captura las lecturas en <a href="../agua/lecturas.html">Lecturas de agua</a> antes de generar. Si generas sin ellas, después usa «Actualizar agua y periodos».</div>`;
+                    } catch (err) {
+                        console.warn('No se pudo revisar el agua', err);
+                        if (el) { el.className = 'lf-aviso'; el.textContent = 'No se pudieron revisar las lecturas de agua. Revísalas en Lecturas de agua antes de generar.'; }
+                    }
+                })();
+                document.getElementById('cHacer').addEventListener('click', async () => {
+                    const btn = document.getElementById('cHacer'), msgC = document.getElementById('cMsg');
+                    btn.disabled = true; msgC.textContent = '';
+                    try {
+                        if (!seleccion().length) throw new Error('Activa al menos una factura para exportar.');
+                        const generarSig = document.getElementById('cGenerar').checked;
+                        if (!(await exportarPDF())) { btn.disabled = false; return; }
+                        await setDoc(doc(db, 'facturacion_cortes', mes), {
+                            mes, facturas: r.facturas, facturado: r.facturado, cobrado: r.cobrado, porCobrar: r.porCobrar,
+                            pendientes: r.pendientes, sinFactura: r.sinFactura,
+                            apagadas: filas.filter(f => !seleccion().includes(f.id)).map(f => f.contratoId),
+                            generoSiguiente: generarSig, hechoPor: getCurrentUser().email, hechoEn: serverTimestamp()
+                        });
+                        cerrar();
+                        // Deja el mes siguiente limpio: interruptores prendidos, orden por locales y selector de mes adelantado
+                        const cerrado = mes, aviso = `<span class="ok">Corte de ${esc(mesTxt(cerrado))} hecho: reporte exportado y corte guardado. </span>`;
+                        ordenF = { col: 'locales', dir: 1 };
+                        mes = siguiente;
+                        history.replaceState(null, '', '?mes=' + mes);
+                        prefijoMsg = aviso;
+                        if (generarSig) generarSinConfirmar = true;
+                        await cargar();
+                        if (generarSig) {
+                            const g = document.getElementById('generar');
+                            if (g) { prefijoMsg = aviso; g.click(); } else generarSinConfirmar = false;
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        msgC.textContent = err.message || 'No se pudo hacer el corte.';
+                        btn.disabled = false;
+                    }
+                });
+            };
+            document.getElementById('corte')?.addEventListener('click', abrirCorte);
             app.querySelectorAll('select.estado').forEach(s => s.addEventListener('change', () => cambiarEstado(s)));
             // Toda la fila abre la factura, salvo los controles (casilla, interruptor, estado)
             app.querySelectorAll('tr.fila-f').forEach(tr => tr.addEventListener('click', e => {
@@ -255,8 +367,72 @@
             return `<th class="ord ${cls}" data-col="${col}" title="${esc(title || 'Ordenar por ' + txt.toLowerCase())}">${txt}<span class="flecha">▲▼</span></th>`;
         }
 
+        // ---------- Historial de cortes: consultar y volver a exportar ----------
+        async function abrirHistorialCortes() {
+            const fondo = document.createElement('div');
+            fondo.className = 'lf-modal-fondo';
+            fondo.innerHTML = `<div class="lf-modal" role="dialog" aria-label="Historial de cortes" style="max-width:980px"><h3>Historial de cortes</h3><div id="hcCuerpo" class="nota-hc">Cargando...</div><div class="lf-modal-pie"><span id="hcMsg" style="margin-right:auto;font-size:13px;color:var(--peligro)"></span><button class="lf-btn" data-cerrar>Cerrar</button></div></div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+            const cuerpo = document.getElementById('hcCuerpo'), msgH = document.getElementById('hcMsg');
+            try {
+                const cortes = (await getDocs(collection(db, 'facturacion_cortes'))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.mes.localeCompare(a.mes));
+                if (!cortes.length) { cuerpo.innerHTML = '<p class="vacio">Todavía no hay cortes. El primero aparece aquí cuando hagas el corte del mes.</p>'; return; }
+                const fecha = c => c.hechoEn?.toDate?.().toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) || '-';
+                cuerpo.innerHTML = `<div class="lf-tabla-wrap"><table class="lf-tabla">
+                    <thead><tr><th>Mes</th><th>Corte</th><th class="der">Facturas</th><th class="der">Facturado</th><th class="der">Cobrado</th><th class="der">Por cobrar</th><th>Sin pagar</th><th></th></tr></thead>
+                    <tbody>${cortes.map(c => `<tr>
+                        <td><strong>${esc(mesTxt(c.mes))}</strong></td>
+                        <td>${esc(fecha(c))}<small>${esc(c.hechoPor || '')}</small></td>
+                        <td class="der lf-num">${c.facturas ?? '-'}${(c.apagadas || []).length ? `<small>${c.apagadas.length} apagada${c.apagadas.length > 1 ? 's' : ''}</small>` : ''}</td>
+                        <td class="der lf-num">${dinero(c.facturado)}</td>
+                        <td class="der lf-num" style="color:var(--exito)">${dinero(c.cobrado)}</td>
+                        <td class="der lf-num">${dinero(c.porCobrar)}</td>
+                        <td title="${esc((c.pendientes || []).map(p => `${p.locales} ${p.razonSocial}`).join('; '))}">${(c.pendientes || []).length ? `${c.pendientes.length} al corte` : '<span class="lf-vacio">Todo pagado</span>'}</td>
+                        <td><div class="lf-acciones"><button class="lf-btn lf-btn-compacto" data-ver-corte="${esc(c.mes)}">Ver mes</button><button class="lf-btn lf-btn-compacto lf-btn-primario" data-exp-corte="${esc(c.mes)}">Exportar</button></div></td>
+                    </tr>`).join('')}</tbody></table></div>
+                    <p class="nota-hc" style="margin:10px 0 0;font-size:13px;color:var(--tinta-suave)">«Exportar» vuelve a generar el reporte con las facturas de ese mes tal como están hoy y con los mismos locales apagados que se marcaron en el corte. Si cambiaron desde entonces, te avisa.</p>`;
+                cuerpo.querySelectorAll('[data-ver-corte]').forEach(b => b.addEventListener('click', () => {
+                    cerrar();
+                    mes = b.dataset.verCorte;
+                    history.replaceState(null, '', '?mes=' + mes);
+                    cargar();
+                }));
+                cuerpo.querySelectorAll('[data-exp-corte]').forEach(b => b.addEventListener('click', async () => {
+                    b.disabled = true; msgH.textContent = '';
+                    try { await exportarCorte(cortes.find(c => c.mes === b.dataset.expCorte)); }
+                    catch (err) { console.error(err); msgH.textContent = err.message || 'No se pudo exportar.'; }
+                    finally { b.disabled = false; }
+                }));
+            } catch (err) {
+                console.error(err);
+                cuerpo.innerHTML = `<p class="err">No se pudo cargar el historial (${esc(err.message)}).</p>`;
+            }
+        }
+
+        // Vuelve a exportar el reporte de un mes cortado: facturas de hoy, locales apagados como estaban en el corte
+        async function exportarCorte(corte) {
+            const [snapC, frescas] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(corte.mes)]);
+            const contratos = snapC.docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
+            const facturas = frescas.map(f => ({ ...f, ...totalesFactura(f) }));
+            if (!facturas.length) throw new Error(`Ya no hay facturas de ${mesTxt(corte.mes)}.`);
+            const hoy = r2(facturas.reduce((s, f) => s + (f.total || 0), 0));
+            if (typeof corte.facturado === 'number' && Math.abs(hoy - corte.facturado) > 0.005
+                && !confirm(`Las facturas de ${mesTxt(corte.mes)} cambiaron desde el corte: se facturó ${dinero(corte.facturado)} y hoy suman ${dinero(hoy)}.\n\n¿Exportar con los datos de hoy?`)) return;
+            const apagadas = new Set(corte.apagadas || []);
+            const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
+            const orden = f => contratos.findIndex(c => c.id === f.contratoId);
+            const elegidas = facturas.map(f => ({ ...f, _redactada: apagadas.has(f.contratoId) })).sort((a, b) => orden(a) - orden(b));
+            if (elegidas.every(f => f._redactada)) throw new Error('En ese corte todos los locales estaban apagados.');
+            imprimirHojas(documentoContadores(corte.mes, elegidas, porId, { resumen: true }), `Facturas LAFABDECHOC ${mesTxt(corte.mes)} (corte)`);
+        }
+
         async function generar(faltan, contratos) {
-            if (!confirm(`¿Generar ${faltan.length} factura(s) de ${mesTxt(mes)}?\n\nQuedan como "Pendiente" para que las revises.`)) return;
+            if (!generarSinConfirmar && !confirm(`¿Generar ${faltan.length} factura(s) de ${mesTxt(mes)}?\n\nQuedan como "Pendiente" para que las revises.`)) return;
+            generarSinConfirmar = false;
             const btn = document.getElementById('generar');
             btn.disabled = true;
             try {
