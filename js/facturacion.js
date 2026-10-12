@@ -322,6 +322,10 @@ export const ESTILO_HOJA = `
   .hc { font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 10.5px; line-height: 1.4; }
   .hc h1 { font-size: 17px; margin: 0; line-height: 1.2; }
   .hc .enc { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 12px; }
+  .hc .enc { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
+  .hc .enc-izq { display: flex; align-items: center; }
+  .hc .enc-centro { text-align: center; }
+  .hc .enc-logo { height: 34px; width: auto; display: block; }
   .hc .enc .der { text-align: right; font-size: 9.5px; color: #555; }
   .hc h2 { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; color: #555; }
   .hc table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
@@ -360,10 +364,15 @@ export const ESTILO_HOJA = `
   .hc .redact { color: #111 !important; letter-spacing: -1px; white-space: nowrap; overflow: hidden; display: inline-block; max-width: 100%; vertical-align: bottom; }
 `;
 
-export function encabezadoHoja(mes, subtitulo = '') {
-  return `<div class="enc"><div><h1>Facturación ${mesCap(mes)}</h1>
-    <div class="peq">Emisor: LAFABDECHOC S DE RL DE CV · Solicitud de emisión de CFDI</div></div>
-    <div class="der">${esc(subtitulo).replace(/&lt;br&gt;/g, '<br>')}<br>Generado el ${fechaDMY(hoyISO())}</div></div>`;
+// Logo del encabezado: se precarga al cargar el módulo para que ya esté listo al imprimir
+// (la ruta es relativa porque todas las páginas que exportan están un nivel dentro de admin/ o admin/public/)
+const LOGO_URL = '../css/logo.png';
+if (typeof Image !== 'undefined') { try { new Image().src = LOGO_URL; } catch (e) { /* sin logo no pasa nada */ } }
+
+export function encabezadoHoja(mes) {
+  return `<div class="enc"><div class="enc-izq"><img class="enc-logo" src="${LOGO_URL}" alt="La Fábrica de Chocolate"></div>
+    <div class="enc-centro"><h1>Facturación ${mesCap(mes)}</h1></div>
+    <div class="der">Generado el ${fechaDMY(hoyISO())}</div></div>`;
 }
 
 
@@ -400,7 +409,7 @@ export function resumenHTML(facturas, contratosPorId = {}) {
     ? [3, 8, 20, 11, 7.5, 7, 6.5, 6, 6, 8.5, 7.5, 9]
     : [3, 9, 22, 12, 8, 7.5, 7, 6.5, 8.5, 7.5, 9];
   return `
-    <h2>Resumen · subtotales sin IVA por concepto</h2>
+    <h2>Facturas de LAFABDECHOC S DE RL DE CV · subtotales sin IVA por concepto</h2>
     <table class="fija">
       <colgroup>${anchos.map(w => `<col style="width:${w}%">`).join('')}</colgroup>
       <thead><tr><th>#</th><th>Locales</th><th>Receptor</th><th>RFC</th>
@@ -560,7 +569,7 @@ export function documentoContadores(mes, facturas, contratosPorId = {}, { resume
     .map(({ f, i }, k) => ({ f, n: hayNumeros ? (resumen ? facturas.length + i + 1 : fichas.length + k + 1) : '' }));
   const resumenes = [facturas.length > 1 || gbd.length ? resumenHTML(facturas, contratosPorId) : '', gbd.length ? resumenGbdHTML(gbd, facturas.length + 1) : ''].filter(Boolean).join('');
   return `<div class="hc">
-    ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}${gbd.length ? `<br>GBD: ${gbdAct.length} factura(s)${gbdAct.length < gbd.length ? ` + ${gbd.length - gbdAct.length} tachada(s)` : ''} · Total ${dinero(totGbd)}` : ''}`)}
+    ${encabezadoHoja(mes)}
     ${resumen && resumenes ? resumenes + '<h2 class="salto">Detalle por receptor</h2>' : ''}
     <div class="fichas">${fichas.map(({ f, n }) => hojaFacturaHTML(f, contratosPorId[f.contratoId], n)).join('')}${fichasGbd.map(({ f, n }) => hojaGbdHTML(f, n)).join('')}</div>
   </div>`;
