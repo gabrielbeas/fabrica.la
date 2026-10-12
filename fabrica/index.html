@@ -1680,6 +1680,18 @@
 </footer>
 
 <script>
+  // Orden aleatorio de las fichas de La comunidad en cada visita
+  (function () {
+    const grid = document.querySelector('.tenants-grid');
+    if (!grid) return;
+    const fichas = Array.from(grid.querySelectorAll('.tenant-card'));
+    for (let i = fichas.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [fichas[i], fichas[j]] = [fichas[j], fichas[i]];
+    }
+    fichas.forEach(f => grid.appendChild(f));
+  })();
+
   function handleSubmit() {
     const nombre = document.getElementById('nombre').value.trim();
     const email = document.getElementById('email').value.trim();
