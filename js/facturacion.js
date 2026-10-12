@@ -363,7 +363,7 @@ export const ESTILO_HOJA = `
 export function encabezadoHoja(mes, subtitulo = '') {
   return `<div class="enc"><div><h1>Facturación ${mesCap(mes)}</h1>
     <div class="peq">Emisor: LAFABDECHOC S DE RL DE CV · Solicitud de emisión de CFDI</div></div>
-    <div class="der">${esc(subtitulo)}<br>Generado el ${fechaDMY(hoyISO())}</div></div>`;
+    <div class="der">${esc(subtitulo).replace(/&lt;br&gt;/g, '<br>')}<br>Generado el ${fechaDMY(hoyISO())}</div></div>`;
 }
 
 
@@ -420,6 +420,93 @@ export function resumenHTML(facturas, contratosPorId = {}) {
     </table>`;
 }
 
+// ================= FACTURAS DE GBD (renta a GBD y préstamo a Proyectos Saraperos; colección facturas_gbd) =================
+const pctTxt = f => `${+(f * 100).toFixed(4)}%`;
+/**
+ * Cálculo de una factura de GBD. Base = subtotal/IVA/retenciones capturados; si lleva moratorios
+ * (`moratoriosPct` > 0) se agregan como un renglón más: pct × subtotal, con IVA 16 % y sin retención.
+ * Total = subtotal + IVA + moratorios − retenciones.
+ */
+export function calcGBD(f) {
+  const base = r2(Number(f.subtotal) || 0), iva = r2(Number(f.iva) || 0);
+  const retIsr = r2(Number(f.retIsr) || 0), retIva = r2(Number(f.retIva) || 0);
+  const pct = Number(f.moratoriosPct) || 0;
+  const moraSub = r2(base * pct), moraIva = r2(moraSub * IVA);
+  return {
+    base, iva, retIsr, retIva, pct, moraSub, moraIva, moraTotal: r2(moraSub + moraIva),
+    subtotal: r2(base + moraSub), ivaTotal: r2(iva + moraIva), retenciones: r2(retIsr + retIva),
+    total: r2(base + iva + moraSub + moraIva - retIsr - retIva)
+  };
+}
+/**
+ * Importes de la factura mensual de un contrato de GBD. La renta a GBD (con `porcentaje`) se calcula sola:
+ * porcentaje × suma de las rentas del mes (sin IVA) de todos los contratos de locales; IVA 16 % y las retenciones
+ * conservan la proporción que tienen en el contrato. El resto (préstamo) se copia tal cual.
+ */
+export function montosGBD(c, contratos, mes) {
+  const fijo = { subtotal: c.subtotal || 0, iva: c.iva || 0, retIsr: c.retIsr || 0, retIva: c.retIva || 0, total: c.total || 0 };
+  if (c.tipo !== 'renta' || typeof c.porcentaje !== 'number' || !contratos.length || !(c.subtotal > 0)) return { ...fijo, automatico: false };
+  const baseRentas = r2(contratos.reduce((s, x) => s + rentaDelMes(x, mes).renta, 0));
+  const subtotal = r2(baseRentas * c.porcentaje), iva = r2(subtotal * IVA);
+  const retIsr = r2(subtotal * (c.retIsr || 0) / c.subtotal), retIva = r2(subtotal * (c.retIva || 0) / c.subtotal);
+  return { subtotal, iva, retIsr, retIva, total: r2(subtotal + iva - retIsr - retIva), automatico: true, baseRentas };
+}
+/** Descripción corta y detalle de una factura de GBD */
+export function conceptoGBDTxt(f) {
+  if (f.tipo === 'prestamo') return { corto: `Intereses${typeof f.tasaAnual === 'number' ? ` · ${pctTxt(f.tasaAnual)} anual` : ''}`, detalle: `Préstamo de ${dinero(f.capital)}${typeof f.tasaAnual === 'number' ? ` al ${pctTxt(f.tasaAnual)} anual` : ''}` };
+  return { corto: `${typeof f.porcentaje === 'number' ? `${pctTxt(f.porcentaje)} de las rentas` : f.concepto}${f.periodo ? ` · ${f.periodo}` : ''}`, detalle: `${typeof f.porcentaje === 'number' ? `${pctTxt(f.porcentaje)} ` : ''}${f.concepto}${f.periodo ? ` (periodo ${f.periodo})` : ''}` };
+}
+
+/** Resumen de las facturas de GBD (apagadas tachadas y fuera de los totales). `inicio` = número de la primera. */
+function resumenGbdHTML(gbd, inicio) {
+  const filas = gbd.map((f, i) => ({ f, c: calcGBD(f), n: inicio + i }));
+  const act = filas.filter(x => !x.f._redactada);
+  const s = k => r2(act.reduce((a, x) => a + x.c[k], 0));
+  const anchos = [3, 18, 27, 11, 10, 10, 10, 11];
+  return `
+    <h2>Facturas de GABRIEL BEAS DIAZ (GBD) · subtotales sin IVA</h2>
+    <table class="fija">
+      <colgroup>${anchos.map(w => `<col style="width:${w}%">`).join('')}</colgroup>
+      <thead><tr><th>#</th><th>Contrato</th><th>Receptor</th><th class="n">Subtotal</th><th class="n">IVA 16%</th><th class="n">Ret. ISR</th><th class="n">Ret. IVA</th><th class="n">Total</th></tr></thead>
+      <tbody>
+        ${filas.map(x => `<tr><td>${x.n}</td><td>${esc(x.f.nombre)}</td><td>${esc(x.f.contraparte)}</td>
+          ${mtdR(x.f._redactada, x.c.subtotal)}${mtdR(x.f._redactada, x.c.ivaTotal)}${mtdR(x.f._redactada, x.c.retIsr, false, true)}${mtdR(x.f._redactada, x.c.retIva, false, true)}${mtdR(x.f._redactada, x.c.total, true)}</tr>`).join('')}
+        <tr class="tot"><td colspan="3">TOTAL · ${act.length} factura${act.length === 1 ? '' : 's'}${act.length < filas.length ? ` (${filas.length - act.length} tachada${filas.length - act.length === 1 ? '' : 's'})` : ''}</td>
+          ${mtd(s('subtotal'))}${mtd(s('ivaTotal'))}${mtd(s('retIsr'))}${mtd(s('retIva'))}${mtd(s('total'))}</tr>
+      </tbody>
+    </table>`;
+}
+
+/** Ficha de una factura de GBD: receptor, conceptos con retenciones y destinatarios */
+export function hojaGbdHTML(f, numero = '') {
+  const red = !!f._redactada, c = calcGBD(f), txt = conceptoGBDTxt(f);
+  const neto = r2(c.base + c.iva - c.retIsr - c.retIva);
+  return `
+    <div class="ficha">
+      <div class="ficha-cab">
+        <div><span class="k">${numero ? `${numero} · ` : ''}Receptor</span><span class="v">${esc(f.contraparte)}</span></div>
+        <div><span class="k">Emisor</span><span class="v">GABRIEL BEAS DIAZ</span></div>
+        <div><span class="k">Contrato</span><span class="v">${esc(f.nombre)}</span></div>
+        <div><span class="k">Mes</span><span class="v">${mesCap(f.mes)}</span></div>
+      </div>
+      <table class="fija">
+        <colgroup><col style="width:20%"><col style="width:27%"><col style="width:11%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:12%"></colgroup>
+        <thead><tr><th>Concepto</th><th>Detalle</th><th class="n">Subtotal</th><th class="n">IVA 16%</th><th class="n">Ret. ISR</th><th class="n">Ret. IVA</th><th class="n">Total</th></tr></thead>
+        <tbody>
+          <tr><td><strong>${esc(f.concepto)}</strong></td><td class="peq">${red ? tapar(txt.detalle) : esc(txt.detalle)}</td>
+            ${mtdR(red, c.base)}${mtdR(red, c.iva)}${mtdR(red, c.retIsr, false, true)}${mtdR(red, c.retIva, false, true)}${mtdR(red, neto)}</tr>
+          ${c.pct > 0 ? `<tr><td><strong>INTERESES MORATORIOS</strong></td><td class="peq">${red ? tapar('00% sobre el subtotal') : `${pctTxt(c.pct)} sobre el subtotal`}</td>
+            ${mtdR(red, c.moraSub)}${mtdR(red, c.moraIva)}${mtdR(red, 0, false, true)}${mtdR(red, 0, false, true)}${mtdR(red, c.moraTotal)}</tr>` : ''}
+          <tr class="tot"><td colspan="2">TOTAL A FACTURAR</td>${mtdR(red, c.subtotal)}${mtdR(red, c.ivaTotal)}${mtdR(red, c.retIsr, false, true)}${mtdR(red, c.retIva, false, true)}${mtdR(red, c.total)}</tr>
+        </tbody>
+      </table>
+      <div class="ficha-pie">
+        <div><span class="k">Enviar CFDI a</span>${(f.correos || []).map(esc).join(' · ') || '–'}</div>
+        <div><span class="k">Notas</span>${f.notas ? (red ? tapar(f.notas) : esc(f.notas).replace(/\n/g, ' · ')) : '–'}</div>
+      </div>
+    </div>`;
+}
+
 /** Ficha de una factura: datos del receptor + conceptos con monto */
 export function hojaFacturaHTML(f, contrato = {}, numero = '') {
   const t = totalesFactura(f);
@@ -458,17 +545,24 @@ export function hojaFacturaHTML(f, contrato = {}, numero = '') {
 }
 
 /** Documento completo: encabezado + resumen + fichas */
-export function documentoContadores(mes, facturas, contratosPorId = {}, { resumen = true } = {}) {
+export function documentoContadores(mes, facturas, contratosPorId = {}, { resumen = true, gbd = [] } = {}) {
   const activas = facturas.filter(f => !f._redactada);
   const tot = r2(activas.reduce((s, f) => s + (totalesFactura(f).total || 0), 0));
+  const gbdAct = gbd.filter(f => !f._redactada);
+  const totGbd = r2(gbdAct.reduce((s, f) => s + calcGBD(f).total, 0));
   // El resumen lleva todos los locales (los apagados tachados); el detalle solo los prendidos.
-  // Con resumen, cada ficha conserva el número que tiene en esa lista; sin resumen se numeran seguidas.
+  // Con resumen, cada ficha conserva el número que tiene en esa lista (las de GBD siguen la numeración de los locales);
+  // sin resumen se numeran seguidas. Con una sola factura en todo el documento no se numera.
+  const hayNumeros = facturas.length + gbd.length > 1;
   const fichas = facturas.map((f, i) => ({ f, i })).filter(({ f }) => !f._redactada)
-    .map(({ f, i }, k, todas) => ({ f, n: facturas.length > 1 ? (resumen ? i + 1 : (todas.length > 1 ? k + 1 : '')) : '' }));
+    .map(({ f, i }, k) => ({ f, n: hayNumeros ? (resumen ? i + 1 : k + 1) : '' }));
+  const fichasGbd = gbd.map((f, i) => ({ f, i })).filter(({ f }) => !f._redactada)
+    .map(({ f, i }, k) => ({ f, n: hayNumeros ? (resumen ? facturas.length + i + 1 : fichas.length + k + 1) : '' }));
+  const resumenes = [facturas.length > 1 || gbd.length ? resumenHTML(facturas, contratosPorId) : '', gbd.length ? resumenGbdHTML(gbd, facturas.length + 1) : ''].filter(Boolean).join('');
   return `<div class="hc">
-    ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}`)}
-    ${facturas.length > 1 && resumen ? resumenHTML(facturas, contratosPorId) + '<h2 class="salto">Detalle por receptor</h2>' : ''}
-    <div class="fichas">${fichas.map(({ f, n }) => hojaFacturaHTML(f, contratosPorId[f.contratoId], n)).join('')}</div>
+    ${encabezadoHoja(mes, `${activas.length} factura(s)${activas.length < facturas.length ? ` + ${facturas.length - activas.length} tachada(s)` : ''} · Total ${dinero(tot)}${gbd.length ? `<br>GBD: ${gbdAct.length} factura(s)${gbdAct.length < gbd.length ? ` + ${gbd.length - gbdAct.length} tachada(s)` : ''} · Total ${dinero(totGbd)}` : ''}`)}
+    ${resumen && resumenes ? resumenes + '<h2 class="salto">Detalle por receptor</h2>' : ''}
+    <div class="fichas">${fichas.map(({ f, n }) => hojaFacturaHTML(f, contratosPorId[f.contratoId], n)).join('')}${fichasGbd.map(({ f, n }) => hojaGbdHTML(f, n)).join('')}</div>
   </div>`;
 }
 

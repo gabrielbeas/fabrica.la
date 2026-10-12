@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura de GBD - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261005-5">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
+        .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
+        .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .barra a { color: var(--accion); text-decoration: none; font-size: 14px; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 22px; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .panel { border: 1px solid var(--linea); border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; }
+        .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; padding: 8px; border-bottom: 1px solid var(--linea); }
+        td { padding: 8px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: middle; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
+        th.num { font-family: inherit; }
+        .nota { font-size: 12px; color: var(--tinta-suave); }
+        .tot td { font-weight: 700; border-top: 1px solid var(--borde-control); border-bottom: none; }
+        .avisos { background: var(--atencion-suave); color: var(--atencion); border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-top: 14px; }
+        .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .datos .k { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-suave); margin-bottom: 4px; }
+        .datos a { color: var(--tinta); }
+        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 16px; }
+        .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        .campos input, .campos select, .campos textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font: inherit; font-size: 14px; }
+        .campos .ancho { grid-column: 1 / -1; }
+        select.estado { border: none; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+        .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
+        .e-pagado { background: var(--exito); color: var(--fondo); } select.estado option { background: var(--fondo); color: var(--tinta); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
+        .ok { color: var(--exito); } .err { color: var(--peligro); }
+        .tarjetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
+        .tarjeta .et { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; }
+        .graf svg { width: 100%; height: auto; display: block; }
+        .graf svg text { font-size: 11px; fill: var(--tinta-suave); font-family: var(--font-sans); }
+        .graf .barra { fill: var(--accion); } .graf g.b:hover .barra { fill: #d08a1e; }
+        .graf .hit { fill: transparent; }
+        .anios { font-size: 13px; color: var(--tinta-suave); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+        .anios b { color: var(--tinta); font-family: var(--font-mono); font-weight: 600; }
+        details.pagos summary { cursor: pointer; color: var(--accion); font-size: 14px; margin-top: 14px; }
+        @media (max-width: 850px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
+        .acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+        @media (max-width: 850px) { .datos, .campos { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
+        import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { ESTADOS, mesTxt, dinero, esc, r2, ordenLocales, rentaDelMes, calcGBD, conceptoGBDTxt, normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261011-6';
+
+        const app = document.getElementById('app');
+        const params = new URLSearchParams(location.search);
+        const id = params.get('id');   // {contratoGbd}_{YYYY-MM}
+        let f = null, editando = false, pagos = [];
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        const pct = x => `${+(x * 100).toFixed(4)}%`;
+        const pct2 = x => `${+(x * 100).toFixed(2)}%`;
+        const menos = x => (x ? '−' + dinero(x) : dinero(0));
+
+        async function cargar(msg = '') {
+            try {
+                const snap = await getDoc(doc(db, 'facturas_gbd', id || '_'));
+                if (!snap.exists()) { app.innerHTML = '<p class="err">No se encontró la factura.</p><p><a href="./">← Facturación</a></p>'; return; }
+                f = { id: snap.id, ...snap.data() };
+                pagos = [];
+                if (f.tipo !== 'prestamo') {
+                    pagos = (await getDocs(query(collection(db, 'pagos_gbd'), where('contratoId', '==', f.contratoId)))).docs.map(d => ({ id: d.id, ...d.data() }))
+                        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+                }
+                document.title = `${f.nombre} · ${mesTxt(f.mes)} - La Fábrica de Chocolate`;
+                await render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        // Origen del subtotal: renta = porcentaje de la suma de las rentas de cada local; préstamo = capital × tasa ÷ 12
+        async function origenHTML(c) {
+            if (f.tipo !== 'prestamo' && typeof f.porcentaje === 'number') {
+                const locs = (await getDocs(collection(db, 'contratos'))).docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
+                const filas = locs.map(x => ({ x, renta: rentaDelMes(x, f.mes).renta }));
+                const base = r2(filas.reduce((a, r) => a + r.renta, 0)), esperado = r2(base * f.porcentaje);
+                return { formula: `${pct(f.porcentaje)} de ${dinero(base)} (rentas del mes sin IVA)`, html: `<div class="panel">
+                    <h2>Rentas del mes que se toman de base</h2>
+                    <table>
+                        <thead><tr><th>Locales</th><th>Locatario</th><th class="num">Renta de ${esc(mesTxt(f.mes))} sin IVA</th></tr></thead>
+                        <tbody>${filas.map(r => `<tr><td>${esc((r.x.locales || []).join(', '))}</td><td>${esc(r.x.razonSocial || '')}</td><td class="num">${dinero(r.renta)}</td></tr>`).join('')}</tbody>
+                        <tfoot><tr class="tot"><td colspan="2">Total de rentas del mes (${filas.length} contratos)</td><td class="num">${dinero(base)}</td></tr>
+                        <tr class="tot"><td colspan="2">${pct(f.porcentaje)} para GBD</td><td class="num">${dinero(esperado)}</td></tr></tfoot>
+                    </table>
+                    ${Math.abs(esperado - c.base) > 0.02 ? `<div class="avisos">El subtotal de esta factura (${dinero(c.base)}) difiere del ${pct(f.porcentaje)} de las rentas de hoy (${dinero(esperado)}): se capturó o se editó a mano, o las rentas cambiaron después de generarla.</div>` : ''}
+                </div>` };
+            }
+            if (f.tipo === 'prestamo' && typeof f.capital === 'number' && typeof f.tasaAnual === 'number') {
+                const mensual = r2(f.capital * f.tasaAnual / 12);
+                return { formula: `${dinero(f.capital)} × ${pct(f.tasaAnual)} ÷ 12`, html: `<div class="panel">
+                    <h2>Préstamo a ${esc(f.contraparte)}</h2>
+                    <table>
+                        <tbody><tr><td>Capital prestado</td><td class="num">${dinero(f.capital)}</td></tr>
+                        <tr><td>Tasa de interés anual</td><td class="num">${pct(f.tasaAnual)}</td></tr></tbody>
+                        <tfoot><tr class="tot"><td>Interés mensual (capital × tasa ÷ 12)</td><td class="num">${dinero(mensual)}</td></tr></tfoot>
+                    </table>
+                    ${Math.abs(mensual - c.base) > 0.02 ? `<div class="avisos">El subtotal de esta factura (${dinero(c.base)}) difiere del interés calculado (${dinero(mensual)}).</div>` : ''}
+                </div>` };
+            }
+            return { formula: conceptoGBDTxt(f).detalle, html: '' };
+        }
+
+        async function render(msg) {
+            const c = calcGBD(f), txt = conceptoGBDTxt(f);
+            const o = await origenHTML(c);
+            app.innerHTML = `
+                <div class="barra">
+                    <a href="./?mes=${esc(f.mes)}">← Facturación ${esc(mesTxt(f.mes))}</a>
+                    <a href="../locales/index.html">Ver contratos de GBD →</a>
+                </div>
+                <h1>${esc(f.nombre)}</h1>
+                <p class="sub">${esc(mesTxt(f.mes))} · GBD a: ${esc(f.contraparte)} · ${esc(txt.detalle)}</p>
+                <div id="msg" style="margin-bottom:12px">${msg}</div>
+                ${o.html}
+                <div class="panel">
+                    <h2>Factura del mes</h2>
+                    <table>
+                        <thead><tr><th>${esc(f.concepto)}</th><th>Cómo se calcula</th><th class="num">Importe</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>Subtotal</strong></td><td class="nota">${esc(o.formula)}</td><td class="num"><strong>${dinero(c.base)}</strong></td></tr>
+                            <tr><td>IVA 16%</td><td class="nota">16% del subtotal</td><td class="num">${dinero(c.iva)}</td></tr>
+                            ${c.pct > 0 ? `<tr><td>Intereses moratorios</td><td class="nota">${pct(c.pct)} del subtotal (${dinero(c.moraSub)}) más IVA (${dinero(c.moraIva)})</td><td class="num">${dinero(c.moraTotal)}</td></tr>` : ''}
+                            <tr><td>Retención ISR</td><td class="nota">${c.base ? `${pct2(c.retIsr / c.base)} del subtotal` : '-'}</td><td class="num">${menos(c.retIsr)}</td></tr>
+                            <tr><td>Retención IVA</td><td class="nota">${c.iva && c.retIva ? `${pct2(c.retIva / c.iva)} del IVA` : 'No se retiene IVA'}</td><td class="num">${menos(c.retIva)}</td></tr>
+                        </tbody>
+                        <tfoot><tr class="tot"><td colspan="2">Total a recibir</td><td class="num">${dinero(c.total)}</td></tr></tfoot>
+                    </table>
+                </div>
+                <div class="panel">
+                    <h2>Envío y pago</h2>
+                    <div class="datos">
+                        <div><div class="k">Enviar CFDI a</div>${(f.correos || []).map(x => `<div><a href="mailto:${esc(x)}">${esc(x)}</a></div>`).join('') || '-'}</div>
+                        <div><div class="k">Estado de pago</div>
+                            <select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" id="estado">${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}</select>
+                            ${f.fechaPago ? `<div class="nota" style="margin-top:6px">Fecha de pago: ${esc(f.fechaPago)}</div>` : ''}
+                            ${f.notas ? `<div class="k" style="margin-top:12px">Notas</div><div style="white-space:pre-wrap">${esc(f.notas)}</div>` : ''}</div>
+                    </div>
+                    <div class="acciones"><button class="btn" id="editar">Editar factura</button></div>
+                    <div id="formEditar"></div>
+                </div>
+                ${historialPagosHTML()}`;
+            document.getElementById('estado').addEventListener('change', async e => {
+                const sel = e.target; sel.disabled = true;
+                try {
+                    await updateDoc(doc(db, 'facturas_gbd', f.id), { estadoPago: sel.value, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                    f.estadoPago = sel.value; sel.className = `estado ${ESTADOS[sel.value]?.clase || ''}`;
+                } catch (err) { console.error(err); sel.value = f.estadoPago; alert('No se pudo cambiar el estado: ' + err.message); }
+                finally { sel.disabled = false; }
+            });
+            document.getElementById('editar').addEventListener('click', formularioEditar);
+        }
+
+        // ---------- Historial de pagos recibidos (colección pagos_gbd, importados del banco) ----------
+        const MESES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const fechaCorta = iso => { const [y, m, d] = iso.split('-'); return `${+d} ${MESES_C[+m - 1].toLowerCase()} ${y}`; };
+        const mesSig = k => { let [y, m] = k.split('-').map(Number); m++; if (m > 12) { m = 1; y++; } return `${y}-${String(m).padStart(2, '0')}`; };
+        function historialPagosHTML() {
+            if (!pagos.length) return '';
+            const total = r2(pagos.reduce((a, x) => a + x.importe, 0));
+            const porMes = {};
+            pagos.forEach(x => { const k = x.fecha.slice(0, 7); (porMes[k] = porMes[k] || []).push(x); });
+            const claves = Object.keys(porMes).sort();
+            const meses = []; for (let k = claves[0]; k <= claves[claves.length - 1]; k = mesSig(k)) meses.push(k);
+            const sumaMes = k => r2((porMes[k] || []).reduce((a, x) => a + x.importe, 0));
+            const ult12 = meses.slice(-12), tot12 = r2(ult12.reduce((a, k) => a + sumaMes(k), 0));
+            const ultimo = pagos[0];
+            // Gráfica de barras: total recibido por mes
+            const W = 900, H = 260, izq = 64, abajo = 28, arriba = 10;
+            const max = Math.max(...meses.map(sumaMes)) || 1;
+            const base10 = Math.pow(10, Math.floor(Math.log10(max / 5)));
+            const paso = [1, 2, 5, 10].map(m => m * base10).find(x => max / x <= 5), tope = Math.ceil(max / paso) * paso;
+            const y = v => arriba + (H - arriba - abajo) * (1 - v / tope);
+            const ancho = (W - izq) / meses.length, barra = Math.max(4, ancho - 3);
+            const cada = Math.ceil(meses.length / 12);
+            const ticks = Array.from({ length: Math.round(tope / paso) + 1 }, (_, i) => i * paso);
+            const miles = v => (v >= 1000 ? `${+(v / 1000).toFixed(0)} mil` : String(v));
+            const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Pagos recibidos por mes">
+                ${ticks.map(t => `<line x1="${izq}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#e4e8ec"/><text x="${izq - 8}" y="${y(t) + 4}" text-anchor="end">${miles(t)}</text>`).join('')}
+                ${meses.map((m, i) => {
+                    const v = sumaMes(m), x = izq + i * ancho + (ancho - barra) / 2, top = y(v);
+                    const det = (porMes[m] || []).map(p => `${fechaCorta(p.fecha)}: ${dinero(p.importe)}${p.nota ? ` (${p.nota})` : ''}`).join('\n');
+                    return `<g class="b"><title>${esc(`${MESES_C[+m.slice(5) - 1]} ${m.slice(0, 4)}: ${v ? dinero(v) : 'sin pago'}${det ? '\n' + det : ''}`)}</title>
+                        <rect class="hit" x="${izq + i * ancho}" y="${arriba}" width="${ancho}" height="${H - abajo - arriba}"/>
+                        ${v ? `<rect class="barra" x="${x}" y="${top}" width="${barra}" height="${H - abajo - top}" rx="2"/>` : `<line x1="${x}" x2="${x + barra}" y1="${H - abajo - 1}" y2="${H - abajo - 1}" stroke="#d08a1e" stroke-width="2"/>`}
+                        ${i % cada === 0 || i === meses.length - 1 ? `<text x="${izq + i * ancho + (i === meses.length - 1 ? ancho : ancho / 2)}" y="${H - 8}" text-anchor="${i === meses.length - 1 ? 'end' : 'middle'}">${MESES_C[+m.slice(5) - 1]} ${m.slice(2, 4)}</text>` : ''}</g>`;
+                }).join('')}
+            </svg>`;
+            const anios = {}; pagos.forEach(x => { const a = x.fecha.slice(0, 4); anios[a] = r2((anios[a] || 0) + x.importe); });
+            const sinPago = meses.filter(m => !porMes[m]);
+            return `<div class="panel">
+                <h2>Historial de pagos recibidos de ${esc(f.contraparte)}</h2>
+                <div class="tarjetas">
+                    <div class="tarjeta"><div class="et">Recibido en total</div><div class="val">${dinero(total)}</div><div class="det">${pagos.length} pagos desde ${esc(fechaCorta(pagos[pagos.length - 1].fecha))}</div></div>
+                    <div class="tarjeta"><div class="et">Últimos 12 meses</div><div class="val">${dinero(tot12)}</div><div class="det">Promedio ${dinero(r2(tot12 / ult12.length))} al mes</div></div>
+                    <div class="tarjeta"><div class="et">Último pago</div><div class="val">${dinero(ultimo.importe)}</div><div class="det">${esc(fechaCorta(ultimo.fecha))}</div></div>
+                    <div class="tarjeta"><div class="et">Meses sin pago</div><div class="val">${sinPago.length}</div><div class="det">${sinPago.length ? esc(sinPago.map(m => `${MESES_C[+m.slice(5) - 1]} ${m.slice(2, 4)}`).join(', ')) : 'Ninguno'}</div></div>
+                </div>
+                <div class="graf">${svg}</div>
+                <p class="nota" style="margin:6px 0 0">Total recibido por mes (los pagos partidos del mismo mes se suman). Pasa el cursor por una barra para ver el detalle; la raya ámbar marca un mes sin pago.</p>
+                <div class="anios">${Object.keys(anios).sort().map(a => `<span>${a}: <b>${dinero(anios[a])}</b></span>`).join('')}</div>
+                <details class="pagos"><summary>Ver los ${pagos.length} pagos</summary>
+                    <table style="margin-top:8px"><thead><tr><th>Fecha</th><th class="num">Importe</th><th>Nota</th></tr></thead>
+                    <tbody>${pagos.map(x => `<tr><td>${esc(fechaCorta(x.fecha))}</td><td class="num">${dinero(x.importe)}</td><td class="nota">${esc(x.nota || '')}</td></tr>`).join('')}</tbody></table>
+                </details>
+            </div>`;
+        }
+
+        function formularioEditar() {
+            const num = v => (typeof v === 'number' ? String(v) : '');
+            const cont = document.getElementById('formEditar');
+            document.getElementById('editar').disabled = true;
+            cont.innerHTML = `<div class="campos">
+                    <div class="ancho"><label for="fg_concepto">Concepto</label><input id="fg_concepto" value="${esc(f.concepto)}"></div>
+                    <div><label for="fg_subtotal">Subtotal</label><input id="fg_subtotal" inputmode="decimal" value="${num(f.subtotal)}"></div>
+                    <div><label for="fg_iva">IVA</label><input id="fg_iva" inputmode="decimal" value="${num(f.iva)}"></div>
+                    <div><label for="fg_retIsr">Retención ISR</label><input id="fg_retIsr" inputmode="decimal" value="${num(f.retIsr)}"></div>
+                    <div><label for="fg_retIva">Retención IVA</label><input id="fg_retIva" inputmode="decimal" value="${num(f.retIva)}"></div>
+                    <div><label for="fg_mora">Moratorios (% del subtotal, 0 = sin moratorios)</label><input id="fg_mora" inputmode="decimal" value="${+((f.moratoriosPct || 0) * 100).toFixed(4)}"></div>
+                    <div><label for="fg_total">Total (automático)</label><input id="fg_total" readonly></div>
+                    <div><label for="fg_fecha">Fecha de pago</label><input id="fg_fecha" type="date" value="${esc(f.fechaPago || '')}"></div>
+                    <div class="ancho"><label for="fg_correos">Enviar a (un correo por renglón)</label><textarea id="fg_correos" rows="4">${esc((f.correos || []).join('\n'))}</textarea></div>
+                    <div class="ancho"><label for="fg_notas">Notas</label><textarea id="fg_notas" rows="2">${esc(f.notas || '')}</textarea></div>
+                </div>
+                <div class="acciones"><button class="btn" id="fg_guardar">Guardar</button><button class="btn-sec" id="fg_cancelar">Cancelar</button><span id="fg_msg" class="err"></span></div>`;
+            const v = k => document.getElementById(k).value.trim();
+            const n = k => { const t = v(k).replace(/[$,\s]/g, ''); return t === '' ? null : Number(t); };
+            const valores = () => ({ subtotal: n('fg_subtotal'), iva: n('fg_iva'), retIsr: n('fg_retIsr'), retIva: n('fg_retIva'), moratoriosPct: (n('fg_mora') ?? 0) / 100 });
+            const totalAuto = () => { const x = valores(); document.getElementById('fg_total').value = Object.values(x).every(y => y === null || Number.isFinite(y)) ? calcGBD(x).total.toFixed(2) : ''; };
+            ['fg_subtotal', 'fg_iva', 'fg_retIsr', 'fg_retIva', 'fg_mora'].forEach(k => document.getElementById(k).addEventListener('input', totalAuto));
+            totalAuto();
+            document.getElementById('fg_cancelar').addEventListener('click', () => { cont.innerHTML = ''; document.getElementById('editar').disabled = false; });
+            document.getElementById('fg_guardar').addEventListener('click', async () => {
+                const msgF = document.getElementById('fg_msg'), btn = document.getElementById('fg_guardar');
+                msgF.textContent = '';
+                const x = valores();
+                if (Object.values(x).some(y => y === null || !Number.isFinite(y) || y < 0) || x.moratoriosPct > 1) { msgF.textContent = 'Revisa los importes y el porcentaje: deben ser números de cero en adelante (moratorios hasta 100%).'; return; }
+                const renglones = v('fg_correos').split('\n').map(y => y.trim()).filter(Boolean);
+                const malos = renglones.filter(y => !correoValido(y.replace(/\(.*?\)/g, '')));
+                if (malos.length) { msgF.textContent = `Correo no válido: ${malos[0]}`; return; }
+                if (!v('fg_concepto')) { msgF.textContent = 'El concepto no puede quedar vacío.'; return; }
+                const nuevo = { concepto: v('fg_concepto'), ...x, total: calcGBD(x).total, correos: normalizarCorreos(renglones), fechaPago: v('fg_fecha') || null, notas: v('fg_notas') };
+                btn.disabled = true;
+                try {
+                    await updateDoc(doc(db, 'facturas_gbd', f.id), { ...nuevo, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                    await cargar('<span class="ok">Factura de GBD actualizada.</span>');
+                } catch (err) { console.error(err); msgF.textContent = 'No se pudo guardar: ' + err.message; btn.disabled = false; }
+            });
+        }
+    </script>
+</body>
+</html>

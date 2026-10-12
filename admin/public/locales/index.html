@@ -60,6 +60,26 @@
         .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
         .err { color: var(--peligro); }
         .vacio td { text-align: center; color: var(--tinta-suave); padding: 30px; cursor: default; }
+
+        /* Contratos de GBD */
+        .seccion-gbd { margin-top: 40px; }
+        .seccion-gbd h2 { font-size: 20px; margin: 0 0 4px; }
+        .seccion-gbd .sub { margin: 0 0 14px; }
+        .tabla-gbd tbody tr { cursor: default; }
+        .tabla-gbd { font-size: 13px; }
+        .tabla-gbd th, .tabla-gbd td { padding-left: 10px; padding-right: 10px; }
+        .tabla-gbd th.num, .tabla-gbd td.num { padding-left: 6px; padding-right: 6px; }
+        .tabla-gbd td { white-space: nowrap; }
+        .tabla-gbd td.contrato { white-space: normal; min-width: 150px; }
+        .tabla-gbd td.concepto { white-space: normal; min-width: 170px; }
+        .tabla-gbd td.correos { white-space: normal; min-width: 215px; }
+        .tabla-gbd .correos a { display: block; color: var(--tinta); text-decoration: none; }
+        .tabla-gbd .correos a:hover { color: var(--accion); text-decoration: underline; }
+        .est-pend { background: var(--fondo-hundido); color: var(--tinta-suave); }
+        .btn-mini { font: inherit; font-size: 12px; padding: 4px 12px; border: 1px solid var(--borde-control); background: var(--fondo); border-radius: 12px; cursor: pointer; color: var(--tinta); }
+        .btn-mini:hover { background: var(--fondo-hundido); }
+        .gbd-nota { font-size: 12px; color: var(--tinta-suave); margin: 8px 0 0; }
+        .lf-modal .grupo-gbd { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--tinta-suave); }
     </style>
 </head>
 <body>
@@ -67,8 +87,8 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
-        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261005-5';
-        import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
+        import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261005-5';
 
         const app = document.getElementById('app');
@@ -168,7 +188,8 @@
                             <td class="num">${dinero(contratos.reduce((s, c) => s + (c.total || 0), 0))}</td>
                             <td class="num">${dinero(contratos.reduce((s, c) => s + (c.totalIva || 0), 0))}</td></tr></tfoot>
                     </table>
-                </div>`;
+                </div>
+                <div id="gbd"></div>`;
 
             const cuerpo = document.getElementById('cuerpo');
             function pintar(filtro) {
@@ -199,6 +220,143 @@
                 pintar(ch.dataset.f);
             }));
             pintar('todos');
+            await cargarGBD();
+            pintarGBD();
+        }
+
+        // ---------------- CONTRATOS DE GBD (colección contratos_gbd) ----------------
+        // Renta a GBD y préstamo a Proyectos Saraperos. Datos solo en Firestore (nunca en el código).
+        // Campos: orden, tipo (renta|prestamo), nombre, contraparte, concepto, porcentaje+periodo (renta) o capital+tasaAnual (préstamo),
+        //         subtotal, iva, retIsr, retIva, total (= subtotal + iva - retIsr - retIva), correos [], estado, fuente.
+        const ESTADOS_GBD = { pendiente: ['Pendiente', 'est-pend'], en_proceso: ['En proceso', 'e-termina'], pagado: ['Pagado a tiempo', 'e-vigente'], pago_tarde: ['Pagado tarde', 'e-vencido'] };
+        const pct = f => `${+(f * 100).toFixed(4)}%`;
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const correoValido = x => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x);
+        let gbd = [];
+        let facturasMesGBD = {};          // factura de GBD del mes en curso por contrato (de ahí sale el estado)
+        const mesHoy = hoyISO().slice(0, 7);
+
+        async function cargarGBD() {
+            try {
+                const sn = await getDocs(collection(db, 'contratos_gbd'));
+                gbd = sn.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 99) - (b.orden || 99));
+                const fs = await getDocs(query(collection(db, 'facturas_gbd'), where('mes', '==', mesHoy)));
+                facturasMesGBD = Object.fromEntries(fs.docs.map(d => [d.data().contratoId, d.data()]));
+            } catch (err) { console.warn('No se pudieron leer los contratos de GBD', err); gbd = []; facturasMesGBD = {}; }
+        }
+
+        function conceptoGBD(c) {
+            if (c.tipo === 'prestamo') return `Préstamo de ${dinero(c.capital)} al ${pct(c.tasaAnual || 0)} anual<div class="gris" style="font-size:12px">${esc(c.concepto)}</div>`;
+            return `${typeof c.porcentaje === 'number' ? `<strong>${pct(c.porcentaje)}</strong> · ` : ''}${esc(c.concepto)}`;
+        }
+
+        function pintarGBD() {
+            const el = document.getElementById('gbd');
+            if (!el) return;
+            const fila = c => {
+                const [txt, clase] = ESTADOS_GBD[facturasMesGBD[c.id]?.estadoPago] || [null, ''];
+                return `<tr>
+                    <td class="contrato"><strong>${esc(c.nombre)}</strong><div class="gris" style="font-size:12px">${esc(c.contraparte)}</div></td>
+                    <td class="concepto">${conceptoGBD(c)}</td>
+                    <td class="num">${dinero(c.subtotal)}</td>
+                    <td class="num">${dinero(c.iva)}</td>
+                    <td class="num">${dinero(c.retIsr)}</td>
+                    <td class="num">${dinero(c.retIva)}</td>
+                    <td class="num"><strong>${dinero(c.total)}</strong></td>
+                    <td class="correos">${(c.correos || []).map(x => `<a href="mailto:${esc(x)}">${esc(x)}</a>`).join('') || '<span class="gris">-</span>'}</td>
+                    <td>${txt ? `<span class="estado ${clase}" title="Factura de ${mesHoy}">${txt}</span>` : '<span class="gris" title="Todavía no hay factura de GBD de este mes">-</span>'}</td>
+                    <td><button class="btn-mini" data-editar-gbd="${esc(c.id)}">Editar</button></td>
+                </tr>`;
+            };
+            el.innerHTML = `<div class="seccion-gbd">
+                <h2>Contratos de GBD</h2>
+                <p class="sub">Renta a GBD y préstamo a Proyectos Saraperos.</p>
+                <div class="tabla-wrap"><table class="tabla-gbd">
+                    <thead><tr><th>Contrato</th><th>Concepto</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Ret. ISR</th><th class="num">Ret. IVA</th><th class="num">Total</th><th>Enviar a</th><th>Estado del mes</th><th></th></tr></thead>
+                    <tbody>${gbd.length ? gbd.map(fila).join('') : '<tr class="vacio"><td colspan="10">Sin contratos de GBD.</td></tr>'}</tbody>
+                </table></div>
+                <p class="gbd-nota">Total = subtotal + IVA − retenciones. El estado es el de la factura de este mes (se cambia en Facturación → Facturas de GBD). Los importes de aquí se copian a las facturas que se generen desde ahora.</p>
+            </div>`;
+            el.querySelectorAll('[data-editar-gbd]').forEach(b => b.addEventListener('click', () => editarGBD(gbd.find(x => x.id === b.dataset.editarGbd))));
+        }
+
+        function editarGBD(c) {
+            const num = v => (typeof v === 'number' ? String(v) : '');
+            const fondo = document.createElement('div');
+            fondo.className = 'lf-modal-fondo';
+            fondo.innerHTML = `<div class="lf-modal" role="dialog" aria-label="Editar contrato de GBD">
+                <h3>Editar: ${esc(c.nombre)}</h3>
+                <div class="lf-form">
+                    <div class="lf-campo"><label for="g_contraparte">Contraparte</label><input id="g_contraparte" value="${esc(c.contraparte)}"></div>
+                    <div class="lf-campo"><label for="g_concepto">Concepto</label><input id="g_concepto" value="${esc(c.concepto)}"></div>
+                    ${c.tipo === 'prestamo' ? `
+                        <div class="lf-campo"><label for="g_capital">Capital del préstamo ($)</label><input id="g_capital" class="lf-num" inputmode="decimal" value="${num(c.capital)}"></div>
+                        <div class="lf-campo"><label for="g_tasa">Tasa anual (%)</label><input id="g_tasa" class="lf-num" inputmode="decimal" value="${typeof c.tasaAnual === 'number' ? +(c.tasaAnual * 100).toFixed(4) : ''}"></div>` : `
+                        <div class="lf-campo"><label for="g_pct">Porcentaje sobre el total de rentas (%)</label><input id="g_pct" class="lf-num" inputmode="decimal" value="${typeof c.porcentaje === 'number' ? +(c.porcentaje * 100).toFixed(4) : ''}"></div>
+                        <div class="lf-campo"><label for="g_periodo">Periodo</label><input id="g_periodo" value="${esc(c.periodo || '')}"></div>`}
+                    <p class="grupo-gbd">Importes</p>
+                    <div class="lf-campo"><label for="g_subtotal">Subtotal</label><input id="g_subtotal" class="lf-num" inputmode="decimal" value="${num(c.subtotal)}"></div>
+                    <div class="lf-campo"><label for="g_iva">IVA</label><input id="g_iva" class="lf-num" inputmode="decimal" value="${num(c.iva)}"></div>
+                    <div class="lf-campo"><label for="g_retIsr">Retención ISR</label><input id="g_retIsr" class="lf-num" inputmode="decimal" value="${num(c.retIsr)}"></div>
+                    <div class="lf-campo"><label for="g_retIva">Retención IVA</label><input id="g_retIva" class="lf-num" inputmode="decimal" value="${num(c.retIva)}"></div>
+                    <div class="lf-campo"><label for="g_total">Total (automático)</label><input id="g_total" class="lf-num" readonly></div>
+                    <div class="lf-campo lf-ancho"><label for="g_correos">Enviar a (un correo por renglón)</label><textarea id="g_correos" rows="4">${esc((c.correos || []).join('\n'))}</textarea></div>
+                </div>
+                <div class="lf-modal-pie"><span id="g_msg" style="margin-right:auto;font-size:13px;color:var(--peligro)"></span><button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="g_guardar">Guardar</button></div>
+            </div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+
+            const v = id => document.getElementById(id).value.trim();
+            const n = id => { const t = v(id).replace(/[$,\s]/g, ''); return t === '' ? null : Number(t); };
+            const totalAuto = () => {
+                const [a, b, c1, d] = ['g_subtotal', 'g_iva', 'g_retIsr', 'g_retIva'].map(n);
+                document.getElementById('g_total').value = [a, b, c1, d].every(x => x === null || Number.isFinite(x)) ? r2((a || 0) + (b || 0) - (c1 || 0) - (d || 0)).toFixed(2) : '';
+            };
+            ['g_subtotal', 'g_iva', 'g_retIsr', 'g_retIva'].forEach(id => document.getElementById(id).addEventListener('input', totalAuto));
+            totalAuto();
+
+            document.getElementById('g_guardar').addEventListener('click', async () => {
+                const msg = document.getElementById('g_msg'), btn = document.getElementById('g_guardar');
+                msg.textContent = '';
+                const importes = { subtotal: n('g_subtotal'), iva: n('g_iva'), retIsr: n('g_retIsr'), retIva: n('g_retIva') };
+                if (Object.values(importes).some(x => x === null || !Number.isFinite(x) || x < 0)) { msg.textContent = 'Revisa los importes: deben ser números de cero en adelante.'; return; }
+                const renglones = v('g_correos').split('\n').map(x => x.trim()).filter(Boolean);
+                const malos = renglones.filter(x => !correoValido(x));
+                if (malos.length) { msg.textContent = `Correo no válido: ${malos[0]}`; return; }
+                const nuevo = { contraparte: v('g_contraparte'), concepto: v('g_concepto'), ...importes, correos: [...new Set(renglones)] };
+                nuevo.total = r2(nuevo.subtotal + nuevo.iva - nuevo.retIsr - nuevo.retIva);
+                if (!nuevo.contraparte || !nuevo.concepto) { msg.textContent = 'La contraparte y el concepto no pueden quedar vacíos.'; return; }
+                if (c.tipo === 'prestamo') {
+                    nuevo.capital = n('g_capital'); const t = n('g_tasa'); nuevo.tasaAnual = t === null ? null : t / 100;
+                    if (![nuevo.capital, nuevo.tasaAnual].every(x => x !== null && Number.isFinite(x) && x >= 0)) { msg.textContent = 'Revisa el capital y la tasa.'; return; }
+                } else {
+                    const p = n('g_pct'); nuevo.porcentaje = p === null ? null : p / 100; nuevo.periodo = v('g_periodo');
+                    if (nuevo.porcentaje !== null && !Number.isFinite(nuevo.porcentaje)) { msg.textContent = 'Revisa el porcentaje.'; return; }
+                }
+                // Solo los campos que cambiaron
+                const antes = {}, despues = {};
+                for (const k of Object.keys(nuevo)) {
+                    if (JSON.stringify(c[k] ?? null) !== JSON.stringify(nuevo[k] ?? null)) { antes[k] = c[k] ?? null; despues[k] = nuevo[k] ?? null; }
+                }
+                if (!Object.keys(despues).length) { cerrar(); return; }
+                btn.disabled = true;
+                try {
+                    const user = getCurrentUser();
+                    await updateDoc(doc(db, 'contratos_gbd', c.id), { ...despues, editadoPor: user.email, editadoEn: serverTimestamp() });
+                    await addDoc(collection(db, 'contratos_gbd', c.id, 'historial'), { antes, despues, por: user.email, en: serverTimestamp() });
+                    cerrar();
+                    await cargarGBD();
+                    pintarGBD();
+                } catch (err) {
+                    console.error(err);
+                    msg.textContent = 'No se pudo guardar: ' + err.message;
+                    btn.disabled = false;
+                }
+            });
         }
     </script>
 </body>

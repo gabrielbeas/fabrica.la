@@ -60,6 +60,7 @@
   </section></div>
 
   <script type="module">
+    import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
     import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
     import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261005-5';
     import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -213,6 +214,7 @@
           <section class="panel"><div class="panel-head"><div><h2>Últimos cortes</h2><p class="hint">Uno por cuenta</p></div></div>${Object.keys(CUENTAS).map(c => { const k = ultimoCorte?.[c]; return k ? `<div class="cut-summary"><span class="cut-label">${CUENTAS[c]} · ${escapeHtml(parseDate(k.fecha))}</span><span class="pill ${Number(k.diferencia) === 0 ? 'aprobado' : 'pendiente'}">${Number(k.diferencia) === 0 ? 'Conciliado' : 'Diferencia ' + money(k.diferencia)}</span></div>` : `<div class="cut-summary"><span class="cut-label">${CUENTAS[c]}</span><span class="cut-value">Sin cortes</span></div>`; }).join('')}<p class="cut-foot">Registra un corte para comparar el saldo esperado de cada cuenta con lo contado o con el banco.</p></section>
         </aside></div>`;
       document.getElementById('buscar').addEventListener('input', renderFilas);
+      selectorMes(document.getElementById('filtroMes'));
       ['filtroTipo', 'filtroEstado', 'filtroMes'].forEach(id => document.getElementById(id).addEventListener('change', renderFilas));
       document.getElementById('reposicion').addEventListener('click', () => abrirMovimiento('entrada'));
       document.getElementById('editarSaldos')?.addEventListener('click', abrirSaldos);

@@ -48,6 +48,29 @@
         a.loc { color: var(--tinta); text-decoration: none; font-weight: 600; }
         a.loc:hover { color: var(--accion); }
         .vencido { color: var(--peligro); font-size: 11px; font-weight: 600; }
+        /* Locales y metrajes: cada fila en una sola línea (en pantallas anchas) */
+        @media (min-width: 901px) { .tabla-met td, .tabla-met th { white-space: nowrap; } }
+        /* Cotizador por local (a la derecha de la tabla de metrajes; filas alineadas con ella) */
+        .met-lado { display: flex; gap: 24px; align-items: flex-start; }
+        .met-lado > .met-col { min-width: 0; }
+        .met-lado > .met-izq { flex: 0 1 auto; }
+        @media (min-width: 901px) { .tabla-met { width: auto; } .met-izq .tabla-wrap { display: inline-block; max-width: 100%; } }
+        .met-lado > .met-der { flex: 0 0 480px; }
+        .met-cab { height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; font-size: 14px; }
+        .met-cab .desglose { margin: 0; }
+        .met-cab button { font: inherit; font-size: 13px; border: none; background: none; color: var(--accion); cursor: pointer; padding: 4px 2px; }
+        .met-cab button:hover { text-decoration: underline; }
+        @media (min-width: 901px) {
+            .tabla-met th, .tabla-met td, .tabla-cot th, .tabla-cot td { height: 36px; vertical-align: middle; box-sizing: border-box; padding: 0 8px; white-space: nowrap; font-size: 13px; }
+        }
+        .tabla-cot { width: 100%; border-collapse: collapse; }
+        .tabla-cot input { font: inherit; font-family: var(--font-mono); font-size: 13px; width: 96px; text-align: right; padding: 3px 6px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: var(--fondo); color: var(--tinta); }
+        .tabla-cot input:focus { outline: 2px solid var(--foco); outline-offset: 1px; }
+        .tabla-cot .sube { color: var(--exito); } .tabla-cot .baja { color: var(--peligro); }
+        .tabla-cot .dif { font-size: 13px; }
+        @media (max-width: 1100px) { .met-lado { flex-wrap: wrap; } .met-lado > .met-der { flex: 1 1 100%; overflow-x: auto; } }
+        .desglose { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin: 0 0 12px; cursor: pointer; }
+        tr.sub-local td { color: var(--tinta-suave); }
         .barra-m2 { height: 8px; border-radius: 4px; background: var(--accion); opacity: .55; }
         tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
         .dos { display: grid; grid-template-columns: 1fr; gap: 0; }
@@ -160,6 +183,7 @@
             const vista = location.hash.slice(1);
             const admin = esAdmin();
             window.scrollTo(0, 0);
+            app.style.maxWidth = vista === 'metrajes' ? '1750px' : '';
             if (!admin || !['directorio', 'metrajes'].includes(vista)) {
                 app.innerHTML = `
                     <h1>Bienvenido, ${esc(user.nombre || user.email)}</h1>
@@ -310,19 +334,26 @@
         // Columnas ordenables de "Locales y metrajes": clave → valor para comparar
         const COL_MET = {
             locales: c => parseInt(c.locales?.[0] || 999),
-            locatario: c => (c.nombreComercial || c.razonSocial || '').toLowerCase(),
+            locatario: c => (c.razonSocial || c.nombreComercial || '').toLowerCase(),
             acceso: c => (c.acceso || '').toLowerCase(),
             m2: c => Number(c.m2) || 0,
             renta: c => c.total || 0,
             rentaM2: c => c.m2 ? (c.total || 0) / c.m2 : 0
         };
         let ordenMet = { col: 'locales', dir: 1 };
+        let desglosarLocales = false;   // prueba: un local por fila
+        // Cotizador: por contrato, renta mensual y renta por m² propuestas (arrancan con la renta actual; no se guardan)
+        let cot = {};
+        const cotDe = c => cot[c.id] || (cot[c.id] = { renta: c.total || 0, m2p: c.m2 && c.total ? c.total / c.m2 : 0 });
+        const numCot = t => { const v = Number(String(t).replace(/[$,\s]/g, '')); return String(t).trim() === '' || !Number.isFinite(v) ? null : v; };
+        const signo = (n, f) => (Math.abs(n) < 0.005 ? f(0) : (n > 0 ? '+' : '−') + f(Math.abs(n)));
+        const pctTxt = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(1)}%`;
 
         function vistaMetrajes() {
             const m2Total = contratos.reduce((s, c) => s + (Number(c.m2) || 0), 0);
+            const m2Rentado = contratos.filter(c => !c.propio).reduce((s, c) => s + (Number(c.m2) || 0), 0);   // la renta por m² no cuenta locales propios
             const nLocales = contratos.reduce((s, c) => s + (c.locales || []).length, 0);
             const rentaTotal = contratos.reduce((s, c) => s + (c.total || 0), 0);
-            const maxM2 = Math.max(1, ...contratos.map(c => Number(c.m2) || 0));
             const th = (col, txt, cls = '') => {
                 const act = ordenMet.col === col;
                 return `<th class="ord ${cls} ${act ? 'act' : ''}" data-col="${col}" title="Ordenar por ${txt.toLowerCase()}">${txt}<span class="flecha">${act ? (ordenMet.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`;
@@ -336,25 +367,90 @@
                 <a class="volver" href="#">← Inicio</a>
                 <h1>Locales y metrajes</h1>
                 <p class="sub">Superficie y renta por contrato. Haz clic en el título de una columna para ordenar.</p>
+                <div class="met-lado">
+                <div class="met-col met-izq">
+                <div class="met-cab"><label class="desglose"><input type="checkbox" id="desglosar" ${desglosarLocales ? 'checked' : ''}> Un local por fila (prueba)</label></div>
                 <div class="tabla-wrap">
-                    <table class="tabla-movil">
-                        <thead><tr>${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acceso', 'Acceso')}${th('m2', 'm²', 'num')}<th style="width:26%"></th>${th('renta', 'Renta mensual', 'num')}${th('rentaM2', 'Renta por m²', 'num')}</tr></thead>
+                    <table class="tabla-movil tabla-met">
+                        <thead><tr>${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acceso', 'Acceso')}${th('m2', 'm²', 'num')}${th('renta', 'Renta mensual', 'num')}${th('rentaM2', 'Renta por m²', 'num')}</tr></thead>
                         <tbody>
-                            ${lista.map(c => `<tr>
-                                <td><a class="loc" href="${caratula(c.id)}">${esc((c.locales || []).join(', '))}</a></td>
-                                <td>${esc(c.nombreComercial || c.razonSocial)}${c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
+                            ${lista.map(c => {
+                                const locs = (c.locales || []).length ? c.locales : [''];
+                                const filasC = desglosarLocales ? locs : [locs.join(', ')];
+                                return filasC.map((l, i) => {
+                                    const primera = i === 0;
+                                    const resto = '<span class="gris" title="Los m² y la renta son del contrato completo">incluido en el contrato</span>';
+                                    return `<tr${!primera ? ' class="sub-local"' : ''}>
+                                <td><a class="loc" href="${caratula(c.id)}">${esc(l)}</a></td>
+                                <td>${esc(c.razonSocial || c.nombreComercial)}${primera && c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
                                 <td>${esc(c.acceso || '-')}</td>
-                                <td class="num">${c.m2 ? num(c.m2) : '<span class="gris">-</span>'}</td>
-                                <td>${c.m2 ? `<div class="barra-m2" style="width:${(Number(c.m2) / maxM2 * 100).toFixed(1)}%"></div>` : ''}</td>
-                                <td class="num">${dinero(c.total)}</td>
-                                <td class="num">${c.m2 ? dinero((c.total || 0) / c.m2) : '-'}</td>
-                            </tr>`).join('')}
+                                <td class="num">${!primera ? '' : c.m2 ? num(c.m2) : '<span class="gris">-</span>'}</td>
+                                <td class="num">${!primera ? resto : c.propio ? '<span class="gris" title="Local del propietario: sin renta">Propio</span>' : dinero(c.total)}</td>
+                                <td class="num">${!primera ? '' : c.m2 && !c.propio ? dinero((c.total || 0) / c.m2) : '-'}</td>
+                            </tr>`;
+                                }).join('');
+                            }).join('')}
                         </tbody>
-                        <tfoot><tr><td colspan="3">Total · ${contratos.length} contratos, ${nLocales} locales</td><td class="num">${num(m2Total)}</td><td></td>
-                            <td class="num">${dinero(rentaTotal)}</td><td class="num">${m2Total ? dinero(rentaTotal / m2Total) : '-'}</td></tr></tfoot>
+                        <tfoot><tr><td colspan="3">Total · ${contratos.length} contratos, ${nLocales} locales</td><td class="num">${num(m2Total)}</td>
+                            <td class="num">${dinero(rentaTotal)}</td><td class="num">${m2Rentado ? dinero(rentaTotal / m2Rentado) : '-'}</td></tr></tfoot>
                     </table>
                 </div>
+                </div>
+                <div class="met-col met-der">
+                <div class="met-cab"><span><strong>Cotizador</strong> · edita la renta por m² o la mensual y se ajusta la otra</span><button type="button" id="cotReset">Restablecer</button></div>
+                <div class="tabla-wrap">
+                    <table class="tabla-cot">
+                        <thead><tr><th class="num">Renta por m²</th><th class="num">Renta mensual</th><th class="num">Diferencia $</th><th class="num">Diferencia %</th></tr></thead>
+                        <tbody>
+                            ${lista.map(c => {
+                                const locs = (c.locales || []).length ? c.locales : [''];
+                                const n = desglosarLocales ? locs.length : 1;
+                                const x = cotDe(c);
+                                return Array.from({ length: n }, (_, i) => i > 0 ? '<tr class="sub-local"><td colspan="4"></td></tr>' : `<tr data-id="${esc(c.id)}">
+                                <td class="num"><input inputmode="decimal" class="cot-m2" value="${c.m2 ? x.m2p.toFixed(2) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
+                                <td class="num"><input inputmode="decimal" class="cot-renta" value="${x.renta.toFixed(2)}" aria-label="Renta mensual cotizada"></td>
+                                <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"></td>
+                            </tr>`).join('');
+                            }).join('')}
+                        </tbody>
+                        <tfoot><tr id="cotPie"><td class="num" data-t="m2"></td><td class="num" data-t="renta"></td><td class="num dif" data-t="d$"></td><td class="num dif" data-t="d%"></td></tr></tfoot>
+                    </table>
+                </div>
+                </div>
+                </div>
                 <p class="gris" style="margin-top:8px">Los m² son por contrato (como vienen en cada carátula). Los contratos con varios locales muestran la superficie total. Renta sin IVA.</p>`;
+            // Cotizador: cada campo ajusta al otro y se recalculan diferencias y totales
+            const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
+            const pintarDif = (el, d, p) => {
+                el.querySelector('[data-d="$"]').textContent = p === null ? '-' : signo(d, dinero);
+                el.querySelector('[data-d="%"]').textContent = p === null ? '-' : pctTxt(p);
+                el.querySelectorAll('.dif').forEach(td => { td.classList.toggle('sube', p !== null && d > 0.005); td.classList.toggle('baja', p !== null && d < -0.005); });
+            };
+            const totalesCot = () => {
+                const filasCot = [...app.querySelectorAll('.tabla-cot tbody tr[data-id]')];
+                let renta = 0, m2 = 0;
+                filasCot.forEach(tr => { const c = porId[tr.dataset.id], x = cot[tr.dataset.id]; renta += x.renta; if (!c.propio || x.renta > 0) m2 += Number(c.m2) || 0; });
+                const pie = document.getElementById('cotPie'), d = renta - rentaTotal, p = rentaTotal ? d / rentaTotal * 100 : null;
+                pie.querySelector('[data-t="m2"]').textContent = m2 ? dinero(renta / m2) : '-';
+                pie.querySelector('[data-t="renta"]').textContent = dinero(renta);
+                pie.querySelector('[data-t="d$"]').textContent = signo(d, dinero);
+                pie.querySelector('[data-t="d%"]').textContent = p === null ? '-' : pctTxt(p);
+                pie.querySelectorAll('.dif').forEach(td => { td.classList.toggle('sube', d > 0.005); td.classList.toggle('baja', d < -0.005); });
+            };
+            const recalcFila = tr => {
+                const c = porId[tr.dataset.id], x = cot[tr.dataset.id], d = x.renta - (c.total || 0);
+                pintarDif(tr, d, c.total ? d / c.total * 100 : null);
+            };
+            app.querySelectorAll('.tabla-cot tbody tr[data-id]').forEach(tr => {
+                const c = porId[tr.dataset.id], x = cot[tr.dataset.id], iM2 = tr.querySelector('.cot-m2'), iR = tr.querySelector('.cot-renta');
+                iM2.addEventListener('input', () => { const v = numCot(iM2.value); if (v === null || v < 0) return; x.m2p = v; x.renta = v * c.m2; iR.value = x.renta.toFixed(2); recalcFila(tr); totalesCot(); });
+                iR.addEventListener('input', () => { const v = numCot(iR.value); if (v === null || v < 0) return; x.renta = v; x.m2p = c.m2 ? v / c.m2 : 0; if (c.m2) iM2.value = x.m2p.toFixed(2); recalcFila(tr); totalesCot(); });
+                [iM2, iR].forEach(i => i.addEventListener('focus', () => i.select()));
+                recalcFila(tr);
+            });
+            totalesCot();
+            document.getElementById('cotReset').addEventListener('click', () => { cot = {}; vistaMetrajes(); });
+            document.getElementById('desglosar').addEventListener('change', e => { desglosarLocales = e.target.checked; vistaMetrajes(); });
             app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
                 const col = t.dataset.col;
                 // Primer clic: texto A→Z, números de mayor a menor; segundo clic invierte

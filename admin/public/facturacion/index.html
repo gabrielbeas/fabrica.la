@@ -66,6 +66,29 @@
         .switch input:disabled + .slider { opacity: .5; }
         .mor-monto { display: inline-block; margin-left: 8px; color: var(--peligro); font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: middle; }
         .mor-n { display: block; font-size: 11px; color: var(--peligro); margin-top: 2px; }
+        /* Las tablas de locatarios y de GBD comparten el ancho de sus columnas (así quedan alineadas) */
+        @media (min-width: 901px) {
+            table.tabla-alineada { table-layout: fixed; }
+            .tabla-alineada col.c-sel { width: 74px; } .tabla-alineada col.c-loc { width: 120px; } .tabla-alineada col.c-mor { width: 200px; }
+            .tabla-alineada col.c-sub { width: 130px; } .tabla-alineada col.c-iva { width: 130px; } .tabla-alineada col.c-tot { width: 135px; } .tabla-alineada col.c-est { width: 195px; }
+        }
+        /* En pantallas anchas la página crece y los montos se separan más */
+        @media (min-width: 1400px) {
+            .main { max-width: 1500px; }
+            .tabla-alineada col.c-sub { width: 175px; } .tabla-alineada col.c-iva { width: 175px; } .tabla-alineada col.c-tot { width: 175px; } .tabla-alineada col.c-est { width: 215px; }
+        }
+        /* Facturas de GBD */
+        .gbd-sec { margin-top: 34px; }
+        .gbd-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .gbd-sec h2 { font-size: 20px; margin: 0; }
+        .gbd-sec .sub2 { margin: 4px 0 0; font-size: 13px; color: var(--tinta-suave); }
+        tr.fila-g { cursor: pointer; }
+        tr.fila-g:hover td { background: var(--ambar-suave); }
+        .det-g { display: block; font-size: 12px; font-weight: 400; color: var(--tinta-suave); margin-top: 2px; white-space: normal; }
+        td.num .det-g { white-space: nowrap; }
+        .nota-g { font-size: 12px; color: var(--tinta-suave); margin: 8px 0 0; }
+        .lineas-g td { padding: 9px 14px; }
+        .lineas-g td.num { font-family: var(--font-mono); }
         /* Corte del mes */
         .pie-corte { display: flex; justify-content: flex-end; margin-top: 16px; }
         .btn-corte { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 12px 22px; font-size: 14px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
@@ -79,19 +102,21 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
+        import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
         import { crearNavbar } from '../../../js/navbar.js?v=20261005-5';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261005-5';
-        import { collection, getDocs, getDoc, setDoc, doc, writeBatch, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { collection, getDocs, getDoc, setDoc, doc, writeBatch, updateDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             ESTADOS, mesTxt, mesActual, mesMas, resumenCorte, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura, conceptoAgua,
-            documentoContadores, imprimirHojas, totalesFactura
-        } from '../../../js/facturacion.js?v=20261011-4';
+            documentoContadores, imprimirHojas, totalesFactura, normalizarCorreos, correoValido, calcGBD, conceptoGBDTxt, montosGBD, rentaDelMes
+        } from '../../../js/facturacion.js?v=20261011-6';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
         // Orden de la tabla (se conserva al cambiar de mes o recargar los datos)
         let ordenF = { col: 'locales', dir: 1 };
+        let contratosGBD = [], facturasGBD = [];   // contratos_gbd y facturas_gbd del mes (renta a GBD y préstamo a Proyectos Saraperos)
         let corteMes = null;              // registro del corte de `mes` (facturacion_cortes/{mes}), si ya se hizo
         let prefijoMsg = '';              // texto que se antepone al próximo mensaje (aviso del corte)
         let generarSinConfirmar = false;  // el corte genera las facturas del mes siguiente sin preguntar otra vez
@@ -107,8 +132,13 @@
         async function cargar(msg = '') {
             app.innerHTML = '<p style="color:#999">Cargando...</p>';
             try {
-                const [snapC, facturas, general, snapCorte] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes), cargarConfigGeneral(),
-                    getDoc(doc(db, 'facturacion_cortes', mes)).catch(() => null)]);
+                const [snapC, facturas, general, snapCorte, snapCG, snapFG] = await Promise.all([getDocs(collection(db, 'contratos')), cargarFacturasMes(mes), cargarConfigGeneral(),
+                    getDoc(doc(db, 'facturacion_cortes', mes)).catch(() => null),
+                    getDocs(collection(db, 'contratos_gbd')).catch(() => null),
+                    getDocs(query(collection(db, 'facturas_gbd'), where('mes', '==', mes))).catch(() => null)]);
+                const porOrden = (a, b) => (a.orden || 99) - (b.orden || 99);
+                contratosGBD = snapCG ? snapCG.docs.map(d => ({ id: d.id, ...d.data() })).sort(porOrden) : [];
+                facturasGBD = snapFG ? snapFG.docs.map(d => ({ id: d.id, ...d.data() })).sort(porOrden) : [];
                 corteMes = snapCorte?.exists() ? snapCorte.data() : null;
                 msg = prefijoMsg + msg; prefijoMsg = '';
                 PCT_MORATORIOS = general.moratoriosPct;
@@ -140,7 +170,7 @@
                     ${faltan.length ? `<button class="btn" id="generar">Generar ${facturas.length ? `faltantes (${faltan.length})` : `facturas de ${mesTxt(mes)}`}</button>` : ''}
                     ${facturas.length ? `
                         <button class="btn-sec" id="actAgua" title="Toma las lecturas de agua capturadas y pone el periodo correcto al agua y a la basura en todas las facturas del mes">Actualizar agua y periodos</button>
-                        <button class="btn-sec" id="exportar">Exportar PDF (<span id="nSel">${facturas.length}</span>)</button>
+                        <button class="btn-sec" id="exportar">Exportar PDF (<span id="nSel">${facturas.length + facturasGBD.length}</span>)</button>
                         <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555;margin:0 0 10px">
                             <input type="checkbox" id="conResumen" checked> Incluir resumen</label>` : ''}
                     <button class="btn-sec" id="histCortes" title="Cortes anteriores: consultarlos y volver a exportarlos">Historial de cortes</button>
@@ -155,8 +185,9 @@
                     <div class="tarjeta"><div class="k">Por cobrar</div><div class="v" style="color:#b26a00">${dinero(total - cobrado)}</div></div>
                 </div>
                 <div class="tabla-wrap">
-                    <table class="tabla-movil">
-                        <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th>${thOrd('locales', 'Locales')}${thOrd('locatario', 'Locatario')}${thOrd('moratorios', 'Moratorios', 'mor-th', 'Intereses moratorios: 5% sobre la renta sin IVA')}${thOrd('subtotal', 'Subtotal', 'num')}${thOrd('iva', 'IVA', 'num')}${thOrd('total', 'Total', 'num')}${thOrd('estado', 'Estado de pago')}</tr></thead>
+                    <table class="tabla-movil tabla-alineada">
+                        ${COLGROUP}
+                        <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodas" checked><span class="slider"></span></label></th>${thOrd('locales', 'Locales')}${thOrd('locatario', 'Locatario')}${thOrd('moratorios', 'Moratorios', 'mor-th', 'Intereses moratorios: 5% sobre la renta sin IVA')}${thOrd('basura', 'Basura', 'num', 'Recolección de basura del mes, con IVA')}${thOrd('agua', 'Agua', 'num', 'Agua cobrada (con IVA) y fecha de la lectura que se está cargando')}${thOrd('total', 'Total con IVA', 'num')}${thOrd('estado', 'Estado de pago')}</tr></thead>
                         <tbody>
                             ${filas.map(f => `
                                 <tr class="fila-f" data-id="${esc(f.id)}" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
@@ -164,8 +195,8 @@
                                     <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
                                     <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
                                     <td class="mor-td">${celdaMoratorios(f)}</td>
-                                    <td class="num"><span class="monto">${dinero(f.subtotal)}</span></td>
-                                    <td class="num"><span class="monto">${dinero(f.iva)}</span></td>
+                                    <td class="num"><span class="monto">${montoC(f, 'basura') === null ? '–' : dinero(montoC(f, 'basura'))}</span></td>
+                                    <td class="num">${celdaAgua(f)}</td>
                                     <td class="num"><strong class="monto">${dinero(f.total)}</strong></td>
                                     <td><select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" data-id="${esc(f.id)}">
                                         ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}
@@ -174,13 +205,16 @@
                         </tbody>
                         <tfoot><tr><td colspan="3">Total</td>
                             <td class="mor-td">${(() => { const m = facturas.reduce((s, f) => s + montoMoratorios(f), 0); const n = facturas.filter(f => montoMoratorios(f) > 0).length; return m ? `<span class="mor-monto">${dinero(m)}</span><span class="mor-n">${n} locatario${n > 1 ? 's' : ''}</span>` : ''; })()}</td>
-                            <td class="num" id="totSub">${dinero(facturas.reduce((s, f) => s + (f.subtotal || 0), 0))}</td>
-                            <td class="num" id="totIva">${dinero(facturas.reduce((s, f) => s + (f.iva || 0), 0))}</td>
+                            <td class="num" id="totSub">${dinero(facturas.reduce((s, f) => s + (montoC(f, 'basura') || 0), 0))}</td>
+                            <td class="num" id="totIva">${dinero(facturas.reduce((s, f) => s + (montoC(f, 'agua') || 0), 0))}</td>
                             <td class="num" id="totTot">${dinero(total)}</td><td></td></tr></tfoot>
                     </table>
-                </div>
-                <div class="pie-corte"><button class="btn-corte" id="corte" title="Exporta el reporte, guarda el corte y pasa al mes siguiente">CORTE DEL MES</button></div>`}`;
+                </div>`}
+                <div id="gbdFact"></div>
+                ${facturas.length ? `<div class="pie-corte"><button class="btn-corte" id="corte" title="Exporta el reporte, guarda el corte y pasa al mes siguiente">CORTE DEL MES</button></div>` : ''}`;
+            try { pintarGBD(); } catch (err) { console.error("No se pudieron pintar las facturas de GBD", err); }
 
+            selectorMes(document.getElementById('mes'));
             document.getElementById('mes').addEventListener('change', e => {
                 mes = e.target.value || mesActual();
                 history.replaceState(null, '', '?mes=' + mes);
@@ -194,15 +228,15 @@
             const actualizarSel = () => {
                 const activas = new Set(seleccion());
                 const n = activas.size;
-                const nSel = document.getElementById('nSel');
-                if (nSel) nSel.textContent = n;
+                actualizarNSel();
                 const todas = document.getElementById('selTodas');
                 if (todas) todas.checked = n === filas.length;
                 app.querySelectorAll('tr.fila-f').forEach(tr => tr.classList.toggle('redactada', !activas.has(tr.dataset.id)));
                 const act = facturas.filter(f => activas.has(f.id));
                 const suma = k => dinero(act.reduce((s, f) => s + (f[k] || 0), 0));
+                const sumaC = t => dinero(act.reduce((s, f) => s + (montoC(f, t) || 0), 0));
                 const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-                set('totSub', suma('subtotal')); set('totIva', suma('iva')); set('totTot', suma('total'));
+                set('totSub', sumaC('basura')); set('totIva', sumaC('agua')); set('totTot', suma('total'));
             };
             app.querySelectorAll('input.sel').forEach(x => x.addEventListener('change', actualizarSel));
             document.getElementById('selTodas')?.addEventListener('change', e => {
@@ -216,12 +250,16 @@
                 const orden = [...app.querySelectorAll('tbody tr.fila-f')].map(tr => tr.dataset.id);
                 // Todas salen en el PDF; las apagadas van tachadas (redacted) y no suman
                 const elegidas = frescas.map(f => ({ ...f, _redactada: !ids.has(f.id) })).sort((a, b) => orden.indexOf(a.id) - orden.indexOf(b.id));
-                if (!ids.size) { alert('Activa al menos una factura.'); return false; }
+                // Facturas de GBD del mes (también con su interruptor: las apagadas van tachadas)
+                const idsG = new Set(seleccionGBD());
+                const gbd = (await leerFacturasGBD(mes)).map(f => ({ ...f, _redactada: !idsG.has(f.id) }));
+                if (!ids.size && !idsG.size) { alert('Activa al menos una factura.'); return false; }
                 const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
                 const conResumen = document.getElementById('conResumen').checked;
+                const prendidas = ids.size + idsG.size, todas = filas.length + gbd.length;
                 // window.print() espera a que se cierre el diálogo de impresión
-                imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen }),
-                    `Facturas LAFABDECHOC ${mesTxt(mes)}${ids.size < filas.length ? ` (${ids.size} de ${filas.length})` : ''}`);
+                imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen, gbd }),
+                    `Facturas LAFABDECHOC ${mesTxt(mes)}${prendidas < todas ? ` (${prendidas} de ${todas})` : ''}`);
                 return true;
             };
             document.getElementById('exportar')?.addEventListener('click', exportarPDF);
@@ -236,6 +274,8 @@
                 if (r.pendientes.length) avisos.push(`<strong>${r.pendientes.length}</strong> factura${r.pendientes.length > 1 ? 's' : ''} sin pagar (${dinero(r.porCobrar)}): <ul class="corte-lista">${r.pendientes.map(p => `<li>${esc(p.locales)} · ${esc(p.razonSocial)} · ${esc(ESTADOS[p.estadoPago]?.txt || p.estadoPago)} · ${dinero(p.total)}</li>`).join('')}</ul>Se quedan en ${mesTxt(mes)}; las puedes seguir marcando desde ahí.`);
                 if (r.sinFactura.length) avisos.push(`Sin factura este mes: ${lista(r.sinFactura, x => x.razonSocial)}.`);
                 if (r.conAvisos.length) avisos.push(`${r.conAvisos.length} factura${r.conAvisos.length > 1 ? 's' : ''} con avisos (agua sin lectura, contrato vencido...): ${lista(r.conAvisos, x => x.razonSocial)}.`);
+                const gbdPend = facturasGBD.filter(f => f.estadoPago !== 'pagado' && f.estadoPago !== 'pago_tarde');
+                if (gbdPend.length) avisos.push(`Facturas de GBD sin pagar: ${gbdPend.map(f => `${esc(f.nombre)} (${dinero(calcGBD(f).total)})`).join('; ')}.`);
                 if (apagadas) avisos.push(`${apagadas} local${apagadas > 1 ? 'es' : ''} apagado${apagadas > 1 ? 's' : ''}: salen tachados en el resumen y sin detalle.`);
                 if (corteMes) avisos.push(`Ya hay un corte de este mes. Puedes repetirlo; se actualiza el registro.`);
                 const fondo = document.createElement('div');
@@ -287,12 +327,14 @@
                     const btn = document.getElementById('cHacer'), msgC = document.getElementById('cMsg');
                     btn.disabled = true; msgC.textContent = '';
                     try {
-                        if (!seleccion().length) throw new Error('Activa al menos una factura para exportar.');
+                        if (!seleccion().length && !seleccionGBD().length) throw new Error('Activa al menos una factura para exportar.');
                         const generarSig = document.getElementById('cGenerar').checked;
                         if (!(await exportarPDF())) { btn.disabled = false; return; }
                         await setDoc(doc(db, 'facturacion_cortes', mes), {
                             mes, facturas: r.facturas, facturado: r.facturado, cobrado: r.cobrado, porCobrar: r.porCobrar,
                             pendientes: r.pendientes, sinFactura: r.sinFactura,
+                            gbd: facturasGBD.map(f => ({ contratoId: f.contratoId, nombre: f.nombre, total: calcGBD(f).total, estadoPago: f.estadoPago })),
+                            apagadasGBD: facturasGBD.filter(f => !seleccionGBD().includes(f.id)).map(f => f.contratoId),
                             apagadas: filas.filter(f => !seleccion().includes(f.id)).map(f => f.contratoId),
                             generoSiguiente: generarSig, hechoPor: getCurrentUser().email, hechoEn: serverTimestamp()
                         });
@@ -332,8 +374,8 @@
                 locales: f => posLocales[f.id],
                 locatario: f => (f.razonSocial || '').toLocaleLowerCase('es-MX'),
                 moratorios: f => montoMoratorios(f),
-                subtotal: f => f.subtotal || 0,
-                iva: f => f.iva || 0,
+                basura: f => montoC(f, 'basura') || 0,
+                agua: f => montoC(f, 'agua') || 0,
                 total: f => f.total || 0,
                 // El estado se lee del select por si se cambió sin recargar
                 estado: f => ORDEN_ESTADO.indexOf(app.querySelector(`select.estado[data-id="${CSS.escape(f.id)}"]`)?.value ?? f.estadoPago)
@@ -357,14 +399,149 @@
             app.querySelectorAll('th.ord').forEach(th => th.addEventListener('click', () => {
                 const col = th.dataset.col;
                 // Montos: primer clic de mayor a menor; texto y locales: de A a Z
-                ordenF = ordenF.col === col ? { col, dir: -ordenF.dir } : { col, dir: ['moratorios', 'subtotal', 'iva', 'total'].includes(col) ? -1 : 1 };
+                ordenF = ordenF.col === col ? { col, dir: -ordenF.dir } : { col, dir: ['moratorios', 'basura', 'agua', 'total'].includes(col) ? -1 : 1 };
                 ordenar();
             }));
             ordenar();
         }
 
+        // Basura y agua de una factura (total con IVA del concepto); null si la factura no lo lleva
+        const conceptoDe = (f, t) => (f.conceptos || []).find(c => c.tipo === t || (!c.tipo && (t === 'agua' ? /AGUA/ : /BASURA/).test(c.concepto || '')));
+        const montoC = (f, t) => { const c = conceptoDe(f, t); return c ? (c.total || 0) : null; };
+        // Agua: monto y, debajo, la(s) fecha(s) de la lectura con que se cargó, para comprobar que es la correcta
+        function celdaAgua(f) {
+            const c = conceptoDe(f, 'agua');
+            if (!c) return '<span class="monto">–</span>';
+            const fechas = [...new Set([...(c.lecturas || '').matchAll(/lectura del (\d{4})-(\d{2})-(\d{2})/g)].map(m => `${m[3]}/${m[2]}/${m[1]}`))];
+            return `<span class="monto">${dinero(c.total || 0)}</span>${fechas.length ? `<span class="det-g">${fechas.join(' y ')}</span>` : '<span class="det-g">sin lectura</span>'}`;
+        }
+
+        const COLGROUP = '<colgroup><col class="c-sel"><col class="c-loc"><col><col class="c-mor"><col class="c-sub"><col class="c-iva"><col class="c-tot"><col class="c-est"></colgroup>';
+
         function thOrd(col, txt, cls = '', title = '') {
             return `<th class="ord ${cls}" data-col="${col}" title="${esc(title || 'Ordenar por ' + txt.toLowerCase())}">${txt}<span class="flecha">▲▼</span></th>`;
+        }
+
+        // ---------- Facturas de GBD: renta a GBD y préstamo a Proyectos Saraperos (colección facturas_gbd, id {contrato}_{YYYY-MM}) ----------
+        // Cada mes se generan copiando los importes de contratos_gbd (Contratos → Contratos de GBD); después se ajustan por factura.
+        // Datos solo en Firestore. Total = subtotal + IVA + moratorios − retenciones (ver calcGBD en js/facturacion.js).
+        const porOrdenG = (a, b) => (a.orden || 99) - (b.orden || 99);
+        async function leerFacturasGBD(mesX) {
+            return (await getDocs(query(collection(db, 'facturas_gbd'), where('mes', '==', mesX)))).docs.map(d => ({ id: d.id, ...d.data() })).sort(porOrdenG);
+        }
+        const seleccionGBD = () => [...app.querySelectorAll('input.sel-gbd:checked')].map(x => x.dataset.id);
+        // Contador del botón «Exportar PDF»: facturas prendidas de locatarios + de GBD
+        function actualizarNSel() {
+            const el = document.getElementById('nSel');
+            if (el) el.textContent = app.querySelectorAll('input.sel:checked').length + seleccionGBD().length;
+        }
+
+        async function generarGBD(mesX) {
+            const cs = (await getDocs(collection(db, 'contratos_gbd'))).docs.map(d => ({ id: d.id, ...d.data() })).sort(porOrdenG);
+            const hay = new Set((await leerFacturasGBD(mesX)).map(f => f.contratoId));
+            const faltan = cs.filter(c => !hay.has(c.id));
+            if (!faltan.length) return 0;
+            const batch = writeBatch(db), user = getCurrentUser().email;
+            const locatarios = (await getDocs(collection(db, 'contratos'))).docs.map(d => ({ id: d.id, ...d.data() }));
+            faltan.forEach(c => { const m = montosGBD(c, locatarios, mesX); batch.set(doc(db, 'facturas_gbd', `${c.id}_${mesX}`), {
+                contratoId: c.id, mes: mesX, orden: c.orden || 99, tipo: c.tipo || null, nombre: c.nombre, contraparte: c.contraparte, concepto: c.concepto,
+                porcentaje: c.porcentaje ?? null, periodo: c.periodo ?? null, capital: c.capital ?? null, tasaAnual: c.tasaAnual ?? null,
+                subtotal: m.subtotal, iva: m.iva, retIsr: m.retIsr, retIva: m.retIva, moratoriosPct: 0, total: m.total,
+                correos: c.correos || [], estadoPago: 'pendiente', notas: m.automatico ? `Calculado: ${pctTxtG(c.porcentaje)} de las rentas del mes.` : '', creadoPor: user, creadoEn: serverTimestamp()
+            }); });
+            await batch.commit();
+            return faltan.length;
+        }
+
+        const pagadaG = f => f.estadoPago === 'pagado' || f.estadoPago === 'pago_tarde';
+        const celdaMoraGBD = f => {
+            const c = calcGBD(f), on = c.pct > 0;
+            return `<label class="switch" title="${on ? 'Quitar' : 'Cobrar'} moratorios (${Math.round(PCT_MORATORIOS * 100)}% del subtotal)"><input type="checkbox" class="mor-switch-g" data-id="${esc(f.id)}" ${on ? 'checked' : ''}><span class="slider"></span></label>
+                ${on ? `<span class="mor-monto monto">${dinero(c.moraTotal)}</span><span class="mor-n">${pctTxtG(c.pct)} del subtotal</span>` : ''}`;
+        };
+        const pctTxtG = f => `${+(f * 100).toFixed(4)}%`;
+
+        function pintarGBD() {
+            const el = document.getElementById('gbdFact');
+            if (!el || (!contratosGBD.length && !facturasGBD.length)) return;
+            const faltan = contratosGBD.filter(c => !facturasGBD.some(f => f.contratoId === c.id));
+            const fila = f => {
+                const c = calcGBD(f), txt = conceptoGBDTxt(f);
+                return `<tr class="fila-g" data-id="${esc(f.id)}" title="Ver detalle">
+                    <td><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" class="sel-gbd" data-id="${esc(f.id)}" checked><span class="slider"></span></label></td>
+                    <td><strong>${f.tipo === 'prestamo' ? 'Préstamo' : 'Renta'}</strong></td>
+                    <td>${esc(f.contraparte)}<span class="det-g">${esc(txt.corto)}</span></td>
+                    <td class="mor-td">${celdaMoraGBD(f)}</td>
+                    <td class="num"><span class="monto">${dinero(c.subtotal)}</span></td>
+                    <td class="num"><span class="monto">${dinero(c.ivaTotal)}</span></td>
+                    <td class="num"><strong class="monto">${dinero(c.total)}</strong>${c.retenciones ? `<span class="det-g monto" title="Retención ISR ${dinero(c.retIsr)} + retención IVA ${dinero(c.retIva)}">ret. −${dinero(c.retenciones)}</span>` : ''}</td>
+                    <td><select class="estado ${ESTADOS[f.estadoPago]?.clase || ''}" data-gbd-estado="${esc(f.id)}">
+                        ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === f.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}</select></td>
+                </tr>`;
+            };
+            el.innerHTML = `<div class="gbd-sec">
+                <div class="gbd-cab"><div><h2>Facturas de GBD</h2><p class="sub2">Renta a GBD y préstamo a Proyectos Saraperos · ${esc(mesTxt(mes))}. Clic en un renglón para abrir su factura.</p></div>
+                    ${faltan.length ? `<button class="btn" id="gbdGenerar">Generar ${facturasGBD.length ? `faltantes (${faltan.length})` : `facturas de GBD de ${esc(mesTxt(mes))}`}</button>` : ''}</div>
+                ${facturasGBD.length ? `<div class="tabla-wrap"><table class="tabla-alineada">
+                    ${COLGROUP}
+                    <thead><tr><th><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" id="selTodasGbd" checked><span class="slider"></span></label></th><th>Contrato</th><th>Receptor</th><th class="mor-th">Moratorios</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th>Estado de pago</th></tr></thead>
+                    <tbody>${facturasGBD.map(fila).join('')}</tbody>
+                    <tfoot><tr><td colspan="3">Total</td><td class="mor-td" id="totMorG"></td><td class="num" id="totSubG"></td><td class="num" id="totIvaG"></td><td class="num" id="totTotG"></td><td></td></tr></tfoot>
+                </table></div>
+                <p class="nota-g">Total = subtotal + IVA + moratorios − retenciones. Los importes base se editan en Contratos → Contratos de GBD; cada factura se ajusta en su detalle.</p>`
+                    : `<div class="vacio">No hay facturas de GBD de <strong>${esc(mesTxt(mes))}</strong>.</div>`}
+            </div>`;
+            document.getElementById('gbdGenerar')?.addEventListener('click', async e => {
+                e.target.disabled = true;
+                try { const n = await generarGBD(mes); await cargar(`<span class="ok">Se generaron ${n} factura${n === 1 ? '' : 's'} de GBD.</span>`); }
+                catch (err) { console.error(err); document.getElementById('msg').innerHTML = `<span class="err">No se pudieron generar: ${esc(err.message)}</span>`; e.target.disabled = false; }
+            });
+            if (!facturasGBD.length) return;
+
+            // Interruptor apagado = factura tachada y fuera de los totales (igual que en los locatarios)
+            const actualizarSelG = () => {
+                const activas = new Set(seleccionGBD());
+                const todas = document.getElementById('selTodasGbd');
+                if (todas) todas.checked = activas.size === facturasGBD.length;
+                el.querySelectorAll('tr.fila-g').forEach(tr => tr.classList.toggle('redactada', !activas.has(tr.dataset.id)));
+                const act = facturasGBD.filter(f => activas.has(f.id)).map(calcGBD);
+                const suma = k => act.reduce((s, c) => s + c[k], 0);
+                const set = (id, t) => { const n = document.getElementById(id); if (n) n.innerHTML = t; };
+                set('totSubG', dinero(r2(suma('subtotal')))); set('totIvaG', dinero(r2(suma('ivaTotal'))));
+                set('totTotG', dinero(r2(suma('total'))) + (suma('retenciones') ? `<span class="det-g">ret. −${dinero(r2(suma('retenciones')))}</span>` : ''));
+                const mora = suma('moraTotal'), nMora = act.filter(c => c.moraTotal > 0).length;
+                set('totMorG', mora ? `<span class="mor-monto">${dinero(r2(mora))}</span><span class="mor-n">${nMora} contrato${nMora > 1 ? 's' : ''}</span>` : '');
+                actualizarNSel();
+            };
+            el.querySelectorAll('input.sel-gbd').forEach(x => x.addEventListener('change', actualizarSelG));
+            document.getElementById('selTodasGbd')?.addEventListener('change', e => { el.querySelectorAll('input.sel-gbd').forEach(x => { x.checked = e.target.checked; }); actualizarSelG(); });
+            actualizarSelG();
+
+            el.querySelectorAll('[data-gbd-estado]').forEach(sel => sel.addEventListener('change', async () => {
+                const f = facturasGBD.find(x => x.id === sel.dataset.gbdEstado);
+                sel.disabled = true;
+                try {
+                    await updateDoc(doc(db, 'facturas_gbd', f.id), { estadoPago: sel.value, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                    f.estadoPago = sel.value;
+                    sel.className = `estado ${ESTADOS[sel.value]?.clase || ''}`;
+                } catch (err) { console.error(err); sel.value = f.estadoPago; alert('No se pudo cambiar el estado: ' + err.message); }
+                finally { sel.disabled = false; }
+            }));
+            el.querySelectorAll('input.mor-switch-g').forEach(sw => sw.addEventListener('change', async () => {
+                const f = facturasGBD.find(x => x.id === sw.dataset.id);
+                if (pagadaG(f) && !confirm(`La factura de ${f.nombre} ya está marcada como pagada. ¿${sw.checked ? 'Agregar' : 'Quitar'} los moratorios de todos modos?`)) { sw.checked = !sw.checked; return; }
+                sw.disabled = true;
+                try {
+                    const pct = sw.checked ? PCT_MORATORIOS : 0;
+                    await updateDoc(doc(db, 'facturas_gbd', f.id), { moratoriosPct: pct, total: calcGBD({ ...f, moratoriosPct: pct }).total, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                    await cargar(`<span class="ok">${sw.checked ? `Moratorios agregados a ${esc(f.nombre)}.` : `Moratorios quitados a ${esc(f.nombre)}.`}</span>`);
+                } catch (err) { console.error(err); sw.checked = !sw.checked; sw.disabled = false; alert('No se pudieron actualizar los moratorios: ' + err.message); }
+            }));
+            // Toda la fila abre el detalle, salvo los controles (interruptores y estado)
+            el.querySelectorAll('tr.fila-g').forEach(tr => tr.addEventListener('click', e => {
+                if (e.target.closest('input, select, label, button, a')) return;
+                location.href = `ficha-gbd.html?id=${encodeURIComponent(tr.dataset.id)}`;
+            }));
         }
 
         // ---------- Historial de cortes: consultar y volver a exportar ----------
@@ -426,8 +603,11 @@
             const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
             const orden = f => contratos.findIndex(c => c.id === f.contratoId);
             const elegidas = facturas.map(f => ({ ...f, _redactada: apagadas.has(f.contratoId) })).sort((a, b) => orden(a) - orden(b));
-            if (elegidas.every(f => f._redactada)) throw new Error('En ese corte todos los locales estaban apagados.');
-            imprimirHojas(documentoContadores(corte.mes, elegidas, porId, { resumen: true }), `Facturas LAFABDECHOC ${mesTxt(corte.mes)} (corte)`);
+            // Las facturas de GBD solo entran si el corte ya las registraba (los cortes anteriores no las llevaban)
+            const apagG = new Set(corte.apagadasGBD || []);
+            const gbd = Array.isArray(corte.gbd) ? (await leerFacturasGBD(corte.mes)).map(f => ({ ...f, _redactada: apagG.has(f.contratoId) })) : [];
+            if (elegidas.every(f => f._redactada) && gbd.every(f => f._redactada)) throw new Error('En ese corte todos los locales estaban apagados.');
+            imprimirHojas(documentoContadores(corte.mes, elegidas, porId, { resumen: true, gbd }), `Facturas LAFABDECHOC ${mesTxt(corte.mes)} (corte)`);
         }
 
         async function generar(faltan, contratos) {
@@ -447,7 +627,10 @@
                     });
                 });
                 await batch.commit();
-                cargar(`<span class="ok">Se generaron ${faltan.length} facturas. Revisa cada una antes de enviarla.</span>`);
+                // También las facturas de GBD del mes (renta a GBD y préstamo), si faltan
+                let nGBD = 0;
+                try { nGBD = await generarGBD(mes); } catch (err) { console.warn('No se generaron las facturas de GBD', err); }
+                cargar(`<span class="ok">Se generaron ${faltan.length} facturas${nGBD ? ` y ${nGBD} de GBD` : ''}. Revisa cada una antes de enviarla.</span>`);
             } catch (err) {
                 console.error(err);
                 document.getElementById('msg').innerHTML = `<span class="err">No se pudo generar: ${esc(err.message)}</span>`;

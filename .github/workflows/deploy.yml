@@ -48,7 +48,7 @@ jobs:
           cp -r js dist/js
           # Panel (solo archivos nuevos)
           mkdir -p dist/admin/agua dist/admin/locales dist/admin/facturacion dist/admin/calendarios dist/admin/config dist/admin/caja-chica dist/admin/bitacora dist/admin/personal dist/admin/cfe
-          cp admin/public/facturacion/index.html admin/public/facturacion/ficha.html dist/admin/facturacion/
+          cp admin/public/facturacion/index.html admin/public/facturacion/ficha.html admin/public/facturacion/ficha-gbd.html dist/admin/facturacion/
           cp admin/public/index.html dist/admin/
           cp admin/public/calendarios/index.html dist/admin/calendarios/
           cp admin/public/config/index.html dist/admin/config/
