@@ -1,4 +1,5 @@
 // Alertas de contratos: vigencia (fin de contrato), incremento de renta y depósito (saldo por pagar).
+import { cuentaDeposito } from './depositos.js?v=20261014-4';
 // Lo usan locales/index.html (punto de color) y locales/caratula.html (detalle).
 
 export const VENTANA_DIAS = 90;
@@ -29,7 +30,7 @@ export function alertasContrato(c) {
         .filter(e => e.dias <= VENTANA_DIAS)
         .map(e => ({ ...e, nivel: nivelDe(e.dias) }))
         .sort((a, b) => a.dias - b.dias);
-    const saldo = typeof c.porPagar === 'number' && c.porPagar > 0 ? c.porPagar : 0;
+    const saldo = cuentaDeposito(c).saldo > 0.005 ? cuentaDeposito(c).saldo : 0;
     const peor = lista.length ? lista[0].nivel : (saldo ? '60' : null);
     // contrato: nivel del fin de contrato (círculo); otras: cuántas alertas de incremento o depósito (cuadrito)
     const fin = lista.find(e => e.tipo === 'Fin de contrato');

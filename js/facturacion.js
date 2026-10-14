@@ -1,5 +1,5 @@
 // Facturación mensual a locatarios: cálculo y utilidades compartidas
-import { db } from './auth.js?v=20261012-4';
+import { db } from './auth.js?v=20261014-4';
 import {
   collection, getDocs, getDoc, doc, query, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -366,7 +366,7 @@ export const ESTILO_HOJA = `
 
 // Logo del encabezado: se precarga al cargar el módulo para que ya esté listo al imprimir
 // (la ruta es relativa porque todas las páginas que exportan están un nivel dentro de admin/ o admin/public/)
-const LOGO_URL = '../css/logo.png';
+export const LOGO_URL = '../css/logo.png';
 if (typeof Image !== 'undefined') { try { new Image().src = LOGO_URL; } catch (e) { /* sin logo no pasa nada */ } }
 
 export function encabezadoHoja(mes) {
@@ -618,23 +618,24 @@ function paginarFichas(cont) {
 }
 
 /** Abre el diálogo de impresión con las hojas (el usuario elige "Guardar como PDF") */
-export function imprimirHojas(html, titulo) {
+export function imprimirHojas(html, titulo, { vertical = false } = {}) {
   let cont = document.getElementById('hojas-impresion');
   if (!cont) {
     cont = document.createElement('div');
     cont.id = 'hojas-impresion';
     document.body.appendChild(cont);
-    const st = document.createElement('style');
-    st.textContent = ESTILO_HOJA + `
+  }
+  // La hoja se vuelve a declarar en cada impresión (horizontal para facturas, vertical para cartas)
+  let st = document.getElementById('estilo-hojas-impresion');
+  if (!st) { st = document.createElement('style'); st.id = 'estilo-hojas-impresion'; document.head.appendChild(st); }
+  st.textContent = ESTILO_HOJA + `
       #hojas-impresion { display: none; }
-      @page { size: letter landscape; margin: 10mm 12mm; }
+      @page { size: letter ${vertical ? 'portrait' : 'landscape'}; margin: ${vertical ? '16mm 18mm' : '10mm 12mm'}; }
       @media print {
         body > *:not(#hojas-impresion) { display: none !important; }
         #hojas-impresion { display: block !important; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       }`;
-    document.head.appendChild(st);
-  }
   cont.innerHTML = html;
   paginarFichas(cont);
   const tituloPrevio = document.title;

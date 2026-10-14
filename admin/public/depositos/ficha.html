@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depósito · La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261014-4">
+    <style>
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+        .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
+        .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .barra a { color: var(--accion); text-decoration: none; font-size: 14px; }
+        .barra a:hover { text-decoration: underline; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
+        .panel { border: 1px solid var(--linea); border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; }
+        .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accion); margin: 0 0 12px; }
+        .dos { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(420px, 1.3fr); gap: 18px; }
+        @media (max-width: 900px) { .dos { grid-template-columns: 1fr; } }
+        .campo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .campo label { display: block; font-size: 11px; color: var(--tinta-suave); margin-bottom: 3px; }
+        .campo input, .campo select, .campo textarea { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--borde-control); border-radius: 6px; box-sizing: border-box; background: var(--fondo); color: var(--tinta); }
+        .campo .ancho { grid-column: 1 / -1; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; font-size: 11px; color: var(--tinta-suave); padding: 6px 8px; border-bottom: 1px solid var(--linea); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+        td { padding: 7px 8px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: top; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
+        th.num { font-family: var(--font-sans); }
+        .gris { color: var(--tinta-suave); font-size: 12px; }
+        .resumen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+        .resumen div { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; }
+        .resumen .et { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .03em; }
+        .resumen .val { font-size: 18px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
+        .resumen .alerta .val { color: var(--peligro); } .resumen .bien .val { color: var(--exito); }
+        .acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 6px; border: none; background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { font: inherit; font-size: 14px; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:disabled { opacity: .5; }
+        .msg { font-size: 13px; } .ok { color: var(--exito); } .err { color: var(--peligro); }
+        .vacio { color: var(--tinta-suave); padding: 16px 0; }
+        .link { color: var(--accion); text-decoration: none; font-size: 13px; }
+        .link:hover { text-decoration: underline; }
+        .pago-nuevo { border-top: 1px solid var(--linea); margin-top: 16px; padding-top: 14px; }
+        .pago-nuevo .campo { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 900px) { .pago-nuevo .campo { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><p class="vacio">Cargando...</p></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261014-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-4';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-4';
+        import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const params = new URLSearchParams(location.search);
+        const id = params.get('id');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+        const dinero = n => (r2(n) < 0 ? '-$' : '$') + Math.abs(r2(n)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? `${+f.slice(8, 10)} ${MESES_C[+f.slice(5, 7) - 1]} ${f.slice(0, 4)}` : (f || '-');
+        const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        const TIPOS = { directo: 'Directo', asignado: 'Asignado', compartido: 'Compartido (no suma)' };
+
+        let c = null;
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        const cuentaDe = cuentaDeposito;   // misma cuenta que la carátula y las alertas (js/depositos.js)
+
+        async function cargar(msg = '') {
+            if (!id) { app.innerHTML = '<p class="err">Falta el contrato.</p>'; return; }
+            try {
+                const snap = await getDoc(doc(db, 'contratos', id));
+                if (!snap.exists()) { app.innerHTML = '<p class="err">No se encontró el contrato.</p><p><a class="link" href="./">← Depósitos</a></p>'; return; }
+                c = { id: snap.id, ...snap.data() };
+                document.title = `Depósito · ${c.razonSocial || c.id} - La Fábrica de Chocolate`;
+                render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        function render(msg = '') {
+            const k = cuentaDe(c);
+            const saldoTxt = k.saldo > 0.005 ? `<span class="resumen-saldo">${dinero(k.saldo)}</span>` : k.saldo < -0.005 ? `${dinero(k.saldo)} a favor` : 'Cubierto';
+            app.innerHTML = `
+                <div class="barra">
+                    <a href="./">← Depósitos</a>
+                    <a href="../locales/caratula.html?id=${encodeURIComponent(c.id)}">Ver carátula →</a>
+                </div>
+                <h1>${esc(c.razonSocial || c.nombreComercial || c.id)}</h1>
+                <p class="sub">Local ${esc((c.locales || []).join(', '))}${c.nombreComercial && c.nombreComercial !== c.razonSocial ? ` · ${esc(c.nombreComercial)}` : ''}</p>
+                <div class="resumen">
+                    <div class="${k.saldo > 0.005 ? 'alerta' : 'bien'}"><div class="et">Por pagar</div><div class="val">${k.saldo > 0.005 ? dinero(k.saldo) : saldoTxt}</div></div>
+                    <div><div class="et">Requerido</div><div class="val">${dinero(k.requerido)}</div><div class="gris">${k.meses} mes${k.meses === 1 ? '' : 'es'} × ${dinero(k.base)} (${k.baseClave === 'sin' ? 'sin' : 'con'} mantenimiento)</div></div>
+                    <div><div class="et">Pagado</div><div class="val">${dinero(k.pagado)}</div><div class="gris">${k.cuentan.length} pago${k.cuentan.length === 1 ? '' : 's'} que cuentan</div></div>
+                </div>
+                <span id="msg" class="msg">${msg}</span>
+                <div class="dos" style="margin-top:12px">
+                    <div class="panel">
+                        <h2>Acuerdo en contrato</h2>
+                        <div class="campo">
+                            <div><label for="d_meses">Meses de depósito</label><input id="d_meses" type="number" min="0" step="1" value="${k.meses}"></div>
+                            <div><label for="d_garantia">Garantía</label><input id="d_garantia" value="${esc(c.garantia || '')}"></div>
+                            <div class="ancho"><label for="d_base">Base del depósito</label><select id="d_base">${Object.entries(BASES_DEPOSITO).map(([v, t]) => `<option value="${v}" ${k.baseClave === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+                            <div class="ancho"><label for="d_detalle">Detalle del acuerdo (texto del contrato)</label><textarea id="d_detalle" rows="4">${esc(c.garantiaDetalle || '')}</textarea></div>
+                            <div class="ancho"><label for="d_nota">Nota de saldo</label><input id="d_nota" value="${esc(c.porPagarNota || '')}"></div>
+                        </div>
+                        <div class="gris">Renta con mantenimiento: ${dinero(k.rentaCon)} · Renta sin mantenimiento: ${dinero(k.rentaSin)} (sin IVA). Base usada: ${dinero(k.base)}.</div>
+                        <div class="acciones"><button class="btn" id="d_guardarAcuerdo">Guardar acuerdo</button><span id="d_msg" class="msg"></span></div>
+                    </div>
+                    <div class="panel">
+                        <h2>Pagos del depósito</h2>
+                        ${k.pagos.length ? `<table><thead><tr><th>Fecha</th><th class="num">Monto</th><th>Tipo</th><th>Banco</th><th>Quién pagó</th></tr></thead><tbody>
+                            ${k.pagos.map(p => `<tr><td>${fechaCorta(p.fecha)}</td><td class="num">${dinero(p.monto)}</td><td>${esc(TIPOS[p.tipo] || p.tipo || '')}</td><td>${esc(p.banco || '')}</td><td>${esc(p.pago || '')}${p.nota ? `<div class="gris">${esc(p.nota)}</div>` : ''}</td></tr>`).join('')}
+                            </tbody></table>` : '<div class="vacio">Sin pagos registrados.</div>'}
+                        <div class="pago-nuevo">
+                            <h2>Registrar pago</h2>
+                            <div class="campo">
+                                <div><label for="p_fecha">Fecha</label><input id="p_fecha" type="date" value="${iso(new Date())}"></div>
+                                <div><label for="p_monto">Monto</label><input id="p_monto" inputmode="decimal" placeholder="0.00"></div>
+                                <div><label for="p_tipo">Tipo</label><select id="p_tipo"><option value="directo">Directo (suma)</option><option value="asignado">Asignado (suma)</option><option value="compartido">Compartido (no suma)</option></select></div>
+                                <div><label for="p_banco">Banco</label><input id="p_banco" placeholder="BBVA LFDC, Efectivo…"></div>
+                                <div><label for="p_pago">Quién pagó</label><input id="p_pago" value="${esc(c.razonSocial || '')}"></div>
+                                <div><label for="p_nota">Nota</label><input id="p_nota"></div>
+                            </div>
+                            <div class="acciones"><button class="btn-sec" id="p_agregar">Agregar pago</button><span id="p_msg" class="msg"></span></div>
+                        </div>
+                    </div>
+                </div>`;
+            enlazar();
+        }
+
+        // Guarda el contrato, recalcula el por pagar y deja entrada en su historial. `cambios` = { campo: [antes, despues] }
+        async function guardar(patch, cambios) {
+            const user = getCurrentUser();
+            const merged = { ...c, ...patch };
+            const porPagar = cuentaDe(merged).saldo;
+            await updateDoc(doc(db, 'contratos', c.id), { ...patch, porPagar, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+            await addDoc(collection(db, 'contratos', c.id, 'historial'), {
+                antes: Object.fromEntries(Object.entries(cambios).map(([k, v]) => [k, v[0]])),
+                despues: Object.fromEntries(Object.entries(cambios).map(([k, v]) => [k, v[1]])),
+                por: user.email, en: serverTimestamp()
+            });
+            Object.assign(c, patch, { porPagar });
+        }
+
+        function enlazar() {
+            document.getElementById('d_guardarAcuerdo').addEventListener('click', async () => {
+                const msg = document.getElementById('d_msg'), btn = document.getElementById('d_guardarAcuerdo');
+                const meses = Number(document.getElementById('d_meses').value);
+                const baseSel = document.getElementById('d_base').value;
+                if (!Number.isInteger(meses) || meses < 0) { msg.className = 'msg err'; msg.textContent = 'Los meses deben ser un número entero de cero en adelante.'; return; }
+                const garantia = document.getElementById('d_garantia').value.trim();
+                const detalle = document.getElementById('d_detalle').value.trim();
+                const nota = document.getElementById('d_nota').value.trim();
+                const patch = { mesesDeposito: meses, depositoBase: baseSel, garantia, garantiaDetalle: detalle, porPagarNota: nota };
+                const cambios = {};
+                if (meses !== c.mesesDeposito) cambios.mesesDeposito = [c.mesesDeposito, meses];
+                if (baseSel !== (c.depositoBase === 'sin' ? 'sin' : 'con')) cambios.depositoBase = [c.depositoBase || 'con', baseSel];
+                if (garantia !== (c.garantia || '')) cambios.garantia = [c.garantia || '', garantia];
+                if (detalle !== (c.garantiaDetalle || '')) cambios.garantiaDetalle = [c.garantiaDetalle || '', detalle];
+                if (nota !== (c.porPagarNota || '')) cambios.porPagarNota = [c.porPagarNota || '', nota];
+                if (!Object.keys(cambios).length) { msg.className = 'msg'; msg.textContent = 'No hay cambios.'; return; }
+                btn.disabled = true;
+                try {
+                    await guardar(patch, cambios);
+                    render('<span class="ok">Acuerdo guardado.</span>');
+                } catch (err) { console.error(err); msg.className = 'msg err'; msg.textContent = 'No se pudo guardar: ' + err.message; btn.disabled = false; }
+            });
+            document.getElementById('p_agregar').addEventListener('click', async () => {
+                const msg = document.getElementById('p_msg'), btn = document.getElementById('p_agregar');
+                const fecha = document.getElementById('p_fecha').value;
+                const monto = Number(String(document.getElementById('p_monto').value).replace(/[$,\s]/g, ''));
+                const tipo = document.getElementById('p_tipo').value;
+                const banco = document.getElementById('p_banco').value.trim();
+                const pago = document.getElementById('p_pago').value.trim();
+                const nota = document.getElementById('p_nota').value.trim();
+                if (!fecha) { msg.className = 'msg err'; msg.textContent = 'Escribe la fecha.'; return; }
+                if (!Number.isFinite(monto) || monto <= 0) { msg.className = 'msg err'; msg.textContent = 'Escribe un monto mayor a cero.'; return; }
+                const nuevo = { fecha, monto: r2(monto), tipo, banco, pago, nota, locales: (c.locales || []).join(', ') };
+                btn.disabled = true;
+                try {
+                    await guardar({ historialDepositos: [...(c.historialDepositos || []), nuevo] }, { pagoDeposito: [null, `${fecha} ${dinero(monto)} ${tipo}`] });
+                    render('<span class="ok">Pago registrado.</span>');
+                } catch (err) { console.error(err); msg.className = 'msg err'; msg.textContent = 'No se pudo guardar: ' + err.message; btn.disabled = false; }
+            });
+        }
+    </script>
+</body>
+</html>

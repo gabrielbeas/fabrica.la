@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261012-4">
+    <link rel="stylesheet" href="../css/panel.css?v=20261014-4">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -117,12 +117,14 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261012-4';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261012-4';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261014-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-4';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt } from '../../../js/facturacion.js?v=20261012-2';
-        import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261012-4';
-        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261012-4';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261013-1';
+        import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261014-4';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-4';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-4';
+        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261014-4';
 
         const app = document.getElementById('app');
         let diaLimitePago = 10; // Configuración → facturacion_config/general; pagos después de ese día son tarde
@@ -286,13 +288,17 @@
                         <div class="seccion">
                             <h2>Depósito</h2>
                             <dl>
-                                ${fila('Depósito', typeof c.deposito === 'number' ? dinero(c.deposito) + (c.depositoPagado ? ' (pagado)' : '') : '')}
-                                ${fila('Fecha de depósito', c.depositoFecha ? fechaTxt(c.depositoFecha) : '')}
                                 ${fila('Meses de depósito', c.mesesDeposito)}
+                                ${fila('Base del depósito', BASES_DEPOSITO[cuentaDeposito(c).baseClave] + ' · ' + dinero(cuentaDeposito(c).base))}
+                                ${fila('Depósito requerido', dinero(cuentaDeposito(c).requerido))}
+                                ${fila('Depósito pagado', dinero(cuentaDeposito(c).pagado) + (cuentaDeposito(c).saldo <= 0.005 && cuentaDeposito(c).pagado > 0 ? ' (cubierto)' : ''))}
+                                ${fila('Fecha del primer pago', cuentaDeposito(c).primero ? fechaTxt(cuentaDeposito(c).primero) : '')}
+                                ${fila('Último pago', cuentaDeposito(c).ultimo ? fechaTxt(cuentaDeposito(c).ultimo) : '')}
                                 ${fila('Meses de gracia', c.mesesGracia)}
-                                ${fila('Por pagar', typeof c.porPagar === 'number' ? dinero(c.porPagar) + (c.porPagarNota ? ` · ${esc(c.porPagarNota)}` : '') : '')}
+                                ${fila('Por pagar', dinero(cuentaDeposito(c).saldo) + (c.porPagarNota ? ` · ${esc(c.porPagarNota)}` : ''))}
                             </dl>
                             ${Array.isArray(c.historialDepositos) ? `<button class="btn-sec btn-mini no-print" id="btnDepositos">Ver historial de pagos de depósito</button>` : ''}
+                            ${!c.propio ? `<button class="btn-sec btn-mini no-print" id="btnRequerimiento" title="Hoja de requerimiento de pago del saldo del depósito en garantía">Requerimiento de cobro (PDF)</button>` : ''}
                         </div>
                         ${(c.rentas || []).length ? `
                         <div class="seccion ancha">
@@ -361,6 +367,7 @@
                 </div>`;
             document.getElementById('btnEditar').addEventListener('click', () => edicion(c));
             document.getElementById('btnDepositos')?.addEventListener('click', () => ventanaDepositos(c));
+            document.getElementById('btnRequerimiento')?.addEventListener('click', e => requerimientoDeposito({ ...c, id: contratoId }, e.currentTarget));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
             document.getElementById('btnIncremento')?.addEventListener('click', () => ventanaIncremento(c));
             if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
@@ -586,6 +593,9 @@
         //   tipo 'directo'    → pago del inquilino a este contrato (suma)
         //   tipo 'compartido' → pago hecho para varios locales (se muestra, no suma)
         //   tipo 'asignado'   → parte de los pagos compartidos que corresponde a este contrato (suma)
+        // Depósito en garantía: requerido = meses de depósito × renta vigente con mantenimiento incluido (sin IVA); pagado = pagos directos y asignados
+        const resumenDeposito = cuentaDeposito;   // misma cuenta que Depósitos y las alertas (js/depositos.js)
+
         function ventanaDepositos(c) {
             const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f.split('-').reverse().join('/') : esc(f || '');
             const pagos = [...(c.historialDepositos || [])].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
@@ -593,8 +603,9 @@
             const cuentan = pagos.filter(p => p.tipo !== 'compartido');
             const pagado = cuentan.reduce((s, p) => s + (p.monto || 0), 0);
             const totalComp = compartidos.reduce((s, p) => s + (p.monto || 0), 0);
-            const requerido = (c.deposito || 0) + (c.porPagar || 0);
-            const saldo = requerido - pagado;
+            // Igual que la sección Depósitos: meses de depósito × renta vigente
+            const requerido = cuentaDeposito(c).requerido;
+            const saldo = cuentaDeposito(c).saldo;
             const filaPago = p => `<tr class="${p.tipo === 'compartido' ? 'comp' : ''}">
                 <td>${fechaCorta(p.fecha)}</td><td>${esc(p.pago)}${p.nota ? `<div class="nota-p">${esc(p.nota)}</div>` : ''}</td>
                 <td>${esc(p.locales)}</td><td>${esc(p.banco)}</td><td class="num">${dinero(p.monto)}</td></tr>`;
@@ -669,11 +680,8 @@
             ['totalIva', 'Renta con IVA', 'numero', 'Renta'],
             ['mantenimientoPct', 'Mantenimiento (%)', 'porcentaje', 'Renta'],
             ['mantenimientoMonto', 'Mantenimiento ($)', 'numero', 'Renta'],
-            ['deposito', 'Depósito', 'numero', 'Depósito'],
-            ['depositoFecha', 'Fecha de depósito', 'fecha', 'Depósito'],
             ['mesesDeposito', 'Meses de depósito', 'numero', 'Depósito'],
             ['mesesGracia', 'Meses de gracia', 'numero', 'Depósito'],
-            ['porPagar', 'Por pagar', 'numero', 'Depósito'],
             ['porPagarNota', 'Nota de por pagar', 'texto', 'Depósito'],
             ['seguro.aseguradora', 'Aseguradora', 'texto', 'Seguro y servicios'],
             ['seguro.poliza', 'Póliza', 'texto', 'Seguro y servicios'],

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depósitos - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261014-4">
+    <style>
+        /* Solo lo propio de Depósitos; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+        .main { max-width: 1500px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 18px; }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 12px 14px; }
+        .tarjeta .et { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .tarjeta .det { font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
+        .tarjeta.alerta .val { color: var(--peligro); } .tarjeta.bien .val { color: var(--exito); }
+        th.ord { cursor: pointer; user-select: none; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
+        th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
+        button.req { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--accion); background: var(--fondo); color: var(--accion); cursor: pointer; white-space: nowrap; }
+        button.req:hover { background: var(--accion-suave); }
+        button.req.sin-saldo { border-color: var(--borde-control); color: var(--tinta-suave); }
+        button.req:disabled { opacity: .5; cursor: wait; }
+        .tabla-wrap { overflow-x: auto; border: 1px solid var(--linea); border-radius: 10px; }
+        table.dep { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+        table.dep th { text-align: left; font-size: 11px; font-weight: 600; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; padding: 9px 8px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        table.dep td { padding: 8px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: middle; }
+        table.dep .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
+        table.dep th.num { font-family: var(--font-sans); }
+        table.dep tr.fila { cursor: pointer; } table.dep tr.fila:hover td { background: var(--ambar-suave); }
+        table.dep tr.abierta td { background: var(--fondo-hundido); }
+        .gris { color: var(--tinta-suave); font-size: 12px; }
+        .estado { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+        .e-saldo { background: var(--peligro-suave); color: var(--peligro); }
+        .e-cero { background: var(--exito-suave, #e8f5e9); color: var(--exito); }
+        .e-favor { background: var(--atencion-suave); color: var(--atencion); }
+        .detalle { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(420px, 1.4fr); gap: 18px; padding: 14px 4px; }
+        .detalle h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accion); margin: 0 0 8px; }
+        .detalle table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .detalle th { text-align: left; font-size: 11px; color: var(--tinta-suave); padding: 4px 6px; border-bottom: 1px solid var(--linea); font-weight: 600; }
+        .detalle td { padding: 5px 6px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: top; }
+        .campo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .campo label { display: block; font-size: 11px; color: var(--tinta-suave); margin-bottom: 3px; }
+        .campo input, .campo select, .campo textarea { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 6px; box-sizing: border-box; background: var(--fondo); color: var(--tinta); }
+        .campo .ancho { grid-column: 1 / -1; }
+        .acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+        .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 6px; border: none; background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .msg { font-size: 13px; } .ok { color: var(--exito); } .err { color: var(--peligro); }
+        .vacio { color: var(--tinta-suave); text-align: center; padding: 30px 16px; }
+        .pie { color: var(--tinta-suave); font-size: 12px; margin-top: 10px; }
+        .link { color: var(--accion); text-decoration: none; font-size: 12px; }
+        .link:hover { text-decoration: underline; }
+        .pago-nuevo { border-top: 1px solid var(--linea); margin-top: 10px; padding-top: 10px; }
+        .pago-nuevo .campo { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 1000px) { .detalle { grid-template-columns: 1fr; } .pago-nuevo .campo { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="vacio">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261014-4';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-4';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-4';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-4';
+        import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+        const dinero = n => (r2(n) < 0 ? '-$' : '$') + Math.abs(r2(n)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? `${+f.slice(8, 10)} ${MESES_C[+f.slice(5, 7) - 1]} ${f.slice(0, 4)}` : (f || '-');
+        const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        const TIPOS = { directo: 'Directo', asignado: 'Asignado', compartido: 'Compartido (no suma)' };
+
+        let contratos = [];
+        let orden = { col: 'locales', dir: 1 };
+        // Valor de cada columna para ordenar (texto A→Z, números de menor a mayor o al revés)
+        const CLAVE = {
+            locales: x => parseInt(x.c.locales?.[0] || 999),
+            locatario: x => (x.c.razonSocial || x.c.nombreComercial || '').toLowerCase(),
+            acuerdo: x => (x.c.garantia || '').toLowerCase(),
+            meses: x => x.k.meses,
+            renta: x => x.k.base,
+            requerido: x => x.k.requerido,
+            pagado: x => x.k.pagado,
+            saldo: x => x.k.saldo,
+            ultimo: x => x.k.ultimo || ''
+        };
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        const cuentaDe = cuentaDeposito;   // misma cuenta que la carátula y las alertas (js/depositos.js)
+
+        async function cargar(msg = '') {
+            try {
+                const snap = await getDocs(collection(db, 'contratos'));
+                contratos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .filter(c => !c.propio)
+                    .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999));
+                render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        function render(msg = '') {
+            const filas = contratos.map(c => ({ c, k: cuentaDe(c) }));
+            const f = CLAVE[orden.col];
+            filas.sort((a, b) => {
+                const x = f(a), y = f(b);
+                const cmp = typeof x === 'string' ? x.localeCompare(y, 'es') : x - y;
+                return cmp * orden.dir || CLAVE.locales(a) - CLAVE.locales(b);
+            });
+            const th = (col, txt, cls = '') => {
+                const act = orden.col === col;
+                return `<th class="ord ${cls} ${act ? 'act' : ''}" data-col="${col}" title="Ordenar por ${txt.toLowerCase()}">${txt}<span class="flecha">${act ? (orden.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`;
+            };
+            const totSaldo = r2(filas.filter(x => x.k.saldo > 0).reduce((s, x) => s + x.k.saldo, 0));
+            const nSaldo = filas.filter(x => x.k.saldo > 0.005).length;
+            const totPagado = r2(filas.reduce((s, x) => s + x.k.pagado, 0));
+            app.innerHTML = `
+                <div class="cabeza">
+                    <div><h1>Depósitos</h1><p class="sub" style="margin:0">Depósito en garantía de cada contrato: acuerdo, pagos y saldo. Lo que cambies aquí se guarda en el contrato, y al revés.</p></div>
+                    <span id="msg" class="msg">${msg}</span>
+                </div>
+                <div class="tarjetas">
+                    <div class="tarjeta ${nSaldo ? 'alerta' : 'bien'}"><div class="et">Por cobrar</div><div class="val">${dinero(totSaldo)}</div><div class="det">${nSaldo} contrato${nSaldo === 1 ? '' : 's'} con saldo</div></div>
+                    <div class="tarjeta"><div class="et">Pagado en total</div><div class="val">${dinero(totPagado)}</div><div class="det">Pagos que cuentan para el depósito</div></div>
+                    <div class="tarjeta"><div class="et">Contratos</div><div class="val">${contratos.length}</div><div class="det">Sin locales propios</div></div>
+                </div>
+                ${!contratos.length ? '<div class="vacio">No hay contratos.</div>' : `
+                <div class="tabla-wrap"><table class="dep">
+                    <thead><tr>
+                        ${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acuerdo', 'Acuerdo en contrato')}${th('meses', 'Meses', 'num')}
+                        ${th('renta', 'Base del depósito', 'num')}${th('requerido', 'Requerido', 'num')}${th('pagado', 'Pagado', 'num')}
+                        ${th('saldo', 'Por pagar', 'num')}${th('ultimo', 'Último pago')}<th></th>
+                    </tr></thead>
+                    <tbody>
+                    ${filas.map(({ c, k }) => `
+                        <tr class="fila" data-id="${esc(c.id)}">
+                            <td><strong>${esc((c.locales || []).join(', '))}</strong></td>
+                            <td>${esc(c.razonSocial || c.nombreComercial || '')}</td>
+                            <td>${esc(c.garantia || '-')}<div class="gris">${esc(c.garantiaDetalle ? c.garantiaDetalle.slice(0, 70) + (c.garantiaDetalle.length > 70 ? '…' : '') : '')}</div></td>
+                            <td class="num">${k.meses}</td>
+                            <td class="num">${dinero(k.base)}<div class="gris" style="font-family:var(--font-sans)">${k.baseClave === 'sin' ? 'sin mantenimiento' : 'con mantenimiento'}</div></td>
+                            <td class="num">${dinero(k.requerido)}</td>
+                            <td class="num">${dinero(k.pagado)}</td>
+                            <td class="num">${k.saldo > 0.005 ? `<span class="estado e-saldo">${dinero(k.saldo)}</span>` : k.saldo < -0.005 ? `<span class="estado e-favor">${dinero(k.saldo)} a favor</span>` : `<span class="estado e-cero">Cubierto</span>`}</td>
+                            <td>${k.ultimo ? fechaCorta(k.ultimo) : '<span class="gris">Sin pagos</span>'}</td>
+                            <td><button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" data-req="${esc(c.id)}" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro</button></td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table></div>
+                <p class="pie">Requerido = meses de depósito × base del depósito (renta con mantenimiento incluido, o renta sin mantenimiento cuando va desglosado), sin IVA. Pagado = pagos que cuentan (los compartidos no suman). Por pagar = requerido − pagado; se guarda en el contrato como «por pagar». Clic en una fila para abrir el depósito del contrato; el botón genera el requerimiento de cobro.</p>`}`;
+            app.querySelectorAll('button.req').forEach(b => b.addEventListener('click', e => {
+                e.stopPropagation();
+                requerimientoDeposito(contratos.find(c => c.id === b.dataset.req), b);
+            }));
+            app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
+                const col = t.dataset.col;
+                // Texto y locales: A→Z; montos, meses y fechas: de mayor a menor primero
+                orden = orden.col === col ? { col, dir: -orden.dir } : { col, dir: ['locales', 'locatario', 'acuerdo', 'ultimo'].includes(col) ? 1 : -1 };
+                render();
+            }));
+            app.querySelectorAll('tr.fila').forEach(tr => tr.addEventListener('click', e => {
+                if (e.target.closest('a, button')) return;
+                location.href = `ficha.html?id=${encodeURIComponent(tr.dataset.id)}`;
+            }));
+        }
+
+    </script>
+</body>
+</html>
