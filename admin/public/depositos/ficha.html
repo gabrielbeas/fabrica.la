@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261014-4">
+    <link rel="stylesheet" href="../css/panel.css?v=20261014-5">
     <style>
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
         .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
@@ -17,9 +17,14 @@
         h1 { font-size: 24px; margin: 0 0 4px; }
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
         .panel { border: 1px solid var(--linea); border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; }
-        .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accion); margin: 0 0 12px; }
-        .dos { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(420px, 1.3fr); gap: 18px; }
-        @media (max-width: 900px) { .dos { grid-template-columns: 1fr; } }
+        button.req { font: inherit; font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--accion); background: var(--fondo); color: var(--accion); cursor: pointer; white-space: nowrap; }
+        button.req:hover { background: var(--accion-suave); }
+        button.req.sin-saldo { border-color: var(--borde-control); color: var(--tinta-suave); }
+        button.req:disabled { opacity: .5; cursor: wait; }
+        .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accion); margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .dos { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        .campo.tres { grid-template-columns: 1fr 1fr 1.4fr; }
+        @media (max-width: 900px) { .campo.tres { grid-template-columns: 1fr; } }
         .campo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .campo label { display: block; font-size: 11px; color: var(--tinta-suave); margin-bottom: 3px; }
         .campo input, .campo select, .campo textarea { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--borde-control); border-radius: 6px; box-sizing: border-box; background: var(--fondo); color: var(--tinta); }
@@ -53,9 +58,10 @@
     <div class="main" id="app"><p class="vacio">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261014-4';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-4';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-4';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261014-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-5';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-5';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-5';
         import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -113,19 +119,7 @@
                 <span id="msg" class="msg">${msg}</span>
                 <div class="dos" style="margin-top:12px">
                     <div class="panel">
-                        <h2>Acuerdo en contrato</h2>
-                        <div class="campo">
-                            <div><label for="d_meses">Meses de depósito</label><input id="d_meses" type="number" min="0" step="1" value="${k.meses}"></div>
-                            <div><label for="d_garantia">Garantía</label><input id="d_garantia" value="${esc(c.garantia || '')}"></div>
-                            <div class="ancho"><label for="d_base">Base del depósito</label><select id="d_base">${Object.entries(BASES_DEPOSITO).map(([v, t]) => `<option value="${v}" ${k.baseClave === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
-                            <div class="ancho"><label for="d_detalle">Detalle del acuerdo (texto del contrato)</label><textarea id="d_detalle" rows="4">${esc(c.garantiaDetalle || '')}</textarea></div>
-                            <div class="ancho"><label for="d_nota">Nota de saldo</label><input id="d_nota" value="${esc(c.porPagarNota || '')}"></div>
-                        </div>
-                        <div class="gris">Renta con mantenimiento: ${dinero(k.rentaCon)} · Renta sin mantenimiento: ${dinero(k.rentaSin)} (sin IVA). Base usada: ${dinero(k.base)}.</div>
-                        <div class="acciones"><button class="btn" id="d_guardarAcuerdo">Guardar acuerdo</button><span id="d_msg" class="msg"></span></div>
-                    </div>
-                    <div class="panel">
-                        <h2>Pagos del depósito</h2>
+                        <h2>Pagos del depósito <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimiento" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro (PDF)</button></h2>
                         ${k.pagos.length ? `<table><thead><tr><th>Fecha</th><th class="num">Monto</th><th>Tipo</th><th>Banco</th><th>Quién pagó</th></tr></thead><tbody>
                             ${k.pagos.map(p => `<tr><td>${fechaCorta(p.fecha)}</td><td class="num">${dinero(p.monto)}</td><td>${esc(TIPOS[p.tipo] || p.tipo || '')}</td><td>${esc(p.banco || '')}</td><td>${esc(p.pago || '')}${p.nota ? `<div class="gris">${esc(p.nota)}</div>` : ''}</td></tr>`).join('')}
                             </tbody></table>` : '<div class="vacio">Sin pagos registrados.</div>'}
@@ -141,6 +135,18 @@
                             </div>
                             <div class="acciones"><button class="btn-sec" id="p_agregar">Agregar pago</button><span id="p_msg" class="msg"></span></div>
                         </div>
+                    </div>
+                    <div class="panel">
+                        <h2>Acuerdo en contrato</h2>
+                        <div class="campo tres">
+                            <div><label for="d_meses">Meses de depósito</label><input id="d_meses" type="number" min="0" step="1" value="${k.meses}"></div>
+                            <div><label for="d_base">Base del depósito</label><select id="d_base">${Object.entries(BASES_DEPOSITO).map(([v, t]) => `<option value="${v}" ${k.baseClave === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+                            <div><label for="d_garantia">Garantía</label><input id="d_garantia" value="${esc(c.garantia || '')}"></div>
+                            <div class="ancho"><label for="d_detalle">Detalle del acuerdo (texto del contrato)</label><textarea id="d_detalle" rows="4">${esc(c.garantiaDetalle || '')}</textarea></div>
+                            <div class="ancho"><label for="d_nota">Nota de saldo</label><input id="d_nota" value="${esc(c.porPagarNota || '')}"></div>
+                        </div>
+                        <div class="gris">Renta con mantenimiento: ${dinero(k.rentaCon)} · Renta sin mantenimiento: ${dinero(k.rentaSin)} (sin IVA). Base usada: ${dinero(k.base)}.</div>
+                        <div class="acciones"><button class="btn" id="d_guardarAcuerdo">Guardar acuerdo</button><span id="d_msg" class="msg"></span></div>
                     </div>
                 </div>`;
             enlazar();
@@ -161,6 +167,7 @@
         }
 
         function enlazar() {
+            document.getElementById('btnRequerimiento').addEventListener('click', e => requerimientoDeposito(c, e.currentTarget));
             document.getElementById('d_guardarAcuerdo').addEventListener('click', async () => {
                 const msg = document.getElementById('d_msg'), btn = document.getElementById('d_guardarAcuerdo');
                 const meses = Number(document.getElementById('d_meses').value);

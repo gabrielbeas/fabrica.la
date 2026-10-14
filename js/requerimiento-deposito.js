@@ -1,9 +1,9 @@
 // Requerimiento de cobro del saldo del depósito en garantía (PDF vía impresión).
 // Lo usan la carátula y la sección Depósitos. Los datos bancarios salen de config_cobro/cuenta (solo Firestore).
-import { db, getCurrentUser } from './auth.js?v=20261014-4';
+import { db, getCurrentUser } from './auth.js?v=20261014-5';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261013-1';
-import { cuentaDeposito } from './depositos.js?v=20261014-4';
+import { cuentaDeposito } from './depositos.js?v=20261014-5';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -42,10 +42,8 @@ Saldo a cobrar: ${dinero(r.saldo)}
         const locales = (c.locales || []).join(', ');
         const dir = (Array.isArray(c.direccion) ? c.direccion : [c.direccion]).filter(Boolean).map(x => esc(String(x).replace(/\bCP:/, 'CP'))).join(', ');
         const obligados = (c.obligadosSolidarios || []).filter(Boolean).join(', ');
-        const ultimoPago = r.pagos.length ? r.pagos[r.pagos.length - 1] : null;
-        const pagadoTxt = r.pagos.length === 1 && ultimoPago.fecha
-            ? `Depósito pagado · ${fechaTxt(ultimoPago.fecha)}${ultimoPago.banco ? `, ${esc(ultimoPago.banco)}` : ''}`
-            : `Depósito pagado (${r.pagos.length} pago${r.pagos.length === 1 ? '' : 's'})`;
+        // Siempre el mismo texto, con o sin un solo pago: «Depósito pagado (N pagos)»
+        const pagadoTxt = `Depósito pagado (${r.cuentan.length} pago${r.cuentan.length === 1 ? '' : 's'})`;
         const requeridoTxt = (c.mesesDeposito || 1) === 1 ? `Depósito en garantía requerido (1 mes de renta vigente ${baseTxt})` : `Depósito en garantía requerido (${c.mesesDeposito} meses de renta vigente ${baseTxt})`;
         const html = `<div class="rq">
             <style>
@@ -85,6 +83,7 @@ Saldo a cobrar: ${dinero(r.saldo)}
                 </tbody>
             </table>
             <p class="nota">Este depósito no se factura por tratarse de un depósito en garantía.</p>
+
             <p>Le pedimos cubrir este saldo a más tardar el <strong>${larga(lim)}</strong>, mediante transferencia a la cuenta siguiente, y enviar su comprobante a facturas@fabrica.la.</p>
             <div class="banco">
                 <b>Beneficiario</b><span>${esc(cta.beneficiario)}</span>

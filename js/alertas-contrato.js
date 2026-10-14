@@ -1,5 +1,5 @@
 // Alertas de contratos: vigencia (fin de contrato), incremento de renta y depósito (saldo por pagar).
-import { cuentaDeposito } from './depositos.js?v=20261014-4';
+import { cuentaDeposito } from './depositos.js?v=20261014-5';
 // Lo usan locales/index.html (punto de color) y locales/caratula.html (detalle).
 
 export const VENTANA_DIAS = 90;
