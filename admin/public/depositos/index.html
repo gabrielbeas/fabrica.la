@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261014-5">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
     <style>
         /* Solo lo propio de Depósitos; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
@@ -26,10 +26,6 @@
         th.ord.act { color: var(--accion); }
         th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
         th.ord.act .flecha { opacity: 1; }
-        button.req { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--accion); background: var(--fondo); color: var(--accion); cursor: pointer; white-space: nowrap; }
-        button.req:hover { background: var(--accion-suave); }
-        button.req.sin-saldo { border-color: var(--borde-control); color: var(--tinta-suave); }
-        button.req:disabled { opacity: .5; cursor: wait; }
         .tabla-wrap { overflow-x: auto; border: 1px solid var(--linea); border-radius: 10px; }
         table.dep { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
         table.dep th { text-align: left; font-size: 11px; font-weight: 600; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; padding: 9px 8px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
@@ -70,11 +66,10 @@
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261014-5';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-5';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261014-5';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-5';
-        import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261015-2';
+                import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -153,7 +148,7 @@
                     <thead><tr>
                         ${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acuerdo', 'Acuerdo en contrato')}${th('meses', 'Meses', 'num')}
                         ${th('renta', 'Base del depósito', 'num')}${th('requerido', 'Requerido', 'num')}${th('pagado', 'Pagado', 'num')}
-                        ${th('saldo', 'Por pagar', 'num')}${th('ultimo', 'Último pago')}<th></th>
+                        ${th('saldo', 'Por pagar', 'num')}${th('ultimo', 'Último pago')}
                     </tr></thead>
                     <tbody>
                     ${filas.map(({ c, k }) => `
@@ -167,15 +162,10 @@
                             <td class="num">${dinero(k.pagado)}</td>
                             <td class="num">${k.saldo > 0.005 ? `<span class="estado e-saldo">${dinero(k.saldo)}</span>` : k.saldo < -0.005 ? `<span class="estado e-favor">${dinero(k.saldo)} a favor</span>` : `<span class="estado e-cero">Cubierto</span>`}</td>
                             <td>${k.ultimo ? fechaCorta(k.ultimo) : '<span class="gris">Sin pagos</span>'}</td>
-                            <td><button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" data-req="${esc(c.id)}" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro</button></td>
                         </tr>`).join('')}
                     </tbody>
                 </table></div>
-                <p class="pie">Requerido = meses de depósito × base del depósito (renta con mantenimiento incluido, o renta sin mantenimiento cuando va desglosado), sin IVA. Pagado = pagos que cuentan (los compartidos no suman). Por pagar = requerido − pagado; se guarda en el contrato como «por pagar». Clic en una fila para abrir el depósito del contrato; el botón genera el requerimiento de cobro.</p>`}`;
-            app.querySelectorAll('button.req').forEach(b => b.addEventListener('click', e => {
-                e.stopPropagation();
-                requerimientoDeposito(contratos.find(c => c.id === b.dataset.req), b);
-            }));
+                <p class="pie">Requerido = meses de depósito × base del depósito (renta con mantenimiento incluido, o renta sin mantenimiento cuando va desglosado), sin IVA. Pagado = pagos que cuentan (los compartidos no suman). Por pagar = requerido − pagado; se guarda en el contrato como «por pagar». Clic en una fila para abrir el depósito del contrato; ahí está el requerimiento de cobro (PDF y correo).</p>`}`;
             app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
                 const col = t.dataset.col;
                 // Texto y locales: A→Z; montos, meses y fechas: de mayor a menor primero
@@ -183,7 +173,7 @@
                 render();
             }));
             app.querySelectorAll('tr.fila').forEach(tr => tr.addEventListener('click', e => {
-                if (e.target.closest('a, button')) return;
+                if (e.target.closest('a')) return;
                 location.href = `ficha.html?id=${encodeURIComponent(tr.dataset.id)}`;
             }));
         }

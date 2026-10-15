@@ -1,9 +1,9 @@
 // Requerimiento de cobro del saldo del depósito en garantía (PDF vía impresión).
 // Lo usan la carátula y la sección Depósitos. Los datos bancarios salen de config_cobro/cuenta (solo Firestore).
-import { db, getCurrentUser } from './auth.js?v=20261014-5';
+import { db, getCurrentUser } from './auth.js?v=20261015-2';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261013-1';
-import { cuentaDeposito } from './depositos.js?v=20261014-5';
+import { cuentaDeposito } from './depositos.js?v=20261015-2';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -108,3 +108,80 @@ Saldo a cobrar: ${dinero(r.saldo)}
     } finally { if (btn) btn.disabled = false; }
 }
 
+// ---------- Requerimiento por correo ----------
+// Prepara el mensaje y abre la redacción de Gmail de admin@fabrica.la con las direcciones del Directorio.
+// El PDF no se puede adjuntar por enlace: se genera aparte con el botón del requerimiento y se adjunta a mano.
+import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './correos-contrato.js?v=20261014-6';
+
+export async function emailRequerimientoDeposito(c) {
+  const r = cuentaDeposito(c);
+  if (r.saldo <= 0.005) { alert(`Este contrato no tiene saldo de depósito por cobrar.\n\nDepósito requerido: ${dinero(r.requerido)}\nDepósito pagado: ${dinero(r.pagado)}`); return; }
+  const correos = correosDeContrato(c);
+  const locales = (c.locales || []).join(', ');
+  const baseTxt = r.baseClave === 'sin' ? 'sin mantenimiento' : 'con mantenimiento';
+  const isoDe = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const larga = iso => { const [y, m, d] = iso.split('-'); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
+  const def = isoDe(new Date(Date.now() + PLAZO_REQUERIMIENTO_DIAS * 86400000));
+  const asunto = `Requerimiento de pago · Saldo del depósito en garantía · Local ${locales}`;
+  const cuerpo = lim => `Estimados ${c.razonSocial}:
+
+Les hacemos llegar el requerimiento de pago del saldo del depósito en garantía del local ${locales}, por ${dinero(r.saldo)} (${r.meses} mes${r.meses === 1 ? '' : 'es'} de renta vigente ${baseTxt}, menos ${dinero(r.pagado)} ya pagados).
+
+Les pedimos realizar la transferencia a más tardar el ${larga(lim)}, a la cuenta indicada en el documento adjunto, y enviar su comprobante a facturas@fabrica.la. Este depósito es una garantía, por lo que no genera factura.
+
+Si detectan alguna diferencia en el saldo o en los pagos considerados, favor de hacérnoslo saber por este mismo medio antes del ${larga(lim)}.
+
+Quedamos atentos a cualquier duda.
+
+Saludos,
+Administración
+LAFABDECHOC S DE RL DE CV`;
+
+  const fondo = document.createElement('div');
+  fondo.className = 'lf-modal-fondo';
+  fondo.innerHTML = `<div class="lf-modal" role="dialog" aria-label="Requerimiento por correo" style="max-width:720px">
+    <h3>Requerimiento de cobro por correo</h3>
+    <p style="margin:0;font-size:13px;color:var(--tinta-suave)">${esc(c.razonSocial)} · local ${esc(locales)} · saldo ${dinero(r.saldo)}</p>
+    <div class="lf-form">
+      <div class="lf-campo lf-ancho"><label>Para (direcciones del Directorio)</label>
+        ${correos.length ? correos.map(x => `<label style="display:flex;gap:8px;align-items:center;justify-content:flex-start;text-align:left;text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;margin:3px 0;cursor:pointer"><input type="checkbox" class="rq-correo" value="${esc(x.correo)}" checked style="width:16px;height:16px;flex:none;margin:0"> <span>${esc(x.correo)}</span> <span style="color:var(--tinta-suave);font-size:12px">${esc(x.tipo)}</span></label>`).join('') : '<div style="color:var(--peligro);font-size:13px">Este contrato no tiene correos en el Directorio. Agrégalos en Contratos o en Facturación.</div>'}
+      </div>
+      <div class="lf-campo"><label for="rq-fecha">Fecha límite de pago</label><input id="rq-fecha" type="date" value="${def}"></div>
+      <div class="lf-campo lf-ancho"><label for="rq-asunto">Asunto</label><input id="rq-asunto" value="${esc(asunto)}"></div>
+      <div class="lf-campo lf-ancho"><label for="rq-cuerpo">Mensaje</label><textarea id="rq-cuerpo" rows="13">${esc(cuerpo(def))}</textarea></div>
+    </div>
+    <p style="margin:0;font-size:12px;color:var(--tinta-suave)">El correo se abre en Gmail, desde ${CORREO_REMITENTE} (esa cuenta debe estar abierta en este navegador). Genera el PDF con «Requerimiento de cobro (PDF)» y adjúntalo antes de enviar; usa la misma fecha límite.</p>
+    <div class="lf-modal-pie"><span id="rq-msg" style="margin-right:auto;font-size:13px;color:var(--peligro)"></span>
+      <button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn" id="rq-copiar">Copiar mensaje</button><button class="lf-btn lf-btn-primario" id="rq-abrir">Abrir en Gmail (${CORREO_REMITENTE})</button></div>
+  </div>`;
+  const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+  const teclas = e => { if (e.key === 'Escape') cerrar(); };
+  fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+  document.addEventListener('keydown', teclas);
+  document.body.appendChild(fondo);
+  const $ = id => document.getElementById(id), msg = $('rq-msg');
+  // Si no se ha editado el mensaje a mano, cambiar la fecha lo reescribe
+  let editado = false;
+  $('rq-cuerpo').addEventListener('input', () => { editado = true; });
+  $('rq-fecha').addEventListener('change', () => { if (!editado && $('rq-fecha').value) $('rq-cuerpo').value = cuerpo($('rq-fecha').value); });
+  $('rq-copiar').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('rq-cuerpo').value); msg.style.color = 'var(--exito)'; msg.textContent = 'Mensaje copiado.'; }
+    catch { msg.style.color = 'var(--peligro)'; msg.textContent = 'No se pudo copiar; selecciona el texto a mano.'; }
+  });
+  $('rq-abrir').addEventListener('click', async () => {
+    const para = [...fondo.querySelectorAll('.rq-correo:checked')].map(x => x.value);
+    if (!para.length) { msg.style.color = 'var(--peligro)'; msg.textContent = 'Marca al menos una dirección.'; return; }
+    const datos = { para, asunto: $('rq-asunto').value, cuerpo: $('rq-cuerpo').value };
+    if (urlGmail(datos).length > 7000) { msg.style.color = 'var(--peligro)'; msg.textContent = 'El mensaje es muy largo para abrirlo directo; usa «Copiar mensaje».'; return; }
+    abrirCorreo(datos);   // primero, para que el navegador no bloquee la pestaña nueva
+    try {
+      const user = getCurrentUser();
+      await addDoc(collection(db, 'contratos', c.id, 'historial'), {
+        antes: { requerimientoDepositoCorreo: null },
+        despues: { requerimientoDepositoCorreo: `${isoDe(new Date()).split('-').reverse().join('/')}: preparado desde ${CORREO_REMITENTE} para ${para.join(', ')} · saldo ${dinero(r.saldo)}` },
+        por: user.email, en: serverTimestamp()
+      });
+    } catch (err) { console.warn('No se anotó en el historial', err); }
+    cerrar();
+  });
+}

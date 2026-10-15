@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261014-5">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
     <style>
         /* Solo lo propio de Pagos mensuales; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
@@ -57,8 +57,8 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261014-5';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261014-5';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
         import { collection, getDocs, doc, setDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');

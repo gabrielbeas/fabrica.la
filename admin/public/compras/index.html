@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compras - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <style>
+        /* Solo lo propio de Compras; lo demás viene de panel.css (sistema «Panel LFdC») */
+        body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+        .main { max-width: 1400px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0; }
+        .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; border: none; background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { font: inherit; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover { background: var(--fondo-hundido); }
+        .btn-mini { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--accion); cursor: pointer; }
+        .msg { font-size: 13px; } .ok { color: var(--exito); } .err { color: var(--peligro); }
+        .prov { border: 1px solid var(--linea); border-radius: 10px; margin-bottom: 22px; overflow: hidden; }
+        .prov-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); }
+        .prov-cab h2 { margin: 0; font-size: 16px; }
+        .prov-cab .det { color: var(--tinta-suave); font-size: 12px; margin-top: 2px; }
+        .tabla-wrap { overflow-x: auto; }
+        .datos-prov { padding: 6px 18px 0; border-bottom: 1px solid var(--linea); }
+        .datos-prov[hidden] { display: none; }
+        .prov-cab h2 { display: flex; align-items: center; gap: 8px; }
+        button.flecha { width: 28px; height: 28px; border: none; background: none; border-radius: 6px; cursor: pointer; color: var(--accion); padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        button.flecha:hover { background: var(--accion-suave); }
+        button.flecha svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+        button.flecha[aria-expanded="true"] svg { transform: rotate(180deg); }
+        .ficha-prov { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 22px; padding: 4px 0 14px; }
+        .ficha-prov .k { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+        .ficha-prov .v { font-size: 13px; overflow-wrap: anywhere; }
+        .ficha-prov .ancho { grid-column: 1 / -1; }
+        table.cat { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+        table.cat th { text-align: left; font-size: 11px; font-weight: 600; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; padding: 9px 10px; border-bottom: 1px solid var(--linea); white-space: nowrap; }
+        table.cat td { padding: 7px 10px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: middle; }
+        table.cat .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
+        table.cat th.num { font-family: var(--font-sans); }
+        table.cat button.nombre { font: inherit; font-weight: 600; border: none; background: none; padding: 0; cursor: pointer; color: var(--tinta); text-align: left; }
+        table.cat button.nombre:hover { color: var(--accion); text-decoration: underline; }
+        table.cat input.cant { width: 76px; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--borde-control); border-radius: 6px; background: var(--fondo); color: var(--tinta); }
+        table.cat input.cant.con { border-color: var(--accion); background: var(--accion-suave); }
+        table.cat tfoot td { border-bottom: none; padding: 4px 10px; font-weight: 600; }
+        .gris { color: var(--tinta-suave); font-size: 12px; }
+        .vacio { color: var(--tinta-suave); text-align: center; padding: 26px 16px; }
+        .ordenes h2 { font-size: 16px; margin: 30px 0 10px; }
+        .estado { font: inherit; font-size: 12px; border: 1px solid var(--borde-control); border-radius: 999px; padding: 4px 8px; background: var(--fondo); color: var(--tinta); }
+        .l-tabla { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+        .l-tabla th { text-align: left; font-size: 11px; color: var(--tinta-suave); padding: 5px 6px; border-bottom: 1px solid var(--linea); text-transform: uppercase; }
+        .l-tabla td { padding: 5px 6px; border-bottom: 1px solid var(--fondo-hundido); }
+        .l-tabla .num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="vacio">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
+        import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { collection, getDocs, doc, addDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261013-1';
+        import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261015-3';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f.split('-').reverse().join('/') : (f || '');
+        const UNIDADES = ['CAJA', 'PAQUETE', 'BULTO', 'BOTELLA', 'LITRO', '5 LITROS', 'GARRAFA', 'PIEZA', 'ROLLO', 'KILO'];
+        const ESTADOS_OC = { enviada: 'Enviada', recibida: 'Recibida', cancelada: 'Cancelada' };
+
+        let proveedores = [], productos = [], ordenes = [], cant = {};
+        // Cantidades del pedido en preparación (por navegador; no se guardan en Firestore hasta generar la orden)
+        try { cant = JSON.parse(localStorage.getItem('lfdc_compras_cant') || '{}'); } catch { cant = {}; }
+        const guardarCant = () => { try { localStorage.setItem('lfdc_compras_cant', JSON.stringify(cant)); } catch { /* sin almacenamiento no pasa nada */ } };
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin() && !esOperario()) app.innerHTML = '<h1>Acceso restringido</h1>';
+            else cargar();
+        }
+
+        async function cargar(msg = '') {
+            try {
+                const [sp, sd, so] = await Promise.all([
+                    getDocs(collection(db, 'proveedores')), getDocs(collection(db, 'productos_compra')), getDocs(collection(db, 'ordenes_compra'))
+                ]);
+                proveedores = sp.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.activo !== false).sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99) || a.nombre.localeCompare(b.nombre, 'es'));
+                productos = sd.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.activo !== false).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+                ordenes = so.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.folio || '').localeCompare(a.folio || ''));
+                render(msg);
+            } catch (err) {
+                console.error(err);
+                app.innerHTML = `<p class="err">No se pudo cargar: ${esc(err.message)}</p>`;
+            }
+        }
+
+        const lineasDe = pid => productos.filter(p => p.proveedorId === pid && Number(cant[p.id]) > 0)
+            .map(p => ({ productoId: p.id, nombre: p.nombre, marca: p.marca || '', clave: p.clave || '', contenido: p.contenido || '', unidad: p.unidad || '', cantidad: Number(cant[p.id]), precioSinIva: Number(p.precioSinIva) || 0 }));
+
+        // Datos del proveedor «para el record»: fiscales, contacto y condiciones de pago (se despliegan con la flechita del nombre)
+        const datosAbiertos = new Set();
+        function datosProveedor(v) {
+            const dato = (k, val, ancho = false) => val ? `<div class="${ancho ? 'ancho' : ''}"><div class="k">${k}</div><div class="v">${esc(val)}</div></div>` : '';
+            return `<div class="datos-prov" data-datos="${esc(v.id)}" ${datosAbiertos.has(v.id) ? '' : 'hidden'}>
+                <div class="ficha-prov">
+                    ${dato('Giro', v.giro)}${dato('RFC', v.rfc)}${dato('Número de cliente', v.numeroCliente)}
+                    ${dato('Domicilio', v.domicilio, true)}${dato('Sitio web', v.web)}${dato('Teléfono', v.telefono)}${dato('Correos', (v.correos || []).join(' · '))}
+                    ${dato('Forma de pago', v.formaPago)}${dato('Método de pago', v.metodoPago)}${dato('Uso de CFDI', v.usoCfdi)}
+                    ${dato('Entrega habitual', v.entrega)}${dato('Notas de entrega', v.entregaNotas)}${dato('Notas', v.notas, true)}
+                </div></div>`;
+        }
+        const hayDatos = v => !!(v.rfc || v.domicilio || v.giro || v.web || v.numeroCliente || v.formaPago || v.entrega);
+
+        function seccionProveedor(prov, prods) {
+            const lineas = prov ? lineasDe(prov.id) : [];
+            const t = totalesOrden(lineas);
+            return `<section class="prov" data-prov="${esc(prov?.id || '')}">
+                <div class="prov-cab">
+                    <div><h2>${esc(prov?.nombre || 'Sin proveedor asignado')}${prov && hayDatos(prov) ? `<button type="button" class="flecha" data-flecha="${esc(prov.id)}" aria-expanded="${datosAbiertos.has(prov.id)}" aria-label="Mostrar u ocultar los datos del proveedor" title="Datos del proveedor"><svg viewBox="0 0 24 24"><path d="M5 8l7 8 7-8"/></svg></button>` : ''}</h2>
+                        <div class="det">${prov ? [prov.contacto, (prov.correos || []).join(' · '), prov.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin datos de contacto: edita el proveedor para agregar correos' : 'Asigna un proveedor a estos productos para poder pedirlos'}</div></div>
+                    <div class="acciones">
+                        ${prov ? `<button class="btn-sec" data-editar-prov="${esc(prov.id)}">Editar proveedor</button>
+                        <button class="btn-sec" data-limpiar="${esc(prov.id)}" ${lineas.length ? '' : 'disabled'}>Limpiar cantidades</button>
+                        <button class="btn" data-orden="${esc(prov.id)}" ${lineas.length ? '' : 'disabled'}>Generar orden de compra${lineas.length ? ` (${lineas.length} · ${dinero(t.total)})` : ''}</button>` : ''}
+                    </div>
+                </div>
+                ${prov ? datosProveedor(prov) : ''}
+                ${prods.length ? `<div class="tabla-wrap"><table class="cat">
+                    <thead><tr><th>Producto</th><th>Marca</th><th>Clave</th><th>Contenido</th><th>Unidad de compra</th><th class="num">Precio s/IVA</th><th class="num">Precio c/IVA</th><th class="num">Cantidad</th><th class="num">Importe s/IVA</th></tr></thead>
+                    <tbody>${prods.map(p => { const q = Number(cant[p.id]) || 0; return `<tr>
+                        <td><button type="button" class="nombre" data-editar-prod="${esc(p.id)}" title="Editar producto">${esc(p.nombre)}</button>${p.notas ? `<div class="gris">${esc(p.notas)}</div>` : ''}</td>
+                        <td>${esc(p.marca || '')}</td><td>${esc(p.clave || '')}</td><td>${esc(p.contenido || '')}</td><td>${esc(p.unidad || '')}</td>
+                        <td class="num">${dinero(p.precioSinIva)}</td><td class="num">${dinero(conIva(p.precioSinIva))}</td>
+                        <td class="num"><input class="cant ${q > 0 ? 'con' : ''}" inputmode="decimal" data-cant="${esc(p.id)}" value="${q > 0 ? q : ''}" placeholder="0" aria-label="Cantidad de ${esc(p.nombre)}"></td>
+                        <td class="num" data-importe="${esc(p.id)}">${q > 0 ? dinero(q * (Number(p.precioSinIva) || 0)) : ''}</td></tr>`; }).join('')}</tbody>
+                    ${prov ? `<tfoot><tr><td colspan="8" class="num">Subtotal / IVA 16% / Total del pedido</td><td class="num" data-tot="${esc(prov.id)}">${lineas.length ? `${dinero(t.subtotal)} · ${dinero(t.iva)} · ${dinero(t.total)}` : ''}</td></tr></tfoot>` : ''}
+                </table></div>` : '<div class="vacio">Este proveedor todavía no tiene productos. Usa «Agregar producto».</div>'}
+            </section>`;
+        }
+
+        function render(msg = '') {
+            const sinProv = productos.filter(p => !proveedores.some(v => v.id === p.proveedorId));
+            app.innerHTML = `
+                <div class="cabeza">
+                    <div><h1>Compras</h1><p class="sub">Catálogo de productos de mantenimiento por proveedor y órdenes de compra. Los correos salen de ${esc(CORREO_REMITENTE)}.</p></div>
+                    <div class="acciones"><span id="msg" class="msg">${msg}</span>
+                        <button class="btn-sec" id="nuevoProv">Agregar proveedor</button><button class="btn" id="nuevoProd">Agregar producto</button></div>
+                </div>
+                ${!proveedores.length && !productos.length ? '<div class="vacio">Todavía no hay proveedores ni productos. Empieza con «Agregar proveedor».</div>' : ''}
+                ${proveedores.map(v => seccionProveedor(v, productos.filter(p => p.proveedorId === v.id))).join('')}
+                ${sinProv.length ? seccionProveedor(null, sinProv) : ''}
+                <div class="ordenes">
+                    <h2>Órdenes de compra</h2>
+                    ${ordenes.length ? `<div class="tabla-wrap"><table class="cat">
+                        <thead><tr><th>Folio</th><th>Fecha</th><th>Proveedor</th><th class="num">Líneas</th><th class="num">Total c/IVA</th><th>Estado</th><th></th></tr></thead>
+                        <tbody>${ordenes.map(o => `<tr>
+                            <td><strong>${esc(o.folio)}</strong></td><td>${esc(fechaCorta(o.fecha))}</td><td>${esc(o.proveedorNombre || '')}</td>
+                            <td class="num">${(o.lineas || []).length}</td><td class="num">${dinero(totalesOrden(o.lineas || []).total)}</td>
+                            <td><select class="estado" data-estado="${esc(o.id)}">${Object.entries(ESTADOS_OC).map(([k, t]) => `<option value="${k}" ${k === (o.estado || 'enviada') ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+                            <td><button class="btn-mini" data-pdf="${esc(o.id)}">PDF</button> <button class="btn-mini" data-correo="${esc(o.id)}">Correo</button></td></tr>`).join('')}</tbody>
+                    </table></div>` : '<div class="vacio">Todavía no hay órdenes. Captura cantidades en un proveedor y usa «Generar orden de compra».</div>'}
+                </div>`;
+            enlazar();
+        }
+
+        function enlazar() {
+            document.getElementById('nuevoProv').addEventListener('click', () => editarProveedor(null));
+            document.getElementById('nuevoProd').addEventListener('click', () => editarProducto(null));
+            app.querySelectorAll('[data-editar-prov]').forEach(b => b.addEventListener('click', () => editarProveedor(proveedores.find(v => v.id === b.dataset.editarProv))));
+            app.querySelectorAll('[data-editar-prod]').forEach(b => b.addEventListener('click', () => editarProducto(productos.find(p => p.id === b.dataset.editarProd))));
+            app.querySelectorAll('[data-flecha]').forEach(b => b.addEventListener('click', () => {
+                const id = b.dataset.flecha, panel = app.querySelector(`[data-datos="${CSS.escape(id)}"]`);
+                const abrir = panel.hidden;
+                panel.hidden = !abrir; b.setAttribute('aria-expanded', String(abrir));
+                if (abrir) datosAbiertos.add(id); else datosAbiertos.delete(id);
+            }));
+            app.querySelectorAll('[data-limpiar]').forEach(b => b.addEventListener('click', () => {
+                productos.filter(p => p.proveedorId === b.dataset.limpiar).forEach(p => delete cant[p.id]); guardarCant(); render();
+            }));
+            app.querySelectorAll('[data-orden]').forEach(b => b.addEventListener('click', () => ordenDeCompra(proveedores.find(v => v.id === b.dataset.orden))));
+            // Cantidades: actualizar importes y totales sin redibujar (se conserva el foco)
+            app.querySelectorAll('input.cant').forEach(i => i.addEventListener('input', () => {
+                const p = productos.find(x => x.id === i.dataset.cant), v = Number(String(i.value).replace(',', '.'));
+                if (Number.isFinite(v) && v > 0) cant[p.id] = v; else delete cant[p.id];
+                guardarCant();
+                i.classList.toggle('con', !!cant[p.id]);
+                const imp = app.querySelector(`[data-importe="${CSS.escape(p.id)}"]`); if (imp) imp.textContent = cant[p.id] ? dinero(cant[p.id] * (Number(p.precioSinIva) || 0)) : '';
+                const sec = i.closest('section.prov'), pid = sec.dataset.prov, lineas = lineasDe(pid), t = totalesOrden(lineas);
+                const tot = sec.querySelector('[data-tot]'); if (tot) tot.textContent = lineas.length ? `${dinero(t.subtotal)} · ${dinero(t.iva)} · ${dinero(t.total)}` : '';
+                const bo = sec.querySelector('[data-orden]'); if (bo) { bo.disabled = !lineas.length; bo.textContent = `Generar orden de compra${lineas.length ? ` (${lineas.length} · ${dinero(t.total)})` : ''}`; }
+                const bl = sec.querySelector('[data-limpiar]'); if (bl) bl.disabled = !lineas.length;
+            }));
+            app.querySelectorAll('[data-estado]').forEach(s => s.addEventListener('change', async () => {
+                s.disabled = true;
+                try { await updateDoc(doc(db, 'ordenes_compra', s.dataset.estado), { estado: s.value, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() }); ordenes.find(o => o.id === s.dataset.estado).estado = s.value; }
+                catch (err) { console.error(err); alert('No se pudo cambiar el estado: ' + err.message); render(); }
+                finally { s.disabled = false; }
+            }));
+            app.querySelectorAll('[data-pdf]').forEach(b => b.addEventListener('click', () => { const o = ordenes.find(x => x.id === b.dataset.pdf); imprimirOrden(o, proveedores.find(v => v.id === o.proveedorId) || { nombre: o.proveedorNombre, correos: o.proveedorCorreos || [] }); }));
+            app.querySelectorAll('[data-correo]').forEach(b => b.addEventListener('click', () => { const o = ordenes.find(x => x.id === b.dataset.correo); correoOrden(o, proveedores.find(v => v.id === o.proveedorId) || { nombre: o.proveedorNombre, correos: o.proveedorCorreos || [] }); }));
+        }
+
+        // ---------- ventanas ----------
+        function ventana(html, ancho = 560) {
+            const fondo = document.createElement('div');
+            fondo.className = 'lf-modal-fondo';
+            fondo.innerHTML = `<div class="lf-modal" role="dialog" style="max-width:${ancho}px">${html}</div>`;
+            const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
+            const teclas = e => { if (e.key === 'Escape') cerrar(); };
+            fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            document.addEventListener('keydown', teclas);
+            document.body.appendChild(fondo);
+            return { fondo, cerrar, $: id => fondo.querySelector('#' + id) };
+        }
+
+        function editarProveedor(v) {
+            const w = ventana(`<h3>${v ? 'Editar proveedor' : 'Agregar proveedor'}</h3>
+                <div class="lf-form">
+                    <div class="lf-campo lf-ancho"><label for="pv_nombre">Nombre de la empresa</label><input id="pv_nombre" value="${esc(v?.nombre || '')}"></div>
+                    <div class="lf-campo"><label for="pv_contacto">Contacto</label><input id="pv_contacto" value="${esc(v?.contacto || '')}"></div>
+                    <div class="lf-campo"><label for="pv_tel">Teléfono</label><input id="pv_tel" value="${esc(v?.telefono || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_correos">Correos para las órdenes (uno por renglón)</label><textarea id="pv_correos" rows="3">${esc((v?.correos || []).join('\n'))}</textarea></div>
+                    <div class="lf-campo"><label for="pv_rfc">RFC</label><input id="pv_rfc" value="${esc(v?.rfc || '')}"></div>
+                    <div class="lf-campo"><label for="pv_cliente">Número de cliente</label><input id="pv_cliente" value="${esc(v?.numeroCliente || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_giro">Giro</label><input id="pv_giro" value="${esc(v?.giro || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_dom">Domicilio</label><input id="pv_dom" value="${esc(v?.domicilio || '')}"></div>
+                    <div class="lf-campo"><label for="pv_web">Sitio web</label><input id="pv_web" value="${esc(v?.web || '')}"></div>
+                    <div class="lf-campo"><label for="pv_uso">Uso de CFDI</label><input id="pv_uso" value="${esc(v?.usoCfdi || '')}"></div>
+                    <div class="lf-campo"><label for="pv_fp">Forma de pago</label><input id="pv_fp" value="${esc(v?.formaPago || '')}"></div>
+                    <div class="lf-campo"><label for="pv_mp">Método de pago</label><input id="pv_mp" value="${esc(v?.metodoPago || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_entrega">Entrega habitual (domicilio)</label><input id="pv_entrega" value="${esc(v?.entrega || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_entnotas">Notas de entrega (horario, contacto)</label><input id="pv_entnotas" value="${esc(v?.entregaNotas || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pv_notas">Notas</label><textarea id="pv_notas" rows="2">${esc(v?.notas || '')}</textarea></div>
+                </div>
+                <div class="lf-modal-pie"><span id="pv_msg" class="err" style="margin-right:auto;font-size:13px"></span>
+                    ${v ? '<button class="lf-btn" id="pv_archivar" title="Deja de mostrarse; sus productos y órdenes quedan guardados">Archivar</button>' : ''}
+                    <button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="pv_guardar">Guardar</button></div>`);
+            const guardar = async extra => {
+                const nombre = w.$('pv_nombre').value.trim(), msg = w.$('pv_msg');
+                const renglones = w.$('pv_correos').value.split('\n').map(x => x.trim()).filter(Boolean);
+                if (!extra) {
+                    if (!nombre) { msg.textContent = 'Escribe el nombre de la empresa.'; return; }
+                    const malo = renglones.find(x => !correoValido(x)); if (malo) { msg.textContent = `Correo no válido: ${malo}`; return; }
+                }
+                const datos = extra || { nombre, contacto: w.$('pv_contacto').value.trim(), telefono: w.$('pv_tel').value.trim(), correos: normalizarCorreos(renglones).filter(x => x.toLowerCase() !== 'facturas@fabrica.la'), rfc: w.$('pv_rfc').value.trim().toUpperCase(), numeroCliente: w.$('pv_cliente').value.trim(), giro: w.$('pv_giro').value.trim(), domicilio: w.$('pv_dom').value.trim(), web: w.$('pv_web').value.trim(), usoCfdi: w.$('pv_uso').value.trim(), formaPago: w.$('pv_fp').value.trim(), metodoPago: w.$('pv_mp').value.trim(), entrega: w.$('pv_entrega').value.trim(), entregaNotas: w.$('pv_entnotas').value.trim(), notas: w.$('pv_notas').value.trim(), activo: true, ...(v ? {} : { orden: proveedores.length + 1 }) };
+                try {
+                    const base = { ...datos, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() };
+                    if (v) await updateDoc(doc(db, 'proveedores', v.id), base); else await addDoc(collection(db, 'proveedores'), { ...base, creadoPor: getCurrentUser().email, creadoEn: serverTimestamp() });
+                    w.cerrar(); await cargar(`<span class="ok">${extra ? 'Proveedor archivado.' : 'Proveedor guardado.'}</span>`);
+                } catch (err) { console.error(err); msg.textContent = 'No se pudo guardar: ' + err.message; }
+            };
+            w.$('pv_guardar').addEventListener('click', () => guardar(null));
+            w.$('pv_archivar')?.addEventListener('click', () => { if (confirm(`¿Archivar a ${v.nombre}? Deja de mostrarse, pero sus productos y órdenes quedan guardados.`)) guardar({ activo: false }); });
+        }
+
+        function editarProducto(p) {
+            if (!proveedores.length) { alert('Primero agrega un proveedor.'); return; }
+            const w = ventana(`<h3>${p ? 'Editar producto' : 'Agregar producto'}</h3>
+                <div class="lf-form">
+                    <div class="lf-campo lf-ancho"><label for="pd_nombre">Producto</label><input id="pd_nombre" value="${esc(p?.nombre || '')}"></div>
+                    <div class="lf-campo"><label for="pd_prov">Proveedor</label><select id="pd_prov">${proveedores.map(v => `<option value="${esc(v.id)}" ${v.id === (p?.proveedorId || '') ? 'selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>
+                    <div class="lf-campo"><label for="pd_marca">Marca</label><input id="pd_marca" value="${esc(p?.marca || '')}"></div>
+                    <div class="lf-campo"><label for="pd_clave">Clave del proveedor</label><input id="pd_clave" value="${esc(p?.clave || '')}"></div>
+                    <div class="lf-campo"><label for="pd_unidad">Unidad de compra</label><input id="pd_unidad" list="pd_unidades" value="${esc(p?.unidad || '')}"><datalist id="pd_unidades">${UNIDADES.map(u => `<option value="${u}">`).join('')}</datalist></div>
+                    <div class="lf-campo lf-ancho"><label for="pd_contenido">Contenido de la unidad (ej. 12 rollos de 300 hojas, 1 L)</label><input id="pd_contenido" value="${esc(p?.contenido || '')}"></div>
+                    <div class="lf-campo"><label for="pd_precio">Precio sin IVA por unidad de compra</label><input id="pd_precio" class="lf-num" inputmode="decimal" value="${typeof p?.precioSinIva === 'number' ? p.precioSinIva : ''}"></div>
+                    <div class="lf-campo"><label>Con IVA 16%</label><input id="pd_precioIva" class="lf-num" readonly></div>
+                    <div class="lf-campo lf-ancho"><label for="pd_desc">Descripción como la factura el proveedor</label><input id="pd_desc" value="${esc(p?.descripcionFactura || '')}"></div>
+                    <div class="lf-campo"><label for="pd_sat">Clave de producto SAT</label><input id="pd_sat" value="${esc(p?.claveSat || '')}"></div>
+                    <div class="lf-campo"><label for="pd_satu">Clave de unidad SAT</label><input id="pd_satu" value="${esc(p?.claveUnidadSat || '')}"></div>
+                    <div class="lf-campo lf-ancho"><label for="pd_notas">Notas</label><input id="pd_notas" value="${esc(p?.notas || '')}"></div>
+                </div>
+                <div class="lf-modal-pie"><span id="pd_msg" class="err" style="margin-right:auto;font-size:13px"></span>
+                    ${p ? '<button class="lf-btn" id="pd_archivar" title="Deja de mostrarse; queda guardado">Archivar</button>' : ''}
+                    <button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="pd_guardar">Guardar</button></div>`, 620);
+            const precio = () => { const n = Number(String(w.$('pd_precio').value).replace(/[$,\s]/g, '')); return w.$('pd_precio').value.trim() === '' || !Number.isFinite(n) ? null : n; };
+            const act = () => { const n = precio(); w.$('pd_precioIva').value = n === null ? '' : conIva(n).toFixed(2); };
+            w.$('pd_precio').addEventListener('input', act); act();
+            const guardar = async extra => {
+                const msg = w.$('pd_msg'), nombre = w.$('pd_nombre').value.trim(), pr = precio();
+                if (!extra) {
+                    if (!nombre) { msg.textContent = 'Escribe el nombre del producto.'; return; }
+                    if (pr === null || pr < 0) { msg.textContent = 'Escribe un precio sin IVA válido.'; return; }
+                    if (!w.$('pd_unidad').value.trim()) { msg.textContent = 'Escribe la unidad de compra.'; return; }
+                }
+                const datos = extra || { nombre, proveedorId: w.$('pd_prov').value, marca: w.$('pd_marca').value.trim(), clave: w.$('pd_clave').value.trim(), unidad: w.$('pd_unidad').value.trim().toUpperCase(), contenido: w.$('pd_contenido').value.trim(), precioSinIva: pr, descripcionFactura: w.$('pd_desc').value.trim(), claveSat: w.$('pd_sat').value.trim(), claveUnidadSat: w.$('pd_satu').value.trim(), notas: w.$('pd_notas').value.trim(), activo: true };
+                try {
+                    const user = getCurrentUser().email;
+                    if (p) {
+                        const base = { ...datos, actualizadoPor: user, actualizadoEn: serverTimestamp() };
+                        // Cada cambio de precio queda en el historial del producto
+                        if (!extra && pr !== p.precioSinIva) base.historialPrecios = [...(p.historialPrecios || []), { fecha: hoyISO(), precioSinIva: pr, por: user }];
+                        await updateDoc(doc(db, 'productos_compra', p.id), base);
+                    } else {
+                        await addDoc(collection(db, 'productos_compra'), { ...datos, historialPrecios: [{ fecha: hoyISO(), precioSinIva: pr, por: user }], creadoPor: user, creadoEn: serverTimestamp() });
+                    }
+                    w.cerrar(); await cargar(`<span class="ok">${extra ? 'Producto archivado.' : 'Producto guardado.'}</span>`);
+                } catch (err) { console.error(err); msg.textContent = 'No se pudo guardar: ' + err.message; }
+            };
+            w.$('pd_guardar').addEventListener('click', () => guardar(null));
+            w.$('pd_archivar')?.addEventListener('click', () => { if (confirm(`¿Archivar «${p.nombre}»? Deja de mostrarse en el catálogo.`)) guardar({ activo: false }); });
+        }
+
+        // Folio consecutivo por año: OC-AAAA-NNN
+        function siguienteFolio() {
+            const anio = new Date().getFullYear();
+            const mayor = Math.max(0, ...ordenes.filter(o => (o.folio || '').startsWith(`OC-${anio}-`)).map(o => parseInt(o.folio.split('-')[2], 10) || 0));
+            return `OC-${anio}-${String(mayor + 1).padStart(3, '0')}`;
+        }
+
+        function ordenDeCompra(prov) {
+            const lineas = lineasDe(prov.id);
+            if (!lineas.length) return;
+            const t = totalesOrden(lineas);
+            const ultimaEntrega = prov.entrega || ordenes.find(o => o.entrega)?.entrega || '';
+            const w = ventana(`<h3>Orden de compra · ${esc(prov.nombre)}</h3>
+                <table class="l-tabla"><thead><tr><th>Producto</th><th>Unidad</th><th class="num">Cant.</th><th class="num">Precio s/IVA</th><th class="num">Importe</th></tr></thead><tbody>
+                    ${lineas.map(l => `<tr><td>${esc(l.nombre)}</td><td>${esc(l.unidad)}</td><td class="num">${esc(String(l.cantidad))}</td><td class="num">${dinero(l.precioSinIva)}</td><td class="num">${dinero(l.cantidad * l.precioSinIva)}</td></tr>`).join('')}
+                    <tr><td colspan="4" class="num"><strong>Subtotal</strong></td><td class="num">${dinero(t.subtotal)}</td></tr>
+                    <tr><td colspan="4" class="num"><strong>IVA 16%</strong></td><td class="num">${dinero(t.iva)}</td></tr>
+                    <tr><td colspan="4" class="num"><strong>Total</strong></td><td class="num"><strong>${dinero(t.total)}</strong></td></tr></tbody></table>
+                <div class="lf-form">
+                    <div class="lf-campo lf-ancho"><label for="oc_entrega">Entregar en (aparece en la orden)</label><input id="oc_entrega" value="${esc(ultimaEntrega)}" placeholder="Domicilio de entrega"></div>
+                    <div class="lf-campo lf-ancho"><label for="oc_notas">Notas para el proveedor</label><textarea id="oc_notas" rows="2">${esc(prov.entregaNotas || '')}</textarea></div>
+                </div>
+                <p class="gris" style="margin:0">Al generar se guarda la orden con su folio. El correo se abre en Gmail (${esc(CORREO_REMITENTE)}) para ${(prov.correos || []).length ? esc(prov.correos.join(', ')) : '<span class="err">— el proveedor no tiene correos: agrégalos en «Editar proveedor»</span>'}; el PDF se adjunta a mano.</p>
+                <div class="lf-modal-pie"><span id="oc_msg" class="err" style="margin-right:auto;font-size:13px"></span>
+                    <button class="lf-btn" data-cerrar>Cancelar</button>
+                    <button class="lf-btn" id="oc_pdf">Guardar y exportar PDF</button>
+                    <button class="lf-btn lf-btn-primario" id="oc_correo">Guardar y abrir correo</button></div>`, 680);
+            const generar = async como => {
+                const msg = w.$('oc_msg');
+                if (como === 'correo' && !(prov.correos || []).length) { msg.textContent = 'Este proveedor no tiene correos.'; return; }
+                const o = { folio: siguienteFolio(), fecha: hoyISO(), proveedorId: prov.id, proveedorNombre: prov.nombre, proveedorCorreos: prov.correos || [], lineas, entrega: w.$('oc_entrega').value.trim(), notas: w.$('oc_notas').value.trim(), estado: 'enviada', ...totalesOrden(lineas) };
+                w.$('oc_pdf').disabled = w.$('oc_correo').disabled = true;
+                if (como === 'correo') correoOrden(o, prov);   // primero, para que el navegador no bloquee la pestaña de Gmail
+                try {
+                    await addDoc(collection(db, 'ordenes_compra'), { ...o, creadoPor: getCurrentUser().email, creadoEn: serverTimestamp() });
+                    productos.filter(p => p.proveedorId === prov.id).forEach(p => delete cant[p.id]); guardarCant();
+                    w.cerrar();
+                    if (como === 'pdf') imprimirOrden(o, prov);
+                    await cargar(`<span class="ok">Orden ${esc(o.folio)} guardada.</span>`);
+                } catch (err) { console.error(err); msg.textContent = 'No se pudo guardar: ' + err.message; w.$('oc_pdf').disabled = w.$('oc_correo').disabled = false; }
+            };
+            w.$('oc_pdf').addEventListener('click', () => generar('pdf'));
+            w.$('oc_correo').addEventListener('click', () => generar('correo'));
+        }
+    </script>
+</body>
+</html>

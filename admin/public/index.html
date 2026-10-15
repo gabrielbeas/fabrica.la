@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="css/panel.css?v=20261014-5">
+    <link rel="stylesheet" href="css/panel.css?v=20261015-2">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -110,18 +110,17 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../js/navbar.js?v=20261014-5';
-        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261014-5';
+        import { crearNavbar } from '../../js/navbar.js?v=20261015-2';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261015-2';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261014-5';
+        import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from '../../js/correos-contrato.js?v=20261014-6';
+        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261015-2';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const num = n => (Number(n) || 0).toLocaleString('es-MX', { maximumFractionDigits: 2 });
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
-        // Quita anotaciones entre paréntesis de los correos, ej. "x@y.com (obligado solidario)"
-        const limpiarCorreo = s => String(s || '').replace(/\(.*?\)/g, '').trim();
         const b = basePath();
 
         // ---------- Apps del inicio (agregar aquí las nuevas) ----------
@@ -134,6 +133,7 @@
             siapa: '<svg viewBox="0 0 24 24"><path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg>',
             calendario: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
             config: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+            compras: '<svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10.5l2-8H6.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg>',
             caja: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2M7 6V4h10v2"/></svg>',
             bitacora: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 10l1.5 1.5L13 8.5M8.5 15.5l1.5 1.5 3-3"/></svg>',
             depositos: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>',
@@ -149,6 +149,7 @@
             { id: 'facturacion', nombre: 'Facturación', des: 'Facturas del mes y exportación para contadores', href: b + 'facturacion/', soloAdmin: true },
             { id: 'depositos', nombre: 'Depósitos', des: 'Depósito en garantía de cada contrato: acuerdo, pagos y saldo', href: b + 'depositos/', soloAdmin: true },
             { id: 'pagos', nombre: 'Pagos mensuales', des: 'Impuestos, rentas, seguros y servicios que se pagan cada mes', href: b + 'pagos-mensuales/', soloAdmin: true },
+            { id: 'compras', nombre: 'Compras', des: 'Catálogo de productos por proveedor y órdenes de compra', href: b + 'compras/', roles: ['admin', 'operario'] },
             { id: 'caja', nombre: 'Caja Chica', des: 'Gastos, reposiciones y cortes de efectivo', href: b + 'caja-chica/', roles: ['admin', 'operario'] },
             { id: 'agua', nombre: 'Lecturas de agua', des: 'Captura de lecturas e histórico por tubo', href: b + 'agua/lecturas.html' },
             { id: 'bitacora', nombre: 'Bitácora', des: 'Registro de acciones realizadas en la plaza', href: b + 'bitacora/', roles: ['admin', 'operario'] },
@@ -207,19 +208,8 @@
 
         const caratula = id => `locales/caratula.html?id=${encodeURIComponent(id)}`;
 
-        // Correos únicos del locatario: notificación (contrato) + facturación
-        function correosDe(c) {
-            const lista = [];
-            (c.correosNotificacion || []).forEach(x => lista.push({ correo: limpiarCorreo(x), tipo: 'Contrato' }));
-            (c.facturacion?.correos || []).forEach(x => lista.push({ correo: limpiarCorreo(x), tipo: 'Facturación' }));
-            const vistos = new Map();
-            lista.filter(x => /@/.test(x.correo)).forEach(x => {
-                const k = x.correo.toLowerCase();
-                if (vistos.has(k)) { if (!vistos.get(k).tipo.includes(x.tipo)) vistos.get(k).tipo += ' · ' + x.tipo; }
-                else vistos.set(k, { ...x });
-            });
-            return [...vistos.values()];
-        }
+        // Correos únicos del locatario (notificación + facturación): js/correos-contrato.js, el mismo que usa Depósitos
+        const correosDe = correosDeContrato;
 
         // Columnas ordenables del Directorio
         const COL_DIR = {
@@ -266,7 +256,7 @@
                         <option value="bcc" ${modoCorreo === 'bcc' ? 'selected' : ''}>Copia oculta (CCO)</option>
                         <option value="to" ${modoCorreo === 'to' ? 'selected' : ''}>Para (todos se ven)</option>
                     </select>
-                    <button class="escribir" id="escribirCorreo">Escribir correo</button>
+                    <button class="escribir" id="escribirCorreo" title="Abre la redacción de Gmail desde admin@fabrica.la">Escribir correo</button>
                     <span class="aviso-largo" id="avisoLargo" hidden></span>
                 </div>
                 <div class="tabla-wrap">
@@ -319,13 +309,14 @@
             }));
             document.getElementById('modoCorreo').addEventListener('change', e => { modoCorreo = e.target.value; });
             document.getElementById('escribirCorreo').addEventListener('click', () => {
-                const lista = [...marcados].map(c => encodeURIComponent(c).replace(/%40/g, '@')).join(',');
-                const url = modoCorreo === 'to' ? `mailto:${lista}` : `mailto:?bcc=${lista}`;
+                const direcciones = [...marcados];
+                const datos = modoCorreo === 'to' ? { para: direcciones } : { cco: direcciones };
+                const url = urlGmail(datos);
                 const aviso = document.getElementById('avisoLargo');
-                // Algunos programas de correo cortan enlaces muy largos
-                aviso.hidden = url.length <= 1900;
-                aviso.textContent = `Son muchas direcciones (${url.length} caracteres); si tu programa de correo no las muestra todas, envía en dos partes.`;
-                window.location.href = url;
+                // Gmail corta los enlaces muy largos
+                aviso.hidden = url.length <= 7000;
+                aviso.textContent = `Son muchas direcciones (${url.length} caracteres); si Gmail no las muestra todas, envía en dos partes.`;
+                abrirCorreo(datos);
             });
             actualizarBarra();
             app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {

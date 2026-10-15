@@ -252,14 +252,29 @@ service cloud.firestore {
       }
     }
 
+    // Compras (15/10/2026): proveedores, catálogo de productos y órdenes de compra. Admin y operario los ven, crean
+    // y editan (los productos y proveedores se archivan, no se borran); solo el admin puede borrar documentos.
+    match /proveedores/{id} {
+      allow read, create, update: if puedeUsarCajaChica();
+      allow delete: if isAdmin();
+    }
+    match /productos_compra/{id} {
+      allow read, create, update: if puedeUsarCajaChica();
+      allow delete: if isAdmin();
+    }
+    match /ordenes_compra/{id} {
+      allow read, create, update: if puedeUsarCajaChica();
+      allow delete: if isAdmin();
+    }
+
     // Resto de colecciones (las que no tienen regla propia arriba): solo admin.
     // El operario solo usa agua (lecturas, medidores, costo), calendario, caja chica y bitácora, que tienen su regla propia.
     // La lista excluye las colecciones con regla propia para no ampliar sus permisos (p. ej. historiales y caja chica).
     match /{collection}/{docId} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos', 'bitacora']) && isAdmin();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos', 'bitacora', 'proveedores', 'productos_compra', 'ordenes_compra']) && isAdmin();
     }
     match /{collection}/{docId}/{rest=**} {
-      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos', 'bitacora']) && isAdmin();
+      allow read, write: if !(collection in ['users', 'agua_medidores', 'agua_config', 'agua_lecturas', 'contratos', 'facturas', 'facturacion_config', 'calendario_eventos', 'caja_chica_config', 'caja_chica_movimientos', 'caja_chica_cortes', 'siapa_periodos', 'siapa_recibos', 'siapa_pagos', 'bitacora', 'proveedores', 'productos_compra', 'ordenes_compra']) && isAdmin();
     }
   }
 }
