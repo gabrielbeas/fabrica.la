@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Depósitos - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         /* Solo lo propio de Depósitos; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
@@ -60,15 +61,18 @@
         .pago-nuevo { border-top: 1px solid var(--linea); margin-top: 10px; padding-top: 10px; }
         .pago-nuevo .campo { grid-template-columns: repeat(3, 1fr); }
         @media (max-width: 1000px) { .detalle { grid-template-columns: 1fr; } .pago-nuevo .campo { grid-template-columns: 1fr 1fr; } }
+
+        /* Celular: las tablas anchas se vuelven tarjetas (clase tabla-movil, estilos en js/navbar.js) */
+        @media (max-width: 700px) { table.dep { min-width: 0; } table.dep td .gris { text-align: right; } }
     </style>
 </head>
 <body>
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261015-5';
                 import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -144,7 +148,7 @@
                     <div class="tarjeta"><div class="et">Contratos</div><div class="val">${contratos.length}</div><div class="det">Sin locales propios</div></div>
                 </div>
                 ${!contratos.length ? '<div class="vacio">No hay contratos.</div>' : `
-                <div class="tabla-wrap"><table class="dep">
+                <div class="tabla-wrap"><table class="dep tabla-movil">
                     <thead><tr>
                         ${th('locales', 'Locales')}${th('locatario', 'Locatario')}${th('acuerdo', 'Acuerdo en contrato')}${th('meses', 'Meses', 'num')}
                         ${th('renta', 'Base del depósito', 'num')}${th('requerido', 'Requerido', 'num')}${th('pagado', 'Pagado', 'num')}

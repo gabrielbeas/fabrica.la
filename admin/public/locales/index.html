@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Locales - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -30,7 +31,7 @@
         .chip { background: var(--fondo); border: 1px solid var(--borde-control); border-radius: 16px; padding: 6px 14px; font-size: 13px; color: var(--tinta-suave); cursor: pointer; }
         .chip.activa { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
         .leyenda { margin-left: auto; font-size: 12px; color: var(--tinta-suave); display: flex; gap: 12px; align-items: center; }
-        @media (max-width: 700px) { .filtros { flex-wrap: wrap; } .leyenda { margin-left: 0; width: 100%; } .tabla-movil tbody tr { position: relative; } .tabla-movil td.col-alerta { position: absolute; top: 11px; right: 14px; width: auto; padding: 0 !important; } .tabla-movil td.col-alerta:has(.punto) + td { padding-right: 22px !important; } }
+        @media (max-width: 700px) { .filtros { flex-wrap: wrap; } .leyenda { margin-left: 0; width: 100%; } .tabla-movil tbody tr { position: relative; } .tabla-movil td.col-alerta { position: absolute; top: 11px; right: 14px; width: auto; padding: 0 !important; } .tabla-movil td.col-alerta:not(:empty) + td { padding-right: 52px !important; } }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 
         /* Tabla */
@@ -86,10 +87,10 @@
     <div class="main" id="app"><div class="cargando">Cargando contratos...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
         import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261015-2';
+        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261015-5';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

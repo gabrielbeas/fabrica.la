@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Factura de GBD - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -55,14 +56,17 @@
         @media (max-width: 850px) { .tarjetas { grid-template-columns: repeat(2, 1fr); } }
         .acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
         @media (max-width: 850px) { .datos, .campos { grid-template-columns: 1fr; } }
+
+        /* Celular: las tablas anchas se vuelven tarjetas (clase tabla-movil, estilos en js/navbar.js) */
+        @media (max-width: 700px) { .graf svg text { font-size: 16px; } .anios { gap: 4px 14px; } }
     </style>
 </head>
 <body>
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
         import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { ESTADOS, mesTxt, dinero, esc, r2, ordenLocales, rentaDelMes, calcGBD, conceptoGBDTxt, normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261013-1';
 
@@ -109,7 +113,7 @@
                 const base = r2(filas.reduce((a, r) => a + r.renta, 0)), esperado = r2(base * f.porcentaje);
                 return { formula: `${pct(f.porcentaje)} de ${dinero(base)} (rentas del mes sin IVA)`, html: `<div class="panel">
                     <h2>Rentas del mes que se toman de base</h2>
-                    <table>
+                    <table class="tabla-movil">
                         <thead><tr><th>Locales</th><th>Locatario</th><th class="num">Renta de ${esc(mesTxt(f.mes))} sin IVA</th></tr></thead>
                         <tbody>${filas.map(r => `<tr><td>${esc((r.x.locales || []).join(', '))}</td><td>${esc(r.x.razonSocial || '')}</td><td class="num">${dinero(r.renta)}</td></tr>`).join('')}</tbody>
                         <tfoot><tr class="tot"><td colspan="2">Total de rentas del mes (${filas.length} contratos)</td><td class="num">${dinero(base)}</td></tr>
@@ -122,7 +126,7 @@
                 const mensual = r2(f.capital * f.tasaAnual / 12);
                 return { formula: `${dinero(f.capital)} × ${pct(f.tasaAnual)} ÷ 12`, html: `<div class="panel">
                     <h2>Préstamo a ${esc(f.contraparte)}</h2>
-                    <table>
+                    <table class="tabla-movil">
                         <tbody><tr><td>Capital prestado</td><td class="num">${dinero(f.capital)}</td></tr>
                         <tr><td>Tasa de interés anual</td><td class="num">${pct(f.tasaAnual)}</td></tr></tbody>
                         <tfoot><tr class="tot"><td>Interés mensual (capital × tasa ÷ 12)</td><td class="num">${dinero(mensual)}</td></tr></tfoot>
@@ -147,7 +151,7 @@
                 ${o.html}
                 <div class="panel">
                     <h2>Factura del mes</h2>
-                    <table>
+                    <table class="tabla-movil">
                         <thead><tr><th>${esc(f.concepto)}</th><th>Cómo se calcula</th><th class="num">Importe</th></tr></thead>
                         <tbody>
                             <tr><td><strong>Subtotal</strong></td><td class="nota">${esc(o.formula)}</td><td class="num"><strong>${dinero(c.base)}</strong></td></tr>
@@ -232,7 +236,7 @@
                 <p class="nota" style="margin:6px 0 0">Total recibido por mes (los pagos partidos del mismo mes se suman). Pasa el cursor por una barra para ver el detalle; la raya ámbar marca un mes sin pago.</p>
                 <div class="anios">${Object.keys(anios).sort().map(a => `<span>${a}: <b>${dinero(anios[a])}</b></span>`).join('')}</div>
                 <details class="pagos"><summary>Ver los ${pagos.length} pagos</summary>
-                    <table style="margin-top:8px"><thead><tr><th>Fecha</th><th class="num">Importe</th><th>Nota</th></tr></thead>
+                    <table class="tabla-movil" style="margin-top:8px"><thead><tr><th>Fecha</th><th class="num">Importe</th><th>Nota</th></tr></thead>
                     <tbody>${pagos.map(x => `<tr><td>${esc(fechaCorta(x.fecha))}</td><td class="num">${dinero(x.importe)}</td><td class="nota">${esc(x.nota || '')}</td></tr>`).join('')}</tbody></table>
                 </details>
             </div>`;

@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Depósito · La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
         .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
@@ -36,7 +37,7 @@
         th.num { font-family: var(--font-sans); }
         .gris { color: var(--tinta-suave); font-size: 12px; }
         .resumen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
-        .resumen div { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; }
+        .resumen > div { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; }
         .resumen .et { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .03em; }
         .resumen .val { font-size: 18px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
         .resumen .alerta .val { color: var(--peligro); } .resumen .bien .val { color: var(--exito); }
@@ -52,15 +53,23 @@
         .pago-nuevo { border-top: 1px solid var(--linea); margin-top: 16px; padding-top: 14px; }
         .pago-nuevo .campo { grid-template-columns: repeat(3, 1fr); }
         @media (max-width: 900px) { .pago-nuevo .campo { grid-template-columns: 1fr 1fr; } }
+
+        /* Celular: las tablas anchas se vuelven tarjetas (clase tabla-movil, estilos en js/navbar.js) */
+        @media (max-width: 700px) {
+            .panel h2 { flex-wrap: wrap; align-items: flex-start; }
+            .panel h2 button.req { flex: 1 1 100%; white-space: normal; }
+            .pago-nuevo .campo, .campo, .campo.tres { grid-template-columns: 1fr; }
+            .resumen { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="main" id="app"><p class="vacio">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261015-5';
         import { requerimientoDeposito, emailRequerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-10';
         import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -120,7 +129,7 @@
                 <div class="dos" style="margin-top:12px">
                     <div class="panel">
                         <h2>Pagos del depósito <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimiento" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro (PDF)</button> <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimientoCorreo" title="Preparar el correo con el requerimiento para las direcciones del Directorio">Requerimiento de cobro (correo)</button></h2>
-                        ${k.pagos.length ? `<table><thead><tr><th>Fecha</th><th class="num">Monto</th><th>Tipo</th><th>Banco</th><th>Quién pagó</th></tr></thead><tbody>
+                        ${k.pagos.length ? `<table class="tabla-movil"><thead><tr><th>Fecha</th><th class="num">Monto</th><th>Tipo</th><th>Banco</th><th>Quién pagó</th></tr></thead><tbody>
                             ${k.pagos.map(p => `<tr><td>${fechaCorta(p.fecha)}</td><td class="num">${dinero(p.monto)}</td><td>${esc(TIPOS[p.tipo] || p.tipo || '')}</td><td>${esc(p.banco || '')}</td><td>${esc(p.pago || '')}${p.nota ? `<div class="gris">${esc(p.nota)}</div>` : ''}</td></tr>`).join('')}
                             </tbody></table>` : '<div class="vacio">Sin pagos registrados.</div>'}
                         <div class="pago-nuevo">

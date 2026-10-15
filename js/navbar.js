@@ -8,7 +8,7 @@ import {
   isAuthenticated,
   basePath,
   onAuthChange
-} from './auth.js?v=20261015-2';
+} from './auth.js?v=20261015-5';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -414,7 +414,13 @@ function agregarEstilosMovil() {
       /* Rejillas de tarjetas de resumen: dos por renglón */
       .tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
       .tarjeta { padding: 12px 14px !important; }
-      .tarjeta .val { font-size: 19px !important; overflow-wrap: anywhere; }
+      /* Montos de las tarjetas: un poco más chicos y sin partir cifras a la mitad */
+      .tarjeta .val { font-size: 17px !important; overflow-wrap: normal !important; word-break: normal !important; }
+
+      /* Cifras del sistema de diseño (lf-cifras): dos por renglón, montos más chicos */
+      .lf-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+      .lf-cifra { padding: 12px 14px !important; }
+      .lf-cifra .lf-valor { font-size: 18px !important; line-height: 24px !important; }
 
       /* Listas de datos (dt/dd): etiqueta arriba, valor abajo */
       dl { grid-template-columns: minmax(0, 1fr) !important; gap: 2px !important; }
@@ -436,7 +442,7 @@ function agregarEstilosMovil() {
 
       /* Tablas en tarjetas: cada renglón es una tarjeta con "etiqueta: valor" */
       .tabla-wrap:has(> .tabla-movil) { border: none !important; overflow: visible !important; }
-      table.tabla-movil, .tabla-movil tbody, .tabla-movil tfoot, .tabla-movil tr, .tabla-movil td { display: block; width: 100%; }
+      table.tabla-movil, .tabla-movil tbody, .tabla-movil tfoot, .tabla-movil tr, .tabla-movil td { display: block; width: 100%; box-sizing: border-box; min-width: 0 !important; }
       .tabla-movil thead tr { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
       .tabla-movil thead th { display: none; }
       .tabla-movil thead th.ord { display: inline-flex; align-items: center; background: var(--fondo, #ffffff); border: 1px solid var(--linea, #dfe3e8); border-radius: 999px; padding: 5px 10px; font-size: 11px; }
@@ -445,7 +451,7 @@ function agregarEstilosMovil() {
       .tabla-movil tr[style*="display: none"], .tabla-movil tr[hidden] { display: none !important; }
       .tabla-movil td { padding: 6px 0 !important; border: none !important; text-align: right !important; background: none !important; white-space: normal !important; overflow-wrap: anywhere; }
       .tabla-movil td::after { content: ""; display: block; clear: both; }
-      .tabla-movil td::before { content: attr(data-label); float: left; max-width: 45%; margin-right: 12px; text-align: left; color: var(--tinta-suave, #5f6670); font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; line-height: 1.6; }
+      .tabla-movil td::before { content: attr(data-label); font-family: var(--font-sans, Roboto, Arial, sans-serif); float: left; max-width: 45%; margin-right: 12px; text-align: left; color: var(--tinta-suave, #5f6670); font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; line-height: 1.6; }
       .tabla-movil td:not([data-label])::before, .tabla-movil td[data-label=""]::before { display: none; }
       .tabla-movil td:not([data-label]), .tabla-movil td[data-label=""] { text-align: left !important; }
       .tabla-movil td:empty { display: none; }

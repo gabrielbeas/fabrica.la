@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Compras - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         /* Solo lo propio de Compras; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
@@ -39,13 +40,19 @@
         .ficha-prov .v { font-size: 13px; overflow-wrap: anywhere; }
         .ficha-prov .ancho { grid-column: 1 / -1; }
         table.cat { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+        table.cat.fijo { min-width: 1240px; table-layout: fixed; }
+        table.cat.fijo th, table.cat.fijo td { padding-left: 12px; padding-right: 12px; }
+        table.cat.fijo th.num, table.cat.fijo td.num { text-align: right; }
+        table.cat.fijo td.centro, table.cat.fijo th.centro { text-align: center; }
+        table.cat tfoot td.num { font-family: var(--font-sans); }
+        table.cat.fijo th, table.cat.fijo td { overflow-wrap: anywhere; }
         table.cat th { text-align: left; font-size: 11px; font-weight: 600; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; padding: 9px 10px; border-bottom: 1px solid var(--linea); white-space: nowrap; }
         table.cat td { padding: 7px 10px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: middle; }
         table.cat .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
         table.cat th.num { font-family: var(--font-sans); }
         table.cat button.nombre { font: inherit; font-weight: 600; border: none; background: none; padding: 0; cursor: pointer; color: var(--tinta); text-align: left; }
         table.cat button.nombre:hover { color: var(--accion); text-decoration: underline; }
-        table.cat input.cant { width: 76px; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--borde-control); border-radius: 6px; background: var(--fondo); color: var(--tinta); }
+        table.cat input.cant { width: 84px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--borde-control); border-radius: 6px; background: var(--fondo); color: var(--tinta); }
         table.cat input.cant.con { border-color: var(--accion); background: var(--accion-suave); }
         table.cat tfoot td { border-bottom: none; padding: 4px 10px; font-weight: 600; }
         .gris { color: var(--tinta-suave); font-size: 12px; }
@@ -56,17 +63,27 @@
         .l-tabla th { text-align: left; font-size: 11px; color: var(--tinta-suave); padding: 5px 6px; border-bottom: 1px solid var(--linea); text-transform: uppercase; }
         .l-tabla td { padding: 5px 6px; border-bottom: 1px solid var(--fondo-hundido); }
         .l-tabla .num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+
+        /* Celular: las tablas anchas se vuelven tarjetas (clase tabla-movil, estilos en js/navbar.js) */
+        @media (max-width: 700px) {
+            table.cat, table.cat.fijo { min-width: 0; }
+            .prov-cab { padding: 12px 14px; }
+            .prov-cab .acciones { width: 100%; }
+            .prov-cab .acciones .btn, .prov-cab .acciones .btn-sec { flex: 1 1 auto; }
+            .datos-prov { padding: 6px 14px 0; }
+            table.cat.fijo td.num input.cant { width: 110px !important; }
+        }
     </style>
 </head>
 <body>
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
         import { collection, getDocs, doc, addDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261013-1';
-        import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261015-3';
+        import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261015-5';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -103,6 +120,9 @@
             }
         }
 
+        // Importe de una línea con IVA (cantidad × precio con IVA)
+        const importeConIva = (p, q) => Math.round((Number(q) || 0) * (Number(p.precioSinIva) || 0) * 116) / 100;
+
         const lineasDe = pid => productos.filter(p => p.proveedorId === pid && Number(cant[p.id]) > 0)
             .map(p => ({ productoId: p.id, nombre: p.nombre, marca: p.marca || '', clave: p.clave || '', contenido: p.contenido || '', unidad: p.unidad || '', cantidad: Number(cant[p.id]), precioSinIva: Number(p.precioSinIva) || 0 }));
 
@@ -134,15 +154,16 @@
                     </div>
                 </div>
                 ${prov ? datosProveedor(prov) : ''}
-                ${prods.length ? `<div class="tabla-wrap"><table class="cat">
-                    <thead><tr><th>Producto</th><th>Marca</th><th>Clave</th><th>Contenido</th><th>Unidad de compra</th><th class="num">Precio s/IVA</th><th class="num">Precio c/IVA</th><th class="num">Cantidad</th><th class="num">Importe s/IVA</th></tr></thead>
+                ${prods.length ? `<div class="tabla-wrap"><table class="cat fijo tabla-movil">
+                    <colgroup><col style="width:25%"><col style="width:100px"><col style="width:150px"><col style="width:220px"><col style="width:120px"><col style="width:110px"><col style="width:110px"><col style="width:110px"><col style="width:130px"></colgroup>
+                    <thead><tr><th>Producto</th><th>Marca</th><th>Clave</th><th>Contenido</th><th>Unidad de compra</th><th class="num">Precio s/IVA</th><th class="num">Precio c/IVA</th><th class="num">Cantidad</th><th class="num">Importe c/IVA</th></tr></thead>
                     <tbody>${prods.map(p => { const q = Number(cant[p.id]) || 0; return `<tr>
                         <td><button type="button" class="nombre" data-editar-prod="${esc(p.id)}" title="Editar producto">${esc(p.nombre)}</button>${p.notas ? `<div class="gris">${esc(p.notas)}</div>` : ''}</td>
                         <td>${esc(p.marca || '')}</td><td>${esc(p.clave || '')}</td><td>${esc(p.contenido || '')}</td><td>${esc(p.unidad || '')}</td>
                         <td class="num">${dinero(p.precioSinIva)}</td><td class="num">${dinero(conIva(p.precioSinIva))}</td>
-                        <td class="num"><input class="cant ${q > 0 ? 'con' : ''}" inputmode="decimal" data-cant="${esc(p.id)}" value="${q > 0 ? q : ''}" placeholder="0" aria-label="Cantidad de ${esc(p.nombre)}"></td>
-                        <td class="num" data-importe="${esc(p.id)}">${q > 0 ? dinero(q * (Number(p.precioSinIva) || 0)) : ''}</td></tr>`; }).join('')}</tbody>
-                    ${prov ? `<tfoot><tr><td colspan="8" class="num">Subtotal / IVA 16% / Total del pedido</td><td class="num" data-tot="${esc(prov.id)}">${lineas.length ? `${dinero(t.subtotal)} · ${dinero(t.iva)} · ${dinero(t.total)}` : ''}</td></tr></tfoot>` : ''}
+                        <td class="num"><input type="text" class="cant ${q > 0 ? 'con' : ''}" inputmode="decimal" data-cant="${esc(p.id)}" value="${q > 0 ? q : ''}" placeholder="0" aria-label="Cantidad de ${esc(p.nombre)}"></td>
+                        <td class="num" data-importe="${esc(p.id)}">${q > 0 ? dinero(importeConIva(p, q)) : ''}</td></tr>`; }).join('')}</tbody>
+                    ${prov ? `<tfoot><tr><td colspan="8" class="num">Total del pedido con IVA</td><td class="num" data-tot="${esc(prov.id)}">${lineas.length ? dinero(t.total) : ''}</td></tr></tfoot>` : ''}
                 </table></div>` : '<div class="vacio">Este proveedor todavía no tiene productos. Usa «Agregar producto».</div>'}
             </section>`;
         }
@@ -160,7 +181,7 @@
                 ${sinProv.length ? seccionProveedor(null, sinProv) : ''}
                 <div class="ordenes">
                     <h2>Órdenes de compra</h2>
-                    ${ordenes.length ? `<div class="tabla-wrap"><table class="cat">
+                    ${ordenes.length ? `<div class="tabla-wrap"><table class="cat tabla-movil">
                         <thead><tr><th>Folio</th><th>Fecha</th><th>Proveedor</th><th class="num">Líneas</th><th class="num">Total c/IVA</th><th>Estado</th><th></th></tr></thead>
                         <tbody>${ordenes.map(o => `<tr>
                             <td><strong>${esc(o.folio)}</strong></td><td>${esc(fechaCorta(o.fecha))}</td><td>${esc(o.proveedorNombre || '')}</td>
@@ -193,9 +214,9 @@
                 if (Number.isFinite(v) && v > 0) cant[p.id] = v; else delete cant[p.id];
                 guardarCant();
                 i.classList.toggle('con', !!cant[p.id]);
-                const imp = app.querySelector(`[data-importe="${CSS.escape(p.id)}"]`); if (imp) imp.textContent = cant[p.id] ? dinero(cant[p.id] * (Number(p.precioSinIva) || 0)) : '';
+                const imp = app.querySelector(`[data-importe="${CSS.escape(p.id)}"]`); if (imp) imp.textContent = cant[p.id] ? dinero(importeConIva(p, cant[p.id])) : '';
                 const sec = i.closest('section.prov'), pid = sec.dataset.prov, lineas = lineasDe(pid), t = totalesOrden(lineas);
-                const tot = sec.querySelector('[data-tot]'); if (tot) tot.textContent = lineas.length ? `${dinero(t.subtotal)} · ${dinero(t.iva)} · ${dinero(t.total)}` : '';
+                const tot = sec.querySelector('[data-tot]'); if (tot) tot.textContent = lineas.length ? dinero(t.total) : '';
                 const bo = sec.querySelector('[data-orden]'); if (bo) { bo.disabled = !lineas.length; bo.textContent = `Generar orden de compra${lineas.length ? ` (${lineas.length} · ${dinero(t.total)})` : ''}`; }
                 const bl = sec.querySelector('[data-limpiar]'); if (bl) bl.disabled = !lineas.length;
             }));

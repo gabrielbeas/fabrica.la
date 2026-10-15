@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Inicio - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="css/panel.css?v=20261015-5">
     <style>
         * { box-sizing: border-box; }
         body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
@@ -69,6 +70,12 @@
         .tabla-cot .sube { color: var(--exito); } .tabla-cot .baja { color: var(--peligro); }
         .tabla-cot .dif { font-size: 13px; }
         @media (max-width: 1100px) { .met-lado { flex-wrap: wrap; } .met-lado > .met-der { flex: 1 1 100%; overflow-x: auto; } }
+        .solo-movil { display: none; }
+        @media (max-width: 700px) {
+            .met-cab { height: auto; flex-wrap: wrap; }
+            .tabla-cot tr.sub-local { display: none !important; }
+            .tabla-cot input { width: 130px; }
+        }
         .desglose { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin: 0 0 12px; cursor: pointer; }
         tr.sub-local td { color: var(--tinta-suave); }
         .barra-m2 { height: 8px; border-radius: 4px; background: var(--accion); opacity: .55; }
@@ -110,11 +117,11 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../js/navbar.js?v=20261015-2';
-        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261015-2';
+        import { crearNavbar } from '../../js/navbar.js?v=20261015-5';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261015-5';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from '../../js/correos-contrato.js?v=20261014-6';
-        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261015-2';
+        import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261015-5';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -394,21 +401,22 @@
                 <div class="met-col met-der">
                 <div class="met-cab"><span><strong>Cotizador</strong> · edita la renta por m² o la mensual y se ajusta la otra</span><button type="button" id="cotReset">Restablecer</button></div>
                 <div class="tabla-wrap">
-                    <table class="tabla-cot">
-                        <thead><tr><th class="num">Renta por m²</th><th class="num">Renta mensual</th><th class="num">Diferencia $</th><th class="num">Diferencia %</th></tr></thead>
+                    <table class="tabla-cot tabla-movil">
+                        <thead><tr><th class="solo-movil">Contrato</th><th class="num">Renta por m²</th><th class="num">Renta mensual</th><th class="num">Diferencia $</th><th class="num">Diferencia %</th></tr></thead>
                         <tbody>
                             ${lista.map(c => {
                                 const locs = (c.locales || []).length ? c.locales : [''];
                                 const n = desglosarLocales ? locs.length : 1;
                                 const x = cotDe(c);
                                 return Array.from({ length: n }, (_, i) => i > 0 ? '<tr class="sub-local"><td colspan="4"></td></tr>' : `<tr data-id="${esc(c.id)}">
+                                <td class="solo-movil">Local ${esc((c.locales || []).join(', '))} · ${esc(c.razonSocial || c.nombreComercial || '')}</td>
                                 <td class="num"><input inputmode="decimal" class="cot-m2" value="${c.m2 ? x.m2p.toFixed(2) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
                                 <td class="num"><input inputmode="decimal" class="cot-renta" value="${x.renta.toFixed(2)}" aria-label="Renta mensual cotizada"></td>
                                 <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"></td>
                             </tr>`).join('');
                             }).join('')}
                         </tbody>
-                        <tfoot><tr id="cotPie"><td class="num" data-t="m2"></td><td class="num" data-t="renta"></td><td class="num dif" data-t="d$"></td><td class="num dif" data-t="d%"></td></tr></tfoot>
+                        <tfoot><tr id="cotPie"><td class="solo-movil">Total cotizado</td><td class="num" data-t="m2"></td><td class="num" data-t="renta"></td><td class="num dif" data-t="d$"></td><td class="num dif" data-t="d%"></td></tr></tfoot>
                     </table>
                 </div>
                 </div>

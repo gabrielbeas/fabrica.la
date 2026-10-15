@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Pagos mensuales - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
-    <link rel="stylesheet" href="../css/panel.css?v=20261015-2">
+    <link rel="stylesheet" href="../css/panel.css?v=20261015-5">
     <style>
         /* Solo lo propio de Pagos mensuales; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
@@ -51,14 +52,26 @@
         .pie { color: var(--tinta-suave); font-size: 13px; margin-top: 12px; }
         .meses-chk { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px 10px; }
         .meses-chk label { display: flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
+
+        /* Celular: las tablas anchas se vuelven tarjetas (clase tabla-movil, estilos en js/navbar.js) */
+        @media (max-width: 700px) {
+            table.pm { min-width: 0; }
+            table.pm td:has(> .na) { display: none !important; }
+            table.pm tr.grupo td { text-align: left !important; padding: 2px 0 !important; }
+            table.pm tr.grupo { border: none !important; background: none !important; padding: 10px 0 0 !important; margin-bottom: 4px !important; }
+            table.pm td.nombre { white-space: normal; }
+            table.pm td.actual { background: none !important; }
+            select.pm { width: 130px; max-width: 60%; }
+            .cabeza > div:last-child { width: 100%; justify-content: space-between; }
+        }
     </style>
 </head>
 <body>
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261015-2';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-2';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261015-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261015-5';
         import { collection, getDocs, doc, setDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -131,7 +144,7 @@
                 </div>
                 <div class="leyenda">${Object.entries(ESTADOS).map(([k, v]) => `<span><i class="e-${k}"></i>${esc(v.largo)}</span>`).join('')}<span><i style="background:var(--ambar-suave);border:1px solid var(--linea)"></i>Mes actual</span><span class="na">– No aplica ese mes</span></div>
                 ${!conceptos.length ? '<div class="vacio">Todavía no hay conceptos. Usa «Agregar concepto» para empezar.</div>' : `
-                <div class="tabla-wrap"><table class="pm">
+                <div class="tabla-wrap"><table class="pm tabla-movil">
                     <thead><tr><th>Concepto</th>${MESES.map((m, i) => `<th class="${anio === anioHoy && i + 1 === mesHoy ? 'actual' : ''}">${m.slice(0, 3)}</th>`).join('')}</tr></thead>
                     <tbody>
                         ${grupos.map(g => `<tr class="grupo"><td colspan="13">${esc(g)}</td></tr>` + conceptos.filter(c => c.grupo === g).map(c => `<tr>
