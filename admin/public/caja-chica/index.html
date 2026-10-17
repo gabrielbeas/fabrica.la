@@ -20,6 +20,26 @@
     @media (max-width: 950px) { .resumen-cuentas .metrics.cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .btn-mini { padding: 4px 10px; font-size: 11px; border-color: #ffffff73; background: #ffffff14; color: var(--on-accion); margin-top: 6px; }
     .balance-top .saldo-lado { flex-wrap: wrap; }
+    .resumen-cuentas .metrics.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .metric.saldo-card { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
+    .metric.saldo-card .metric-label, .metric.saldo-card .metric-detail { color: #ffffffd1; }
+    .metric.saldo-card .metric-value { color: var(--on-accion); }
+    .metric.saldo-card .metric-icon { background: #ffffff24; color: var(--on-accion); }
+    .metric.saldo-card .btn-mini { margin-top: 10px; }
+    .totales-barra { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--linea); border-radius: 12px; background: var(--fondo-hundido); }
+    .total-bloque { display: flex; flex-direction: column; gap: 2px; }
+    .total-bloque.der { text-align: right; align-items: flex-end; }
+    .total-etiqueta { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); }
+    .total-bloque strong { font-size: 24px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .total-detalle { font-size: 12px; color: var(--tinta-suave); }
+    @media (max-width: 950px) { .resumen-cuentas .metrics.tres { grid-template-columns: 1fr; } .totales-barra { flex-direction: column; } .total-bloque.der { text-align: left; align-items: flex-start; } }
+    .resumen-cuentas .fila-res { display: block; margin-bottom: 12px; }
+    .metric.saldo-card.alerta { background: var(--atencion-suave); border-color: var(--atencion); color: var(--tinta); }
+    .metric.saldo-card.alerta .metric-label, .metric.saldo-card.alerta .metric-detail { color: var(--tinta-suave); }
+    .metric.saldo-card.alerta .metric-value { color: var(--tinta); }
+    .metric.saldo-card.alerta .metric-icon { background: #ffffffb3; color: var(--atencion); }
+    .metric.saldo-card.alerta .btn-mini { border-color: var(--atencion); background: #ffffffb3; color: var(--tinta); }
+    .saldo-aviso { margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--atencion); }
     /* Movimientos a todo el ancho: la descripcion toma el espacio sobrante */
     .tabla-movil th:first-child, .tabla-movil td:first-child { width: 44%; min-width: 260px; }
     .tabla-movil td:first-child .desc { font-size: 15px; }
@@ -210,6 +230,8 @@
     const CUENTAS = { efectivo: 'Efectivo', tarjeta: 'Tarjeta' };
     const cuentaDe = metodo => (metodo === 'tarjeta' || metodo === 'transferencia') ? 'tarjeta' : 'efectivo';
     const efecto = m => (m.tipo === 'entrada' ? 1 : -1) * Number(m.importe || 0);
+    const UMBRAL_SALDO = { tarjeta: 3000, efectivo: 500 };   // por debajo, el recuadro de saldo se pone amarillo
+    const saldoBajo = c => config && saldoDe(c) < UMBRAL_SALDO[c];
     const inicioDe = cuenta => (cuenta === 'tarjeta' ? config?.fechaInicioTarjeta : config?.fechaInicioEfectivo) || config?.fechaInicio || '';
     const saldoInicialDe = cuenta => Number((cuenta === 'tarjeta' ? config?.saldoInicialTarjeta : config?.saldoInicial) || 0);
 
@@ -253,20 +275,25 @@
       const nombreMes = new Date(`${mesActual}-15T12:00:00`).toLocaleDateString('es-MX', { month: 'long' });
       const cuantos = n => `${n} ${n === 1 ? 'gasto' : 'gastos'}`;
       const entradasTotal = entradasMes.reduce((s, m) => s + Number(m.importe || 0), 0);
+      const entradasCuenta = c => entradasMes.filter(m => cuentaDe(m.metodoPago) === c).reduce((s, m) => s + Number(m.importe || 0), 0);
       document.getElementById('setup').innerHTML = !config && admin ? '<div class="setup">Configura el saldo inicial real para activar el cálculo de caja. No se asigna ningún saldo predeterminado.<button class="btn" id="configurarSaldo">Configurar saldo inicial</button></div>' : (!config ? '<div class="setup">El administrador debe configurar el saldo inicial para mostrar el saldo disponible.</div>' : '');
       document.getElementById('configurarSaldo')?.addEventListener('click', () => abrirSaldos());
       contenido.innerHTML = `
-          <section class="panel balance balance-top"><h2>Saldos de caja</h2><p class="hint">Saldo inicial más movimientos no rechazados</p>
-            <div class="saldos-lado">${Object.keys(CUENTAS).map(c => `<div class="saldo-lado"><span>${CUENTAS[c]}<small>Inicial ${config ? money(saldoInicialDe(c)) : '—'}${config && inicioDe(c) ? ' al ' + parseDate(inicioDe(c)) : ''}</small></span><strong>${config ? money(saldoDe(c)) : '—'}</strong>${admin && config ? `<button class="btn btn-mini" data-editar-saldo="${c}">Editar saldo inicial</button>` : ''}</div>`).join('')}</div>
-            <div class="balance-meta"><span>Total</span><strong>${config ? money(saldoActual()) : 'Sin configurar'}</strong></div>
-          </section>
-        <section class="resumen-cuentas" aria-label="Resumen del mes">
-          <div class="metrics cuatro">
-          <article class="metric"><div class="metric-label">Gastos en efectivo, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('efectivo')))}</div><div class="metric-detail">${cuantos(gastosCuenta('efectivo').length)}</div></article>
-          <article class="metric"><div class="metric-label">Gastos con tarjeta, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('tarjeta')))}</div><div class="metric-detail">${cuantos(gastosCuenta('tarjeta').length)}</div></article>
-          <article class="metric total-mes"><div class="metric-label">Gastos totales, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(gastosTotal)}</div><div class="metric-detail">${cuantos(gastosMes.length)}</div></article>
-          <article class="metric"><div class="metric-label">Reposiciones, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg></span></div><div class="metric-value">${money(entradasTotal)}</div><div class="metric-detail">${entradasMes.length} entradas este mes</div></article>
+        <section class="resumen-cuentas" aria-label="Resumen de caja">
+          <div class="totales-barra">
+            <div class="total-bloque"><span class="total-etiqueta">Total en caja</span><strong>${config ? money(saldoActual()) : 'Sin configurar'}</strong><span class="total-detalle">tarjeta más efectivo</span></div>
+            <div class="total-bloque der"><span class="total-etiqueta">Gastado en ${nombreMes}</span><strong>${money(gastosTotal)}</strong><span class="total-detalle">${cuantos(gastosMes.length)}: efectivo ${money(sumaGastos(gastosCuenta('efectivo')))} y tarjeta ${money(sumaGastos(gastosCuenta('tarjeta')))}</span></div>
           </div>
+          <div class="fila-res"><div class="metrics tres">
+          <article class="metric saldo-card${saldoBajo('tarjeta') ? ' alerta' : ''}"><div class="metric-label">Saldo de tarjeta <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('tarjeta')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('tarjeta')) : '—'}${config && inicioDe('tarjeta') ? ' al ' + parseDate(inicioDe('tarjeta')) : ''}</div>${saldoBajo('tarjeta') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['tarjeta'])}</div>` : ''}${admin && config ? '<button class="btn btn-mini" data-editar-saldo="tarjeta">Editar saldo inicial</button>' : ''}</article>
+          <article class="metric"><div class="metric-label">Gastos con tarjeta, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('tarjeta')))}</div><div class="metric-detail">${cuantos(gastosCuenta('tarjeta').length)}</div></article>
+          <article class="metric"><div class="metric-label">Reposiciones en tarjeta, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg></span></div><div class="metric-value">${money(entradasCuenta('tarjeta'))}</div><div class="metric-detail">${entradasMes.filter(m => cuentaDe(m.metodoPago) === 'tarjeta').length} entradas este mes</div></article>
+          </div></div>
+          <div class="fila-res"><div class="metrics tres">
+          <article class="metric saldo-card${saldoBajo('efectivo') ? ' alerta' : ''}"><div class="metric-label">Saldo de efectivo <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('efectivo')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('efectivo')) : '—'}${config && inicioDe('efectivo') ? ' al ' + parseDate(inicioDe('efectivo')) : ''}</div>${saldoBajo('efectivo') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['efectivo'])}</div>` : ''}${admin && config ? '<button class="btn btn-mini" data-editar-saldo="efectivo">Editar saldo inicial</button>' : ''}</article>
+          <article class="metric"><div class="metric-label">Gastos en efectivo, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('efectivo')))}</div><div class="metric-detail">${cuantos(gastosCuenta('efectivo').length)}</div></article>
+          <article class="metric"><div class="metric-label">Reposiciones en efectivo, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg></span></div><div class="metric-value">${money(entradasCuenta('efectivo'))}</div><div class="metric-detail">${entradasMes.filter(m => cuentaDe(m.metodoPago) === 'efectivo').length} entradas este mes</div></article>
+          </div></div>
         </section>
         <div class="layout"><section class="panel">
           <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Todos los cambios quedan registrados en el historial.</p></div><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div>
