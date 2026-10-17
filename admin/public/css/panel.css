@@ -8,20 +8,20 @@
  */
 
 :root {
-  --fondo: #fbf8f2;
-  --fondo-hundido: #f3eee4;
+  --fondo: #ffffff;
+  --fondo-hundido: #f2f4f7;
   --fondo-elevado: #ffffff;
-  --linea: #e4dccd;
-  --borde-control: #9a9080;
-  --tinta: #1f2a33;
-  --tinta-suave: #6b6358;
-  --tinta-tenue: #a39b8d;
+  --linea: #dfe3e8;
+  --borde-control: #8a929c;
+  --tinta: #1b2430;
+  --tinta-suave: #5f6670;
+  --tinta-tenue: #9aa1aa;
   --accion: #1f4e79;
   --accion-hover: #2a5f8f;
-  --accion-suave: #e8eef4;
+  --accion-suave: #e6eef6;
   --on-accion: #ffffff;
   --ambar: #d08a1e;
-  --ambar-suave: #faefd6;
+  --ambar-suave: #fbf0dd;
   --foco: #1f4e79;
   --peligro: #b3261e;
   --on-peligro: #ffffff;
