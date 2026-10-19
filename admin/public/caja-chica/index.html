@@ -25,7 +25,9 @@
     .metric.saldo-card .metric-label, .metric.saldo-card .metric-detail { color: #ffffffd1; }
     .metric.saldo-card .metric-value { color: var(--on-accion); }
     .metric.saldo-card .metric-icon { background: #ffffff24; color: var(--on-accion); }
-    .metric.saldo-card .btn-mini { margin-top: 10px; }
+    .metric.saldo-card .btn-mini { margin-top: 0; }
+    .head-acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .saldo-botones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .totales-barra { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--linea); border-radius: 12px; background: var(--fondo-hundido); }
     .total-bloque { display: flex; flex-direction: column; gap: 2px; }
     .total-bloque.der { text-align: right; align-items: flex-end; }
@@ -179,7 +181,7 @@
     }
 
     async function iniciar() {
-      document.getElementById('nuevoMovimiento').addEventListener('click', abrirMovimiento);
+      document.getElementById('nuevoMovimiento').addEventListener('click', () => abrirMovimiento());
       document.getElementById('nuevoCorte').addEventListener('click', abrirCorte);
       document.getElementById('guardarMovimiento').addEventListener('click', guardarMovimiento);
       document.getElementById('guardarCorte').addEventListener('click', guardarCorte);
@@ -285,32 +287,97 @@
             <div class="total-bloque der"><span class="total-etiqueta">Gastado en ${nombreMes}</span><strong>${money(gastosTotal)}</strong><span class="total-detalle">${cuantos(gastosMes.length)}: efectivo ${money(sumaGastos(gastosCuenta('efectivo')))} y tarjeta ${money(sumaGastos(gastosCuenta('tarjeta')))}</span></div>
           </div>
           <div class="fila-res"><div class="metrics tres">
-          <article class="metric saldo-card${saldoBajo('tarjeta') ? ' alerta' : ''}"><div class="metric-label">Saldo de tarjeta <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('tarjeta')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('tarjeta')) : '—'}${config && inicioDe('tarjeta') ? ' al ' + parseDate(inicioDe('tarjeta')) : ''}</div>${saldoBajo('tarjeta') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['tarjeta'])}</div>` : ''}${admin && config ? '<button class="btn btn-mini" data-editar-saldo="tarjeta">Editar saldo inicial</button>' : ''}</article>
+          <article class="metric saldo-card${saldoBajo('tarjeta') ? ' alerta' : ''}"><div class="metric-label">Saldo de tarjeta <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('tarjeta')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('tarjeta')) : '—'}${config && inicioDe('tarjeta') ? ' al ' + parseDate(inicioDe('tarjeta')) : ''}</div>${saldoBajo('tarjeta') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['tarjeta'])}</div>` : ''}${config ? '<div class="saldo-botones"><button class="btn btn-mini" data-reposicion="tarjeta">Reposición de saldo</button>' + (admin ? '<button class="btn btn-mini" data-editar-saldo="tarjeta">Editar saldo inicial</button>' : '') + '</div>' : ''}</article>
           <article class="metric"><div class="metric-label">Gastos con tarjeta, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('tarjeta')))}</div><div class="metric-detail">${cuantos(gastosCuenta('tarjeta').length)}</div></article>
           <article class="metric"><div class="metric-label">Reposiciones en tarjeta, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg></span></div><div class="metric-value">${money(entradasCuenta('tarjeta'))}</div><div class="metric-detail">${entradasMes.filter(m => cuentaDe(m.metodoPago) === 'tarjeta').length} entradas este mes</div></article>
           </div></div>
           <div class="fila-res"><div class="metrics tres">
-          <article class="metric saldo-card${saldoBajo('efectivo') ? ' alerta' : ''}"><div class="metric-label">Saldo de efectivo <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('efectivo')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('efectivo')) : '—'}${config && inicioDe('efectivo') ? ' al ' + parseDate(inicioDe('efectivo')) : ''}</div>${saldoBajo('efectivo') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['efectivo'])}</div>` : ''}${admin && config ? '<button class="btn btn-mini" data-editar-saldo="efectivo">Editar saldo inicial</button>' : ''}</article>
+          <article class="metric saldo-card${saldoBajo('efectivo') ? ' alerta' : ''}"><div class="metric-label">Saldo de efectivo <span class="metric-icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg></span></div><div class="metric-value">${config ? money(saldoDe('efectivo')) : 'Sin configurar'}</div><div class="metric-detail">Inicial ${config ? money(saldoInicialDe('efectivo')) : '—'}${config && inicioDe('efectivo') ? ' al ' + parseDate(inicioDe('efectivo')) : ''}</div>${saldoBajo('efectivo') ? `<div class="saldo-aviso">Saldo bajo: menos de ${money(UMBRAL_SALDO['efectivo'])}</div>` : ''}${config ? '<div class="saldo-botones"><button class="btn btn-mini" data-reposicion="efectivo">Reposición de saldo</button>' + (admin ? '<button class="btn btn-mini" data-editar-saldo="efectivo">Editar saldo inicial</button>' : '') + '</div>' : ''}</article>
           <article class="metric"><div class="metric-label">Gastos en efectivo, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h10M7 15h6"/></svg></span></div><div class="metric-value">${money(sumaGastos(gastosCuenta('efectivo')))}</div><div class="metric-detail">${cuantos(gastosCuenta('efectivo').length)}</div></article>
           <article class="metric"><div class="metric-label">Reposiciones en efectivo, ${nombreMes} <span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg></span></div><div class="metric-value">${money(entradasCuenta('efectivo'))}</div><div class="metric-detail">${entradasMes.filter(m => cuentaDe(m.metodoPago) === 'efectivo').length} entradas este mes</div></article>
           </div></div>
         </section>
         <div class="layout"><section class="panel">
-          <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Todos los cambios quedan registrados en el historial.</p></div><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div>
+          <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Todos los cambios quedan registrados en el historial.</p></div><div class="head-acciones"><button class="btn" id="exportarPdf" type="button">Exportar PDF</button><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div></div>
           <div class="toolbar"><input class="search" id="buscar" type="search" placeholder="Buscar descripción o responsable"><select class="select" id="filtroTipo"><option value="todos">Todos los tipos</option><option value="gasto">Gastos</option><option value="entrada">Entradas</option></select><select class="select" id="filtroEstado"><option value="todos">Todos los estados</option><option value="pendiente">Pendiente</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option></select></div>
           <div class="table-wrap"><table class="tabla-movil"><thead><tr><th>Movimiento</th><th>Fecha</th><th>Categoría</th><th>Pago</th><th>Estado</th><th>Comprobante</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody id="filas"></tbody></table><div class="empty" id="sinFilas">No hay movimientos para esos filtros.</div></div>
         </section></div>`;
       document.getElementById('buscar').addEventListener('input', renderFilas);
+      document.getElementById('exportarPdf').addEventListener('click', exportarPdf);
       selectorMes(document.getElementById('filtroMes'));
       ['filtroTipo', 'filtroEstado', 'filtroMes'].forEach(id => document.getElementById(id).addEventListener('change', renderFilas));
+      document.querySelectorAll('[data-reposicion]').forEach(b => b.addEventListener('click', () => abrirMovimiento('entrada', b.dataset.reposicion)));
       document.querySelectorAll('[data-editar-saldo]').forEach(b => b.addEventListener('click', () => abrirSaldos(b.dataset.editarSaldo)));
       renderFilas();
     }
 
-    function renderFilas() {
+    // Movimientos que se ven en la lista según el mes, el tipo, el estado y la búsqueda
+    function filtrarMovimientos() {
       const q = document.getElementById('buscar').value.trim().toLocaleLowerCase('es-MX');
       const tipo = document.getElementById('filtroTipo').value, estado = document.getElementById('filtroEstado').value, mes = document.getElementById('filtroMes').value;
-      const visibles = movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.proveedor || ''} ${m.categoria || ''}`.toLocaleLowerCase('es-MX').includes(q)));
+      return movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.proveedor || ''} ${m.categoria || ''}`.toLocaleLowerCase('es-MX').includes(q)));
+    }
+
+    // ---- Exportar a PDF lo que se ve en la lista (impresión del navegador, hoja carta) ----
+    async function exportarPdf() {
+      const lista = filtrarMovimientos();
+      const mes = document.getElementById('filtroMes').value;
+      const tipoSel = document.getElementById('filtroTipo'), estSel = document.getElementById('filtroEstado'), q = document.getElementById('buscar').value.trim();
+      const periodo = mes ? new Date(`${mes}-15T12:00:00`).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }) : 'Todos los meses';
+      const periodoTxt = periodo.charAt(0).toUpperCase() + periodo.slice(1);
+      const filtros = [tipoSel.value !== 'todos' ? `Tipo: ${tipoSel.selectedOptions[0].textContent}` : '', estSel.value !== 'todos' ? `Estado: ${estSel.selectedOptions[0].textContent}` : '', q ? `Búsqueda: «${q}»` : ''].filter(Boolean);
+      const cuenta = m => cuentaDe(m.metodoPago);
+      const cuentan = lista.filter(m => m.estado !== 'rechazado');
+      const suma = f => cuentan.filter(f).reduce((t, m) => t + Number(m.importe || 0), 0);
+      const gE = suma(m => m.tipo === 'gasto' && cuenta(m) === 'efectivo'), gT = suma(m => m.tipo === 'gasto' && cuenta(m) === 'tarjeta');
+      const rE = suma(m => m.tipo === 'entrada' && cuenta(m) === 'efectivo'), rT = suma(m => m.tipo === 'entrada' && cuenta(m) === 'tarjeta');
+      const pago = m => ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }[m.metodoPago || 'efectivo'] || m.metodoPago);
+      const estadoTxt = m => ({ pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado');
+      const filas = lista.map(m => `<tr class="${m.estado === 'rechazado' ? 'rech' : ''}"><td>${escapeHtml(parseDate(m.fecha || ''))}</td><td><b>${escapeHtml(m.descripcion || '')}</b><div class="det">${escapeHtml([m.responsable || m.registradoPorNombre || '', m.proveedor && m.proveedor !== m.descripcion ? m.proveedor : ''].filter(Boolean).join(' · '))}</div></td><td>${escapeHtml(m.categoria || '')}</td><td>${escapeHtml(pago(m))}</td><td>${estadoTxt(m)}</td><td class="num">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td></tr>`).join('');
+      const saldos = config ? `Saldo actual: tarjeta ${money(saldoDe('tarjeta'))} · efectivo ${money(saldoDe('efectivo'))} · total ${money(saldoActual())}` : '';
+      const hoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+      let cont = document.getElementById('hoja-caja');
+      if (!cont) { cont = document.createElement('div'); cont.id = 'hoja-caja'; document.body.appendChild(cont); }
+      let st = document.getElementById('estilo-hoja-caja');
+      if (!st) { st = document.createElement('style'); st.id = 'estilo-hoja-caja'; document.head.appendChild(st); }
+      st.textContent = `#hoja-caja { display: none; }
+        @page { size: letter portrait; margin: 14mm 14mm; }
+        @media print {
+          body > *:not(#hoja-caja) { display: none !important; }
+          #hoja-caja { display: block !important; font: 11px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        #hoja-caja .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
+        #hoja-caja .cab img { height: 38px; }
+        #hoja-caja h1 { margin: 0; font-size: 18px; font-weight: 900; }
+        #hoja-caja .sub { color: #5f6670; font-size: 11px; margin-top: 2px; }
+        #hoja-caja .res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+        #hoja-caja .res div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 8px; }
+        #hoja-caja .res span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; }
+        #hoja-caja .res b { font-size: 14px; font-variant-numeric: tabular-nums; }
+        #hoja-caja table { width: 100%; border-collapse: collapse; }
+        #hoja-caja th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; border-bottom: 1px solid #1b2430; padding: 5px 6px; }
+        #hoja-caja td { padding: 5px 6px; border-bottom: 1px solid #e6e9ee; vertical-align: top; }
+        #hoja-caja tr { break-inside: avoid; }
+        #hoja-caja .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        #hoja-caja .det { color: #5f6670; font-size: 9.5px; }
+        #hoja-caja tr.rech td { color: #9aa1aa; text-decoration: line-through; }
+        #hoja-caja .pie { margin-top: 10px; font-size: 9.5px; color: #5f6670; }`;
+      cont.innerHTML = `<div class="cab"><div><h1>Caja Chica · ${escapeHtml(periodoTxt)}</h1><div class="sub">${escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))}</div></div><img src="../css/logo.png" alt="La Fábrica de Chocolate"></div>
+        <div class="res"><div><span>Gastos en efectivo</span><b>${money(gE)}</b></div><div><span>Gastos con tarjeta</span><b>${money(gT)}</b></div><div><span>Total gastado</span><b>${money(gE + gT)}</b></div><div><span>Reposiciones</span><b>${money(rE + rT)}</b></div></div>
+        ${saldos ? `<div class="sub" style="margin-bottom:8px">${escapeHtml(saldos)}</div>` : ''}
+        ${lista.length ? `<table><thead><tr><th>Fecha</th><th>Movimiento</th><th>Categoría</th><th>Pago</th><th>Estado</th><th class="num">Importe</th></tr></thead><tbody>${filas}</tbody></table>` : '<p>No hay movimientos con estos filtros.</p>'}
+        <div class="pie">${lista.length} movimiento${lista.length === 1 ? '' : 's'}. Los rechazados aparecen tachados y no suman. Generado el ${escapeHtml(hoy)}.</div>`;
+      const img = cont.querySelector('img');
+      if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; });
+      const tituloPrevio = document.title;
+      document.title = `Caja Chica ${periodoTxt}`;
+      window.print();
+      setTimeout(() => { document.title = tituloPrevio; }, 1000);
+    }
+
+    function renderFilas() {
+      const visibles = filtrarMovimientos();
       const tbody = document.getElementById('filas');
       tbody.innerHTML = visibles.map(m => {
         const estadoLabel = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado';
@@ -431,8 +498,14 @@
       const select = document.getElementById('categoria');
       select.innerHTML = choices.map(c => `<option value="${escapeHtml(c)}" ${seleccion === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
     }
-    function actualizarCategorias() { opcionesCategoria(document.getElementById('tipo').value); }
-    function abrirMovimiento(tipo = 'gasto') {
+    // Una reposición no lleva proveedor ni descripción: siempre es el admin quien repone saldo
+    function ajustarCamposTipo() {
+      const rep = document.getElementById('tipo').value === 'entrada';
+      document.getElementById('proveedor').closest('.field').hidden = rep;
+      document.getElementById('descripcion').closest('.field').hidden = rep;
+    }
+    function actualizarCategorias() { opcionesCategoria(document.getElementById('tipo').value); ajustarCamposTipo(); }
+    function abrirMovimiento(tipo = 'gasto', metodo = 'efectivo') {
       if (!config) { showNotice('Primero el administrador debe configurar el saldo inicial.', true); return; }
       hideNotice();
       editingMovementId = null;
@@ -441,13 +514,14 @@
       document.getElementById('fecha').value = today();
       document.getElementById('importe').value = '';
       document.getElementById('descripcion').value = '';
-      document.getElementById('responsable').value = '';
+      document.getElementById('responsable').value = tipo === 'entrada' && admin ? 'Admin LAFABDECHOC' : '';
       document.getElementById('proveedor').value = '';
-      document.getElementById('metodo').value = 'efectivo';
+      document.getElementById('metodo').value = metodo === 'tarjeta' ? 'tarjeta' : 'efectivo';
       document.getElementById('movimientoError').textContent = '';
       document.getElementById('notaRevision').style.display = admin ? 'none' : '';
-      document.getElementById('movimientoTitulo').textContent = tipo === 'entrada' ? 'Registrar reposición' : 'Registrar movimiento';
+      document.getElementById('movimientoTitulo').textContent = tipo === 'entrada' ? `Reposición de saldo de ${metodo === 'tarjeta' ? 'tarjeta' : 'efectivo'}` : 'Registrar movimiento';
       document.getElementById('guardarMovimiento').textContent = 'Registrar';
+      ajustarCamposTipo();
       actualizarPrevia();
       abrirModal('movimientoModal');
     }
@@ -463,6 +537,7 @@
       document.getElementById('descripcion').value = m.descripcion || '';
       document.getElementById('responsable').value = RESPONSABLES.includes(m.responsable) ? m.responsable : '';
       document.getElementById('proveedor').value = m.proveedor || (m.responsable && !RESPONSABLES.includes(m.responsable) ? m.responsable : '');
+      ajustarCamposTipo();
       document.getElementById('metodo').value = m.metodoPago || 'efectivo';
       document.getElementById('movimientoError').textContent = '';
       document.getElementById('notaRevision').style.display = '';
@@ -513,7 +588,9 @@
     async function guardarMovimiento() {
       const error = document.getElementById('movimientoError'), button = document.getElementById('guardarMovimiento');
       const tipo = document.getElementById('tipo').value, fecha = document.getElementById('fecha').value;
-      const importe = Number(document.getElementById('importe').value), descripcion = document.getElementById('descripcion').value.trim();
+      let descripcion = document.getElementById('descripcion').value.trim();
+      const importe = Number(document.getElementById('importe').value);
+      if (tipo === 'entrada' && !descripcion) descripcion = `Reposición de saldo de ${cuentaDe(document.getElementById('metodo').value) === 'tarjeta' ? 'tarjeta' : 'efectivo'}`;
       const responsable = document.getElementById('responsable').value, proveedor = document.getElementById('proveedor').value.trim();
       if (!fecha || !descripcion || !RESPONSABLES.includes(responsable) || !Number.isFinite(importe) || importe <= 0) { error.textContent = 'Completa fecha, responsable, descripción e importe válido.'; return; }
       if (archivo && (!TIPOS.includes(archivo.type) || archivo.size > MAX_BYTES)) { error.textContent = 'Revisa el tipo de archivo y el límite de 10 MB.'; return; }
