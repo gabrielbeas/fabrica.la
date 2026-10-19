@@ -56,6 +56,11 @@
         .btn-lapiz { width: 22px; height: 22px; padding: 0; margin-right: 4px; border: none; background: none; color: var(--accion); cursor: pointer; vertical-align: -5px; border-radius: 4px; }
         .btn-lapiz:hover { background: var(--accion-suave); }
         .btn-lapiz svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        th.ord { cursor: pointer; user-select: none; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
+        th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
         table.cat input.precio { width: 100px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--accion); border-radius: 6px; background: var(--accion-suave); color: var(--tinta); }
         table.cat input.precio.cambio { border-color: var(--atencion); background: var(--atencion-suave); }
         table.cat input.cant.con { border-color: var(--accion); background: var(--accion-suave); }
@@ -96,6 +101,25 @@
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        // Orden de columnas: una elección por proveedor en el catálogo y otra en las órdenes (sin elección = orden original)
+        const ordCat = {}, ordOrd = { col: '', dir: 1 };
+        const CLAVE_CAT = {
+            producto: p => (p.nombre || '').toLowerCase(), marca: p => (p.marca || '').toLowerCase(), clave: p => (p.clave || '').toLowerCase(),
+            contenido: p => (p.contenido || '').toLowerCase(), unidad: p => (p.unidad || '').toLowerCase(),
+            sin: p => Number(p.precioSinIva) || 0, con: p => (Number(p.precioSinIva) || 0) * 1.16,
+            cant: p => Number(cant[p.id]) || 0, importe: p => importeConIva(p, cant[p.id])
+        };
+        const CLAVE_OC = {
+            folio: o => String(o.folio || ''), fecha: o => String(o.fecha || ''), proveedor: o => (o.proveedorNombre || '').toLowerCase(),
+            lineas: o => (o.lineas || []).length, total: o => totalesOrden(o.lineas || []).total, estado: o => ESTADOS_OC[o.estado || 'enviada'] || ''
+        };
+        const ordenarPor = (lista, clave, est) => {
+            if (!est || !est.col) return lista;
+            const f = clave[est.col];
+            return [...lista].sort((a, b) => { const x = f(a), y = f(b); return (typeof x === 'string' ? x.localeCompare(y, 'es', { numeric: true }) : x - y) * est.dir; });
+        };
+        const flechaOrd = (est, col) => `<span class="flecha">${est && est.col === col ? (est.dir > 0 ? '▲' : '▼') : '▲▼'}</span>`;
+        const thCat = (provId, est, col, txt, cls = '', antes = '') => `<th class="ord ${cls} ${est && est.col === col ? 'act' : ''}" data-ocat="${esc(provId)}" data-col="${col}" title="Ordenar por ${txt.toLowerCase()}">${antes}${txt}${flechaOrd(est, col)}</th>`;
         const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f.split('-').reverse().join('/') : (f || '');
         const UNIDADES = ['CAJA', 'PAQUETE', 'BULTO', 'BOTELLA', 'LITRO', '5 LITROS', 'GARRAFA', 'PIEZA', 'ROLLO', 'KILO'];
         const ESTADOS_OC = { enviada: 'Enviada', recibida: 'Recibida', cancelada: 'Cancelada' };
@@ -150,6 +174,9 @@
         const hayDatos = v => !!(v.rfc || v.domicilio || v.giro || v.web || v.numeroCliente || v.formaPago || v.entrega);
 
         function seccionProveedor(prov, prods) {
+            const clavePv = prov?.id || '-';
+            const estCat = ordCat[clavePv];
+            prods = ordenarPor(prods, CLAVE_CAT, estCat);
             const lineas = prov ? lineasDe(prov.id) : [];
             const t = totalesOrden(lineas);
             return `<section class="prov" data-prov="${esc(prov?.id || '')}">
@@ -167,8 +194,8 @@
                 </div>
                 ${prov ? datosProveedor(prov) : ''}
                 ${prods.length ? `<div class="tabla-wrap"><table class="cat fijo tabla-movil">
-                    <colgroup><col style="width:25%"><col style="width:100px"><col style="width:150px"><col style="width:220px"><col style="width:120px"><col style="width:110px"><col style="width:110px"><col style="width:110px"><col style="width:130px"></colgroup>
-                    <thead><tr><th>Producto</th><th>Marca</th><th>Clave</th><th>Contenido</th><th>Unidad de compra</th><th class="num">${prov && !editandoPrecios.has(prov.id) ? `<button type="button" class="btn-lapiz" data-precios="${esc(prov.id)}" title="Editar los precios sin IVA" aria-label="Editar los precios sin IVA"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg></button>` : ''}Precio s/IVA</th><th class="num">Precio c/IVA</th><th class="num">Cantidad</th><th class="num">Importe c/IVA</th></tr></thead>
+                    <colgroup><col style="width:22%"><col style="width:100px"><col style="width:140px"><col style="width:200px"><col style="width:150px"><col style="width:140px"><col style="width:130px"><col style="width:115px"><col style="width:140px"></colgroup>
+                    <thead><tr>${thCat(clavePv, estCat, 'producto', 'Producto')}${thCat(clavePv, estCat, 'marca', 'Marca')}${thCat(clavePv, estCat, 'clave', 'Clave')}${thCat(clavePv, estCat, 'contenido', 'Contenido')}${thCat(clavePv, estCat, 'unidad', 'Unidad de compra')}${thCat(clavePv, estCat, 'sin', 'Precio s/IVA', 'num', prov && !editandoPrecios.has(prov.id) ? `<button type="button" class="btn-lapiz" data-precios="${esc(prov.id)}" title="Editar los precios sin IVA" aria-label="Editar los precios sin IVA"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg></button>` : '')}${thCat(clavePv, estCat, 'con', 'Precio c/IVA', 'num')}${thCat(clavePv, estCat, 'cant', 'Cantidad', 'num')}${thCat(clavePv, estCat, 'importe', 'Importe c/IVA', 'num')}</tr></thead>
                     <tbody>${prods.map(p => { const q = Number(cant[p.id]) || 0; return `<tr>
                         <td><button type="button" class="nombre" data-editar-prod="${esc(p.id)}" title="Editar producto">${esc(p.nombre)}</button>${p.notas ? `<div class="gris">${esc(p.notas)}</div>` : ''}</td>
                         <td>${esc(p.marca || '')}</td><td>${esc(p.clave || '')}</td><td>${esc(p.contenido || '')}</td><td>${esc(p.unidad || '')}</td>
@@ -196,8 +223,8 @@
                 <div class="ordenes">
                     <h2>Órdenes de compra</h2>
                     ${ordenes.length ? `<div class="tabla-wrap"><table class="cat tabla-movil">
-                        <thead><tr><th>Folio</th><th>Fecha</th><th>Proveedor</th><th class="num">Líneas</th><th class="num">Total c/IVA</th><th>Estado</th><th></th></tr></thead>
-                        <tbody>${ordenes.map(o => `<tr>
+                        <thead><tr>${['folio:Folio', 'fecha:Fecha', 'proveedor:Proveedor', 'lineas:Líneas:num', 'total:Total c/IVA:num', 'estado:Estado'].map(d => { const [c, t, k] = d.split(':'); return `<th class="ord ${k || ''} ${ordOrd.col === c ? 'act' : ''}" data-ooc="${c}" title="Ordenar por ${t.toLowerCase()}">${t}${flechaOrd(ordOrd, c)}</th>`; }).join('')}<th></th></tr></thead>
+                        <tbody>${ordenarPor(ordenes, CLAVE_OC, ordOrd).map(o => `<tr>
                             <td><strong>${esc(o.folio)}</strong></td><td>${esc(fechaCorta(o.fecha))}</td><td>${esc(o.proveedorNombre || '')}</td>
                             <td class="num">${(o.lineas || []).length}</td><td class="num">${dinero(totalesOrden(o.lineas || []).total)}</td>
                             <td><select class="estado" data-estado="${esc(o.id)}">${Object.entries(ESTADOS_OC).map(([k, t]) => `<option value="${k}" ${k === (o.estado || 'enviada') ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
@@ -208,6 +235,17 @@
         }
 
         function enlazar() {
+            app.querySelectorAll('th[data-ocat]').forEach(t => t.addEventListener('click', e => {
+                if (e.target.closest('button')) return;
+                const k = t.dataset.ocat, col = t.dataset.col, e0 = ordCat[k];
+                ordCat[k] = e0 && e0.col === col ? { col, dir: -e0.dir } : { col, dir: 1 };
+                render();
+            }));
+            app.querySelectorAll('th[data-ooc]').forEach(t => t.addEventListener('click', () => {
+                const col = t.dataset.ooc;
+                if (ordOrd.col === col) ordOrd.dir = -ordOrd.dir; else { ordOrd.col = col; ordOrd.dir = 1; }
+                render();
+            }));
             document.getElementById('nuevoProv').addEventListener('click', () => editarProveedor(null));
             document.getElementById('nuevoProd').addEventListener('click', () => editarProducto(null));
             app.querySelectorAll('[data-editar-prov]').forEach(b => b.addEventListener('click', () => editarProveedor(proveedores.find(v => v.id === b.dataset.editarProv))));
