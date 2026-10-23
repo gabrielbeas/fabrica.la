@@ -307,8 +307,8 @@
                             <table>
                                 <thead><tr><th>Concepto</th><th>Periodo</th><th>Incremento / nota</th><th class="num">Monto mensual</th></tr></thead>
                                 <tbody>
-                                    ${c.rentas.map(r => `<tr><td>${esc(r.concepto)}</td><td>${esc(periodoRenta(r))}</td><td>${esc(notaRenta(r))}</td><td class="num">${dinero(r.monto)}</td></tr>`).join('')}
-                                    <tr class="total"><td colspan="3">Renta mensual vigente</td><td class="num">${dinero(c.total)}</td></tr>
+                                    ${filasRenta(c)}
+                                    <tr class="total"><td colspan="3">Renta mensual vigente${explicaVigente(c)}</td><td class="num">${dinero(c.total)}</td></tr>
                                     ${filaTotalPagado(c)}
                                 </tbody>
                             </table>
@@ -393,6 +393,46 @@
         };
         const sumarDias = (f, n) => { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
         // Renta que rige hoy: la que tiene el `desde` más reciente (o, sin fechas, la última de la lista)
+        // Periodos de la lista: si la fila no trae fechas (`desde`), se calculan hacia atrás desde la fecha del próximo aumento
+        // (`incremento`): la última fila es el año que termina un día antes y cada fila anterior es un año antes. Lo que cae antes del
+        // inicio del contrato se marca como anterior. Solo cuentan las filas «RENTA MENSUAL AAAA»; las de base u otros conceptos
+        // se muestran sin periodo. Es solo para mostrar: no se guarda nada ni cambia la facturación.
+        const sumarAnios = (f, n) => `${+f.slice(0, 4) + n}${f.slice(4)}`;
+        const esPeriodoRenta = r => /^RENTA\s+MENSUAL\s+\d{4}$/i.test(String(r.concepto || '').trim());
+        function periodosCalculados(c) {
+            const mapa = new Map();
+            const fecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '');
+            if (!fecha(c.incremento)) return mapa;
+            const filas = (c.rentas || []).filter(r => esPeriodoRenta(r) && !r.desde);
+            filas.reverse().forEach((r, j) => {
+                const desde = sumarAnios(c.incremento, -(j + 1)), hasta = sumarDias(sumarAnios(c.incremento, -j), -1);
+                mapa.set(r, fecha(c.inicio) && hasta < c.inicio ? { antes: true } : { desde: fecha(c.inicio) && desde < c.inicio ? c.inicio : desde, hasta });
+            });
+            return mapa;
+        }
+        function filasRenta(c) {
+            const calc = periodosCalculados(c);
+            return c.rentas.map(r => {
+                const k = calc.get(r);
+                const propio = k && k.antes && r.periodo;   // antes del inicio y con su propio texto de periodo: se respeta ese texto
+                const periodo = !k || propio ? periodoRenta(r) : k.antes ? 'ANTERIOR AL INICIO DEL CONTRATO' : `${mesAnio(k.desde)} – ${mesAnio(k.hasta)}`;
+                // El texto original (por ejemplo, el rango de INPC con que se calculó el aumento) se conserva como nota
+                const extra = k && !propio && r.periodo ? `<div style="font-size:11px;color:var(--tinta-suave)">Base INPC: ${esc(r.periodo)}</div>` : '';
+                return `<tr><td>${esc(r.concepto)}</td><td${k && !propio ? ' title="Calculado con la fecha del próximo aumento y los aumentos anuales"' : ''}>${esc(periodo)}${extra}</td><td>${esc(notaRenta(r))}</td><td class="num">${dinero(r.monto)}</td></tr>`;
+            }).join('');
+        }
+        // La renta vigente puede no ser la última fila (por ejemplo, renta más mantenimiento): se explica de dónde sale
+        function explicaVigente(c) {
+            const filas = (c.rentas || []).filter(esPeriodoRenta);
+            const ult = filas.length ? filas[filas.length - 1].monto : null;
+            if (typeof ult !== 'number' || typeof c.total !== 'number' || Math.abs(c.total - ult) < 0.05) return '';
+            const dif = r2(c.total - ult), pct = (dif / ult) * 100;
+            const mant = typeof c.mantenimientoPct === 'number' ? c.mantenimientoPct : 0;
+            const txt = mant > 0 && Math.abs(c.total - ult * (1 + mant)) < 0.05
+                ? `Renta ${dinero(ult)} + mantenimiento ${+(mant * 100).toFixed(2)} % ${dinero(dif)}`
+                : `Última renta de la lista ${dinero(ult)}; la vigente es ${dinero(dif)} (${+pct.toFixed(2)} %) ${dif > 0 ? 'mayor' : 'menor'}`;
+            return `<div style="font-size:11px;font-weight:400;color:var(--tinta-suave)">${txt}</div>`;
+        }
         const idxVigente = rentas => {
             let idx = -1;
             rentas.forEach((r, i) => { if (r.desde && (idx < 0 || r.desde > rentas[idx].desde)) idx = i; });

@@ -347,6 +347,7 @@
         // Cotizador: por contrato, renta mensual y renta por m² propuestas (arrancan con la renta actual; no se guardan)
         let cot = {};
         const cotDe = c => cot[c.id] || (cot[c.id] = { renta: c.total || 0, m2p: c.m2 && c.total ? c.total / c.m2 : 0 });
+        const fmtCot = n => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });   // 31,437.69
         const numCot = t => { const v = Number(String(t).replace(/[$,\s]/g, '')); return String(t).trim() === '' || !Number.isFinite(v) ? null : v; };
         const signo = (n, f) => (Math.abs(n) < 0.005 ? f(0) : (n > 0 ? '+' : '−') + f(Math.abs(n)));
         const pctTxt = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(1)}%`;
@@ -410,8 +411,8 @@
                                 const x = cotDe(c);
                                 return Array.from({ length: n }, (_, i) => i > 0 ? '<tr class="sub-local"><td colspan="4"></td></tr>' : `<tr data-id="${esc(c.id)}">
                                 <td class="solo-movil">Local ${esc((c.locales || []).join(', '))} · ${esc(c.razonSocial || c.nombreComercial || '')}</td>
-                                <td class="num"><input inputmode="decimal" class="cot-m2" value="${c.m2 ? x.m2p.toFixed(2) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
-                                <td class="num"><input inputmode="decimal" class="cot-renta" value="${x.renta.toFixed(2)}" aria-label="Renta mensual cotizada"></td>
+                                <td class="num"><input inputmode="decimal" class="cot-m2" value="${c.m2 ? fmtCot(x.m2p) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
+                                <td class="num"><input inputmode="decimal" class="cot-renta" value="${fmtCot(x.renta)}" aria-label="Renta mensual cotizada"></td>
                                 <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"></td>
                             </tr>`).join('');
                             }).join('')}
@@ -446,9 +447,9 @@
             };
             app.querySelectorAll('.tabla-cot tbody tr[data-id]').forEach(tr => {
                 const c = porId[tr.dataset.id], x = cot[tr.dataset.id], iM2 = tr.querySelector('.cot-m2'), iR = tr.querySelector('.cot-renta');
-                iM2.addEventListener('input', () => { const v = numCot(iM2.value); if (v === null || v < 0) return; x.m2p = v; x.renta = v * c.m2; iR.value = x.renta.toFixed(2); recalcFila(tr); totalesCot(); });
-                iR.addEventListener('input', () => { const v = numCot(iR.value); if (v === null || v < 0) return; x.renta = v; x.m2p = c.m2 ? v / c.m2 : 0; if (c.m2) iM2.value = x.m2p.toFixed(2); recalcFila(tr); totalesCot(); });
-                [iM2, iR].forEach(i => i.addEventListener('focus', () => i.select()));
+                iM2.addEventListener('input', () => { const v = numCot(iM2.value); if (v === null || v < 0) return; x.m2p = v; x.renta = v * c.m2; iR.value = fmtCot(x.renta); recalcFila(tr); totalesCot(); });
+                iR.addEventListener('input', () => { const v = numCot(iR.value); if (v === null || v < 0) return; x.renta = v; x.m2p = c.m2 ? v / c.m2 : 0; if (c.m2) iM2.value = fmtCot(x.m2p); recalcFila(tr); totalesCot(); });
+                [iM2, iR].forEach(i => { i.addEventListener('focus', () => i.select()); i.addEventListener('blur', () => { const v = numCot(i.value); if (v !== null && v >= 0) i.value = fmtCot(v); }); });
                 recalcFila(tr);
             });
             totalesCot();
