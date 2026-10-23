@@ -229,8 +229,25 @@
         const esPropio = l => PROPIOS.includes(String(l.tubo).toUpperCase());
         const lecturaDudosa = l => (l.revisar || []).length || (typeof l.consumo === 'number' && (l.consumo < 0 || l.consumo > 2000));
 
+        // Lecturas de locales más nuevas que el último periodo de SIAPA (el recibo llega semanas después): para graficarlas
+        // se agrega un periodo provisional por cada tanda de lecturas, con los días desde el periodo anterior.
+        // Cuando llega el recibo de SIAPA el periodo real lo sustituye solo.
+        function periodosProvisionales() {
+            const ult = periodos[periodos.length - 1], out = [];
+            if (!ult) return out;
+            [...new Set(lecturas.filter(l => l.fecha && !esMTO(l) && !esPropio(l) && l.fecha > ult.fechaLectura && dias(l.fecha, ult.fechaLectura) > 20).map(l => l.fecha))].sort().forEach(f => {
+                const prev = out[out.length - 1];
+                if (prev && dias(f, prev.fechaLectura) <= 20) return;   // misma tanda de lecturas
+                out.push({ fechaLectura: f, dias: Math.round(dias(f, (prev || ult).fechaLectura)), provisional: true });
+            });
+            return out;
+        }
+        const periodoAmpliado = (fecha, provs) => provs.find(q => dias(q.fechaLectura, fecha) <= 20) || periodoDe(fecha);
+
         // m³ por periodo de SIAPA: medidor general (SIAPA), suma de locales, consumo propio y tubo MTO
-        function consumoPorPeriodo() {
+        // (con provisionales = true se agregan los periodos provisionales de las lecturas aún sin recibo; solo para gráficas)
+        function consumoPorPeriodo(conProvisionales = false) {
+            const provs = conProvisionales ? periodosProvisionales() : [];
             const loc = {}, mto = {}, propio = {};
             lecturas.forEach(l => {
                 if (!l.fecha || typeof l.consumo !== 'number' || lecturaDudosa(l)) return;
@@ -238,12 +255,12 @@
                 // y, en MTO, los saltos por cambio de medidor
                 if (l.consumo === l.lectura && l.lectura > 5) return;
                 if (esMTO(l) && l.consumo > 400) return;
-                const p = periodoDe(l.fecha);
+                const p = provs.length ? periodoAmpliado(l.fecha, provs) : periodoDe(l.fecha);
                 if (!p) return;
                 const destino = esMTO(l) ? mto : esPropio(l) ? propio : loc;
                 destino[p.fechaLectura] = (destino[p.fechaLectura] || 0) + l.consumo;
             });
-            return periodos.map(p => ({ p, siapa: p.m3, locales: loc[p.fechaLectura] ?? null, propio: propio[p.fechaLectura] ?? null, mto: mto[p.fechaLectura] ?? null }));
+            return [...periodos, ...provs].map(p => ({ p, siapa: p.m3 ?? null, locales: loc[p.fechaLectura] ?? null, propio: propio[p.fechaLectura] ?? null, mto: mto[p.fechaLectura] ?? null }));
         }
 
         function cobradoPorPeriodo() {
@@ -431,7 +448,7 @@
             { k: 'mto', nombre: 'Medidor MTO', corto: 'MTO', color: '#e8590c', dash: '5 4' }
         ];
         function graficasConsumo() {
-            const filas = consumoPorPeriodo();
+            const filas = consumoPorPeriodo(true);
             // Acumulado desde el primer periodo en que las tres líneas tienen dato, para comparar parejo;
             // cada línea se corta en su primer periodo sin dato (no se rellena con ceros).
             let ini = filas.findIndex(f => SERIES.every(s => f[s.k] !== null));
@@ -513,7 +530,7 @@
                 ${opc.ocultables && ocultos.size ? `<button class="btn-mini mostrar-todos">Mostrar todos (${ocultos.size} oculto${ocultos.size > 1 ? 's' : ''})</button>` : ''}
                 <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
                     ${ticks.map(v => `<line x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="${izq - 6}" y="${y(v) + 3}" text-anchor="end">${opc.eje ? opc.eje(v) : numero(v)}</text>`).join('')}
-                    ${opc.mensual ? ejeMensual() : pers.map((p, i) => i % etiquetaCada === 0 || i === pers.length - 1 ? `<text x="${x(t[i])}" y="${H - 6}" text-anchor="middle">${mesCorto(p.fechaLectura)}</text>` : '').join('')}
+                    ${opc.mensual ? ejeMensual() : pers.map((p, i) => (i % etiquetaCada === 0 && pers.length - 1 - i >= etiquetaCada) || i === pers.length - 1 ? `<text x="${x(t[i])}" y="${H - 6}" text-anchor="middle">${mesCorto(p.fechaLectura)}</text>` : '').join('')}
                     <line class="guia" x1="0" x2="0" y1="${arriba}" y2="${H - abajo}"/>
                     ${orden.map(s => `<g class="linea-s${s.fondo ? ' fondo' : ''}" data-k="${esc(s.k)}">${tramos(valores[s.k]).map(tr => tr.length === 1
                         ? `<circle cx="${tr[0][0]}" cy="${tr[0][1]}" r="3" fill="${s.color}"/>`
@@ -590,19 +607,9 @@
         // 8 colores distintos; del noveno en adelante se repiten con línea punteada para distinguirlos
         const COLORES_LOCALES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
         function graficaPorLocal() {
-            // Las lecturas de locales más nuevas que el último periodo de SIAPA (el recibo llega semanas después) también se grafican:
-            // se agrega un periodo provisional por cada tanda de lecturas, con los días desde el periodo anterior.
-            const ultSiapa = periodos[periodos.length - 1];
-            const provisionales = [];
-            if (ultSiapa) {
-                [...new Set(lecturas.filter(l => l.fecha && !esMTO(l) && !esPropio(l) && l.fecha > ultSiapa.fechaLectura && dias(l.fecha, ultSiapa.fechaLectura) > 20).map(l => l.fecha))].sort().forEach(f => {
-                    const prev = provisionales[provisionales.length - 1];
-                    if (prev && dias(f, prev.fechaLectura) <= 20) return;   // misma tanda de lecturas
-                    provisionales.push({ fechaLectura: f, dias: Math.round(dias(f, (prev || ultSiapa).fechaLectura)), provisional: true });
-                });
-            }
+            const provisionales = periodosProvisionales();
             const todos = [...periodos, ...provisionales];
-            const perDe = fecha => provisionales.find(q => dias(q.fechaLectura, fecha) <= 20) || periodoDe(fecha);
+            const perDe = fecha => periodoAmpliado(fecha, provisionales);
             const porTubo = {};
             lecturas.forEach(l => {
                 if (!l.fecha || esMTO(l) || esPropio(l) || typeof l.consumo !== 'number' || lecturaDudosa(l)) return;
@@ -674,9 +681,10 @@
         // Tarifa cobrada de un periodo = el costo por m³ más usado en las lecturas de locales asignadas a ese periodo.
         function costoPorM3() {
             const cuenta = {};
+            const provsCosto = periodosProvisionales();
             lecturas.forEach(l => {
                 if (!l.fecha || esMTO(l) || esPropio(l) || typeof l.costoM3 !== 'number' || !(l.costoM3 > 0)) return;
-                const p = periodoDe(l.fecha);
+                const p = periodoAmpliado(l.fecha, provsCosto);
                 if (!p) return;
                 const c = cuenta[p.fechaLectura] = cuenta[p.fechaLectura] || {};
                 const k = l.costoM3.toFixed(2);
@@ -693,12 +701,17 @@
             const cobradas = lecturas.filter(l => l.fecha && !esMTO(l) && !esPropio(l) && !lecturaDudosa(l)
                 && typeof l.consumo === 'number' && l.consumo > 0 && typeof l.importe === 'number' && !(l.consumo === l.lectura && l.lectura > 5));
             const histCobro = cobradas.reduce((a, l) => a + l.importe, 0) / (cobradas.reduce((a, l) => a + l.consumo, 0) || 1);
-            const valores = { siapa: filas.map(f => f.siapa), cobro: filas.map(f => f.cobro), histSiapa: filas.map(() => histSiapa), histCobro: filas.map(() => histCobro) };
+            // Para la gráfica, los periodos provisionales (lecturas sin recibo) solo aportan lo que cobras
+            const filasG = [...filas, ...provsCosto.map(p => {
+                const c = cuenta[p.fechaLectura];
+                return { p, siapa: null, cobro: c ? +Object.entries(c).sort((a, b) => b[1] - a[1])[0][0] : null };
+            })];
+            const valores = { siapa: filasG.map(f => f.siapa), cobro: filasG.map(f => f.cobro), histSiapa: filasG.map(() => histSiapa), histCobro: filasG.map(() => histCobro) };
             const ult12 = filas.slice(-12);
             const m3_12 = ult12.reduce((a, f) => a + f.p.m3, 0), imp12 = ult12.reduce((a, f) => a + f.p.importe, 0);
             graficaLineas('gCosto', 'Costo por m³ (con IVA)',
                 `SIAPA: importe del periodo entre los m³ facturados (incluye alcantarillado, saneamiento, descarga e IVA). Tú: costo por m³ con que se grabaron las lecturas de los locales de ese periodo. Punteadas: promedio de todo el histórico, ponderado por m³ (SIAPA ${dinero(histSiapa)}, tú ${dinero(histCobro)}; ${dinero(histSiapa - histCobro)} menos por m³). Últimos 12 periodos: SIAPA ${dinero(imp12 / m3_12)} por m³; en Lecturas de agua el costo para lecturas nuevas es ${dinero(tarifa)}.`,
-                periodos, valores, v => dinero(v),
+                filasG.map(f => f.p), valores, v => dinero(v),
                 [{ k: 'siapa', nombre: 'Costo SIAPA por m³', corto: 'SIAPA', color: '#1f4e79', dash: '' },
                  { k: 'cobro', nombre: 'Lo que cobras por m³', corto: 'Cobras', color: '#13855c', dash: '' },
                  { k: 'histSiapa', nombre: `Promedio histórico SIAPA (${dinero(histSiapa)})`, corto: `Prom. SIAPA ${dinero(histSiapa)}`, color: '#1f4e79', dash: '6 4' },
