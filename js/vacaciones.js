@@ -1,6 +1,6 @@
 // Vacaciones del personal. Se capturan en el Calendario (calendario_eventos, tipo «vacaciones», con personaId)
 // y Personal las cuenta. Los usan calendarios/index.html y personal/index.html.
-import { esFeriado } from './feriados.js?v=20261015-5';
+import { esFeriado } from './feriados.js?v=20261023-1';
 
 const DESCANSO_DEFAULT = [0]; // domingo
 const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();

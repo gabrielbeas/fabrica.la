@@ -150,7 +150,7 @@ export function getSeccionesPermitidas() {
   const role = getCurrentUserRole();
   const b = basePath();
 
-  // Mismo orden que las tarjetas de Inicio. Configuración y SIAPA no van en el menú: se entra desde su tarjeta.
+  // Mismo orden que las tarjetas de Inicio. Configuración no va en el menú: se entra desde su tarjeta. SIAPA va a la derecha de Lecturas de agua (solo admin).
   const todas = {
     inicio:      { id: 'inicio',      nombre: 'Inicio',           url: b },
     directorio:  { id: 'directorio',  nombre: 'Directorio',       url: b + '#directorio' },
@@ -159,6 +159,7 @@ export function getSeccionesPermitidas() {
     facturacion: { id: 'facturacion', nombre: 'Facturación',      url: b + 'facturacion/' },
     cajaChica:   { id: 'cajaChica',   nombre: 'Caja Chica',       url: b + 'caja-chica/' },
     agua:        { id: 'agua',        nombre: 'Lecturas de agua', url: b + 'agua/lecturas.html' },
+    siapa:       { id: 'siapa',       nombre: 'SIAPA',            url: b + 'agua/siapa.html' },
     bitacora:    { id: 'bitacora',    nombre: 'Bitácora',         url: b + 'bitacora/' },
     calendarios: { id: 'calendarios', nombre: 'Calendario',       url: b + 'calendarios/' },
     personal:    { id: 'personal',    nombre: 'Personal',         url: b + 'personal/' },
@@ -169,7 +170,7 @@ export function getSeccionesPermitidas() {
   };
 
   const porRol = {
-    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'depositos', 'pagosMensuales', 'cajaChica', 'compras', 'agua', 'bitacora', 'calendarios', 'cfe', 'personal'],
+    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'depositos', 'pagosMensuales', 'cajaChica', 'compras', 'agua', 'siapa', 'bitacora', 'calendarios', 'cfe', 'personal'],
     operario: ['inicio', 'cajaChica', 'compras', 'agua', 'bitacora', 'calendarios']
   };
 

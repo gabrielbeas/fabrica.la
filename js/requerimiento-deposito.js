@@ -1,9 +1,9 @@
 // Requerimiento de cobro del saldo del depósito en garantía (PDF vía impresión).
 // Lo usan la carátula y la sección Depósitos. Los datos bancarios salen de config_cobro/cuenta (solo Firestore).
-import { db, getCurrentUser } from './auth.js?v=20261015-5';
+import { db, getCurrentUser } from './auth.js?v=20261023-1';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261013-1';
-import { cuentaDeposito } from './depositos.js?v=20261015-5';
+import { cuentaDeposito } from './depositos.js?v=20261023-1';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
