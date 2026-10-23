@@ -87,6 +87,17 @@
         .modal-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--tinta); padding-bottom: 14px; margin-bottom: 18px; }
         .modal-cab .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
         .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
+        .titulo-maestro { font-size: 15px; font-weight: 900; margin: 26px 0 4px; }
+        .nota-maestro { font-size: 12px; color: var(--tinta-suave); margin: 0 0 10px; }
+        .comparacion { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 18px; }
+        .comparacion div { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; }
+        .comparacion span { display: block; font-size: 11px; color: var(--tinta-suave); }
+        .comparacion strong { display: block; font-size: 16px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .comparacion small { display: block; margin-top: 2px; font-size: 11px; color: var(--tinta-suave); }
+        .comparacion .alerta-dif { background: var(--atencion-suave); border-color: var(--atencion); }
+        .comparacion .alerta-dif small { color: var(--atencion); font-weight: 600; }
+        .comparacion + .nota-maestro { margin-top: 0; }
+        @media (max-width: 700px) { .comparacion { grid-template-columns: repeat(2, 1fr); } }
         .resumen-h { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
         .resumen-h div { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; }
         .resumen-h span { display: block; font-size: 11px; color: var(--tinta-suave); }
@@ -249,7 +260,7 @@
                         <tbody id="filas"></tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4">Total</td>
+                                <td colspan="4">Total de los medidores (sin el maestro)</td>
                                 <td class="num" id="totalConsumo">-</td>
                                 <td class="pesos"></td>
                                 <td class="num pesos" id="totalImporte">-</td>
@@ -257,6 +268,26 @@
                         </tfoot>
                     </table>
                 </div>
+
+                <h2 class="titulo-maestro">Medidor maestro</h2>
+                <p class="nota-maestro">Es la entrada general: no se suma en el total de arriba. Se compara con la suma de todos los demás medidores y, en teoría, deben ser casi iguales.</p>
+                <div class="tabla-wrap">
+                    <table class="tabla-movil">
+                        <thead>
+                            <tr>
+                                <th>Tubo</th>
+                                <th>Empresa</th>
+                                <th class="num">Lectura anterior (m³)</th>
+                                <th class="num">Lectura actual (m³)</th>
+                                <th class="num">Consumo (m³)</th>
+                                <th class="num pesos">Costo m³</th>
+                                <th class="num pesos">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filaMaestro"></tbody>
+                    </table>
+                </div>
+                <div class="comparacion" id="comparacion"></div>
 
                 <div class="acciones">
                     <button class="btn" id="guardar">Guardar lecturas</button>
@@ -280,10 +311,12 @@
             return isNaN(v) ? 0 : v;
         }
 
+        const TUBO_MAESTRO = 'MTO';
+        const UMBRAL_DIF = 5;   // % de diferencia entre el maestro y la suma a partir del cual se marca para revisar
         function dibujarFilas() {
             const fecha = document.getElementById('fecha').value;
-            const tbody = document.getElementById('filas');
-            tbody.innerHTML = medidores.map(m => {
+            const tbody = document.getElementById('filas'), tbodyM = document.getElementById('filaMaestro');
+            const htmlFila = m => {
                 const ant = lecturaAnterior(m.id, fecha);
                 const existente = lecturaEnFecha(m.id, fecha);
                 const bloqueada = !puedeCorregir(existente);
@@ -299,9 +332,11 @@
                         <td class="num pesos" id="costo-${m.id}">-</td>
                         <td class="num pesos" id="importe-${m.id}">-</td>
                     </tr>`;
-            }).join('');
-            tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
-            tbody.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => eliminarLectura(b.dataset.borrar)));
+            };
+            tbody.innerHTML = medidores.filter(m => m.id !== TUBO_MAESTRO).map(htmlFila).join('');
+            tbodyM.innerHTML = medidores.filter(m => m.id === TUBO_MAESTRO).map(htmlFila).join('');
+            document.querySelectorAll('#filas input, #filaMaestro input').forEach(inp => inp.addEventListener('input', () => recalcular(inp.dataset.tubo)));
+            document.querySelectorAll('#filas [data-borrar], #filaMaestro [data-borrar]').forEach(b => b.addEventListener('click', () => eliminarLectura(b.dataset.borrar)));
             // Filas con histórico: clic en cualquier parte de la fila (menos el campo de captura y botones)
             medidores.forEach(m => {
                 const fila = document.getElementById(`fila-${m.id}`);
@@ -536,14 +571,32 @@
         }
 
         function totales() {
-            let c = 0, i = 0;
-            medidores.forEach(m => {
+            let c = 0, i = 0, locales = 0, propio = 0;
+            medidores.filter(m => m.id !== TUBO_MAESTRO).forEach(m => {
                 const r = calcular(m.id);
-                if (typeof r.consumo === 'number') c += r.consumo;
+                if (typeof r.consumo === 'number') { c += r.consumo; if (m.id === 'SG') propio += r.consumo; else locales += r.consumo; }
                 if (typeof r.importe === 'number') i += r.importe;
             });
             document.getElementById('totalConsumo').textContent = fmt(c);
             document.getElementById('totalImporte').textContent = dinero(i);
+            comparacionMaestro(c, locales, propio);
+        }
+
+        // Maestro contra la suma de los demás medidores (locales + servicios generales)
+        function comparacionMaestro(suma, locales, propio) {
+            const el = document.getElementById('comparacion');
+            if (!el) return;
+            if (!medidores.some(m => m.id === TUBO_MAESTRO)) { el.innerHTML = ''; return; }
+            const maestro = calcular(TUBO_MAESTRO).consumo;
+            if (typeof maestro !== 'number') { el.innerHTML = '<p class="nota-maestro">Captura la lectura del maestro para ver la diferencia contra la suma de los demás medidores.</p>'; return; }
+            const dif = Math.round((maestro - suma) * 1000) / 1000;
+            const pct = maestro > 0 ? (dif / maestro) * 100 : null;
+            const lejos = pct !== null && Math.abs(pct) > UMBRAL_DIF;
+            const signo = n => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+            el.innerHTML = `<div class="${lejos ? 'alerta-dif' : ''}"><span>Maestro</span><strong>${fmt(maestro)} m³</strong></div>
+                <div><span>Suma de los demás medidores</span><strong>${fmt(suma)} m³</strong><small>locales ${fmt(locales)} · servicios generales ${fmt(propio)}</small></div>
+                <div class="${lejos ? 'alerta-dif' : ''}"><span>Diferencia (maestro − suma)</span><strong>${signo(dif)} m³</strong><small>${pct === null ? '' : `${fmt(Math.abs(pct), 1)} % ${dif >= 0 ? 'más en el maestro' : 'más en la suma'}`}</small></div>
+                <div class="${lejos ? 'alerta-dif' : ''}"><span>Relación suma / maestro</span><strong>${maestro > 0 ? fmt((suma / maestro) * 100, 1) + ' %' : '-'}</strong><small>${lejos ? `Revisa: la diferencia pasa de ${UMBRAL_DIF} %` : 'Casi 1 a 1'}</small></div>`;
         }
 
         function mensaje(texto, cls) {
