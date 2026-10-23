@@ -63,7 +63,19 @@
         .tabla-ley th .flecha { font-size: 9px; margin-left: 4px; opacity: .4; }
         .tabla-ley th.act .flecha { opacity: 1; }
         .tabla-ley td { padding: 6px 10px; white-space: nowrap; }
-        .tabla-ley td:nth-child(4) { white-space: normal; min-width: 200px; }
+        /* Columnas de ancho fijo: interruptor, color, local, tubo, locatario (el resto del espacio), cuatro de m³ y «Desde» */
+        .tabla-ley table { table-layout: fixed; min-width: 860px; }
+        .tabla-ley th { vertical-align: middle; }
+        .tabla-ley th:nth-child(1), .tabla-ley td:nth-child(1) { width: 52px; padding-left: 12px; padding-right: 4px; }
+        .tabla-ley th:nth-child(2), .tabla-ley td:nth-child(2) { width: 36px; padding-left: 4px; padding-right: 4px; }
+        .tabla-ley th:nth-child(3), .tabla-ley td:nth-child(3) { width: 96px; }
+        .tabla-ley th:nth-child(4), .tabla-ley td:nth-child(4) { width: 56px; }
+        .tabla-ley td:nth-child(5) { white-space: normal; }
+        .tabla-ley th:nth-child(n+6):nth-child(-n+9), .tabla-ley td:nth-child(n+6):nth-child(-n+9) { width: 104px; }
+        .tabla-ley th:nth-child(10), .tabla-ley td:nth-child(10) { width: 112px; }
+        .tabla-ley th.num .flecha { display: inline-block; width: 16px; margin-left: 3px; text-align: left; }
+        .tabla-ley td.num { padding-right: 29px; }
+        .tabla-ley td:nth-child(3), .tabla-ley td:nth-child(4) { color: var(--tinta); }
         .tabla-ley tr.ley { cursor: pointer; }
         .tabla-ley tr.ley:hover td { background: var(--ambar-suave); }
         .tabla-ley tr.ley.off td { opacity: .4; text-decoration: line-through; }
@@ -635,10 +647,10 @@
                             { k: 'local', t: 'Local', orden: f => parseInt(f.local) || 999 },
                             { k: 'tubo', t: 'Tubo', orden: f => parseInt(f.tubo) || 999 },
                             { k: 'nombre', t: 'Locatario', texto: true },
-                            { k: 'm12', t: 'm³ últimos 12 periodos', num: true, fmt: m3 },
-                            { k: 'prom', t: 'Promedio por 30 días', num: true, fmt: m3 },
-                            { k: 'ultimo', t: 'Último periodo (30 días)', num: true, fmt: m3 },
-                            { k: 'total', t: 'Total desde el inicio', num: true, fmt: m3 },
+                            { k: 'm12', t: 'm³ últimos 12 periodos', corto: 'm³ 12 periodos', num: true, fmt: m3 },
+                            { k: 'prom', t: 'Promedio por 30 días', corto: 'Prom. por 30 días', num: true, fmt: m3 },
+                            { k: 'ultimo', t: 'Último periodo (30 días)', corto: 'Último (30 días)', num: true, fmt: m3 },
+                            { k: 'total', t: 'Total desde el inicio', corto: 'Total del inicio', num: true, fmt: m3 },
                             { k: 'desde', t: 'Desde', fmt: v => v ? fechaCorta(v) : '<span class="gris">Todo el histórico</span>', orden: f => f.desde || '' }
                         ]
                     }
@@ -841,7 +853,7 @@
                 return (typeof x === 'string' ? x.localeCompare(y, 'es', { numeric: true }) : x - y) * o.dir;
             });
             return `<div class="tabla-ley"><table>
-                <thead><tr><th class="sw-th"><label class="switch sw-todos" title="${ocultos.size < series.length ? 'Apagar todos' : 'Prender todos'}"><input type="checkbox" ${ocultos.size === 0 ? 'checked' : ''}><span class="slider"></span></label></th><th></th>${tabla.columnas.map(c => `<th data-col="${c.k}"${c.num ? ' data-num="1" class="num' : ' class="'}${c.k === o.col ? ' act' : ''}" title="Ordenar por ${c.t.toLowerCase()}">${c.t}<span class="flecha">${c.k === o.col ? (o.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`).join('')}</tr></thead>
+                <thead><tr><th class="sw-th"><label class="switch sw-todos" title="${ocultos.size < series.length ? 'Apagar todos' : 'Prender todos'}"><input type="checkbox" ${ocultos.size === 0 ? 'checked' : ''}><span class="slider"></span></label></th><th></th>${tabla.columnas.map(c => `<th data-col="${c.k}"${c.num ? ' data-num="1" class="num' : ' class="'}${c.k === o.col ? ' act' : ''}" title="Ordenar por ${c.t.toLowerCase()}">${c.corto || c.t}<span class="flecha">${c.k === o.col ? (o.dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`).join('')}</tr></thead>
                 <tbody>${filas.map(s => { const f = tabla.filas[s.k]; return `<tr class="ley${ocultos.has(s.k) ? ' off' : ''}" data-k="${esc(s.k)}" title="Clic para ocultar o mostrar la línea">
                     <td class="sw-td"><span class="switch"><input type="checkbox" tabindex="-1" ${ocultos.has(s.k) ? '' : 'checked'}><span class="slider"></span></span></td>
                     <td>${muestra(s)}</td>
