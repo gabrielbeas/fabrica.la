@@ -572,7 +572,7 @@
                 let extra = '';
                 if (conDiferencia && valores.siapa && valores.locales && valores.siapa[i] !== null && valores.locales[i] !== null)
                     extra = `<br><span class="gris">Sin medidor (SIAPA − locales − Servicios Generales): ${fmt(valores.siapa[i] - valores.locales[i] - (valores.propio?.[i] || 0))}</span>`;
-                tip.innerHTML = `<strong>${mesLargo(pers[i].fechaLectura)}</strong><span class="gris">Lectura de SIAPA del ${fechaCorta(pers[i].fechaLectura)}</span><br>`
+                tip.innerHTML = `<strong>${mesLargo(pers[i].fechaLectura)}</strong><span class="gris">${pers[i].provisional ? 'Lectura del' : 'Lectura de SIAPA del'} ${fechaCorta(pers[i].fechaLectura)}${pers[i].provisional ? ' (aún sin recibo de SIAPA)' : ''}</span><br>`
                     + filasTip.map(f => `${muestra(f.s)}${esc(f.s.nombre)}: ${f.v === null ? '<span class="gris">sin dato</span>' : fmt(f.v)}`).join('<br>')
                     + extra;
                 tip.style.display = 'block';
@@ -590,11 +590,24 @@
         // 8 colores distintos; del noveno en adelante se repiten con línea punteada para distinguirlos
         const COLORES_LOCALES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
         function graficaPorLocal() {
+            // Las lecturas de locales más nuevas que el último periodo de SIAPA (el recibo llega semanas después) también se grafican:
+            // se agrega un periodo provisional por cada tanda de lecturas, con los días desde el periodo anterior.
+            const ultSiapa = periodos[periodos.length - 1];
+            const provisionales = [];
+            if (ultSiapa) {
+                [...new Set(lecturas.filter(l => l.fecha && !esMTO(l) && !esPropio(l) && l.fecha > ultSiapa.fechaLectura && dias(l.fecha, ultSiapa.fechaLectura) > 20).map(l => l.fecha))].sort().forEach(f => {
+                    const prev = provisionales[provisionales.length - 1];
+                    if (prev && dias(f, prev.fechaLectura) <= 20) return;   // misma tanda de lecturas
+                    provisionales.push({ fechaLectura: f, dias: Math.round(dias(f, (prev || ultSiapa).fechaLectura)), provisional: true });
+                });
+            }
+            const todos = [...periodos, ...provisionales];
+            const perDe = fecha => provisionales.find(q => dias(q.fechaLectura, fecha) <= 20) || periodoDe(fecha);
             const porTubo = {};
             lecturas.forEach(l => {
                 if (!l.fecha || esMTO(l) || esPropio(l) || typeof l.consumo !== 'number' || lecturaDudosa(l)) return;
                 if (l.consumo === l.lectura && l.lectura > 5) return;
-                const p = periodoDe(l.fecha);
+                const p = perDe(l.fecha);
                 if (!p) return;
                 const k = String(l.tubo);
                 // Cada local empieza en el inicio de su contrato (antes era otro locatario o el local vacío)
@@ -604,8 +617,8 @@
             });
             const tubos = Object.keys(porTubo);
             if (!tubos.length) { document.getElementById('gLocal').innerHTML = '<p class="vacio">Sin lecturas de locales.</p>'; return; }
-            const ini = periodos.findIndex(p => tubos.some(k => porTubo[k][p.fechaLectura] !== undefined));
-            const pers = periodos.slice(Math.max(0, ini));
+            const ini = todos.findIndex(p => tubos.some(k => porTubo[k][p.fechaLectura] !== undefined));
+            const pers = todos.slice(Math.max(0, ini));
             const ultimos = pers.slice(-12).map(p => p.fechaLectura);
             const total12 = k => ultimos.reduce((s, f) => s + (porTubo[k][f] || 0), 0);
             const orden = tubos.sort((a, b) => total12(b) - total12(a));
