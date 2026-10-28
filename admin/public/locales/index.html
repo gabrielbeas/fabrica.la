@@ -88,6 +88,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261023-1';
@@ -291,16 +292,16 @@
                     <div class="lf-campo"><label for="g_contraparte">Contraparte</label><input id="g_contraparte" value="${esc(c.contraparte)}"></div>
                     <div class="lf-campo"><label for="g_concepto">Concepto</label><input id="g_concepto" value="${esc(c.concepto)}"></div>
                     ${c.tipo === 'prestamo' ? `
-                        <div class="lf-campo"><label for="g_capital">Capital del préstamo ($)</label><input id="g_capital" class="lf-num" inputmode="decimal" value="${num(c.capital)}"></div>
+                        <div class="lf-campo"><label for="g_capital">Capital del préstamo ($)</label><input id="g_capital" data-dinero class="lf-num" inputmode="decimal" value="${num(c.capital)}"></div>
                         <div class="lf-campo"><label for="g_tasa">Tasa anual (%)</label><input id="g_tasa" class="lf-num" inputmode="decimal" value="${typeof c.tasaAnual === 'number' ? +(c.tasaAnual * 100).toFixed(4) : ''}"></div>` : `
                         <div class="lf-campo"><label for="g_pct">Porcentaje sobre el total de rentas (%)</label><input id="g_pct" class="lf-num" inputmode="decimal" value="${typeof c.porcentaje === 'number' ? +(c.porcentaje * 100).toFixed(4) : ''}"></div>
                         <div class="lf-campo"><label for="g_periodo">Periodo</label><input id="g_periodo" value="${esc(c.periodo || '')}"></div>`}
                     <p class="grupo-gbd">Importes</p>
-                    <div class="lf-campo"><label for="g_subtotal">Subtotal</label><input id="g_subtotal" class="lf-num" inputmode="decimal" value="${num(c.subtotal)}"></div>
-                    <div class="lf-campo"><label for="g_iva">IVA</label><input id="g_iva" class="lf-num" inputmode="decimal" value="${num(c.iva)}"></div>
-                    <div class="lf-campo"><label for="g_retIsr">Retención ISR</label><input id="g_retIsr" class="lf-num" inputmode="decimal" value="${num(c.retIsr)}"></div>
-                    <div class="lf-campo"><label for="g_retIva">Retención IVA</label><input id="g_retIva" class="lf-num" inputmode="decimal" value="${num(c.retIva)}"></div>
-                    <div class="lf-campo"><label for="g_total">Total (automático)</label><input id="g_total" class="lf-num" readonly></div>
+                    <div class="lf-campo"><label for="g_subtotal">Subtotal</label><input id="g_subtotal" data-dinero class="lf-num" inputmode="decimal" value="${num(c.subtotal)}"></div>
+                    <div class="lf-campo"><label for="g_iva">IVA</label><input id="g_iva" data-dinero class="lf-num" inputmode="decimal" value="${num(c.iva)}"></div>
+                    <div class="lf-campo"><label for="g_retIsr">Retención ISR</label><input id="g_retIsr" data-dinero class="lf-num" inputmode="decimal" value="${num(c.retIsr)}"></div>
+                    <div class="lf-campo"><label for="g_retIva">Retención IVA</label><input id="g_retIva" data-dinero class="lf-num" inputmode="decimal" value="${num(c.retIva)}"></div>
+                    <div class="lf-campo"><label for="g_total">Total (automático)</label><input id="g_total" data-dinero class="lf-num" readonly></div>
                     <div class="lf-campo lf-ancho"><label for="g_correos">Enviar a (un correo por renglón)</label><textarea id="g_correos" rows="4">${esc((c.correos || []).join('\n'))}</textarea></div>
                 </div>
                 <div class="lf-modal-pie"><span id="g_msg" style="margin-right:auto;font-size:13px;color:var(--peligro)"></span><button class="lf-btn" data-cerrar>Cancelar</button><button class="lf-btn lf-btn-primario" id="g_guardar">Guardar</button></div>

@@ -124,6 +124,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { getCurrentUser, isAuthenticated, esAdmin, db, auth } from '../../../js/auth.js?v=20261023-1';
         import {
             collection, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch, serverTimestamp
@@ -236,7 +237,7 @@
                     <div class="campo pesos">
                         <label for="costo">Costo para lecturas nuevas (m³, IVA incluido)</label>
                         ${admin
-                            ? `<input type="number" id="costo" step="0.01" min="0" value="${costoM3}" style="width:120px">`
+                            ? `<input type="number" data-dinero id="costo" step="0.01" min="0" value="${costoM3}" style="width:120px">`
                             : `<div class="costo-fijo">${dinero(costoM3)}</div>`}
                     </div>
                     ${admin ? `<button class="btn-sec" id="guardarCosto">Guardar costo</button>` : ''}

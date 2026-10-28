@@ -92,7 +92,7 @@
     <div class="form">
       <div class="field"><label for="tipo">Tipo</label><select id="tipo" class="select"><option value="gasto">Gasto</option><option value="entrada">Reposición / entrada</option></select></div>
       <div class="field"><label for="fecha">Fecha</label><input class="input" id="fecha" type="date"></div>
-      <div class="field"><label for="importe">Importe (MXN)</label><input class="input" id="importe" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div class="field"><label for="importe">Importe (MXN)</label><input class="input" id="importe" data-dinero type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="$0.00"></div>
       <div class="field"><label for="categoria">Categoría</label><select class="select" id="categoria"></select></div>
       <div class="field full"><label for="proveedor">Proveedor (nombre del establecimiento)</label><input class="input" id="proveedor" maxlength="120" placeholder="Nombre del establecimiento"></div>
       <div class="field full"><label for="descripcion">Descripción</label><input class="input" id="descripcion" maxlength="180" placeholder="¿Qué se pagó o recibió?"></div>
@@ -115,14 +115,14 @@
 
   <div class="modal-bg" id="corteModal" role="dialog" aria-modal="true" aria-labelledby="corteTitulo"><section class="modal">
     <div class="modal-head"><h2 id="corteTitulo">Registrar corte de caja</h2><button class="close" data-close="corteModal" aria-label="Cerrar">×</button></div>
-    <div class="form"><div class="field"><label for="corteCuenta">Cuenta</label><select class="select" id="corteCuenta"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta (incluye transferencias)</option></select></div><div class="field"><label for="corteFecha">Fecha</label><input class="input" id="corteFecha" type="date"></div><div class="field"><label for="corteSaldo">Saldo esperado</label><input class="input" id="corteSaldo" type="number" readonly></div><div class="field"><label for="efectivoContado" id="contadoLabel">Efectivo contado (MXN)</label><input class="input" id="efectivoContado" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="field"><label for="diferencia">Diferencia</label><input class="input" id="diferencia" type="number" readonly></div><div class="field full"><label for="notaCorte">Nota (opcional)</label><textarea class="input" id="notaCorte" rows="2" maxlength="500" placeholder="Explica la diferencia, si la hay"></textarea></div></div>
+    <div class="form"><div class="field"><label for="corteCuenta">Cuenta</label><select class="select" id="corteCuenta"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta (incluye transferencias)</option></select></div><div class="field"><label for="corteFecha">Fecha</label><input class="input" id="corteFecha" type="date"></div><div class="field"><label for="corteSaldo">Saldo esperado</label><input class="input" id="corteSaldo" data-dinero type="number" readonly></div><div class="field"><label for="efectivoContado" id="contadoLabel">Efectivo contado (MXN)</label><input class="input" id="efectivoContado" data-dinero type="number" min="0" step="0.01" inputmode="decimal" placeholder="$0.00"></div><div class="field"><label for="diferencia">Diferencia</label><input class="input" id="diferencia" data-dinero type="number" readonly></div><div class="field full"><label for="notaCorte">Nota (opcional)</label><textarea class="input" id="notaCorte" rows="2" maxlength="500" placeholder="Explica la diferencia, si la hay"></textarea></div></div>
     <div class="modal-msg" id="corteError" role="status"></div><div class="modal-actions"><button class="btn" data-close="corteModal">Cancelar</button><button class="btn btn-primary" id="guardarCorte">Guardar corte</button></div>
   </section></div>
 
   <div class="modal-bg" id="saldoModal" role="dialog" aria-modal="true" aria-labelledby="saldoTitulo"><section class="modal">
     <div class="modal-head"><h2 id="saldoTitulo">Saldos iniciales</h2><button class="close" data-close="saldoModal" aria-label="Cerrar">×</button></div>
     <p class="sub" style="margin:0 0 14px">Captura el saldo real de cada cuenta al iniciar el control. No se agrega ningún valor automáticamente.</p>
-    <div class="form"><div class="field"><label for="saldoInicial">Saldo inicial de efectivo (MXN)</label><input class="input" id="saldoInicial" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="field"><label for="saldoInicialTarjeta">Saldo inicial de tarjeta (MXN)</label><input class="input" id="saldoInicialTarjeta" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="field"><label for="fechaInicio">Fecha de inicio</label><input class="input" id="fechaInicio" type="date"></div></div>
+    <div class="form"><div class="field"><label for="saldoInicial">Saldo inicial de efectivo (MXN)</label><input class="input" id="saldoInicial" data-dinero type="number" min="0" step="0.01" inputmode="decimal" placeholder="$0.00"></div><div class="field"><label for="saldoInicialTarjeta">Saldo inicial de tarjeta (MXN)</label><input class="input" id="saldoInicialTarjeta" data-dinero type="number" min="0" step="0.01" inputmode="decimal" placeholder="$0.00"></div><div class="field"><label for="fechaInicio">Fecha de inicio</label><input class="input" id="fechaInicio" type="date"></div></div>
     <div class="modal-msg" id="saldoError" role="status"></div><div class="modal-actions"><button class="btn" data-close="saldoModal">Cancelar</button><button class="btn btn-primary" id="guardarSaldo">Guardar saldos iniciales</button></div>
   </section></div>
 
@@ -148,6 +148,7 @@
   <script type="module">
     import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
     import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+    import '../../../js/dinero-input.js?v=20261028-1';
     import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261023-1';
     import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
     import { collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, writeBatch, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';

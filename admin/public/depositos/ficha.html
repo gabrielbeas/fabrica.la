@@ -68,6 +68,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261023-1';
         import { requerimientoDeposito, emailRequerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-10';
@@ -136,7 +137,7 @@
                             <h2>Registrar pago</h2>
                             <div class="campo">
                                 <div><label for="p_fecha">Fecha</label><input id="p_fecha" type="date" value="${iso(new Date())}"></div>
-                                <div><label for="p_monto">Monto</label><input id="p_monto" inputmode="decimal" placeholder="0.00"></div>
+                                <div><label for="p_monto">Monto</label><input id="p_monto" data-dinero inputmode="decimal" placeholder="$0.00"></div>
                                 <div><label for="p_tipo">Tipo</label><select id="p_tipo"><option value="directo">Directo (suma)</option><option value="asignado">Asignado (suma)</option><option value="compartido">Compartido (no suma)</option></select></div>
                                 <div><label for="p_banco">Banco</label><input id="p_banco" placeholder="BBVA LFDC, Efectivo…"></div>
                                 <div><label for="p_pago">Quién pagó</label><input id="p_pago" value="${esc(c.razonSocial || '')}"></div>

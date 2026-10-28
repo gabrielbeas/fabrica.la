@@ -66,6 +66,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { ESTADOS, mesTxt, dinero, esc, r2, ordenLocales, rentaDelMes, calcGBD, conceptoGBDTxt, normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261013-1';
@@ -248,12 +249,12 @@
             document.getElementById('editar').disabled = true;
             cont.innerHTML = `<div class="campos">
                     <div class="ancho"><label for="fg_concepto">Concepto</label><input id="fg_concepto" value="${esc(f.concepto)}"></div>
-                    <div><label for="fg_subtotal">Subtotal</label><input id="fg_subtotal" inputmode="decimal" value="${num(f.subtotal)}"></div>
-                    <div><label for="fg_iva">IVA</label><input id="fg_iva" inputmode="decimal" value="${num(f.iva)}"></div>
-                    <div><label for="fg_retIsr">Retención ISR</label><input id="fg_retIsr" inputmode="decimal" value="${num(f.retIsr)}"></div>
-                    <div><label for="fg_retIva">Retención IVA</label><input id="fg_retIva" inputmode="decimal" value="${num(f.retIva)}"></div>
+                    <div><label for="fg_subtotal">Subtotal</label><input id="fg_subtotal" data-dinero inputmode="decimal" value="${num(f.subtotal)}"></div>
+                    <div><label for="fg_iva">IVA</label><input id="fg_iva" data-dinero inputmode="decimal" value="${num(f.iva)}"></div>
+                    <div><label for="fg_retIsr">Retención ISR</label><input id="fg_retIsr" data-dinero inputmode="decimal" value="${num(f.retIsr)}"></div>
+                    <div><label for="fg_retIva">Retención IVA</label><input id="fg_retIva" data-dinero inputmode="decimal" value="${num(f.retIva)}"></div>
                     <div><label for="fg_mora">Moratorios (% del subtotal, 0 = sin moratorios)</label><input id="fg_mora" inputmode="decimal" value="${+((f.moratoriosPct || 0) * 100).toFixed(4)}"></div>
-                    <div><label for="fg_total">Total (automático)</label><input id="fg_total" readonly></div>
+                    <div><label for="fg_total">Total (automático)</label><input id="fg_total" data-dinero readonly></div>
                     <div><label for="fg_fecha">Fecha de pago</label><input id="fg_fecha" type="date" value="${esc(f.fechaPago || '')}"></div>
                     <div class="ancho"><label for="fg_correos">Enviar a (un correo por renglón)</label><textarea id="fg_correos" rows="4">${esc((f.correos || []).join('\n'))}</textarea></div>
                     <div class="ancho"><label for="fg_notas">Notas</label><textarea id="fg_notas" rows="2">${esc(f.notas || '')}</textarea></div>

@@ -94,6 +94,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db, auth } from '../../../js/auth.js?v=20261023-1';
         import { collection, getDocs, getDoc, doc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
@@ -290,13 +291,13 @@
 
                     <div class="valor">
                         <div><div class="nom">Agua: costo por m³</div><div class="des">Con IVA incluido. También se puede cambiar en Lecturas de agua.</div></div>
-                        <div class="entrada"><span>$</span><input type="number" id="v_costo" step="0.01" min="0" value="${val.costoM3}"></div>
+                        <div class="entrada"><input type="number" data-dinero id="v_costo" step="0.01" min="0" value="${val.costoM3}"></div>
                         <div class="calc" id="c_costo"></div>
                     </div>
                     <div class="valor">
                         <div><div class="nom">Recolección de basura</div><div class="des">Subtotal mensual sin IVA. Se cobra a los locales que lo tienen activado en su ficha de facturación.</div>
                             <div class="chips">${conBasura.length ? conBasura.map(t => `<span>${esc(t)}</span>`).join('') : '<span>Ningún local</span>'}</div></div>
-                        <div class="entrada"><span>$</span><input type="number" id="v_basura" step="0.01" min="0" value="${val.basuraSubtotal}"></div>
+                        <div class="entrada"><input type="number" data-dinero id="v_basura" step="0.01" min="0" value="${val.basuraSubtotal}"></div>
                         <div class="calc" id="c_basura"></div>
                     </div>
                     <div class="valor">

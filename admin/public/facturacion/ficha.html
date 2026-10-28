@@ -73,6 +73,7 @@
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
@@ -308,7 +309,7 @@
                     ? `<input type="text" data-desc="${i}" placeholder="Descripción (opcional)" value="${esc(c.descripcion || '')}" style="margin-top:4px">` : '';
                 const subtotalCell = esMor
                     ? `<input type="number" step="0.01" min="0" data-pct="${i}" value="${r2((borrador.moratoriosPct || 0) * 100)}" style="width:70px"> %<span class="det">${dinero(c.subtotal)}</span>`
-                    : `<input type="number" step="0.01" data-sub="${i}" value="${c.subtotal ?? 0}">`;
+                    : `<input type="number" data-dinero step="0.01" data-sub="${i}" value="${c.subtotal ?? 0}">`;
                 return `<tr>
                     <td>${nombre}${detalle ? `<span class="det">${detalle}</span>` : ''}${extraDesc}</td>
                     <td class="num">${subtotalCell}</td>

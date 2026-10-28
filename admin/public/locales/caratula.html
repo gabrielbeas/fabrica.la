@@ -119,6 +119,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261013-1';
@@ -721,10 +722,10 @@
             ['incremento', 'Incremento de renta', 'fecha', 'Vigencia'],
             ['incrementoTipo', 'Tipo de incremento', 'texto', 'Vigencia'],
             ['fechaLimite', 'Fecha límite de pago', 'texto', 'Vigencia'],
-            ['total', 'Renta mensual (sin IVA)', 'numero', 'Renta'],
-            ['totalIva', 'Renta con IVA', 'numero', 'Renta'],
+            ['total', 'Renta mensual (sin IVA)', 'dinero', 'Renta'],
+            ['totalIva', 'Renta con IVA', 'dinero', 'Renta'],
             ['mantenimientoPct', 'Mantenimiento (%)', 'porcentaje', 'Renta'],
-            ['mantenimientoMonto', 'Mantenimiento ($)', 'numero', 'Renta'],
+            ['mantenimientoMonto', 'Mantenimiento ($)', 'dinero', 'Renta'],
             ['mesesDeposito', 'Meses de depósito', 'numero', 'Depósito'],
             ['mesesGracia', 'Meses de gracia', 'numero', 'Depósito'],
             ['porPagarNota', 'Nota de por pagar', 'texto', 'Depósito'],
@@ -766,7 +767,7 @@
                 <option value="terminacion_anticipada" ${c.estado === 'terminacion_anticipada' ? 'selected' : ''}>Terminación anticipada</option></select>`;
             if (tipo === 'lineas' || tipo === 'textarea') return `<textarea id="${id}" rows="${tipo === 'textarea' ? 4 : 3}">${val}</textarea>`;
             const t = tipo === 'fecha' ? 'date' : (tipo === 'numero' || tipo === 'porcentaje') ? 'number' : 'text';
-            return `<input id="${id}" type="${t}" ${t === 'number' ? 'step="any"' : ''} value="${val}">`;
+            return `<input id="${id}" type="${t}" ${tipo === 'dinero' ? 'data-dinero' : ''} ${t === 'number' ? 'step="any"' : ''} value="${val}">`;
         }
 
         function edicion(c) {
@@ -850,7 +851,7 @@
                 let v;
                 if (tipo === 'lista') v = raw ? raw.split(/[,;]+/).map(s => s.trim()).filter(Boolean) : [];
                 else if (tipo === 'lineas') v = raw ? raw.split('\n').map(s => s.trim()).filter(Boolean) : [];
-                else if (tipo === 'numero') v = raw === '' ? null : Number(raw);
+                else if (tipo === 'numero' || tipo === 'dinero') v = raw === '' ? null : Number(raw);
                 else if (tipo === 'porcentaje') v = raw === '' ? null : Number(raw) / 100;
                 else v = raw === '' ? null : raw;
                 if (typeof v === 'number' && isNaN(v)) throw new Error(`"${CAMPOS.find(x => x[0] === k)[1]}" no es un número válido`);

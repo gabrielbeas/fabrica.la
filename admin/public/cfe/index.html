@@ -124,16 +124,16 @@
                 <div class="lf-campo"><label for="r_lecturaActual">Lectura actual</label><input id="r_lecturaActual" class="lf-num" inputmode="numeric"></div>
                 <div class="lf-campo"><label for="r_kwh">Consumo (kWh)</label><input id="r_kwh" class="lf-num" inputmode="decimal"></div>
                 <p class="grupo">Desglose del periodo</p>
-                <div class="lf-campo"><label for="r_cargoFijo">Cargo fijo</label><input id="r_cargoFijo" class="lf-num" inputmode="decimal"></div>
-                <div class="lf-campo"><label for="r_energia">Energía</label><input id="r_energia" class="lf-num" inputmode="decimal"></div>
-                <div class="lf-campo"><label for="r_subtotal">Subtotal</label><input id="r_subtotal" class="lf-num" inputmode="decimal"></div>
-                <div class="lf-campo"><label for="r_iva">IVA 16%</label><input id="r_iva" class="lf-num" inputmode="decimal"></div>
-                <div class="lf-campo"><label for="r_total">Fac. del periodo</label><input id="r_total" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_cargoFijo">Cargo fijo</label><input id="r_cargoFijo" data-dinero class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_energia">Energía</label><input id="r_energia" data-dinero class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_subtotal">Subtotal</label><input id="r_subtotal" data-dinero class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_iva">IVA 16%</label><input id="r_iva" data-dinero class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_total">Fac. del periodo</label><input id="r_total" data-dinero class="lf-num" inputmode="decimal"></div>
                 <p class="grupo">Cuenta</p>
-                <div class="lf-campo"><label for="r_adeudoAnterior">Adeudo anterior</label><input id="r_adeudoAnterior" class="lf-num" inputmode="decimal"></div>
-                <div class="lf-campo"><label for="r_suPago">Su pago (negativo)</label><input id="r_suPago" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_adeudoAnterior">Adeudo anterior</label><input id="r_adeudoAnterior" data-dinero class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_suPago">Su pago (negativo)</label><input id="r_suPago" data-dinero class="lf-num" inputmode="decimal"></div>
                 <div class="lf-campo lf-ancho"><label for="r_ajustes">Otros renglones (opcional)</label><input id="r_ajustes" maxlength="200" placeholder="Ej. Depósito 3623.00; Crédito aplicado -187.12"></div>
-                <div class="lf-campo"><label for="r_totalAPagar">Total a pagar</label><input id="r_totalAPagar" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="r_totalAPagar">Total a pagar</label><input id="r_totalAPagar" data-dinero class="lf-num" inputmode="decimal"></div>
                 <p class="suma" id="rSuma"></p>
                 <div class="lf-campo lf-ancho">
                     <label>Recibo (PDF o foto, máximo 10 MB)</label>
@@ -158,7 +158,7 @@
             <p class="lf-subtitulo-pag" id="pSub"></p>
             <div class="lf-form">
                 <div class="lf-campo"><label for="p_fecha">Fecha de pago</label><input type="date" id="p_fecha"></div>
-                <div class="lf-campo"><label for="p_importe">Importe pagado</label><input id="p_importe" class="lf-num" inputmode="decimal"></div>
+                <div class="lf-campo"><label for="p_importe">Importe pagado</label><input id="p_importe" data-dinero class="lf-num" inputmode="decimal"></div>
                 <div class="lf-campo lf-ancho"><label for="p_nota">Nota (opcional)</label><input id="p_nota" maxlength="200" placeholder="Ej. transferencia, referencia"></div>
             </div>
             <div class="lf-modal-pie">
@@ -196,6 +196,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { auth, db, isAuthenticated, esAdmin, getCurrentUser } from '../../../js/auth.js?v=20261023-1';
         import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';

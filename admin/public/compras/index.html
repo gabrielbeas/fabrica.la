@@ -93,6 +93,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { collection, getDocs, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261013-1';
@@ -200,7 +201,7 @@
                         <td><button type="button" class="nombre" data-editar-prod="${esc(p.id)}" title="Editar producto">${esc(p.nombre)}</button>${p.notas ? `<div class="gris">${esc(p.notas)}</div>` : ''}</td>
                         <td>${esc(p.marca || '')}</td><td>${esc(p.clave || '')}</td><td>${esc(p.contenido || '')}</td><td>${esc(p.unidad || '')}</td>
                         ${prov && editandoPrecios.has(prov.id)
-                            ? `<td class="num"><input type="text" class="precio" inputmode="decimal" data-precio="${esc(p.id)}" value="${Number(p.precioSinIva) || 0}" aria-label="Precio sin IVA de ${esc(p.nombre)}"></td><td class="num" data-precio-iva="${esc(p.id)}">${dinero(conIva(p.precioSinIva))}</td>`
+                            ? `<td class="num"><input type="text" class="precio" data-dinero inputmode="decimal" data-precio="${esc(p.id)}" value="${Number(p.precioSinIva) || 0}" aria-label="Precio sin IVA de ${esc(p.nombre)}"></td><td class="num" data-precio-iva="${esc(p.id)}">${dinero(conIva(p.precioSinIva))}</td>`
                             : `<td class="num">${dinero(p.precioSinIva)}</td><td class="num">${dinero(conIva(p.precioSinIva))}</td>`}
                         <td class="num"><input type="text" class="cant ${q > 0 ? 'con' : ''}" inputmode="decimal" data-cant="${esc(p.id)}" value="${q > 0 ? q : ''}" placeholder="0" aria-label="Cantidad de ${esc(p.nombre)}"></td>
                         <td class="num" data-importe="${esc(p.id)}">${q > 0 ? dinero(importeConIva(p, q)) : ''}</td></tr>`; }).join('')}</tbody>
@@ -390,8 +391,8 @@ No se puede deshacer (queda una copia guardada).`)) return;
                     <div class="lf-campo"><label for="pd_clave">Clave del proveedor</label><input id="pd_clave" value="${esc(p?.clave || '')}"></div>
                     <div class="lf-campo"><label for="pd_unidad">Unidad de compra</label><input id="pd_unidad" list="pd_unidades" value="${esc(p?.unidad || '')}"><datalist id="pd_unidades">${UNIDADES.map(u => `<option value="${u}">`).join('')}</datalist></div>
                     <div class="lf-campo lf-ancho"><label for="pd_contenido">Contenido de la unidad (ej. 12 rollos de 300 hojas, 1 L)</label><input id="pd_contenido" value="${esc(p?.contenido || '')}"></div>
-                    <div class="lf-campo"><label for="pd_precio">Precio sin IVA por unidad de compra</label><input id="pd_precio" class="lf-num" inputmode="decimal" value="${typeof p?.precioSinIva === 'number' ? p.precioSinIva : ''}"></div>
-                    <div class="lf-campo"><label>Con IVA 16%</label><input id="pd_precioIva" class="lf-num" readonly></div>
+                    <div class="lf-campo"><label for="pd_precio">Precio sin IVA por unidad de compra</label><input id="pd_precio" data-dinero class="lf-num" inputmode="decimal" value="${typeof p?.precioSinIva === 'number' ? p.precioSinIva : ''}"></div>
+                    <div class="lf-campo"><label>Con IVA 16%</label><input id="pd_precioIva" data-dinero class="lf-num" readonly></div>
                     <div class="lf-campo lf-ancho"><label for="pd_desc">Descripción como la factura el proveedor</label><input id="pd_desc" value="${esc(p?.descripcionFactura || '')}"></div>
                     <div class="lf-campo"><label for="pd_sat">Clave de producto SAT</label><input id="pd_sat" value="${esc(p?.claveSat || '')}"></div>
                     <div class="lf-campo"><label for="pd_satu">Clave de unidad SAT</label><input id="pd_satu" value="${esc(p?.claveUnidadSat || '')}"></div>

@@ -149,6 +149,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -951,7 +952,7 @@
         function ventanaRecibo(periodo) {
             const p = periodo || {};
             const ed = !!periodo;
-            const campo = (id, label, tipo = 'number', valor = '', extra = '') => `<div ${extra}><label>${label}</label><input id="${id}" type="${tipo}" ${tipo === 'number' ? 'step="0.01"' : ''} value="${esc(valor ?? '')}"></div>`;
+            const campo = (id, label, tipo = 'number', valor = '', extra = '') => `<div ${extra}><label>${label}</label><input id="${id}" type="${tipo === 'dinero' ? 'text' : tipo}" ${tipo === 'dinero' ? 'data-dinero' : ''} ${tipo === 'number' ? 'step="0.01"' : ''} value="${esc(valor ?? '')}"></div>`;
             abrirVentana(`
                 <h3>${ed ? 'Editar periodo' : 'Capturar recibo de SIAPA'}</h3>
                 <p class="sub">${ed ? `Lectura del ${fechaCorta(p.fechaLectura)}.` : 'Copia los datos del recibo. El periodo y su consumo alimentan la tabla y las gráficas.'}</p>
@@ -962,7 +963,7 @@
                     <div><label>Nota</label><input id="f_nota" value="${esc(p.nota || '')}" placeholder="Ej. 210"></div>
                     ${campo('f_m3', 'Consumo m³', 'number', p.m3)}
                     ${campo('f_dias', 'Días', 'number', p.dias)}
-                    ${campo('f_importe', 'Importe del mes (con IVA)', 'number', p.importe)}
+                    ${campo('f_importe', 'Importe del mes (con IVA)', 'dinero', p.importe)}
                 </div>
                 ${ed ? '' : `<h4>Recibo</h4>
                 <div class="campos">
@@ -970,16 +971,16 @@
                     ${campo('r_al', 'Periodo al', 'date')}
                     ${campo('r_emision', 'Fecha de emisión', 'date', hoyISO())}
                     ${campo('r_vence', 'Vencimiento', 'date')}
-                    ${campo('r_total', 'Total a pagar', 'number')}
-                    ${campo('r_recargos', 'Recargos', 'number')}
+                    ${campo('r_total', 'Total a pagar', 'dinero')}
+                    ${campo('r_recargos', 'Recargos', 'dinero')}
                 </div>
                 <h4>Detalle de la facturación (opcional)</h4>
                 <div class="campos">
-                    ${campo('d_consumo', 'Consumo del periodo')}
-                    ${campo('d_alc', 'Alcantarillado')}
-                    ${campo('d_san', 'Plantas de saneamiento')}
-                    ${campo('d_desc', 'Descarga aguas residuales')}
-                    ${campo('d_iva', 'IVA')}
+                    ${campo('d_consumo', 'Consumo del periodo', 'dinero')}
+                    ${campo('d_alc', 'Alcantarillado', 'dinero')}
+                    ${campo('d_san', 'Plantas de saneamiento', 'dinero')}
+                    ${campo('d_desc', 'Descarga aguas residuales', 'dinero')}
+                    ${campo('d_iva', 'IVA', 'dinero')}
                 </div>`}
                 <div class="pie">
                     <span class="msg" id="vmsg"></span>
@@ -1034,7 +1035,7 @@
                 <p class="sub">Monto total pagado, como aparece en el comprobante.</p>
                 <div class="campos">
                     <div><label>Fecha de pago</label><input id="g_fecha" type="date" value="${hoyISO()}"></div>
-                    <div><label>Monto</label><input id="g_monto" type="number" step="0.01" min="0"></div>
+                    <div><label>Monto</label><input id="g_monto" data-dinero type="number" step="0.01" min="0"></div>
                     <div class="ancho"><label>Nota (opcional)</label><input id="g_nota" placeholder="Ej. liquida adeudo con recargos"></div>
                 </div>
                 <div class="pie">

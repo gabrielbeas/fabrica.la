@@ -120,6 +120,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../js/navbar.js?v=20261023-1';
+        import '../../js/dinero-input.js?v=20261028-1';
         import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261023-1';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from '../../js/correos-contrato.js?v=20261014-6';
@@ -413,8 +414,8 @@
                                 const x = cotDe(c);
                                 return Array.from({ length: n }, (_, i) => i > 0 ? '<tr class="sub-local"><td colspan="4"></td></tr>' : `<tr data-id="${esc(c.id)}">
                                 <td class="solo-movil">Local ${esc((c.locales || []).join(', '))} · ${esc(c.razonSocial || c.nombreComercial || '')}</td>
-                                <td class="num"><input inputmode="decimal" class="cot-m2" value="${c.m2 ? fmtCot(x.m2p) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
-                                <td class="num"><input inputmode="decimal" class="cot-renta" value="${fmtCot(x.renta)}" aria-label="Renta mensual cotizada"></td>
+                                <td class="num"><input inputmode="decimal" data-dinero class="cot-m2" value="${c.m2 ? fmtCot(x.m2p) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
+                                <td class="num"><input inputmode="decimal" data-dinero class="cot-renta" value="${fmtCot(x.renta)}" aria-label="Renta mensual cotizada"></td>
                                 <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"></td>
                             </tr>`).join('');
                             }).join('')}
