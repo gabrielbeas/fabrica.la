@@ -125,6 +125,7 @@
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261023-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261023-1';
         import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-10';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261027-2';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261023-1';
 
         const app = document.getElementById('app');
@@ -232,6 +233,7 @@
                     <a href="./">← Locales</a>
                     <div style="display:flex;gap:10px">
                         <button class="btn-sec" id="btnEditar">Editar</button>
+                        <button class="btn-sec" id="btnReporte" title="Reporte completo del contrato: renta, pagos, depósito, facturas, agua, historial">EXPORTAR REPORTE</button>
                         <button class="btn" onclick="window.print()">Imprimir / PDF</button>
                     </div>
                 </div>
@@ -367,6 +369,8 @@
                     <div class="pie">Generado el ${fechaTxt(hoyISO())} desde el panel de administración.${c.editadoPor ? ` Última edición: ${esc(c.editadoPor)}.` : ''}</div>
                 </div>`;
             document.getElementById('btnEditar').addEventListener('click', () => edicion(c));
+            document.getElementById('btnReporte').addEventListener('click', e => exportarReporteContrato({ ...c, id: contratoId }, e.currentTarget, { filasRenta: c.rentas?.length ? filasRenta(c) : '', explicaVigente: explicaVigente(c) })
+                .catch(err => { console.error(err); alert('No se pudo armar el reporte: ' + err.message); }));
             document.getElementById('btnDepositos')?.addEventListener('click', () => ventanaDepositos(c));
             document.getElementById('btnRequerimiento')?.addEventListener('click', e => requerimientoDeposito({ ...c, id: contratoId }, e.currentTarget));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));

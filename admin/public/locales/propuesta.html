@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Propuesta de arrendamiento - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261023-1">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
+        .main { max-width: 980px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
+        .volver { font-size: 13px; color: var(--accion); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+        .volver:hover { text-decoration: underline; }
+        .pasos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .paso-tab { text-align: left; font: inherit; border: 1px solid var(--linea); border-radius: 10px; padding: 12px 16px; background: #fff; cursor: pointer; color: var(--tinta); }
+        .paso-tab b { display: block; font-size: 15px; }
+        .paso-tab span { font-size: 12px; color: var(--tinta-suave); }
+        .paso-tab.act { border-color: var(--accion); background: var(--accion-suave); box-shadow: inset 0 0 0 1px var(--accion); }
+        @media (max-width: 600px) { .pasos { grid-template-columns: 1fr; } }
+        .panel-paso { display: none; }
+        .panel-paso.act { display: block; }
+        .sec { border: 1px solid var(--linea); border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+        .p1 .sec { border-left: 4px solid var(--accion); }
+        .p2 .sec { border-left: 4px solid var(--ambar); background: #fffdf8; }
+        .sec h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 0 0 4px; }
+        .p2 .sec h2 { color: #9a6310; }
+        .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+        .grid .ancho { grid-column: 1 / -1; }
+        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        input[type=text], input[type=number], input[type=date], input[type=email], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
+        textarea { resize: vertical; }
+        .calc { background: var(--fondo-hundido); border-radius: 8px; padding: 8px 12px; font-variant-numeric: tabular-nums; min-height: 38px; display: flex; align-items: center; }
+        .primera { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 14px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 12px 16px; background: #fff; }
+        .tarjeta .et { font-size: 11px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+        .tarjeta .val { font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .tarjeta.dest { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
+        .tarjeta.dest .et { color: inherit; opacity: .85; }
+        .actual { font-size: 13px; color: var(--tinta-suave); background: var(--fondo-hundido); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
+        .actual b { color: var(--tinta); }
+        .resumen-p1 { font-size: 13px; background: var(--ambar-suave); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+        .acciones { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .err { color: var(--peligro); }
+        .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
+        /* Hoja imprimible */
+        #hoja { display: none; }
+        @media print {
+            @page { size: letter portrait; margin: 14mm; }
+            body > .main, #navbar-root, nav { display: none !important; }
+            #hoja { display: block; color: #1b2430; font: 11.5px/1.4 Roboto, Arial, sans-serif; }
+            #hoja .enc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
+            #hoja .enc img { height: 46px; }
+            #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
+            #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 14px 0 6px; border-bottom: 1px solid #dfe3e8; padding-bottom: 3px; break-after: avoid; }
+            #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; }
+            #hoja .campo { break-inside: avoid; }
+            #hoja .campo.ancho { grid-column: 1 / -1; }
+            #hoja .campo .et { font-size: 9.5px; color: #5f6670; text-transform: uppercase; letter-spacing: .04em; }
+            #hoja .campo .v { border-bottom: 1px solid #9aa2ad; min-height: 18px; padding: 1px 0; white-space: pre-wrap; }
+            #hoja .campo .v.largo { min-height: 46px; }
+            #hoja .carta p { margin: 0 0 9px; }
+            #hoja .dest-carta { margin-bottom: 14px; }
+            #hoja .dest-carta b { font-size: 13px; }
+            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 46px; text-align: center; font-size: 10.5px; }
+            #hoja .firmas.una { grid-template-columns: 1fr; width: 50%; margin-left: auto; margin-right: auto; }
+            #hoja .firmas div { border-top: 1px solid #1b2430; padding-top: 4px; }
+            #hoja .pie { margin-top: 14px; font-size: 9.5px; color: #5f6670; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando local...</div></div>
+    <div id="hoja"></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
+        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261023-1';
+        import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const hoja = document.getElementById('hoja');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const IVA = 0.16;
+        const id = new URLSearchParams(location.search).get('id');
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else iniciar().catch(e => { console.error(e); app.innerHTML = `<p class="err">No se pudo cargar: ${esc(e.message)}</p>`; });
+        }
+
+        const fechaTxt = f => { if (!f) return ''; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const hoyISO = () => new Date().toISOString().slice(0, 10);
+        const sumaDia = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+        const sumaMeses = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1 + n, 1)); const ult = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate(); t.setUTCDate(Math.min(d, ult)); return t.toISOString().slice(0, 10); };
+
+        // [clave, etiqueta, tipo, ancho, solo]  ·  solo = 'fisica' | 'moral': el campo o la sección solo aplica a ese tipo de persona
+        // PASO 1: propuesta sencilla con los generales, dirigida a una persona. PASO 2: cuestionario de datos del arrendatario (sigue la carátula).
+        const PASOS = {
+            1: [
+                { t: 'Dirigida a', ayuda: 'Persona a quien va la propuesta.', campos: [
+                    ['dirigidaA', 'Nombre de la persona', 'texto', true],
+                    ['empresa', 'Empresa o proyecto (opcional)', 'texto'], ['fechaPropuesta', 'Fecha de la propuesta', 'fecha'],
+                    ['vigenciaDias', 'Días de vigencia de la propuesta', 'numero']
+                ] },
+                { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [], calc: ['local', 'superficie', 'acceso'] },
+                { t: 'Vigencia', ayuda: 'Fechas y plazo propuestos.', campos: [
+                    ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'], ['fechaLimite', 'Fecha límite de pago', 'texto']
+                ], calc: ['fin', 'incrementoFecha'] },
+                { t: 'Renta', ayuda: 'Renta con la que empieza el primer año, condiciones de pago y depósito en garantía. Sin proyección de años siguientes.', campos: [
+                    ['renta', 'Renta mensual (sin IVA)', 'numero'], ['rentaM2', 'Renta por m² (sin IVA)', 'numero'],
+                    ['incrementoTipo', 'Incremento anual (cómo se calcula)', 'texto', true],
+                    ['periodoGracia', 'Periodo de gracia', 'texto'], ['moratoriosContrato', 'Intereses moratorios', 'texto'],
+                    ['mesesDeposito', 'Meses de depósito', 'numero']
+                ], calc: ['rentaIva', 'deposito'] }
+            ],
+            2: [
+                { t: 'Arrendatario', ayuda: 'Datos del interesado, como irán en el contrato.', campos: [
+                    ['tipoPersona', 'Tipo de persona', 'tipo', true],
+                    ['razonSocial', 'Nombre completo o razón social', 'texto', true],
+                    ['rfc', 'RFC', 'texto'], ['curp', 'CURP', 'texto', false, 'fisica'],
+                    ['nombreComercial', 'Nombre comercial', 'texto'], ['giro', 'Giro o proyecto', 'texto'],
+                    ['telefono', 'Teléfono de contacto', 'texto'],
+                    ['correosNotificacion', 'Correos de notificación (uno por renglón)', 'lineas'],
+                    ['correosFacturacion', 'Correos para enviar las facturas (uno por renglón)', 'lineas'],
+                    ['direccion', 'Dirección fiscal (una línea por renglón)', 'lineas'],
+                    ['proyecto', 'Descripción del proyecto o negocio, horarios y necesidades del local', 'textarea', true]
+                ] },
+                { t: 'Representante legal', solo: 'moral', ayuda: 'Persona moral: quien firmará el contrato.', campos: [
+                    ['representante', 'Nombre completo', 'texto', true], ['repRfc', 'RFC', 'texto'], ['repCurp', 'CURP', 'texto']
+                ] },
+                { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas, con su RFC y CURP.', campos:
+                    [1, 2, 3, 4].flatMap(n => [[`socio${n}`, `Socio ${n} · nombre completo`, 'texto', true], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
+                { t: 'Garantías', ayuda: 'Garantía que ofrece el interesado.', campos: [
+                    ['garantia', 'Garantía', 'texto', true],
+                    ['obligadosSolidarios', 'Obligado solidario (nombre, domicilio y teléfono; uno por renglón)', 'lineas', true],
+                    ['garantiaDetalle', 'Detalle de la garantía', 'textarea', true]
+                ] }
+            ]
+        };
+        const CALC = {
+            local: ['Número de local', 'c_local'], superficie: ['Superficie', 'c_superficie'], acceso: ['Acceso al local', 'c_acceso'],
+            fin: ['Fin del contrato', 'c_fin'], incrementoFecha: ['Primer incremento de renta', 'c_incrementoFecha'],
+            rentaIva: ['Renta mensual con IVA (16 %)', 'c_rentaIva'], deposito: ['Depósito requerido', 'c_deposito']
+        };
+
+        async function iniciar() {
+            const snap = await getDoc(doc(db, 'contratos', id || '_'));
+            if (!snap.exists()) { app.innerHTML = '<a class="volver" href="../#metrajes">Volver a Locales</a><h1>Local no encontrado</h1>'; return; }
+            const c = { id: snap.id, ...snap.data() };
+            const locales = (c.locales || []).join(', ');
+            const m2 = Number(c.m2) || 0;
+            const rentaActual = Number(c.total) || 0;
+            const inicioSug = c.fin ? sumaDia(c.fin, 1) : hoyISO();
+            const clave = 'propuesta2_' + c.id;
+            let guardado = {};
+            try { guardado = JSON.parse(localStorage.getItem(clave) || '{}'); } catch (e) { /* sin borrador */ }
+
+            // Lo de Administración arranca con lo del contrato actual; lo del interesado arranca en blanco.
+            const v = {
+                fechaPropuesta: hoyISO(), vigenciaDias: 15,
+                inicio: inicioSug, anios: 5, fechaLimite: c.fechaLimite || '', renta: rentaActual, rentaM2: m2 ? r2(rentaActual / m2) : '',
+                incrementoTipo: 'Inflación anual + puntos adicionales (ejemplo: 4 % + 2 puntos)', mesesDeposito: c.mesesDeposito ?? 1,
+                periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || '', tipoPersona: '',
+                ...guardado
+            };
+
+            const entrada = ([k, et, tipo, ancho, solo]) => {
+                const idc = 'p_' + k;
+                const val = esc(v[k] ?? '');
+                let ctl;
+                if (tipo === 'tipo') ctl = `<select id="${idc}"><option value="">Seleccionar</option><option value="fisica" ${v[k] === 'fisica' ? 'selected' : ''}>Persona física</option><option value="moral" ${v[k] === 'moral' ? 'selected' : ''}>Persona moral</option></select>`;
+                else if (tipo === 'lineas' || tipo === 'textarea') ctl = `<textarea id="${idc}" rows="3">${val}</textarea>`;
+                else if (tipo === 'fecha') ctl = `<input type="date" id="${idc}" value="${val}">`;
+                else if (tipo === 'numero') ctl = `<input type="number" id="${idc}" step="any" min="0" value="${val}">`;
+                else if (tipo === 'plazo') ctl = `<select id="${idc}">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option value="${n}" ${+v.anios === n ? 'selected' : ''}>${n} año${n > 1 ? 's' : ''}</option>`).join('')}</select>`;
+                else ctl = `<input type="text" id="${idc}" value="${val}">`;
+                return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
+            };
+            const seccionHtml = s => `
+                <div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}>
+                    <h2>${s.t}</h2>
+                    ${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
+                    <div class="grid">
+                        ${s.campos.map(entrada).join('')}
+                        ${(s.calc || []).map(k => `<div><label>${CALC[k][0]}</label><div class="calc" id="${CALC[k][1]}"></div></div>`).join('')}
+                    </div>
+                </div>`;
+
+            app.innerHTML = `
+                <a class="volver" href="../#metrajes">Volver a Locales</a>
+                <h1>Propuesta de arrendamiento · Local ${esc(locales)}</h1>
+                <p class="sub">Primero se prepara la propuesta (paso 1) y, si el interesado la acepta, se le envía el cuestionario de datos generales (paso 2).</p>
+                <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · ${m2 ? '<b>' + m2.toLocaleString('es-MX') + ' m²</b> · ' : ''}renta <b>${dinero(rentaActual)}</b> sin IVA${m2 ? ' (' + dinero(rentaActual / m2) + ' por m²)' : ''} · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. El paso 1 arranca con estos valores.</div>
+
+                <div class="pasos">
+                    <button type="button" class="paso-tab act" data-paso="1"><b>Paso 1 · Propuesta</b><span>Generales de la renta, dirigida a una persona</span></button>
+                    <button type="button" class="paso-tab" data-paso="2"><b>Paso 2 · Cuestionario</b><span>Datos del arrendatario, persona física o moral</span></button>
+                </div>
+
+                <div class="panel-paso p1 act" id="paso1">
+                    <div class="primera" id="primera"></div>
+                    ${PASOS[1].map(seccionHtml).join('')}
+                    <div class="acciones">
+                        <button class="btn" id="btnPdf1">PDF de la propuesta</button>
+                        <button class="btn-sec" id="irPaso2">Continuar al paso 2</button>
+                    </div>
+                </div>
+
+                <div class="panel-paso p2" id="paso2">
+                    <div class="resumen-p1" id="resumenP1"></div>
+                    ${PASOS[2].map(seccionHtml).join('')}
+                    <div class="acciones">
+                        <button class="btn" id="btnPdf2">PDF del cuestionario con lo capturado</button>
+                        <button class="btn-sec" id="btnBlanco" title="Sale con todos los espacios vacíos, para enviarlo y que el interesado lo llene">PDF del cuestionario en blanco</button>
+                        <button class="btn-sec" id="btnLimpiar">Limpiar el cuestionario</button>
+                        <button class="btn-sec" id="volverPaso1">Volver al paso 1</button>
+                    </div>
+                </div>
+                <p class="sub" style="margin-top:14px;font-size:12px">Los datos quedan como borrador solo en este navegador; no se guardan en Firestore. Agua y basura se facturan aparte; IVA de 16 %.</p>`;
+
+            const $ = x => document.getElementById(x);
+            const todos = [...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => ({ ...f, s })));
+            const val = k => ($('p_' + k)?.value ?? '').trim();
+
+            function irAPaso(n) {
+                app.querySelectorAll('.paso-tab').forEach(b => b.classList.toggle('act', +b.dataset.paso === n));
+                $('paso1').classList.toggle('act', n === 1);
+                $('paso2').classList.toggle('act', n === 2);
+                window.scrollTo({ top: 0 });
+            }
+            app.querySelectorAll('.paso-tab').forEach(b => b.addEventListener('click', () => irAPaso(+b.dataset.paso)));
+            $('irPaso2').addEventListener('click', () => irAPaso(2));
+            $('volverPaso1').addEventListener('click', () => irAPaso(1));
+
+            function calcular() {
+                const anios = +val('anios') || 1;
+                const inicio = val('inicio') || inicioSug;
+                const renta = +val('renta') || 0;
+                const meses = +val('mesesDeposito') || 0;
+                return {
+                    inicio, anios, renta, iva: r2(renta * IVA), conIva: r2(renta * (1 + IVA)), meses,
+                    fin: sumaDia(sumaMeses(inicio, anios * 12), -1), incr: sumaMeses(inicio, 12), deposito: r2(meses * renta)
+                };
+            }
+
+            function pintar() {
+                const d = calcular();
+                $('c_local').textContent = locales;
+                $('c_superficie').textContent = m2 ? m2.toLocaleString('es-MX') + ' m²' : 'Sin metraje capturado';
+                $('c_acceso').textContent = c.acceso || '-';
+                $('c_fin').textContent = fechaTxt(d.fin);
+                $('c_incrementoFecha').textContent = fechaTxt(d.incr);
+                $('c_rentaIva').textContent = dinero(d.conIva);
+                $('c_deposito').textContent = dinero(d.deposito) + (d.meses ? ` (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '');
+                $('primera').innerHTML = `
+                    <div class="tarjeta dest"><div class="et">Primera renta mensual (${d.inicio.slice(0, 4)})</div><div class="val">${dinero(d.renta)}</div></div>
+                    <div class="tarjeta"><div class="et">Con IVA</div><div class="val">${dinero(d.conIva)}</div></div>
+                    <div class="tarjeta"><div class="et">Por m²</div><div class="val">${m2 ? dinero(d.renta / m2) : '-'}</div></div>
+                    <div class="tarjeta"><div class="et">Depósito</div><div class="val">${dinero(d.deposito)}</div></div>`;
+                $('resumenP1').innerHTML = `Propuesta del paso 1${val('dirigidaA') ? ' para <b>' + esc(val('dirigidaA')) + '</b>' : ''}: inicio <b>${fechaTxt(d.inicio)}</b>, plazo <b>${d.anios} año${d.anios > 1 ? 's' : ''}</b>, renta mensual <b>${dinero(d.renta)}</b> + IVA, depósito <b>${dinero(d.deposito)}</b>.`;
+                // Persona física o moral: se ocultan las secciones y campos que no aplican
+                const tp = val('tipoPersona');
+                app.querySelectorAll('[data-solo]').forEach(el => { el.style.display = tp && el.dataset.solo !== tp ? 'none' : ''; });
+                const g = {};
+                todos.forEach(f => { g[f[0]] = $('p_' + f[0]).value; });
+                try { localStorage.setItem(clave, JSON.stringify(g)); } catch (e) { /* sin almacenamiento */ }
+            }
+
+            // Renta mensual y renta por m² se ajustan una a la otra
+            todos.forEach(f => $('p_' + f[0]).addEventListener('input', () => {
+                if (f[0] === 'renta' && m2) $('p_rentaM2').value = r2((+val('renta') || 0) / m2);
+                if (f[0] === 'rentaM2' && m2) $('p_renta').value = r2((+val('rentaM2') || 0) * m2);
+                pintar();
+            }));
+            pintar();
+
+            // ---- Impresión ----
+            const campo = (et, valor, ancho, largo) => `<div class="campo${ancho ? ' ancho' : ''}"><div class="et">${esc(et)}</div><div class="v${largo ? ' largo' : ''}">${esc(valor)}</div></div>`;
+            const encabezado = titulo => `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div style="text-align:right"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
+
+            function seccionImpresa(s, blanco) {
+                const tp = val('tipoPersona');
+                if (s.solo && tp && s.solo !== tp) return '';
+                const d = calcular();
+                const calcs = { local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
+                const cs = s.campos.filter(f => !(f[4] && tp && f[4] !== tp)).map(([k, et, tipo, ancho]) => {
+                    let valor = blanco ? '' : val(k);
+                    if (tipo === 'tipo') valor = blanco || !valor ? '☐ Persona física      ☐ Persona moral' : (valor === 'moral' ? 'Persona moral' : 'Persona física');
+                    if (!blanco && tipo === 'fecha') valor = fechaTxt(valor);
+                    if (!blanco && tipo === 'plazo') valor = `${valor} año${+valor > 1 ? 's' : ''}`;
+                    if (!blanco && (k === 'renta' || k === 'rentaM2') && valor) valor = dinero(valor) + ' + IVA';
+                    return campo(et, valor, ancho, tipo === 'lineas' || tipo === 'textarea');
+                }).join('');
+                const cc = (s.calc || []).map(k => campo(CALC[k][0], calcs[k])).join('');
+                return `<h3>${s.t}</h3><div class="campos">${cs}${cc}</div>`;
+            }
+
+            // Espera a que cargue el logo antes de abrir la impresión (si no, el PDF puede salir sin él)
+            const imprimirHoja = () => {
+                const img = hoja.querySelector('img');
+                if (!img || img.complete) { window.print(); return; }
+                let listo = false;
+                const ir = () => { if (!listo) { listo = true; window.print(); } };
+                img.addEventListener('load', ir); img.addEventListener('error', ir); setTimeout(ir, 1500);
+            };
+
+            // Paso 1: carta-propuesta corta con los generales
+            function imprimirPaso1() {
+                const d = calcular();
+                const hasta = val('vigenciaDias') && val('fechaPropuesta') ? fechaTxt(sumaDia(val('fechaPropuesta'), +val('vigenciaDias'))) : '';
+                const datos = PASOS[1].filter(s => s.t !== 'Dirigida a').map(s => seccionImpresa(s, false)).join('');
+                hoja.innerHTML = `
+                    ${encabezado('Propuesta de arrendamiento')}
+                    <div class="dest-carta">
+                        <div>${fechaTxt(val('fechaPropuesta'))}</div>
+                        <div style="margin-top:8px">Para: <b>${esc(val('dirigidaA') || 'Por definir')}</b></div>
+                        ${val('empresa') ? `<div>${esc(val('empresa'))}</div>` : ''}
+                    </div>
+                    <div class="carta"><p>Con gusto le presentamos la propuesta de arrendamiento del Local ${esc(locales)}${m2 ? `, de ${m2.toLocaleString('es-MX')} m²` : ''}, en La Fábrica de Chocolate.</p></div>
+                    ${datos}
+                    <div class="carta" style="margin-top:14px"><p>Si la propuesta es de su interés, le enviaremos un cuestionario para recopilar los datos generales del arrendatario, como persona física o persona moral, y preparar el contrato.${hasta ? ` Esta propuesta tiene vigencia hasta el ${hasta}.` : ''}</p></div>
+                    <div class="firmas una"><div>Por La Fábrica de Chocolate</div></div>
+                    <p class="pie">Cifras en pesos mexicanos. La renta se factura con IVA de 16 %; el agua y la recolección de basura se facturan aparte. Esta propuesta no constituye contrato y está sujeta a la firma del contrato de arrendamiento.</p>`;
+                imprimirHoja();
+            }
+
+            // Paso 2: cuestionario (lleno o en blanco)
+            function imprimirPaso2(blanco) {
+                const d = calcular();
+                hoja.innerHTML = `
+                    ${encabezado('Cuestionario de datos generales')}
+                    <div class="carta"><p>Para preparar el contrato de arrendamiento del Local ${esc(locales)} (inicio ${fechaTxt(d.inicio)}, plazo de ${d.anios} año${d.anios > 1 ? 's' : ''}), le pedimos llenar los siguientes datos. Si es persona moral, complete también la información del representante legal y de los socios, con su RFC y CURP.</p></div>
+                    ${PASOS[2].map(s => seccionImpresa(s, blanco)).join('')}
+                    <div class="firmas una"><div>Interesado</div></div>
+                    <p class="pie">Los datos se usarán únicamente para la elaboración del contrato de arrendamiento. Este cuestionario no constituye contrato.</p>`;
+                imprimirHoja();
+            }
+            $('btnPdf1').addEventListener('click', imprimirPaso1);
+            $('btnPdf2').addEventListener('click', () => imprimirPaso2(false));
+            $('btnBlanco').addEventListener('click', () => imprimirPaso2(true));
+            $('btnLimpiar').addEventListener('click', () => {
+                if (!confirm('Se borran los datos del cuestionario (paso 2) de este borrador. ¿Continuar?')) return;
+                todos.filter(f => PASOS[2].includes(f.s)).forEach(f => { $('p_' + f[0]).value = ''; });
+                pintar();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -269,6 +269,7 @@
                 <div class="campos">
                     <div><label>Estado de pago</label><select id="f_estado">${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === factura.estadoPago ? 'selected' : ''}>${v.txt}</option>`).join('')}</select></div>
                     <div><label>Fecha de pago</label><input type="date" id="f_fechaPago" value="${esc(factura.fechaPago || '')}"></div>
+                    <div><label>Folio de la factura (CFDI)</label><input type="text" id="f_folio" maxlength="30" value="${esc(factura.folio || '')}" placeholder="Ej. F-426"></div>
                     <div class="ancho"><label>Notas de esta factura</label><textarea id="f_notas" rows="2">${esc(factura.notas || '')}</textarea></div>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;flex-wrap:wrap">
@@ -354,6 +355,7 @@
                 ...totales(conceptos),
                 estadoPago: document.getElementById('f_estado').value,
                 fechaPago: document.getElementById('f_fechaPago').value || null,
+                folio: document.getElementById('f_folio').value.trim(),
                 notas: document.getElementById('f_notas').value.trim(),
                 actualizadoPor: getCurrentUser().email,
                 actualizadoEn: serverTimestamp()
@@ -412,9 +414,9 @@
             if (!factura || !borrador || !document.getElementById('f_notas')) return false;
             const actual = { c: normalizarConceptos(borrador.conceptos), m: borrador.moratoriosPct || 0,
                 notas: document.getElementById('f_notas').value.trim(), e: document.getElementById('f_estado').value,
-                fp: document.getElementById('f_fechaPago').value || null };
+                fp: document.getElementById('f_fechaPago').value || null, fo: document.getElementById('f_folio').value.trim() };
             const guardado = { c: normalizarConceptos(factura.conceptos || []), m: factura.moratoriosPct || 0,
-                notas: (factura.notas || '').trim(), e: factura.estadoPago, fp: factura.fechaPago || null };
+                notas: (factura.notas || '').trim(), e: factura.estadoPago, fp: factura.fechaPago || null, fo: (factura.folio || '').trim() };
             return JSON.stringify(actual) !== JSON.stringify(guardado);
         };
         window.addEventListener('beforeunload', e => { if (hayCambios()) { e.preventDefault(); e.returnValue = ''; } });

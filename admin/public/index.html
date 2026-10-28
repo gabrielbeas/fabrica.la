@@ -48,6 +48,10 @@
         .correos .tipo { font-size: 11px; color: var(--tinta-tenue); }
         a.loc { color: var(--tinta); text-decoration: none; font-weight: 600; }
         a.loc:hover { color: var(--accion); }
+        a.prop-link { margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--accion); text-decoration: none; border: 1px solid var(--accion); border-radius: 10px; padding: 1px 9px; visibility: hidden; white-space: nowrap; }
+        tr:hover a.prop-link, a.prop-link:focus { visibility: visible; }
+        a.prop-link:hover { background: var(--accion-suave); }
+        @media (hover: none) { a.prop-link { visibility: visible; } }
         .vencido { color: var(--peligro); font-size: 11px; font-weight: 600; }
         /* Locales y metrajes: cada fila en una sola línea (en pantallas anchas) */
         @media (min-width: 901px) { .tabla-met td, .tabla-met th { white-space: nowrap; } }
@@ -384,7 +388,7 @@
                                     const primera = i === 0;
                                     const resto = '<span class="gris" title="Los m² y la renta son del contrato completo">incluido en el contrato</span>';
                                     return `<tr${!primera ? ' class="sub-local"' : ''}>
-                                <td><a class="loc" href="${caratula(c.id)}">${esc(l)}</a></td>
+                                <td><a class="loc" href="${caratula(c.id)}">${esc(l)}</a>${primera && !c.propio ? ` <a class="prop-link" href="locales/propuesta.html?id=${encodeURIComponent(c.id)}" title="Preparar propuesta para un nuevo locatario">Propuesta</a>` : ''}</td>
                                 <td>${esc(c.razonSocial || c.nombreComercial)}${primera && c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
                                 <td>${esc(c.acceso || '-')}</td>
                                 <td class="num">${!primera ? '' : c.m2 ? num(c.m2) : '<span class="gris">-</span>'}</td>
