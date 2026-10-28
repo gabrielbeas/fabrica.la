@@ -17,6 +17,11 @@
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
         .volver { font-size: 13px; color: var(--accion); text-decoration: none; display: inline-block; margin-bottom: 12px; }
         .volver:hover { text-decoration: underline; }
+        /* Botones: igual que en el resto de las páginas (carátula, facturación, configuración) */
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+        .btn-sec:hover { background: var(--linea); }
         .pasos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .paso-tab { text-align: left; font: inherit; border: 1px solid var(--linea); border-radius: 10px; padding: 12px 16px; background: #fff; cursor: pointer; color: var(--tinta); }
         .paso-tab b { display: block; font-size: 15px; }
@@ -82,8 +87,8 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
-        import { isAuthenticated, esAdmin, db } from '../../../js/auth.js?v=20261023-1';
-        import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
+        import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
         const hoja = document.getElementById('hoja');
@@ -166,8 +171,15 @@
             const rentaActual = Number(c.total) || 0;
             const inicioSug = c.fin ? sumaDia(c.fin, 1) : hoyISO();
             const clave = 'propuesta2_' + c.id;
-            let guardado = {};
-            try { guardado = JSON.parse(localStorage.getItem(clave) || '{}'); } catch (e) { /* sin borrador */ }
+            // La propuesta se guarda en Firestore (propuestas/{id del contrato}) conforme se llena; el borrador del navegador solo es respaldo
+            const refProp = doc(db, 'propuestas', c.id);
+            let guardado = {}, ultimaVez = null, hayGuardada = false;
+            try {
+                const ps = await getDoc(refProp);
+                if (ps.exists()) { guardado = ps.data().datos || {}; ultimaVez = ps.data().actualizadoEn?.toDate?.() || null; hayGuardada = true; }
+            } catch (e) { console.warn('No se pudo leer la propuesta guardada', e); }
+            if (!hayGuardada) { try { guardado = JSON.parse(localStorage.getItem(clave) || '{}'); } catch (e) { /* sin borrador */ } }
+            let sucio = !hayGuardada && Object.keys(guardado).length > 0;   // un borrador viejo del navegador se sube a Firestore
 
             // Lo de Administración arranca con lo del contrato actual; lo del interesado arranca en blanco.
             const v = {
@@ -177,6 +189,12 @@
                 periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || '', tipoPersona: '',
                 ...guardado
             };
+            // Renta cotizada en Locales y metrajes (Cotizador): sustituye la renta del borrador y se usa una sola vez
+            try {
+                const cotz = JSON.parse(localStorage.getItem('propuesta_cot_' + c.id) || 'null');
+                if (cotz && Number(cotz.renta) > 0) { v.renta = r2(Number(cotz.renta)); v.rentaM2 = m2 ? r2(v.renta / m2) : ''; sucio = true; }
+                localStorage.removeItem('propuesta_cot_' + c.id);
+            } catch (e) { /* sin cotización */ }
 
             const entrada = ([k, et, tipo, ancho, solo]) => {
                 const idc = 'p_' + k;
@@ -203,7 +221,7 @@
             app.innerHTML = `
                 <a class="volver" href="../#metrajes">Volver a Locales</a>
                 <h1>Propuesta de arrendamiento · Local ${esc(locales)}</h1>
-                <p class="sub">Primero se prepara la propuesta (paso 1) y, si el interesado la acepta, se le envía el cuestionario de datos generales (paso 2).</p>
+                <p class="sub">Primero se prepara la propuesta (paso 1) y, si el interesado la acepta, se le envía el cuestionario de datos generales (paso 2). Se guarda sola conforme la llenas: puedes cerrar y seguir después. <span id="estadoGuardado" style="font-weight:600"></span></p>
                 <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · ${m2 ? '<b>' + m2.toLocaleString('es-MX') + ' m²</b> · ' : ''}renta <b>${dinero(rentaActual)}</b> sin IVA${m2 ? ' (' + dinero(rentaActual / m2) + ' por m²)' : ''} · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. El paso 1 arranca con estos valores.</div>
 
                 <div class="pasos">
@@ -230,7 +248,7 @@
                         <button class="btn-sec" id="volverPaso1">Volver al paso 1</button>
                     </div>
                 </div>
-                <p class="sub" style="margin-top:14px;font-size:12px">Los datos quedan como borrador solo en este navegador; no se guardan en Firestore. Agua y basura se facturan aparte; IVA de 16 %.</p>`;
+                <p class="sub" style="margin-top:14px;font-size:12px">La propuesta se guarda en el panel (una por local), así que puedes retomarla desde cualquier equipo. Agua y basura se facturan aparte; IVA de 16 %.</p>`;
 
             const $ = x => document.getElementById(x);
             const todos = [...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => ({ ...f, s })));
@@ -278,10 +296,40 @@
                 const g = {};
                 todos.forEach(f => { g[f[0]] = $('p_' + f[0]).value; });
                 try { localStorage.setItem(clave, JSON.stringify(g)); } catch (e) { /* sin almacenamiento */ }
+                if (sucio) programarGuardado(g);
             }
+
+            // Guardado automático en Firestore (solo después de que haya cambios)
+            const estado = $('estadoGuardado');
+            const horaTxt = d => `${fechaTxt(d.toISOString().slice(0, 10))} ${d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`;
+            const pone = (t, color) => { estado.textContent = t; estado.style.color = color || 'var(--tinta-suave)'; };
+            let temporizador = null, pendiente = null;
+            async function guardarAhora() {
+                if (!pendiente) return;
+                const datos = pendiente; pendiente = null; clearTimeout(temporizador);
+                pone('Guardando…');
+                try {
+                    await setDoc(refProp, { contratoId: c.id, locales: c.locales || [], datos, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' });
+                    if (!pendiente) pone('Guardada ' + horaTxt(new Date()), 'var(--exito)');
+                } catch (e) {
+                    console.error(e);
+                    pendiente = pendiente || datos;
+                    pone('No se pudo guardar; queda el borrador en este navegador. Revisa tu conexión.', 'var(--peligro)');
+                }
+            }
+            function programarGuardado(g) {
+                pendiente = g;
+                pone('Cambios sin guardar…');
+                clearTimeout(temporizador);
+                temporizador = setTimeout(guardarAhora, 900);
+            }
+            window.addEventListener('pagehide', guardarAhora);
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') guardarAhora(); });
+            if (hayGuardada && ultimaVez) pone('Última vez guardada: ' + horaTxt(ultimaVez));
 
             // Renta mensual y renta por m² se ajustan una a la otra
             todos.forEach(f => $('p_' + f[0]).addEventListener('input', () => {
+                sucio = true;
                 if (f[0] === 'renta' && m2) $('p_rentaM2').value = r2((+val('renta') || 0) / m2);
                 if (f[0] === 'rentaM2' && m2) $('p_renta').value = r2((+val('rentaM2') || 0) * m2);
                 pintar();

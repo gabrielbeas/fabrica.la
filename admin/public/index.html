@@ -48,10 +48,8 @@
         .correos .tipo { font-size: 11px; color: var(--tinta-tenue); }
         a.loc { color: var(--tinta); text-decoration: none; font-weight: 600; }
         a.loc:hover { color: var(--accion); }
-        a.prop-link { margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--accion); text-decoration: none; border: 1px solid var(--accion); border-radius: 10px; padding: 1px 9px; visibility: hidden; white-space: nowrap; }
-        tr:hover a.prop-link, a.prop-link:focus { visibility: visible; }
-        a.prop-link:hover { background: var(--accion-suave); }
-        @media (hover: none) { a.prop-link { visibility: visible; } }
+        .tabla-met tbody tr.fila-prop { cursor: pointer; }
+        .tabla-met tbody tr.fila-prop:hover td { background: var(--fondo-hundido); }
         .vencido { color: var(--peligro); font-size: 11px; font-weight: 600; }
         /* Locales y metrajes: cada fila en una sola línea (en pantallas anchas) */
         @media (min-width: 901px) { .tabla-met td, .tabla-met th { white-space: nowrap; } }
@@ -387,8 +385,8 @@
                                 return filasC.map((l, i) => {
                                     const primera = i === 0;
                                     const resto = '<span class="gris" title="Los m² y la renta son del contrato completo">incluido en el contrato</span>';
-                                    return `<tr${!primera ? ' class="sub-local"' : ''}>
-                                <td><a class="loc" href="${caratula(c.id)}">${esc(l)}</a>${primera && !c.propio ? ` <a class="prop-link" href="locales/propuesta.html?id=${encodeURIComponent(c.id)}" title="Preparar propuesta para un nuevo locatario">Propuesta</a>` : ''}</td>
+                                    return `<tr${!primera ? ' class="sub-local"' : primera && !c.propio ? ` class="fila-prop" data-prop="${esc(c.id)}" title="Preparar propuesta de arrendamiento"` : ''}>
+                                <td><a class="loc" href="${caratula(c.id)}" title="Abrir la carátula">${esc(l)}</a></td>
                                 <td>${esc(c.razonSocial || c.nombreComercial)}${primera && c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
                                 <td>${esc(c.acceso || '-')}</td>
                                 <td class="num">${!primera ? '' : c.m2 ? num(c.m2) : '<span class="gris">-</span>'}</td>
@@ -457,6 +455,16 @@
                 recalcFila(tr);
             });
             totalesCot();
+            // Toda la fila abre la propuesta del local; lo cotizado se lleva a la propuesta (por localStorage, no por la URL)
+            app.querySelectorAll('.tabla-met tr[data-prop]').forEach(tr => tr.addEventListener('click', e => {
+                if (e.target.closest('a')) return;   // el número del local sigue abriendo la carátula
+                const c = porId[tr.dataset.prop], x = cot[c.id];
+                try {
+                    if (x && Math.abs(x.renta - (c.total || 0)) > 0.005) localStorage.setItem('propuesta_cot_' + c.id, JSON.stringify({ renta: x.renta }));
+                    else localStorage.removeItem('propuesta_cot_' + c.id);
+                } catch (err) { /* sin almacenamiento */ }
+                window.location.href = 'locales/propuesta.html?id=' + encodeURIComponent(c.id);
+            }));
             document.getElementById('cotReset').addEventListener('click', () => { cot = {}; vistaMetrajes(); });
             document.getElementById('desglosar').addEventListener('change', e => { desglosarLocales = e.target.checked; vistaMetrajes(); });
             app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
