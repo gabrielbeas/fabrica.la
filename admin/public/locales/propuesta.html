@@ -101,6 +101,7 @@
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261023-1';
         import '../../../js/dinero-input.js?v=20261028-1';
+        import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261023-1';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -121,7 +122,7 @@
             else iniciar().catch(e => { console.error(e); app.innerHTML = `<p class="err">No se pudo cargar: ${esc(e.message)}</p>`; });
         }
 
-        const fechaTxt = f => { if (!f) return ''; const [y, m, d] = f.split('-'); return `${+d} ${MESES[+m - 1]} ${y}`; };
+        const fechaTxt = fechaLarga;   // 1 de enero de 2027 (meses completos con letra)
         const hoyISO = () => new Date().toISOString().slice(0, 10);
         const sumaDia = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
         const sumaMeses = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1 + n, 1)); const ult = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate(); t.setUTCDate(Math.min(d, ult)); return t.toISOString().slice(0, 10); };
@@ -138,13 +139,13 @@
                 { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [], calc: ['local', 'superficie', 'acceso'] },
                 { t: 'Vigencia', ayuda: 'Fechas y plazo propuestos.', campos: [
                     ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'], ['fechaLimite', 'Fecha límite de pago', 'texto']
-                ], calc: ['fin', 'incrementoFecha'] },
+                ], calc: ['fin', 'incrementoFecha'], orden: ['inicio', 'calc:fin', 'anios', 'fechaLimite', 'calc:incrementoFecha'] },
                 { t: 'Renta', ayuda: 'Renta con la que empieza el primer año, condiciones de pago y depósito en garantía. Sin proyección de años siguientes.', campos: [
                     ['renta', 'Renta mensual (sin IVA)', 'dinero'], ['rentaIva', 'Renta mensual con IVA (16 %)', 'dinero'],
-                    ['incrementoTipo', 'Incremento anual (cómo se calcula)', 'texto', true],
+                    ['incrementoTipo', 'Incremento anual', 'texto'],
                     ['periodoGracia', 'Periodo de gracia', 'texto'], ['moratoriosContrato', 'Intereses moratorios', 'texto'],
                     ['mesesDeposito', 'Meses de depósito', 'numero']
-                ], calc: ['deposito'] }
+                ], calc: ['incrementoExpl', 'deposito'], orden: ['renta', 'rentaIva', 'incrementoTipo', 'calc:incrementoExpl', 'periodoGracia', 'moratoriosContrato', 'mesesDeposito', 'calc:deposito'] }
             ],
             2: [
                 { t: 'Arrendatario', ayuda: 'Datos del interesado, como irán en el contrato.', campos: [
@@ -177,7 +178,10 @@
                 ['aumY1', 'Aplicar el primer aumento ya en el primer año', 'check', true]
             ] }
         ];
+        // Texto fijo (no editable): cómo se calcula el incremento y la fuente oficial
+        const EXPLICACION_INCREMENTO = 'Variación anual del INPC publicado por el INEGI (www.inegi.org.mx), del mes previo al aniversario, más 2 puntos porcentuales.';
         const CALC = {
+            incrementoExpl: ['Explicación del incremento', 'c_incrementoExpl'],
             local: ['Número de local', 'c_local'], superficie: ['Superficie', 'c_superficie'], acceso: ['Acceso al local', 'c_acceso'],
             fin: ['Fin del contrato', 'c_fin'], incrementoFecha: ['Primer incremento de renta', 'c_incrementoFecha'],
             rentaIva: ['Renta mensual con IVA (16 %)', 'c_rentaIva'], deposito: ['Depósito requerido', 'c_deposito']
@@ -206,7 +210,7 @@
             const v = {
                 fechaPropuesta: hoyISO(), vigenciaDias: 15,
                 inicio: inicioSug, anios: 5, fechaLimite: c.fechaLimite || '', renta: rentaActual,
-                incrementoTipo: 'Inflación anual + puntos adicionales (ejemplo: 4 % + 2 puntos)', mesesDeposito: c.mesesDeposito ?? 1,
+                incrementoTipo: 'INPC + 2', mesesDeposito: c.mesesDeposito ?? 1,
                 periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || '', tipoPersona: '',
                 infl: 4, pts: 2, aumY1: false,
                 ...guardado
@@ -233,13 +237,13 @@
                 else ctl = `<input type="text" id="${idc}" value="${val}">`;
                 return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
             };
+            const calcHtml = k => `<div><label>${CALC[k][0]}</label><div class="calc" id="${CALC[k][1]}"></div></div>`;
             const seccionHtml = s => `
                 <div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}>
                     <h2>${s.t}</h2>
                     ${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
                     <div class="grid">
-                        ${s.campos.map(entrada).join('')}
-                        ${(s.calc || []).map(k => `<div><label>${CALC[k][0]}</label><div class="calc" id="${CALC[k][1]}"></div></div>`).join('')}
+                        ${s.orden ? s.orden.map(x => x.startsWith('calc:') ? calcHtml(x.slice(5)) : entrada(s.campos.find(f => f[0] === x))).join('') : s.campos.map(entrada).join('') + (s.calc || []).map(calcHtml).join('')}
                     </div>
                 </div>`;
 
@@ -282,6 +286,7 @@
                 <p class="sub" style="margin-top:14px;font-size:12px">La propuesta se guarda en el panel (una por local), así que puedes retomarla desde cualquier equipo. Agua y basura se facturan aparte; IVA de 16 %.</p>`;
 
             const $ = x => document.getElementById(x);
+            activarSelectoresFecha(app, { atras: 1, adelante: 12 });   // fechas con el mes en letra, en español
             const todos = [...PASOS[1], ...PASOS[2], ...PASOS[3]].flatMap(s => s.campos.map(f => ({ ...f, s })));
             const val = k => ($('p_' + k)?.value ?? '').trim();
 
@@ -324,13 +329,20 @@
                 const fs = proyectar(d.renta, pct, d.anios, aumY1, d.inicio);
                 const pri = fs[0], ult = fs[fs.length - 1], p = f => (+(f * 100).toFixed(2)) + ' %';
                 const base = d.renta || 1;
-                // Gráfica de barras: renta mensual por año, con la renta propuesta inicial como línea
-                const W = 1000, H = 280, izq = 70, abajo = 34, max = (Math.max(...fs.map(f => f.renta), rentaActual) * 1.14) || 1, bw = (W - izq - 20) / fs.length;
-                const y = n => H - abajo - (H - abajo - 24) * n / max;
+                // Gráfica de línea: renta mensual por año (eje desde un poco debajo del mínimo para que se vea la evolución)
+                const vals = fs.map(f => f.renta).concat(rentaActual ? [rentaActual] : []);
+                const W = 1000, H = 300, izq = 74, der = 40, arriba = 30, abajo = 34;
+                const lo0 = Math.min(...vals), hi0 = Math.max(...vals), paso = Math.max(1000, Math.ceil((hi0 - lo0) / 4 / 1000) * 1000);
+                const minY = Math.max(0, Math.floor(lo0 * 0.92 / paso) * paso), maxY = Math.ceil(hi0 * 1.06 / paso) * paso || 1;
+                const y = n => H - abajo - (H - abajo - arriba) * (n - minY) / (maxY - minY);
+                const px = i => fs.length === 1 ? (izq + W - der) / 2 : izq + (W - izq - der) * i / (fs.length - 1);
+                const marcas = []; for (let v = minY; v <= maxY + 1; v += paso) marcas.push(v);
+                const puntos = fs.map((f, i) => `${px(i).toFixed(1)},${y(f.renta).toFixed(1)}`).join(' ');
                 const grafica = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Renta mensual por año">`
-                    + [0, .25, .5, .75, 1].map(t => `<line x1="${izq}" x2="${W - 10}" y1="${y(max * t)}" y2="${y(max * t)}" stroke="#eef0f3"/><text x="${izq - 8}" y="${y(max * t) + 4}" text-anchor="end" font-size="11" fill="#5f6670">${Math.round(max * t / 1000)} mil</text>`).join('')
-                    + (rentaActual ? `<line x1="${izq}" x2="${W - 10}" y1="${y(rentaActual)}" y2="${y(rentaActual)}" stroke="#d08a1e" stroke-dasharray="6 4"/><text x="${W - 12}" y="${y(rentaActual) - 6}" text-anchor="end" font-size="11" fill="#d08a1e">Renta del contrato actual ${dinero(rentaActual)}</text>` : '')
-                    + fs.map((f, i) => { const x = izq + i * bw + bw * .16, w = bw * .68; return `<rect x="${x}" y="${y(f.renta)}" width="${w}" height="${H - abajo - y(f.renta)}" rx="4" fill="${i === 0 ? '#1f4e79' : '#5b87b3'}"/><text x="${x + w / 2}" y="${y(f.renta) - 8}" text-anchor="middle" font-size="${fs.length > 7 ? 10 : 12}" font-weight="700" fill="#1b2430">${dinero(f.renta)}</text><text x="${x + w / 2}" y="${H - 12}" text-anchor="middle" font-size="12" fill="#5f6670">${f.desde.slice(0, 4)}</text>`; }).join('')
+                    + marcas.map(v => `<line x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}" stroke="#eef0f3"/><text x="${izq - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#5f6670">${(v / 1000).toLocaleString('es-MX')} mil</text>`).join('')
+                    + (rentaActual ? `<line x1="${izq}" x2="${W - der}" y1="${y(rentaActual)}" y2="${y(rentaActual)}" stroke="#d08a1e" stroke-dasharray="6 4"/><text x="${izq + 6}" y="${y(rentaActual) + 15}" font-size="11" fill="#d08a1e">Renta del contrato actual ${dinero(rentaActual)}</text>` : '')
+                    + (fs.length > 1 ? `<polyline points="${puntos}" fill="none" stroke="#1f4e79" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : '')
+                    + fs.map((f, i) => `<circle cx="${px(i)}" cy="${y(f.renta)}" r="5.5" fill="${i === 0 ? '#1f4e79' : '#fff'}" stroke="#1f4e79" stroke-width="2.5"/><text x="${px(i)}" y="${y(f.renta) - 13}" text-anchor="middle" font-size="${fs.length > 7 ? 10 : 12}" font-weight="700" fill="#1b2430">${dinero(f.renta)}</text><text x="${px(i)}" y="${H - 12}" text-anchor="middle" font-size="12" fill="#5f6670">${f.desde.slice(0, 4)}</text>`).join('')
                     + '</svg>';
                 // Escenarios de inflación con los mismos puntos adicionales
                 const refTot = ult.acum;
@@ -366,6 +378,7 @@
             function pintar() {
                 const d = calcular();
                 $('c_local').textContent = locales;
+                $('c_incrementoExpl').textContent = EXPLICACION_INCREMENTO;
                 $('c_superficie').textContent = m2 ? m2.toLocaleString('es-MX') + ' m²' : 'Sin metraje capturado';
                 $('c_acceso').textContent = c.acceso || '-';
                 $('c_fin').textContent = fechaTxt(d.fin);
@@ -432,17 +445,19 @@
                 const tp = val('tipoPersona');
                 if (s.solo && tp && s.solo !== tp) return '';
                 const d = calcular();
-                const calcs = { local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
-                const cs = s.campos.filter(f => !(f[4] && tp && f[4] !== tp)).map(([k, et, tipo, ancho]) => {
+                const calcs = { incrementoExpl: EXPLICACION_INCREMENTO, local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
+                const cs = Object.fromEntries(s.campos.filter(f => !(f[4] && tp && f[4] !== tp)).map(([k, et, tipo, ancho]) => {
                     let valor = blanco ? '' : val(k);
                     if (tipo === 'tipo') valor = blanco || !valor ? '☐ Persona física      ☐ Persona moral' : (valor === 'moral' ? 'Persona moral' : 'Persona física');
                     if (!blanco && tipo === 'fecha') valor = fechaTxt(valor);
                     if (!blanco && tipo === 'plazo') valor = `${valor} año${+valor > 1 ? 's' : ''}`;
                     if (!blanco && (k === 'renta' || k === 'rentaIva') && valor) valor = dinero(valor) + (k === 'renta' ? ' + IVA' : ' (IVA incluido)');
-                    return campo(et, valor, ancho, tipo === 'lineas' || tipo === 'textarea');
-                }).join('');
-                const cc = (s.calc || []).map(k => campo(CALC[k][0], calcs[k])).join('');
-                return `<h3>${s.t}</h3><div class="campos">${cs}${cc}</div>`;
+                    return [k, campo(et, valor, ancho, tipo === 'lineas' || tipo === 'textarea')];
+                }));
+                const cc = Object.fromEntries((s.calc || []).map(k => ['calc:' + k, campo(CALC[k][0], calcs[k])]));
+                const todo = { ...cs, ...cc };
+                const claves = s.orden ? s.orden.filter(k => k in todo) : Object.keys(todo);
+                return `<h3>${s.t}</h3><div class="campos">${claves.map(k => todo[k]).join('')}</div>`;
             }
 
             // Espera a que cargue el logo antes de abrir la impresión (si no, el PDF puede salir sin él)
