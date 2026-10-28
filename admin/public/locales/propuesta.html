@@ -73,21 +73,22 @@
         @media print {
             @page { size: letter portrait; margin: 14mm; }
             body > .main, #navbar-root, nav { display: none !important; }
-            #hoja { display: block; color: #1b2430; font: 11.5px/1.4 Roboto, Arial, sans-serif; }
-            #hoja .enc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
+            #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
+            #hoja .enc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 12px; margin-bottom: 16px; }
             #hoja .enc img { height: 46px; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
-            #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 14px 0 6px; border-bottom: 1px solid #dfe3e8; padding-bottom: 3px; break-after: avoid; }
-            #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; }
+            #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 16px 0 8px; border-bottom: 1px solid #dfe3e8; padding-bottom: 4px; break-after: avoid; }
+            #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 26px; }
             #hoja .campo { break-inside: avoid; }
             #hoja .campo.ancho { grid-column: 1 / -1; }
             #hoja .campo .et { font-size: 9.5px; color: #5f6670; text-transform: uppercase; letter-spacing: .04em; }
-            #hoja .campo .v { border-bottom: 1px solid #9aa2ad; min-height: 18px; padding: 1px 0; white-space: pre-wrap; }
-            #hoja .campo .v.largo { min-height: 46px; }
-            #hoja .carta p { margin: 0 0 9px; }
-            #hoja .dest-carta { margin-bottom: 14px; }
+            #hoja .campo .et { margin-bottom: 3px; }
+            #hoja .campo .v { border-bottom: 1px solid #9aa2ad; min-height: 21px; padding: 3px 0; white-space: pre-wrap; }
+            #hoja .campo .v.largo { min-height: 54px; }
+            #hoja .carta p { margin: 0 0 10px; }
+            #hoja .dest-carta { margin-bottom: 18px; line-height: 1.7; }
             #hoja .dest-carta b { font-size: 13px; }
-            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 46px; text-align: center; font-size: 10.5px; }
+            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; text-align: center; font-size: 10.5px; }
             #hoja .firmas.una { grid-template-columns: 1fr; width: 50%; margin-left: auto; margin-right: auto; }
             #hoja .firmas div { border-top: 1px solid #1b2430; padding-top: 4px; }
             #hoja .pie { margin-top: 14px; font-size: 9.5px; color: #5f6670; }
@@ -143,7 +144,7 @@
                 { t: 'Renta', ayuda: 'Renta con la que empieza el primer año, condiciones de pago y depósito en garantía. Sin proyección de años siguientes.', campos: [
                     ['renta', 'Renta mensual (sin IVA)', 'dinero'], ['rentaIva', 'Renta mensual con IVA (16 %)', 'dinero'],
                     ['incrementoTipo', 'Incremento anual', 'texto'],
-                    ['periodoGracia', 'Periodo de gracia', 'texto'], ['moratoriosContrato', 'Intereses moratorios', 'texto'],
+                    ['periodoGracia', 'Periodo de gracia (meses)', 'texto'], ['moratoriosContrato', 'Intereses moratorios', 'texto'],
                     ['mesesDeposito', 'Meses de depósito', 'numero']
                 ], calc: ['incrementoExpl', 'deposito'], orden: ['renta', 'rentaIva', 'incrementoTipo', 'calc:incrementoExpl', 'periodoGracia', 'moratoriosContrato', 'mesesDeposito', 'calc:deposito'] }
             ],
