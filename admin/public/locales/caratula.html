@@ -105,12 +105,14 @@
         .alerta-fila .que span { color: var(--tinta-suave); font-size: 13px; }
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
+        .logo-print { display: none; height: 40px; width: auto; margin: 0 0 10px; }
         @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 8px; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
             .hoja { border: none; padding: 0; }
             body { font-size: 12px; }
+            .logo-print { display: block; }
         }
     </style>
 </head>
@@ -243,6 +245,7 @@
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
+                            <img class="logo-print" src="../css/logo.png" alt="La Fábrica de Chocolate">
                             <div class="emp">La Fábrica de Chocolate · Carátula de contrato de arrendamiento</div>
                             <h1>${esc(c.razonSocial)}</h1>
                             <div class="loc">Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}</div>
