@@ -58,7 +58,7 @@
         .met-lado > .met-col { min-width: 0; }
         .met-lado > .met-izq { flex: 0 1 auto; }
         @media (min-width: 901px) { .tabla-met { width: auto; } .met-izq .tabla-wrap { display: inline-block; max-width: 100%; } }
-        .met-lado > .met-der { flex: 0 0 480px; }
+        .met-lado > .met-der { flex: 0 0 540px; }
         .met-cab { height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; font-size: 14px; }
         .met-cab .desglose { margin: 0; }
         .met-cab button { font: inherit; font-size: 13px; border: none; background: none; color: var(--accion); cursor: pointer; padding: 4px 2px; }
@@ -343,7 +343,12 @@
             acceso: c => (c.acceso || '').toLowerCase(),
             m2: c => Number(c.m2) || 0,
             renta: c => c.total || 0,
-            rentaM2: c => c.m2 ? (c.total || 0) / c.m2 : 0
+            rentaM2: c => c.m2 ? (c.total || 0) / c.m2 : 0,
+            // Cotizador: se ordena con lo que está cotizado en pantalla; al estar alineadas, la tabla de la izquierda se reordena igual
+            cotM2: c => cotDe(c).m2p,
+            cotRenta: c => cotDe(c).renta,
+            cotDif: c => cotDe(c).renta - (c.total || 0),
+            cotDifPct: c => c.total ? (cotDe(c).renta - c.total) / c.total : 0
         };
         let ordenMet = { col: 'locales', dir: 1 };
         let desglosarLocales = false;   // prueba: un local por fila
@@ -406,7 +411,7 @@
                 <div class="met-cab"><span><strong>Cotizador</strong> · edita la renta por m² o la mensual y se ajusta la otra</span><button type="button" id="cotReset">Restablecer</button></div>
                 <div class="tabla-wrap">
                     <table class="tabla-cot tabla-movil">
-                        <thead><tr><th class="solo-movil">Contrato</th><th class="num">Renta por m²</th><th class="num">Renta mensual</th><th class="num">Diferencia $</th><th class="num">Diferencia %</th></tr></thead>
+                        <thead><tr><th class="solo-movil">Contrato</th>${th('cotM2', 'Renta por m²', 'num')}${th('cotRenta', 'Renta mensual', 'num')}${th('cotDif', 'Diferencia $', 'num')}${th('cotDifPct', 'Diferencia %', 'num')}</tr></thead>
                         <tbody>
                             ${lista.map(c => {
                                 const locs = (c.locales || []).length ? c.locales : [''];
