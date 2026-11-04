@@ -352,7 +352,19 @@
             // Anchos de columna ajustables: se arrastra el borde derecho del título; se recuerdan en este navegador
             const COLS = ['chk', 'num', 'fecha', 'ban', 'rev', 'beneficiario', 'categoria', 'etq', 'nota', 'monto', 'saldo'];
             const ANCHO_BASE = { chk: 32, num: 40, fecha: 120, ban: 30, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
-            const CLAVE_ANCHOS = 'tesoreria_anchos_v1';
+            const CLAVE_ANCHOS = 'tesoreria_anchos_v2';
+            const FLEX = ['beneficiario', 'categoria', 'etq', 'nota'];
+            function aplicaAnchos() {
+                const wrap = app.querySelector('.tabla-wrap'), tabla = wrap && wrap.querySelector('table');
+                if (!tabla || !tabla.querySelector('col[data-k]')) return;
+                const v = k => (st.anchos[k] > 0 ? st.anchos[k] : ANCHO_BASE[k]);
+                const total = COLS.reduce((a, k) => a + v(k), 0), flex = FLEX.reduce((a, k) => a + v(k), 0);
+                const extra = Math.max(0, wrap.clientWidth - total);
+                let suma = 0;
+                COLS.forEach(k => { const w = Math.round(v(k) + (FLEX.includes(k) ? extra * v(k) / flex : 0)); tabla.querySelector('col[data-k="' + k + '"]').style.width = w + 'px'; suma += w; });
+                tabla.style.width = suma + 'px';
+            }
+            window.addEventListener('resize', () => { if (st.vista !== 'config') aplicaAnchos(); });
             let anchosGuardados = {};
             try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
             const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'movimientos', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
@@ -446,8 +458,8 @@
                                     ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
-                                <div class="tabla-wrap"><table style="min-width:100%;${fijo ? 'width:' + sumaAnchos + 'px' : ''}"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
-                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos"></th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°</th>${th('fecha', 'Fecha')}<th></th><th></th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
+                                <div class="tabla-wrap"><table style="width:${sumaAnchos}px"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
+                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos">${rz('chk')}</th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°${rz('num')}</th>${th('fecha', 'Fecha')}<th>${rz('ban')}</th><th>${rz('rev')}</th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
                                     <tbody>${filas || `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
                             </div>
@@ -467,6 +479,7 @@
                 document.getElementById('fCat').addEventListener('change', e => { st.cat = e.target.value; pintar(); });
                 const q = document.getElementById('q');
                 q.addEventListener('input', () => { st.q = q.value; const pos = q.selectionStart; pintar(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); });
+                aplicaAnchos();
                 const guardarAnchos = () => { try { localStorage.setItem(CLAVE_ANCHOS, JSON.stringify(st.anchos)); } catch (e) { /* sin almacenamiento */ } };
                 const bRest = document.getElementById('bRestCols');
                 if (bRest) bRest.addEventListener('click', () => { st.anchos = {}; try { localStorage.removeItem(CLAVE_ANCHOS); } catch (e) { /* sin almacenamiento */ } pintar(); });
@@ -484,7 +497,7 @@
                         tabla.style.width = suma() + 'px';
                         document.body.style.userSelect = 'none';
                         h.setPointerCapture(ev.pointerId);
-                        const mover = e2 => { st.anchos[k] = Math.max(40, Math.round(w0 + e2.clientX - x0)); col(k).style.width = st.anchos[k] + 'px'; tabla.style.width = suma() + 'px'; };
+                        const mover = e2 => { st.anchos[k] = Math.max(24, Math.round(w0 + e2.clientX - x0)); col(k).style.width = st.anchos[k] + 'px'; tabla.style.width = suma() + 'px'; };
                         const soltar = () => { h.removeEventListener('pointermove', mover); h.removeEventListener('pointerup', soltar); document.body.style.userSelect = ''; guardarAnchos(); pintar(); };
                         h.addEventListener('pointermove', mover); h.addEventListener('pointerup', soltar);
                     });
