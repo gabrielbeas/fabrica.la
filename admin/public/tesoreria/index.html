@@ -446,7 +446,7 @@
                                     ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
-                                <div class="tabla-wrap"><table style="${fijo ? 'width:' + sumaAnchos + 'px' : ''}"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
+                                <div class="tabla-wrap"><table style="min-width:100%;${fijo ? 'width:' + sumaAnchos + 'px' : ''}"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
                                     <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos"></th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°</th>${th('fecha', 'Fecha')}<th></th><th></th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
                                     <tbody>${filas || `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
