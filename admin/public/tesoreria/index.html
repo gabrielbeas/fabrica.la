@@ -133,6 +133,8 @@
         .combo-op.act { background: var(--accion-suave); color: var(--accion); }
         .combo-op.nueva { color: var(--accion); font-weight: 600; border-top: 1px solid var(--linea); }
         .combo-vacio { padding: 10px 12px; font-size: 13px; color: var(--tinta-suave); }
+        .sync { position: fixed; right: 18px; bottom: 14px; background: #fff; border: 1px solid var(--linea); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--tinta-suave); box-shadow: 0 4px 14px rgba(0,0,0,.12); z-index: 900; }
+        .sync.err { color: var(--peligro); border-color: var(--peligro); }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -143,7 +145,8 @@
         import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { collection, getDocs, doc, getDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -163,14 +166,152 @@
         const MOVS = [];
         const CAT = { etiquetas: [], categorias: [], beneficiarios: [] };
 
-        // El prototipo guarda lo que cargues solo en este navegador (localStorage), para que puedas probar sin perderlo al recargar
-        const CLAVE = 'tesoreria_prototipo_v1';
+        // ---------- Persistencia en Firestore ----------
+        // tesoreria_cuentas/{id} · tesoreria_movimientos/{fid} (+ subcolección historial) · tesoreria_config/catalogos · tesoreria_eliminados/{fid}
+        // Cada movimiento tiene un identificador estable (fid). Los que vienen de un CSV lo derivan de cuenta + fecha + monto + beneficiario
+        // (y su número de repetición), así reimportar el mismo archivo nunca duplica, ni siquiera desde otro equipo.
+        const CLAVE = 'tesoreria_prototipo_v1';   // datos de la versión de prueba (solo se leen para migrarlos)
+        const CLAVE_OMITIDA = 'tesoreria_migracion_omitida';
         const CUENTAS_INICIO = () => [{ id: 'clara', nombre: '_CLARA', saldoInicial: 0 }, { id: 'lafab', nombre: '1_LAFABDECHOC', saldoInicial: 0 }, { id: 'dep', nombre: '3_DEPÓSITOS / AP…', saldoInicial: 0 }];
-        try {
-            const g = JSON.parse(localStorage.getItem(CLAVE) || 'null');
-            if (g && Array.isArray(g.cuentas) && Array.isArray(g.movs)) { CUENTAS.splice(0, CUENTAS.length, ...g.cuentas); MOVS.push(...g.movs); if (g.cat) { CAT.etiquetas.push(...(g.cat.etiquetas || [])); CAT.categorias.push(...(g.cat.categorias || [])); CAT.beneficiarios.push(...(g.cat.beneficiarios || [])); } }
-        } catch (e) { /* sin datos guardados */ }
-        const guardarLocal = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ cuentas: CUENTAS, movs: MOVS, cat: CAT })); } catch (e) { /* sin almacenamiento */ } };
+        const usuario = () => getCurrentUser()?.email || '';
+        const cyrb53 = (str, seed = 0) => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
+        const llaveMov = m => m.fecha + '|' + Number(m.monto).toFixed(2) + '|' + (m.beneficiario || '').toLowerCase();
+        const fidDe = (cuenta, llave, k) => 'm' + cyrb53(cuenta + '|' + llave + '|' + k).toString(36);
+        const fidNuevo = () => 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        const serMov = m => ({ cuenta: m.cuenta, fecha: m.fecha, beneficiario: m.beneficiario || '', categoria: m.categoria || '', monto: m.monto, etiquetas: m.etiquetas || [], nota: m.nota || '', revisado: !!m.revisado, bandera: !!m.bandera, estado: m.estado || 'conciliado', excluido: !!m.excluido, adjuntos: m.adjuntos || [], orden: m.orden });
+        const serCuenta = c => ({ nombre: c.nombre, saldoInicial: Number(c.saldoInicial) || 0, orden: c.orden ?? 0 });
+        const snap = { movs: new Map(), cuentas: new Map(), cat: '' };
+        let sincTimer = null, sincEnCurso = false, onEstado = () => {};
+
+        function asignarFids(movs) {
+            const n = {};
+            movs.forEach(m => { const l = llaveMov(m), base = m.cuenta + '|' + l; n[base] = (n[base] ?? -1) + 1; m.fid = fidDe(m.cuenta, l, n[base]); });
+        }
+        function tomarFotoBase() {
+            snap.movs = new Map(MOVS.map(m => [m.fid, JSON.stringify(serMov(m))]));
+            snap.cuentas = new Map(CUENTAS.map(c => [c.id, JSON.stringify(serCuenta(c))]));
+            snap.cat = JSON.stringify(CAT);
+        }
+        async function cargarDatos() {
+            const [cs, ms, cg] = await Promise.all([getDocs(collection(db, 'tesoreria_cuentas')), getDocs(collection(db, 'tesoreria_movimientos')), getDoc(doc(db, 'tesoreria_config', 'catalogos'))]);
+            const cuentas = cs.docs.map(d => ({ id: d.id, ...serCuenta(d.data()) })).sort((a, b) => a.orden - b.orden);
+            const movs = ms.docs.map(d => ({ fid: d.id, ...serMov(d.data()) })).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+            movs.forEach((m, i) => { m.id = i + 1; });
+            CUENTAS.splice(0, CUENTAS.length, ...cuentas);
+            MOVS.splice(0, MOVS.length, ...movs);
+            const c = cg.exists() ? cg.data() : {};
+            CAT.etiquetas.splice(0, CAT.etiquetas.length, ...(c.etiquetas || []));
+            CAT.categorias.splice(0, CAT.categorias.length, ...(c.categorias || []));
+            CAT.beneficiarios.splice(0, CAT.beneficiarios.length, ...(c.beneficiarios || []));
+            tomarFotoBase();
+        }
+
+        // Calcula qué cambió contra lo último guardado y lo escribe (movimientos editados dejan historial; los borrados dejan copia)
+        const programarSync = () => { clearTimeout(sincTimer); sincTimer = setTimeout(sincronizar, 700); };
+        async function sincronizar() {
+            if (sincEnCurso) { programarSync(); return; }
+            const por = usuario(), ahora = serverTimestamp(), ops = [], vistos = new Set();
+            CUENTAS.forEach((c, i) => { c.orden = i; });
+            CUENTAS.forEach(c => {
+                const s = JSON.stringify(serCuenta(c));
+                if (snap.cuentas.get(c.id) !== s) ops.push({ kind: 'cuenta', key: c.id, s, ref: doc(db, 'tesoreria_cuentas', c.id), data: { ...serCuenta(c), actualizadoPor: por, actualizadoEn: ahora }, merge: true });
+            });
+            snap.cuentas.forEach((s, id) => { if (!CUENTAS.some(c => c.id === id)) ops.push({ kind: 'cuenta', key: id, borrar: true, ref: doc(db, 'tesoreria_cuentas', id) }); });
+            MOVS.forEach((m, i) => {
+                if (!m.fid) m.fid = fidNuevo();
+                if (m.orden == null) m.orden = Date.now() * 1000 + i;
+                vistos.add(m.fid);
+                const s = JSON.stringify(serMov(m)), previa = snap.movs.get(m.fid);
+                if (previa === s) return;
+                const ref = doc(db, 'tesoreria_movimientos', m.fid);
+                if (previa === undefined) ops.push({ kind: 'mov', key: m.fid, s, ref, data: { ...serMov(m), creadoPor: por, creadoEn: ahora, actualizadoPor: por, actualizadoEn: ahora } });
+                else {
+                    ops.push({ kind: 'mov', key: m.fid, s, ref, data: { ...serMov(m), actualizadoPor: por, actualizadoEn: ahora }, merge: true });
+                    ops.push({ ref: doc(collection(db, 'tesoreria_movimientos', m.fid, 'historial')), data: { accion: 'editar', antes: JSON.parse(previa), despues: serMov(m), por, en: ahora } });
+                }
+            });
+            snap.movs.forEach((s, fid) => {
+                if (vistos.has(fid)) return;
+                ops.push({ ref: doc(db, 'tesoreria_eliminados', fid), data: { ...JSON.parse(s), eliminadoPor: por, eliminadoEn: ahora } });
+                ops.push({ kind: 'mov', key: fid, borrar: true, ref: doc(db, 'tesoreria_movimientos', fid) });
+            });
+            const sc = JSON.stringify(CAT);
+            if (sc !== snap.cat) ops.push({ kind: 'cat', s: sc, ref: doc(db, 'tesoreria_config', 'catalogos'), data: { ...JSON.parse(sc), actualizadoPor: por, actualizadoEn: ahora } });
+            if (!ops.length) return;
+
+            sincEnCurso = true;
+            try {
+                let hechos = 0;
+                for (let i = 0; i < ops.length; i += 400) {
+                    const trozo = ops.slice(i, i + 400), lote = writeBatch(db);
+                    trozo.forEach(o => { if (o.borrar) lote.delete(o.ref); else if (o.merge) lote.set(o.ref, o.data, { merge: true }); else lote.set(o.ref, o.data); });
+                    onEstado('Guardando ' + Math.min(i + 400, ops.length) + ' de ' + ops.length + '…');
+                    await lote.commit();
+                    trozo.forEach(o => {
+                        if (o.kind === 'mov') o.borrar ? snap.movs.delete(o.key) : snap.movs.set(o.key, o.s);
+                        else if (o.kind === 'cuenta') o.borrar ? snap.cuentas.delete(o.key) : snap.cuentas.set(o.key, o.s);
+                        else if (o.kind === 'cat') snap.cat = o.s;
+                    });
+                    hechos += trozo.length;
+                }
+                onEstado('Guardado en Firestore');
+            } catch (e) {
+                console.error(e);
+                onEstado('No se pudo guardar: ' + (e.message || e) + ' (se reintenta)', true);
+                setTimeout(programarSync, 8000);
+            } finally { sincEnCurso = false; }
+            programarSync();
+        }
+
+        // Datos que dejó la versión de prueba en este navegador (localStorage)
+        function datosLocalViejos() {
+            try { const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); return g && Array.isArray(g.movs) && g.movs.length ? g : null; } catch (e) { return null; }
+        }
+        function ofrecerMigracion(local) {
+            return new Promise(resuelve => {
+                const nCat = new Set(local.movs.map(m => m.categoria).filter(Boolean)).size, nBen = new Set(local.movs.map(m => m.beneficiario).filter(Boolean)).size;
+                app.innerHTML = '<div style="max-width:640px;margin:60px auto;border:1px solid var(--linea);border-radius:12px;padding:26px 30px">'
+                    + '<h1 style="margin:0 0 8px;font-size:22px">Pasar tus datos a Firestore</h1>'
+                    + '<p style="color:var(--tinta-suave);font-size:14px;margin:0 0 16px">Encontré datos de la versión de prueba guardados en este navegador y Tesorería todavía está vacía en Firestore.</p>'
+                    + '<ul style="font-size:14px;line-height:1.7;margin:0 0 18px;padding-left:20px"><li><strong>' + (local.cuentas || []).length + '</strong> cuentas</li><li><strong>' + local.movs.length.toLocaleString('es-MX') + '</strong> movimientos</li><li><strong>' + nCat + '</strong> categorías y <strong>' + nBen + '</strong> beneficiarios en uso</li></ul>'
+                    + '<p style="font-size:13px;color:var(--tinta-suave);margin:0 0 18px">Se copian a Firestore tal cual están. La copia del navegador no se borra: queda como respaldo con otro nombre.</p>'
+                    + '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="migSubir">Subir a Firestore</button><button class="btn-sec" id="migVacio">Empezar vacío</button></div><div id="migMsg" style="margin-top:14px;font-size:13px;color:var(--tinta-suave)"></div></div>';
+                document.getElementById('migVacio').addEventListener('click', () => { try { localStorage.setItem(CLAVE_OMITIDA, '1'); } catch (e) { /* sin almacenamiento */ } CUENTAS.splice(0, CUENTAS.length, ...CUENTAS_INICIO()); resuelve(); });
+                document.getElementById('migSubir').addEventListener('click', async () => {
+                    document.getElementById('migSubir').disabled = true; document.getElementById('migVacio').disabled = true;
+                    onEstado = t => { document.getElementById('migMsg').textContent = t; };
+                    const cuentas = (local.cuentas && local.cuentas.length ? local.cuentas : CUENTAS_INICIO()).map((c, i) => ({ id: c.id, nombre: c.nombre, saldoInicial: Number(c.saldoInicial) || 0, orden: i }));
+                    const movs = local.movs.map((m, i) => ({ ...serMov({ ...m, orden: i }), id: i + 1 }));
+                    asignarFids(movs);
+                    CUENTAS.splice(0, CUENTAS.length, ...cuentas);
+                    MOVS.splice(0, MOVS.length, ...movs);
+                    sincronizarCatalogo();
+                    snap.movs = new Map(); snap.cuentas = new Map(); snap.cat = '';
+                    await sincronizar();
+                    if (snap.movs.size !== MOVS.length) { document.getElementById('migMsg').textContent = 'No se pudo terminar la subida. Revisa la conexión y recarga la página: no se borró nada.'; return; }
+                    try { localStorage.setItem(CLAVE + '_migrado', localStorage.getItem(CLAVE) || ''); localStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ }
+                    resuelve();
+                });
+            });
+        }
+        async function arrancar() {
+            const badge = document.createElement('div'); badge.className = 'sync'; badge.style.display = 'none'; document.body.appendChild(badge);
+            let oculta = null;
+            onEstado = (t, error) => { badge.textContent = t; badge.classList.toggle('err', !!error); badge.style.display = 'block'; clearTimeout(oculta); if (!error && /^Guardado/.test(t)) oculta = setTimeout(() => { badge.style.display = 'none'; }, 2500); };
+            try {
+                await cargarDatos();
+                const local = datosLocalViejos();
+                if (!MOVS.length && local && !localStorage.getItem(CLAVE_OMITIDA)) await ofrecerMigracion(local);
+                else if (!CUENTAS.length) CUENTAS.push(...CUENTAS_INICIO());
+            } catch (e) {
+                console.error(e);
+                app.innerHTML = '<p style="color:var(--peligro);padding:30px">No se pudo cargar Tesorería desde Firestore: ' + esc(e.message || e) + '</p>';
+                return;
+            }
+            onEstado = (t, error) => { badge.textContent = t; badge.classList.toggle('err', !!error); badge.style.display = 'block'; clearTimeout(oculta); if (!error && /^Guardado/.test(t)) oculta = setTimeout(() => { badge.style.display = 'none'; }, 2500); };
+            iniciar();
+        }
+
 
 
         // ---------- Catálogos: etiquetas, categorías (con subcategorías) y beneficiarios ----------
@@ -236,7 +377,7 @@
             };
 
             function pintar() {
-                guardarLocal();
+                programarSync();
                 if (st.vista === 'config') { pintarConfig(); return; }
                 const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
                 const lista = orden(filtrados());
@@ -275,7 +416,6 @@
                 }).join('');
 
                 app.innerHTML = `
-                    <div class="proto"><strong>Prototipo.</strong> Arranca vacío: carga tus CSV con «Importar CSV». Lo que cargues se guarda solo en este navegador, no en el panel; en la versión completa vivirá en Firestore. <button class="btn-sec" id="bVaciar" style="margin-left:8px;padding:4px 12px;font-size:12px">Vaciar datos del prototipo</button></div>
                     <div class="layout">
                         <aside class="cuentas">
                             <h2>Cuentas</h2>
@@ -348,7 +488,6 @@
                 });
                 document.getElementById('bConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
                 document.getElementById('bNuevo').addEventListener('click', () => abrirMovimiento());
-                document.getElementById('bVaciar').addEventListener('click', () => { if (!confirm('Se borran las cuentas y movimientos cargados en este prototipo. ¿Continuar?')) return; MOVS.length = 0; CAT.etiquetas.length = 0; CAT.categorias.length = 0; CAT.beneficiarios.length = 0; CUENTAS.splice(0, CUENTAS.length, ...CUENTAS_INICIO()); try { localStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } st.cuenta = 'todas'; st.sel.clear(); pintar(); });
                 app.querySelectorAll('tr.mov').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.rev, .chk, .banda')) return; abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id)); }));
                 app.querySelectorAll('tr.mov .banda').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.bandera = !m.bandera; pintar(); }));
                 document.getElementById('bImp').addEventListener('click', abrirImportar);
@@ -625,10 +764,10 @@
                     let cat = $m('mCatIn').value.trim();
                     if (cat) { const igual = categorias.find(c => c.v.toLowerCase() === cat.toLowerCase()); cat = igual ? igual.v : cat.toUpperCase(); }
                     const datos = { fecha: $m('mFecha').value, cuenta: $m('mCuenta').value, beneficiario: ben, categoria: cat, monto: tipo === 'ingreso' ? monto : -monto, etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: $m('mExc').checked, adjuntos: e.adjuntos };
-                    if (edita) Object.assign(mov, datos); else { delete datos.ejemplo; MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, ...datos }); }
+                    if (edita) Object.assign(mov, datos); else { delete datos.ejemplo; MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, fid: fidNuevo(), orden: Date.now() * 1000, ...datos }); }
                     sincronizarCatalogo();
                     cierra(); if (st.cuenta !== 'todas') st.cuenta = datos.cuenta; pintar();
-                    const a = document.getElementById('aviso'); a.textContent = (edita ? 'Movimiento actualizado' : 'Movimiento creado') + ' (guardado solo en este navegador).'; a.style.display = 'block';
+                    const a = document.getElementById('aviso'); a.textContent = (edita ? 'Movimiento actualizado' : 'Movimiento creado') + ' (guardado en Firestore).'; a.style.display = 'block';
                 });
                 setTimeout(() => $m('mBen').focus(), 0);
             }
@@ -682,7 +821,7 @@
                 const etiqCss = 'display:block;font-size:12px;color:var(--tinta-suave);margin-bottom:4px';
                 fondo.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:860px;width:100%;padding:22px 26px">'
                     + '<h2 style="margin:0 0 4px;font-size:20px;font-weight:900">Importar movimientos desde CSV</h2>'
-                    + '<p style="margin:0 0 16px;color:var(--tinta-suave);font-size:13px">Sube el CSV que exporta Simplifi (una cuenta por archivo). Se lee en tu navegador y se guarda solo en este navegador (en el prototipo): no se envía a ningún lado.</p>'
+                    + '<p style="margin:0 0 16px;color:var(--tinta-suave);font-size:13px">Sube el CSV que exporta Simplifi (una cuenta por archivo). El archivo se lee en tu navegador y solo se guardan en Firestore los movimientos nuevos: los que ya existen no se duplican.</p>'
                     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 18px">'
                     + '<div><label style="' + etiqCss + '">Cuenta destino</label><select id="iCuenta" style="' + campoCss + '"></select></div>'
                     + '<div id="iNuevaWrap" style="display:none"><label style="' + etiqCss + '">Nombre de la cuenta nueva</label><input id="iNueva" placeholder="Ej. 1_LAFABDECHOC" style="' + campoCss + '"></div>'
@@ -733,11 +872,13 @@
                     const cta = CUENTAS.find(c => c.id === destino);
                     cta.saldoInicial = Number(String($i('iSaldo').value).replace(/[$,\s]/g, '')) || 0;
                     let id = Math.max(0, ...MOVS.map(m => m.id)) + 1;
-                    leido.nuevas.forEach(m => MOVS.push({ id: id++, cuenta: destino, ...m }));
+                    const repet = {}, base = Date.now() * 1000;
+                    MOVS.filter(x => x.cuenta === destino).forEach(x => { const l = llaveMov(x); repet[l] = (repet[l] ?? -1) + 1; });
+                    leido.nuevas.forEach((m, i) => { const l = llaveMov(m); repet[l] = (repet[l] ?? -1) + 1; MOVS.push({ id: id++, fid: fidDe(destino, l, repet[l]), orden: base + i, cuenta: destino, ...m }); });
                     sincronizarCatalogo();
                     const n = leido.nuevas.length;
                     cierra(); st.cuenta = destino; st.sel.clear(); pintar();
-                    const a = document.getElementById('aviso'); a.textContent = 'Se cargaron ' + n + ' movimientos en ' + cta.nombre + ' (guardados solo en este navegador).'; a.style.display = 'block';
+                    const a = document.getElementById('aviso'); a.textContent = 'Se cargaron ' + n + ' movimientos en ' + cta.nombre + ' (guardados en Firestore).'; a.style.display = 'block';
                 });
             }
             pintar();
@@ -747,7 +888,7 @@
         else {
             crearNavbar();
             if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p>Esta sección es solo para el administrador.</p>';
-            else iniciar();
+            else arrancar();
         }
     </script>
 </body>
