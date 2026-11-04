@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Tesorería - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261104-1">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
+        .main { max-width: none; margin: 0 auto; padding: 24px 28px 60px; }
+        .proto { background: var(--ambar-suave); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px; }
+        .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 22px; align-items: start; }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        /* Panel de cuentas */
+        .cuentas h2 { font-size: 20px; margin: 0 0 14px; font-weight: 900; }
+        .cuentas .fila { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .cuentas .fila:hover { background: var(--fondo-hundido); }
+        .cuentas .fila.act { background: var(--accion-suave); color: var(--accion); font-weight: 600; box-shadow: inset 3px 0 0 var(--ambar); }
+        .cuentas .total { font-weight: 700; border-bottom: 1px solid var(--linea); border-radius: 0; margin-bottom: 8px; padding-bottom: 12px; }
+        .cuentas .grupo { font-weight: 600; margin-top: 6px; cursor: default; }
+        .cuentas .grupo:hover { background: none; }
+        .cuentas .sub { padding-left: 22px; font-size: 13px; }
+        .nw { white-space: nowrap; }
+        .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 14px; font-size: 14px; cursor: pointer; }
+        .btn-sec:hover { background: var(--linea); }
+        /* Cabecera */
+        h1 { font-size: 26px; margin: 0 0 14px; font-weight: 900; }
+        .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--linea); margin-bottom: 16px; }
+        .tab { background: none; border: none; padding: 10px 16px; font: inherit; font-size: 14px; color: var(--tinta-suave); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        .tab.act { color: var(--accion); font-weight: 600; border-bottom-color: var(--ambar); }
+        .tarjeta-cuenta { display: flex; justify-content: space-between; align-items: flex-end; border: 1px solid var(--linea); border-radius: 12px; padding: 18px 22px; margin-bottom: 16px; }
+        .tarjeta-cuenta h3 { margin: 0; font-size: 20px; font-weight: 900; }
+        .tarjeta-cuenta .tipo { color: var(--tinta-suave); font-size: 13px; margin-top: 4px; }
+        .tarjeta-cuenta .saldo { font-size: 26px; font-weight: 700; text-align: right; }
+        .tarjeta-cuenta .saldo small { display: block; font-size: 12px; font-weight: 400; color: var(--tinta-suave); font-family: var(--font-sans); }
+        /* Movimientos */
+        .caja { border: 1px solid var(--linea); border-radius: 12px; padding: 16px 18px; }
+        .cab-mov { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .cab-mov h3 { margin: 0; font-size: 17px; font-weight: 900; }
+        .barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .barra input[type=search], .barra select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; background: #fff; color: var(--tinta); }
+        .barra input[type=search] { width: 190px; }
+        .rapidos { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--tinta-suave); flex-wrap: wrap; }
+        .chip { background: var(--fondo); border: 1px solid var(--borde-control); border-radius: 16px; padding: 5px 13px; font-size: 13px; color: var(--tinta-suave); cursor: pointer; }
+        .chip.act { background: var(--accion); border-color: var(--accion); color: var(--on-accion); }
+        .aviso { background: var(--accion-suave); color: var(--accion); border-radius: 8px; padding: 8px 12px; font-size: 13px; margin-bottom: 12px; display: none; }
+        .tabla-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 0; }
+        th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 10px 12px; border-bottom: 1px solid var(--linea); white-space: nowrap; user-select: none; }
+        th.ord { cursor: pointer; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
+        th .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
+        td { padding: 11px 12px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
+        th.der, td.der { text-align: right; }
+        tr.mes td { background: var(--fondo-hundido); font-weight: 600; cursor: pointer; }
+        tr.mes td.der { font-family: var(--font-mono); }
+        tr.mov { cursor: default; }
+        tr.mov:hover td { background: var(--fondo-hundido); }
+        tr.sel td { background: var(--accion-suave) !important; }
+        .ingreso { color: var(--exito); }
+        .rev { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--borde-control); background: #fff; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: transparent; font-size: 12px; line-height: 1; }
+        .rev.si { background: var(--exito); border-color: var(--exito); color: #fff; }
+        .etq { display: inline-block; background: var(--fondo-hundido); border-radius: 10px; padding: 1px 8px; font-size: 12px; color: var(--tinta-suave); margin-right: 4px; }
+        .sin { color: var(--peligro); font-size: 13px; }
+        .vacio { text-align: center; color: var(--tinta-suave); padding: 36px; }
+        .banda { background: none; border: none; color: var(--borde-control); cursor: pointer; padding: 2px; display: inline-flex; }
+        .banda:hover { color: var(--tinta-suave); }
+        .banda.on { color: var(--peligro); }
+        tr.mov:hover .banda:not(.on) { color: var(--tinta-suave); }
+        tr.mov { cursor: pointer; }
+        .mod-fondo { position: fixed; inset: 0; background: rgba(27,36,48,.45); display: flex; align-items: flex-start; justify-content: center; padding: 36px 16px; overflow: auto; z-index: 1000; }
+        .mod { background: #fff; border-radius: 14px; width: 100%; max-width: 760px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+        .mod-cab { display: flex; justify-content: space-between; align-items: center; padding: 18px 26px; border-bottom: 1px solid var(--linea); }
+        .mod-cab h2 { margin: 0; font-size: 20px; font-weight: 900; }
+        .mod-x { background: var(--fondo-hundido); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; color: var(--tinta-suave); line-height: 1; }
+        .mod-cuerpo { padding: 20px 26px; }
+        .mod-pie { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 26px; border-top: 1px solid var(--linea); }
+        .mod-fila-top { display: flex; gap: 12px; align-items: flex-end; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--linea); flex-wrap: wrap; }
+        .mod-ico { width: 44px; height: 44px; border: 1px solid var(--linea); border-radius: 10px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .mod-ico .rev { pointer-events: none; }
+        .mod-ico.banda { padding: 0; }
+        .mod-ico.banda svg { width: 18px; height: 18px; }
+        .mod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        .mod-grid .ancho { grid-column: 1 / -1; }
+        @media (max-width: 640px) { .mod-grid { grid-template-columns: 1fr; } }
+        .mod-campo label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        .mod-campo input:not([type=checkbox]):not([type=file]), .mod-campo select, .mod-campo textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
+        .mod-campo textarea { resize: vertical; }
+        .seg { display: inline-flex; border: 1px solid var(--borde-control); border-radius: 8px; overflow: hidden; }
+        .seg button { border: none; background: #fff; padding: 9px 20px; font: inherit; cursor: pointer; color: var(--tinta-suave); }
+        .seg button.act { background: var(--accion); color: var(--on-accion); font-weight: 600; }
+        .etq-caja { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--borde-control); border-radius: 8px; padding: 6px 8px; background: #fff; }
+        .etq-caja input { border: none !important; padding: 4px !important; flex: 1; min-width: 160px; outline: none; width: auto !important; }
+        .etq-ficha { background: var(--accion-suave); color: var(--accion); border-radius: 12px; padding: 2px 4px 2px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 2px; }
+        .etq-ficha button { border: none; background: none; cursor: pointer; color: var(--accion); font-size: 14px; line-height: 1; }
+        .chk-lin { display: flex !important; align-items: center; gap: 8px; font-size: 14px !important; color: var(--tinta) !important; }
+        .mod-ayuda { font-size: 12px; color: var(--tinta-suave); }
+        .mod-error { color: var(--peligro); font-size: 13px; min-height: 18px; margin-top: 10px; }
+        td.saldo { color: var(--tinta-suave); border-left: 1px solid var(--linea); padding-left: 16px; }
+        td.saldo.neg { color: var(--peligro); }
+        table { table-layout: fixed; }
+        td { overflow-wrap: anywhere; }
+        th { position: relative; overflow: hidden; text-overflow: ellipsis; }
+        .rz { position: absolute; top: 0; right: 0; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
+        .rz::after { content: ''; position: absolute; left: 4px; top: 25%; height: 50%; width: 1px; background: var(--linea); }
+        th:hover .rz::after, .rz:hover::after { background: var(--accion); width: 2px; left: 3px; }
+        .cab-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .cab-h h1 { margin: 0; }
+        .cfg-top { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+        .cfg-sec { margin-bottom: 22px; }
+        .cfg-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .cfg-cab h2 { margin: 0; font-size: 18px; font-weight: 900; }
+        .tag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { background: var(--fondo-hundido); border: none; border-radius: 6px; padding: 6px 14px; font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: .02em; color: var(--tinta); cursor: pointer; }
+        .tag:hover { background: var(--accion-suave); color: var(--accion); }
+        .tabla-cfg { table-layout: auto; }
+        .tabla-cfg tr.fila-cfg { cursor: pointer; }
+        .tabla-cfg tr.fila-cfg:hover td { background: var(--fondo-hundido); }
+        .tog { display: inline-block; width: 18px; color: var(--tinta-suave); }
+        .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div style="color:var(--tinta-suave);padding:40px 0;text-align:center">Cargando...</div></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
+        import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
+        import { isAuthenticated, esAdmin } from '../../../js/auth.js?v=20261104-1';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const dinero = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+        const HOY = '2026-11-04';
+        const FLAG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>';
+
+
+        // ---- Cuentas y movimientos: arrancan vacíos; se cargan desde CSV o a mano ----
+        const CUENTAS = [
+            { id: 'clara', nombre: '_CLARA', saldoInicial: 0 },
+            { id: 'lafab', nombre: '1_LAFABDECHOC', saldoInicial: 0 },
+            { id: 'dep', nombre: '3_DEPÓSITOS / AP…', saldoInicial: 0 }
+        ];
+        const MOVS = [];
+        const CAT = { etiquetas: [], categorias: [], beneficiarios: [] };
+
+        // El prototipo guarda lo que cargues solo en este navegador (localStorage), para que puedas probar sin perderlo al recargar
+        const CLAVE = 'tesoreria_prototipo_v1';
+        const CUENTAS_INICIO = () => [{ id: 'clara', nombre: '_CLARA', saldoInicial: 0 }, { id: 'lafab', nombre: '1_LAFABDECHOC', saldoInicial: 0 }, { id: 'dep', nombre: '3_DEPÓSITOS / AP…', saldoInicial: 0 }];
+        try {
+            const g = JSON.parse(localStorage.getItem(CLAVE) || 'null');
+            if (g && Array.isArray(g.cuentas) && Array.isArray(g.movs)) { CUENTAS.splice(0, CUENTAS.length, ...g.cuentas); MOVS.push(...g.movs); if (g.cat) { CAT.etiquetas.push(...(g.cat.etiquetas || [])); CAT.categorias.push(...(g.cat.categorias || [])); CAT.beneficiarios.push(...(g.cat.beneficiarios || [])); } }
+        } catch (e) { /* sin datos guardados */ }
+        const guardarLocal = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ cuentas: CUENTAS, movs: MOVS, cat: CAT })); } catch (e) { /* sin almacenamiento */ } };
+
+
+        // ---------- Catálogos: etiquetas, categorías (con subcategorías) y beneficiarios ----------
+        // Se alimentan solos con lo que traigan los movimientos (CSV o captura) y se administran en Configuración.
+        let _k = 0;
+        const nuevoId = () => 'k' + Date.now().toString(36) + (++_k);
+        const cmpEs = (a, b) => String(a).localeCompare(String(b), 'es');
+        const catNombre = c => { const p = c.padre ? CAT.categorias.find(x => x.id === c.padre) : null; return p ? p.nombre + ':' + c.nombre : c.nombre; };
+        function asegurarCategoria(completo, tipo) {
+            if (!completo) return;
+            const [pn, ...resto] = completo.split(':'), hn = resto.join(':').trim();
+            let padre = CAT.categorias.find(c => !c.padre && c.nombre === pn.trim());
+            if (!padre) { padre = { id: nuevoId(), nombre: pn.trim(), padre: null, tipo }; CAT.categorias.push(padre); }
+            if (hn && !CAT.categorias.some(c => c.padre === padre.id && c.nombre === hn)) CAT.categorias.push({ id: nuevoId(), nombre: hn, padre: padre.id, tipo });
+        }
+        function sincronizarCatalogo() {
+            const tipos = {};
+            MOVS.forEach(m => {
+                (m.etiquetas || []).forEach(t => { if (!CAT.etiquetas.includes(t)) CAT.etiquetas.push(t); });
+                if (m.beneficiario && !CAT.beneficiarios.includes(m.beneficiario)) CAT.beneficiarios.push(m.beneficiario);
+                if (m.categoria) { const t = tipos[m.categoria] = tipos[m.categoria] || { i: 0, g: 0 }; m.monto > 0 ? t.i++ : t.g++; }
+            });
+            Object.keys(tipos).forEach(n => asegurarCategoria(n, tipos[n].i > tipos[n].g ? 'ingreso' : 'gasto'));
+            CAT.etiquetas.sort(cmpEs); CAT.beneficiarios.sort(cmpEs);
+        }
+        const categoriasOrdenadas = () => {
+            const r = [];
+            CAT.categorias.filter(c => !c.padre).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(p => {
+                r.push({ v: catNombre(p), t: p.nombre });
+                CAT.categorias.filter(c => c.padre === p.id).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(h => r.push({ v: catNombre(h), t: '— ' + h.nombre }));
+            });
+            return r;
+        };
+
+        function iniciar() {
+            // Anchos de columna ajustables: se arrastra el borde derecho del título; se recuerdan en este navegador
+            const COLS = ['chk', 'fecha', 'ban', 'rev', 'beneficiario', 'categoria', 'etq', 'nota', 'monto', 'saldo'];
+            const ANCHO_BASE = { chk: 32, fecha: 120, ban: 30, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
+            const CLAVE_ANCHOS = 'tesoreria_anchos_v1';
+            let anchosGuardados = {};
+            try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
+            const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'movimientos', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
+
+            const saldoDe = c => c.saldoInicial + MOVS.filter(m => m.cuenta === c.id && m.fecha <= HOY).reduce((s, m) => s + m.monto, 0);
+            const saldoTotal = () => CUENTAS.reduce((s, c) => s + saldoDe(c), 0);
+
+            function filtrados() {
+                const mes = HOY.slice(0, 7), pas = new Date(HOY + 'T12:00:00'); pas.setMonth(pas.getMonth() - 1);
+                const mesPasado = pas.toISOString().slice(0, 7), hace90 = new Date(HOY + 'T12:00:00'); hace90.setDate(hace90.getDate() - 90);
+                const q = st.q.trim().toLowerCase();
+                return MOVS.filter(m => (st.cuenta === 'todas' || m.cuenta === st.cuenta)
+                    && (st.tab === 'todos' || (st.tab === 'gastos' ? m.monto < 0 : m.monto > 0))
+                    && (st.rapido !== 'mes' || m.fecha.startsWith(mes))
+                    && (st.rapido !== 'sincat' || !m.categoria)
+                    && (st.rapido !== 'sinrev' || !m.revisado)
+                    && (st.fecha === 'todo' || (st.fecha === 'mes' && m.fecha.startsWith(mes)) || (st.fecha === 'pasado' && m.fecha.startsWith(mesPasado)) || (st.fecha === '90' && m.fecha >= hace90.toISOString().slice(0, 10)))
+                    && (!st.cat || m.categoria === st.cat)
+                    && (!q || [m.beneficiario, m.categoria, m.nota, m.etiquetas.join(' ')].join(' ').toLowerCase().includes(q)));
+            }
+            const orden = lista => {
+                const k = { fecha: m => m.fecha, beneficiario: m => m.beneficiario.toLowerCase(), categoria: m => (m.categoria || '~').toLowerCase(), monto: m => m.monto };
+                return [...lista].sort((a, b) => { const x = k[st.col](a), y = k[st.col](b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || b.id - a.id; });
+            };
+
+            function pintar() {
+                guardarLocal();
+                if (st.vista === 'config') { pintarConfig(); return; }
+                const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
+                const lista = orden(filtrados());
+                // Saldo después de cada movimiento: orden cronológico (fecha y, a igual fecha, id), con el saldo inicial de la cuenta o de todas
+                const saldos = {};
+                {
+                    let acc = st.cuenta === 'todas' ? CUENTAS.reduce((a, c) => a + c.saldoInicial, 0) : (cuentaAct?.saldoInicial || 0);
+                    MOVS.filter(m => st.cuenta === 'todas' || m.cuenta === st.cuenta)
+                        .sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.id - b.id))
+                        .forEach(m => { acc = Math.round((acc + m.monto) * 100) / 100; saldos[m.id] = acc; });
+                }
+                const categorias = [...new Set(MOVS.map(m => m.categoria).filter(Boolean))].sort();
+                const fijo = COLS.every(k => st.anchos[k] > 0);
+                const ancho = k => fijo ? st.anchos[k] : ANCHO_BASE[k];
+                const sumaAnchos = COLS.reduce((a, k) => a + ancho(k), 0);
+                const rz = k => `<span class="rz" data-k="${k}" title="Arrastra para cambiar el ancho"></span>`;
+                const th = (col, txt, cls = '') => `<th class="ord ${cls} ${st.col === col ? 'act' : ''}" data-col="${col}">${txt}<span class="flecha">${st.col === col ? (st.dir > 0 ? '▲' : '▼') : '▲▼'}</span>${rz(col)}</th>`;
+                // Agrupar por mes (en el orden actual de la lista)
+                const grupos = []; const por = {};
+                lista.forEach(m => { const k = m.fecha.slice(0, 7); if (!por[k]) { por[k] = { k, movs: [] }; grupos.push(por[k]); } por[k].movs.push(m); });
+                if (st.col === 'fecha') grupos.sort((a, b) => (a.k < b.k ? -1 : 1) * st.dir);
+                const filas = grupos.map(g => {
+                    const [a, mm] = g.k.split('-'), total = g.movs.reduce((s, m) => s + m.monto, 0), cerrado = st.cerrados.has(g.k);
+                    return `<tr class="mes" data-mes="${g.k}"><td colspan="8"><span class="flecha-mes">${cerrado ? '▸' : '▾'}</span> ${cap(MESES[+mm - 1])} ${a}</td><td class="der">${dinero(total)}</td><td></td></tr>`
+                        + (cerrado ? '' : g.movs.map(m => `<tr class="mov ${st.sel.has(m.id) ? 'sel' : ''}" data-id="${m.id}">
+                            <td><input type="checkbox" class="chk" ${st.sel.has(m.id) ? 'checked' : ''} aria-label="Seleccionar"></td>
+                            <td class="nw">${+m.fecha.slice(8)} de ${MESES[+m.fecha.slice(5, 7) - 1]}</td>
+                            <td><button class="banda ${m.bandera ? 'on' : ''}" title="Marcar con bandera">${FLAG}</button></td>
+                            <td><button class="rev ${m.revisado ? 'si' : ''}" title="${m.revisado ? 'Revisado' : 'Marcar como revisado'}">✓</button></td>
+                            <td>${esc(m.beneficiario)}</td>
+                            <td>${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</td>
+                            <td>${m.etiquetas.map(e => `<span class="etq">${esc(e)}</span>`).join('')}</td>
+                            <td>${esc(m.nota)}</td>
+                            <td class="der num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</td>
+                            <td class="der num saldo ${saldos[m.id] < 0 ? 'neg' : ''}">${dinero(saldos[m.id])}</td></tr>`).join(''));
+                }).join('');
+
+                app.innerHTML = `
+                    <div class="proto"><strong>Prototipo.</strong> Arranca vacío: carga tus CSV con «Importar CSV». Lo que cargues se guarda solo en este navegador, no en el panel; en la versión completa vivirá en Firestore. <button class="btn-sec" id="bVaciar" style="margin-left:8px;padding:4px 12px;font-size:12px">Vaciar datos del prototipo</button></div>
+                    <div class="layout">
+                        <aside class="cuentas">
+                            <h2>Cuentas</h2>
+                            <div class="fila total ${st.cuenta === 'todas' ? 'act' : ''}" data-cuenta="todas"><span>Todas las cuentas</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            <div class="fila grupo"><span>▾ Bancos y efectivo</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            ${CUENTAS.map(c => `<div class="fila sub ${st.cuenta === c.id ? 'act' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                        </aside>
+                        <section>
+                            <div class="cab-h"><h1>Tesorería</h1><button class="btn-sec" id="bConfig">Configuración</button></div>
+                            <div class="tabs">${[['todos', 'Todos'], ['gastos', 'Gastos'], ['ingresos', 'Ingresos']].map(([k, t]) => `<button class="tab ${st.tab === k ? 'act' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
+                            <div class="tarjeta-cuenta"><div><h3>${cuentaAct ? esc(cuentaAct.nombre) : 'Todas las cuentas'}</h3><div class="tipo">${cuentaAct ? 'Manual' : CUENTAS.length + ' cuentas'}</div></div>
+                                <div class="saldo num">${dinero(cuentaAct ? saldoDe(cuentaAct) : saldoTotal())}<small>Saldo a hoy</small></div></div>
+                            <div class="caja">
+                                <div class="cab-mov"><h3>Movimientos</h3>
+                                    <div class="barra">
+                                        <input type="search" id="q" placeholder="Buscar" value="${esc(st.q)}">
+                                        <select id="fFecha" aria-label="Fecha">${[['todo', 'Fecha: todas'], ['mes', 'Este mes'], ['pasado', 'Mes pasado'], ['90', 'Últimos 90 días']].map(([k, t]) => `<option value="${k}" ${st.fecha === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                                        <select id="fCat" aria-label="Categoría"><option value="">Categoría: todas</option>${categorias.map(c => `<option ${st.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+                                        <button class="btn-sec" id="bImp">Importar CSV</button>
+                                        <button class="btn" id="bNuevo">Nuevo</button>
+                                    </div>
+                                </div>
+                                <div class="rapidos">Filtros rápidos
+                                    ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
+                                    ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
+                                </div>
+                                <div class="aviso" id="aviso"></div>
+                                <div class="tabla-wrap"><table style="${fijo ? 'width:' + sumaAnchos + 'px' : ''}"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
+                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos"></th>${th('fecha', 'Fecha')}<th></th><th></th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
+                                    <tbody>${filas || `<tr><td colspan="10" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
+                                </table></div>
+                            </div>
+                        </section>
+                    </div>`;
+
+                const aviso = t => { const a = document.getElementById('aviso'); a.textContent = t; a.style.display = 'block'; };
+                app.querySelectorAll('[data-cuenta]').forEach(e => e.addEventListener('click', () => { st.cuenta = e.dataset.cuenta; st.sel.clear(); pintar(); }));
+                app.querySelectorAll('[data-tab]').forEach(e => e.addEventListener('click', () => { st.tab = e.dataset.tab; pintar(); }));
+                app.querySelectorAll('[data-rapido]').forEach(e => e.addEventListener('click', () => { st.rapido = st.rapido === e.dataset.rapido ? '' : e.dataset.rapido; pintar(); }));
+                app.querySelectorAll('th.ord').forEach(e => e.addEventListener('click', () => { const c = e.dataset.col; st.dir = st.col === c ? -st.dir : (c === 'fecha' || c === 'monto' ? -1 : 1); st.col = c; pintar(); }));
+                app.querySelectorAll('tr.mes').forEach(e => e.addEventListener('click', () => { const k = e.dataset.mes; st.cerrados.has(k) ? st.cerrados.delete(k) : st.cerrados.add(k); pintar(); }));
+                app.querySelectorAll('tr.mov .rev').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.revisado = !m.revisado; pintar(); }));
+                app.querySelectorAll('tr.mov .chk').forEach(e => e.addEventListener('change', () => { const id = +e.closest('tr').dataset.id; e.checked ? st.sel.add(id) : st.sel.delete(id); pintar(); }));
+                document.getElementById('chkTodos').addEventListener('change', e => { lista.forEach(m => e.target.checked ? st.sel.add(m.id) : st.sel.delete(m.id)); pintar(); });
+                document.getElementById('fFecha').addEventListener('change', e => { st.fecha = e.target.value; pintar(); });
+                document.getElementById('fCat').addEventListener('change', e => { st.cat = e.target.value; pintar(); });
+                const q = document.getElementById('q');
+                q.addEventListener('input', () => { st.q = q.value; const pos = q.selectionStart; pintar(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); });
+                const guardarAnchos = () => { try { localStorage.setItem(CLAVE_ANCHOS, JSON.stringify(st.anchos)); } catch (e) { /* sin almacenamiento */ } };
+                const bRest = document.getElementById('bRestCols');
+                if (bRest) bRest.addEventListener('click', () => { st.anchos = {}; try { localStorage.removeItem(CLAVE_ANCHOS); } catch (e) { /* sin almacenamiento */ } pintar(); });
+                app.querySelectorAll('.rz').forEach(h => {
+                    h.addEventListener('click', ev => ev.stopPropagation());
+                    h.addEventListener('pointerdown', ev => {
+                        ev.preventDefault(); ev.stopPropagation();
+                        const tabla = app.querySelector('.tabla-wrap table'), col = k => tabla.querySelector('col[data-k="' + k + '"]');
+                        if (!COLS.every(k => st.anchos[k] > 0)) {   // primer arrastre: se congelan los anchos actuales de todas las columnas
+                            const ths = [...tabla.querySelectorAll('thead th')];
+                            COLS.forEach((k, i) => { st.anchos[k] = Math.max(24, Math.round(ths[i].getBoundingClientRect().width)); col(k).style.width = st.anchos[k] + 'px'; });
+                        }
+                        const k = h.dataset.k, x0 = ev.clientX, w0 = st.anchos[k];
+                        const suma = () => COLS.reduce((a, c) => a + st.anchos[c], 0);
+                        tabla.style.width = suma() + 'px';
+                        document.body.style.userSelect = 'none';
+                        h.setPointerCapture(ev.pointerId);
+                        const mover = e2 => { st.anchos[k] = Math.max(40, Math.round(w0 + e2.clientX - x0)); col(k).style.width = st.anchos[k] + 'px'; tabla.style.width = suma() + 'px'; };
+                        const soltar = () => { h.removeEventListener('pointermove', mover); h.removeEventListener('pointerup', soltar); document.body.style.userSelect = ''; guardarAnchos(); pintar(); };
+                        h.addEventListener('pointermove', mover); h.addEventListener('pointerup', soltar);
+                    });
+                });
+                document.getElementById('bConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
+                document.getElementById('bNuevo').addEventListener('click', () => abrirMovimiento());
+                document.getElementById('bVaciar').addEventListener('click', () => { if (!confirm('Se borran las cuentas y movimientos cargados en este prototipo. ¿Continuar?')) return; MOVS.length = 0; CAT.etiquetas.length = 0; CAT.categorias.length = 0; CAT.beneficiarios.length = 0; CUENTAS.splice(0, CUENTAS.length, ...CUENTAS_INICIO()); try { localStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } st.cuenta = 'todas'; st.sel.clear(); pintar(); });
+                app.querySelectorAll('tr.mov').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.rev, .chk, .banda')) return; abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id)); }));
+                app.querySelectorAll('tr.mov .banda').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.bandera = !m.bandera; pintar(); }));
+                document.getElementById('bImp').addEventListener('click', abrirImportar);
+            }
+
+
+
+            // ---------- CONFIGURACIÓN: etiquetas, categorías y beneficiarios ----------
+            function abrirModal({ titulo, cuerpo, texto, eliminar, ancho = 560 }) {
+                const fondo = document.createElement('div');
+                fondo.className = 'mod-fondo';
+                fondo.innerHTML = `<div class="mod" role="dialog" aria-modal="true" style="max-width:${ancho}px">
+                    <div class="mod-cab"><h2>${esc(titulo)}</h2><button class="mod-x" id="xCerrar" aria-label="Cerrar">×</button></div>
+                    <div class="mod-cuerpo">${cuerpo}<div class="mod-error" id="xError"></div></div>
+                    <div class="mod-pie">${eliminar ? '<button class="btn-sec" id="xEliminar" style="margin-right:auto;color:var(--peligro)">Eliminar</button>' : ''}<button class="btn-sec" id="xCancelar">Cancelar</button><button class="btn" id="xGuardar">${esc(texto)}</button></div></div>`;
+                document.body.appendChild(fondo);
+                const $x = id => fondo.querySelector('#' + id);
+                const tecla = ev => { if (ev.key === 'Escape') cierra(); };
+                const cierra = () => { fondo.remove(); document.removeEventListener('keydown', tecla); };
+                document.addEventListener('keydown', tecla);
+                fondo.addEventListener('mousedown', ev => { if (ev.target === fondo) cierra(); });
+                $x('xCerrar').addEventListener('click', cierra); $x('xCancelar').addEventListener('click', cierra);
+                const primero = fondo.querySelector('input,select'); if (primero) setTimeout(() => primero.focus(), 0);
+                return { $: $x, cierra, error: t => { $x('xError').textContent = t; } };
+            }
+            const cuenta = (campo, valor) => MOVS.filter(m => (campo === 'etq' ? m.etiquetas.includes(valor) : campo === 'ben' ? m.beneficiario === valor : m.categoria === valor)).length;
+
+            function modalEtiqueta(nombre) {
+                const edita = nombre !== undefined;
+                const M = abrirModal({ titulo: edita ? 'Editar etiqueta' : 'Nueva etiqueta', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `<div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(nombre || '')}" placeholder="Nombre de la etiqueta" autocomplete="off"></div>${edita ? `<p class="mod-ayuda" style="margin:10px 0 0">Usada en ${cuenta('etq', nombre)} movimiento(s). Si la renombras, cambia en todos.</p>` : ''}` });
+                M.$('xGuardar').addEventListener('click', () => {
+                    const n = M.$('xNombre').value.trim().toUpperCase();
+                    if (!n) return M.error('Escribe el nombre.');
+                    if (n !== nombre && CAT.etiquetas.includes(n)) return M.error('Ya existe una etiqueta con ese nombre.');
+                    if (edita) { CAT.etiquetas[CAT.etiquetas.indexOf(nombre)] = n; MOVS.forEach(m => { m.etiquetas = m.etiquetas.map(t => (t === nombre ? n : t)); }); } else CAT.etiquetas.push(n);
+                    M.cierra(); pintar();
+                });
+                if (edita) M.$('xEliminar').addEventListener('click', () => {
+                    const c = cuenta('etq', nombre);
+                    if (!confirm(c ? `Se quitará la etiqueta de ${c} movimiento(s). ¿Continuar?` : '¿Eliminar la etiqueta?')) return;
+                    CAT.etiquetas.splice(CAT.etiquetas.indexOf(nombre), 1); MOVS.forEach(m => { m.etiquetas = m.etiquetas.filter(t => t !== nombre); });
+                    M.cierra(); pintar();
+                });
+            }
+
+            function modalBeneficiario(nombre) {
+                const edita = nombre !== undefined;
+                const M = abrirModal({ titulo: edita ? 'Editar beneficiario' : 'Nuevo beneficiario', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `<div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(nombre || '')}" placeholder="Nombre del beneficiario" autocomplete="off"></div>${edita ? `<p class="mod-ayuda" style="margin:10px 0 0">Tiene ${cuenta('ben', nombre)} movimiento(s). Si lo renombras, cambia en todos.</p>` : ''}` });
+                M.$('xGuardar').addEventListener('click', () => {
+                    const n = M.$('xNombre').value.trim();
+                    if (!n) return M.error('Escribe el nombre.');
+                    if (n !== nombre && CAT.beneficiarios.some(b => b.toLowerCase() === n.toLowerCase())) return M.error('Ya existe un beneficiario con ese nombre.');
+                    if (edita) { CAT.beneficiarios[CAT.beneficiarios.indexOf(nombre)] = n; MOVS.forEach(m => { if (m.beneficiario === nombre) m.beneficiario = n; }); } else CAT.beneficiarios.push(n);
+                    M.cierra(); pintar();
+                });
+                if (edita) M.$('xEliminar').addEventListener('click', () => {
+                    const c = cuenta('ben', nombre);
+                    if (c) return M.error(`No se puede eliminar: tiene ${c} movimiento(s). Renómbralo o cambia esos movimientos primero.`);
+                    if (!confirm('¿Eliminar el beneficiario?')) return;
+                    CAT.beneficiarios.splice(CAT.beneficiarios.indexOf(nombre), 1); M.cierra(); pintar();
+                });
+            }
+
+            function modalCategoria(cat) {
+                const edita = !!cat;
+                const hijos = edita ? CAT.categorias.filter(c => c.padre === cat.id) : [];
+                const posibles = CAT.categorias.filter(c => !c.padre && (!edita || c.id !== cat.id));
+                let tipo = cat?.tipo || 'gasto';
+                const M = abrirModal({ titulo: edita ? 'Editar categoría' : 'Crear categoría', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `
+                    <div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(cat?.nombre || '')}" placeholder="Nombre de la categoría" autocomplete="off"></div>
+                    <div class="mod-campo" style="margin-top:14px"><label for="xPadre">Subcategoría de</label><select id="xPadre" ${hijos.length ? 'disabled' : ''}><option value="">Ninguna</option>${posibles.sort((a, b) => cmpEs(a.nombre, b.nombre)).map(c => `<option value="${c.id}" ${cat?.padre === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>${hijos.length ? '<div class="mod-ayuda" style="margin-top:4px">Tiene subcategorías, por eso no puede ser subcategoría de otra.</div>' : ''}</div>
+                    <div class="mod-campo" style="margin-top:14px"><label>Tipo</label><div class="seg"><button type="button" data-t="ingreso" class="${tipo === 'ingreso' ? 'act' : ''}">Ingreso</button><button type="button" data-t="gasto" class="${tipo === 'gasto' ? 'act' : ''}">Gasto</button></div></div>` });
+                M.$('xNombre').closest('.mod').querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => { tipo = b.dataset.t; M.$('xNombre').closest('.mod').querySelectorAll('[data-t]').forEach(x => x.classList.toggle('act', x === b)); }));
+                M.$('xGuardar').addEventListener('click', () => {
+                    const n = M.$('xNombre').value.trim(), padre = M.$('xPadre').value || null;
+                    if (!n) return M.error('Escribe el nombre.');
+                    if (n.includes(':')) return M.error('El nombre no puede llevar dos puntos (:); para una subcategoría usa «Subcategoría de».');
+                    if (CAT.categorias.some(c => c !== cat && c.nombre.toLowerCase() === n.toLowerCase() && (c.padre || null) === padre)) return M.error('Ya existe una categoría con ese nombre en ese nivel.');
+                    if (!edita) { CAT.categorias.push({ id: nuevoId(), nombre: n, padre, tipo }); }
+                    else {
+                        const antes = [[cat, catNombre(cat)], ...hijos.map(h => [h, catNombre(h)])];
+                        cat.nombre = n; cat.padre = padre; cat.tipo = tipo;
+                        antes.forEach(([c, viejo]) => { const nuevo = catNombre(c); if (nuevo !== viejo) MOVS.forEach(m => { if (m.categoria === viejo) m.categoria = nuevo; }); });
+                    }
+                    M.cierra(); pintar();
+                });
+                if (edita) M.$('xEliminar').addEventListener('click', () => {
+                    const c = cuenta('cat', catNombre(cat));
+                    if (hijos.length) return M.error('Tiene subcategorías. Elimínalas o muévelas primero.');
+                    if (c) return M.error(`No se puede eliminar: tiene ${c} movimiento(s). Cámbialos de categoría primero.`);
+                    if (!confirm('¿Eliminar la categoría?')) return;
+                    CAT.categorias.splice(CAT.categorias.indexOf(cat), 1); M.cierra(); pintar();
+                });
+            }
+
+            function modalCuenta(cta) {
+                const edita = !!cta;
+                const movs = edita ? MOVS.filter(m => m.cuenta === cta.id).length : 0;
+                const M = abrirModal({ titulo: edita ? 'Editar cuenta' : 'Crear cuenta', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `
+                    <div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(cta?.nombre || '')}" placeholder="Ej. 1_LAFABDECHOC" autocomplete="off"></div>
+                    <div class="mod-campo" style="margin-top:14px"><label for="xSaldo">Saldo inicial</label><input id="xSaldo" data-dinero value="${cta ? cta.saldoInicial : 0}"><div class="mod-ayuda" style="margin-top:4px">Saldo de la cuenta antes del primer movimiento registrado. Si el CSV trae toda la historia, déjalo en $0.00.</div></div>
+                    ${edita ? `<p class="mod-ayuda" style="margin:12px 0 0">Tiene ${movs} movimiento(s). Saldo a hoy: ${dinero(saldoDe(cta))}.</p>` : ''}` });
+                M.$('xGuardar').addEventListener('click', () => {
+                    const nombre = M.$('xNombre').value.trim(), saldo = Number(M.$('xSaldo').value) || 0;
+                    if (!nombre) return M.error('Escribe el nombre de la cuenta.');
+                    if (CUENTAS.some(c => c !== cta && c.nombre.toLowerCase() === nombre.toLowerCase())) return M.error('Ya existe una cuenta con ese nombre.');
+                    if (edita) { cta.nombre = nombre; cta.saldoInicial = saldo; }
+                    else CUENTAS.push({ id: 'c' + Date.now().toString(36), nombre, saldoInicial: saldo });
+                    M.cierra(); pintar();
+                });
+                if (edita) M.$('xEliminar').addEventListener('click', () => {
+                    if (movs) return M.error(`No se puede eliminar: tiene ${movs} movimiento(s). Elimínalos o cámbialos de cuenta primero.`);
+                    if (!confirm('¿Eliminar la cuenta?')) return;
+                    CUENTAS.splice(CUENTAS.indexOf(cta), 1); if (st.cuenta === cta.id) st.cuenta = 'todas';
+                    M.cierra(); pintar();
+                });
+            }
+
+            function pintarConfig() {
+                sincronizarCatalogo();
+                const q = k => (st.cfgQ[k] || '').trim().toLowerCase();
+                const conteo = {}; const sumar = (k, v) => { conteo[k + '|' + v] = (conteo[k + '|' + v] || 0) + 1; };
+                MOVS.forEach(m => { m.etiquetas.forEach(t => sumar('etq', t)); if (m.beneficiario) sumar('ben', m.beneficiario); if (m.categoria) sumar('cat', m.categoria); });
+                const n = (k, v) => conteo[k + '|' + v] || 0;
+                const etqs = CAT.etiquetas.filter(t => !q('etq') || t.toLowerCase().includes(q('etq')));
+                const bens = CAT.beneficiarios.filter(b => !q('ben') || b.toLowerCase().includes(q('ben')));
+                const padres = CAT.categorias.filter(c => !c.padre).sort((a, b) => cmpEs(a.nombre, b.nombre));
+                const filasCat = [];
+                padres.forEach(p => {
+                    const hs = CAT.categorias.filter(c => c.padre === p.id).sort((a, b) => cmpEs(a.nombre, b.nombre));
+                    const coincideP = !q('cat') || p.nombre.toLowerCase().includes(q('cat'));
+                    const hsF = hs.filter(h => !q('cat') || coincideP || h.nombre.toLowerCase().includes(q('cat')));
+                    if (!coincideP && !hsF.length) return;
+                    const abierto = q('cat') || !st.cfgCerrados.has(p.id);
+                    filasCat.push({ c: p, nivel: 0, hijos: hs.length, abierto, total: n('cat', catNombre(p)) + hs.reduce((a, h) => a + n('cat', catNombre(h)), 0) });
+                    if (abierto) hsF.forEach(h => filasCat.push({ c: h, nivel: 1, total: n('cat', catNombre(h)) }));
+                });
+                const cab = (titulo, clave, boton, extra = '') => `<div class="cfg-cab"><h2>${titulo}</h2><div class="barra"><input type="search" data-q="${clave}" placeholder="Buscar" value="${esc(st.cfgQ[clave] || '')}"><button class="btn" data-nuevo="${clave}">${boton}</button></div></div>${extra}`;
+                app.innerHTML = `
+                    <div class="cfg-top"><button class="btn-sec" id="bVolver">← Movimientos</button><h1 style="margin:0">Configuración</h1></div>
+                    <p class="sub" style="color:var(--tinta-suave);font-size:13px;margin:0 0 18px">Cuentas y catálogos de Tesorería. Etiquetas, categorías y beneficiarios se llenan solos con lo que traen los movimientos (CSV o captura); aquí los puedes crear, renombrar o eliminar.</p>
+
+                    <section class="caja cfg-sec"><div class="cfg-cab"><h2>Cuentas</h2><div class="barra"><button class="btn" data-nuevo="cta">Nueva cuenta</button></div></div>
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th class="der" style="width:170px">Saldo inicial</th><th class="der" style="width:140px">Movimientos</th><th class="der" style="width:170px">Saldo a hoy</th></tr></thead><tbody>
+                            ${CUENTAS.map(c => `<tr class="fila-cfg" data-cta="${c.id}"><td><strong>${esc(c.nombre)}</strong></td><td class="der num">${dinero(c.saldoInicial)}</td><td class="der num">${MOVS.filter(m => m.cuenta === c.id).length}</td><td class="der num">${dinero(saldoDe(c))}</td></tr>`).join('') || '<tr><td colspan="4" class="vacio">Sin cuentas.</td></tr>'}
+                        </tbody></table></div>
+                    </section>
+
+                    <section class="caja cfg-sec">${cab('Etiquetas', 'etq', 'Nueva etiqueta')}
+                        <div class="tag-grid">${etqs.map(t => `<button class="tag" data-etq="${esc(t)}" title="${n('etq', t)} movimiento(s)">${esc(t)}</button>`).join('') || '<span class="vacio" style="padding:10px">Sin etiquetas.</span>'}</div>
+                    </section>
+
+                    <section class="caja cfg-sec">${cab('Categorías', 'cat', 'Nueva categoría')}
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th style="width:140px">Tipo</th><th class="der" style="width:140px">Movimientos</th></tr></thead><tbody>
+                            ${filasCat.map(f => `<tr class="fila-cfg" data-cat="${f.c.id}"><td style="padding-left:${12 + f.nivel * 28}px">${f.nivel === 0 ? `<span class="tog" data-tog="${f.c.id}">${f.hijos ? (f.abierto ? '▾' : '▸') : ''}</span><strong>${esc(f.c.nombre)}</strong>` : esc(f.c.nombre)}</td><td>${f.c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</td><td class="der num">${f.total}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Sin categorías.</td></tr>'}
+                        </tbody></table></div>
+                    </section>
+
+                    <section class="caja cfg-sec">${cab('Beneficiarios', 'ben', 'Nuevo beneficiario')}
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th class="der" style="width:140px">Movimientos</th></tr></thead><tbody>
+                            ${bens.map(b => `<tr class="fila-cfg" data-ben="${esc(b)}"><td>${esc(b)}</td><td class="der num">${n('ben', b)}</td></tr>`).join('') || '<tr><td colspan="2" class="vacio">Sin beneficiarios.</td></tr>'}
+                        </tbody></table></div>
+                    </section>`;
+                document.getElementById('bVolver').addEventListener('click', () => { st.vista = 'movimientos'; pintar(); });
+                app.querySelectorAll('[data-cta]').forEach(e => e.addEventListener('click', () => modalCuenta(CUENTAS.find(c => c.id === e.dataset.cta))));
+                app.querySelectorAll('[data-etq]').forEach(e => e.addEventListener('click', () => modalEtiqueta(e.dataset.etq)));
+                app.querySelectorAll('[data-ben]').forEach(e => e.addEventListener('click', () => modalBeneficiario(e.dataset.ben)));
+                app.querySelectorAll('[data-cat]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.tog')) return; modalCategoria(CAT.categorias.find(c => c.id === e.dataset.cat)); }));
+                app.querySelectorAll('[data-tog]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const id = e.dataset.tog; st.cfgCerrados.has(id) ? st.cfgCerrados.delete(id) : st.cfgCerrados.add(id); pintar(); }));
+                app.querySelectorAll('[data-nuevo]').forEach(e => e.addEventListener('click', () => ({ cta: () => modalCuenta(), etq: () => modalEtiqueta(), cat: () => modalCategoria(), ben: () => modalBeneficiario() })[e.dataset.nuevo]()));
+                app.querySelectorAll('[data-q]').forEach(inp => inp.addEventListener('input', () => { st.cfgQ[inp.dataset.q] = inp.value; const pos = inp.selectionStart, k = inp.dataset.q; pintar(); const nuevo = app.querySelector(`[data-q="${k}"]`); nuevo.focus(); nuevo.setSelectionRange(pos, pos); }));
+            }
+
+            // ---------- Crear / editar un movimiento a mano (clon de «Create transaction» de Simplifi) ----------
+            function abrirMovimiento(mov) {
+                const edita = !!mov;
+                const m = mov || { id: 0, fecha: HOY, cuenta: CUENTAS.some(c => c.id === st.cuenta) ? st.cuenta : CUENTAS[0].id, beneficiario: '', categoria: '', monto: 0, etiquetas: [], nota: '', revisado: false, bandera: false, estado: 'conciliado', excluido: false, adjuntos: [] };
+                const e = { revisado: m.revisado, bandera: m.bandera, etiquetas: [...m.etiquetas], adjuntos: [...(m.adjuntos || [])] };
+                sincronizarCatalogo(); const categorias = categoriasOrdenadas();
+                const beneficiarios = CAT.beneficiarios;
+                const fondo = document.createElement('div');
+                fondo.className = 'mod-fondo';
+                fondo.innerHTML = `
+                <div class="mod" role="dialog" aria-modal="true">
+                    <div class="mod-cab"><h2>${edita ? 'Editar movimiento' : 'Crear movimiento'}</h2><button class="mod-x" id="mCerrar" aria-label="Cerrar">×</button></div>
+                    <div class="mod-cuerpo">
+                        <div class="mod-fila-top">
+                            <button type="button" class="mod-ico" id="mRev" title="Revisado"><span class="rev ${e.revisado ? 'si' : ''}">✓</span></button>
+                            <button type="button" class="mod-ico banda ${e.bandera ? 'on' : ''}" id="mBan" title="Marcar con bandera">${FLAG}</button>
+                            <div class="mod-campo" style="flex:0 0 220px"><label for="mEstado">Estado</label><select id="mEstado"><option value="conciliado" ${m.estado !== 'pendiente' ? 'selected' : ''}>Conciliado</option><option value="pendiente" ${m.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option></select></div>
+                            <button type="button" class="btn-sec" disabled style="margin-left:auto;opacity:.5" title="Disponible en una versión posterior">Marcar como recurrente</button>
+                        </div>
+                        <div class="mod-grid">
+                            <div class="mod-campo"><label for="mBen">Beneficiario</label><input id="mBen" list="mBenLista" placeholder="Seleccionar o escribir beneficiario" value="${esc(m.beneficiario)}" autocomplete="off"><datalist id="mBenLista">${beneficiarios.map(b => `<option value="${esc(b)}">`).join('')}</datalist></div>
+                            <div class="mod-campo"><label>Fecha</label><input type="date" id="mFecha" value="${m.fecha}"></div>
+                            <div class="mod-campo"><label for="mMonto">Monto</label><input id="mMonto" data-dinero value="${Math.abs(m.monto) || ''}" placeholder="$0.00"></div>
+                            <div class="mod-campo"><label>Tipo</label><div class="seg"><button type="button" data-tipo="gasto" class="${m.monto > 0 ? '' : 'act'}">Gasto</button><button type="button" data-tipo="ingreso" class="${m.monto > 0 ? 'act' : ''}">Ingreso</button></div></div>
+                            <div class="mod-campo"><label for="mCuenta">Cuenta</label><select id="mCuenta">${CUENTAS.map(c => `<option value="${c.id}" ${m.cuenta === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+                            <div class="mod-campo"><label for="mCat">Categoría</label><select id="mCat"><option value="">Sin categoría</option>${categorias.map(c => `<option value="${esc(c.v)}" ${m.categoria === c.v ? 'selected' : ''}>${esc(c.t)}</option>`).join('')}<option value="__nueva">Categoría nueva…</option></select><input id="mCatNueva" placeholder="Nombre de la categoría nueva" style="display:none;margin-top:6px"></div>
+                            <div class="mod-campo ancho"><label for="mEtq">Etiquetas</label><div class="etq-caja" id="mEtqCaja"><input id="mEtq" list="mEtqLista" placeholder="Escribe una etiqueta y presiona Enter"><datalist id="mEtqLista">${CAT.etiquetas.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
+                        </div>
+                        <div class="mod-grid" style="margin-top:14px">
+                            <div class="mod-campo"><label for="mNota">Nota</label><textarea id="mNota" rows="3" placeholder="Agrega tu nota aquí">${esc(m.nota)}</textarea></div>
+                            <div>
+                                <div class="mod-campo"><label>Excluir de</label><label class="chk-lin"><input type="checkbox" id="mExc" ${m.excluido ? 'checked' : ''}> Reportes <span class="mod-ayuda">Afecta reportes y resúmenes.</span></label></div>
+                                <div class="mod-campo" style="margin-top:10px"><label for="mAdj">Adjuntos</label><input type="file" id="mAdj" multiple><div id="mAdjLista" class="mod-ayuda"></div></div>
+                            </div>
+                        </div>
+                        <div class="mod-error" id="mError"></div>
+                    </div>
+                    <div class="mod-pie">${edita ? '<button class="btn-sec" id="mEliminar" style="margin-right:auto;color:var(--peligro)">Eliminar</button>' : ''}<button class="btn-sec" id="mCancelar">Cancelar</button><button class="btn" id="mGuardar">${edita ? 'Guardar' : 'Crear'}</button></div>
+                </div>`;
+                document.body.appendChild(fondo);
+                const $m = id => fondo.querySelector('#' + id);
+                selectorFecha($m('mFecha'), { atras: 6, adelante: 3 });
+                let tipo = m.monto > 0 ? 'ingreso' : 'gasto';
+                const cierra = () => { fondo.remove(); document.removeEventListener('keydown', tecla); };
+                const tecla = ev => { if (ev.key === 'Escape') cierra(); };
+                document.addEventListener('keydown', tecla);
+                fondo.addEventListener('mousedown', ev => { if (ev.target === fondo) cierra(); });
+                $m('mCerrar').addEventListener('click', cierra); $m('mCancelar').addEventListener('click', cierra);
+                $m('mRev').addEventListener('click', () => { e.revisado = !e.revisado; $m('mRev').firstElementChild.classList.toggle('si', e.revisado); });
+                $m('mBan').addEventListener('click', () => { e.bandera = !e.bandera; $m('mBan').classList.toggle('on', e.bandera); });
+                fondo.querySelectorAll('[data-tipo]').forEach(b => b.addEventListener('click', () => { tipo = b.dataset.tipo; fondo.querySelectorAll('[data-tipo]').forEach(x => x.classList.toggle('act', x === b)); }));
+                $m('mCat').addEventListener('change', () => { const n = $m('mCatNueva'); n.style.display = $m('mCat').value === '__nueva' ? 'block' : 'none'; if (n.style.display === 'block') n.focus(); });
+                // Etiquetas como fichas
+                const pintaEtq = () => { fondo.querySelectorAll('.etq-ficha').forEach(x => x.remove()); e.etiquetas.forEach((t, i) => { const f = document.createElement('span'); f.className = 'etq-ficha'; f.innerHTML = esc(t) + ' <button type="button" aria-label="Quitar">×</button>'; f.querySelector('button').addEventListener('click', () => { e.etiquetas.splice(i, 1); pintaEtq(); }); $m('mEtqCaja').insertBefore(f, $m('mEtq')); }); };
+                const agregaEtq = () => { const t = $m('mEtq').value.trim().replace(/,$/, '').toUpperCase(); if (t && !e.etiquetas.includes(t)) e.etiquetas.push(t); $m('mEtq').value = ''; pintaEtq(); };
+                $m('mEtq').addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); agregaEtq(); } else if (ev.key === 'Backspace' && !$m('mEtq').value && e.etiquetas.length) { e.etiquetas.pop(); pintaEtq(); } });
+                $m('mEtq').addEventListener('change', agregaEtq);
+                pintaEtq();
+                // Adjuntos (prototipo: solo se anotan los nombres)
+                const pintaAdj = () => { $m('mAdjLista').textContent = e.adjuntos.length ? e.adjuntos.join(' · ') : ''; };
+                $m('mAdj').addEventListener('change', () => { [...$m('mAdj').files].forEach(f => e.adjuntos.push(f.name)); pintaAdj(); });
+                pintaAdj();
+                if (edita) $m('mEliminar').addEventListener('click', () => { if (!confirm('¿Eliminar este movimiento?')) return; MOVS.splice(MOVS.indexOf(mov), 1); cierra(); pintar(); });
+                $m('mGuardar').addEventListener('click', () => {
+                    const err = t => { $m('mError').textContent = t; };
+                    const monto = Math.abs(Number($m('mMonto').value) || 0);
+                    const ben = $m('mBen').value.trim();
+                    if (!ben) return err('Escribe el beneficiario.');
+                    if (!$m('mFecha').value) return err('Elige la fecha completa (día, mes y año).');
+                    if (!monto) return err('Escribe el monto.');
+                    let cat = $m('mCat').value;
+                    if (cat === '__nueva') { cat = $m('mCatNueva').value.trim().toUpperCase(); if (!cat) return err('Escribe el nombre de la categoría nueva.'); }
+                    const datos = { fecha: $m('mFecha').value, cuenta: $m('mCuenta').value, beneficiario: ben, categoria: cat, monto: tipo === 'ingreso' ? monto : -monto, etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: $m('mExc').checked, adjuntos: e.adjuntos };
+                    if (edita) Object.assign(mov, datos); else { delete datos.ejemplo; MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, ...datos }); }
+                    sincronizarCatalogo();
+                    cierra(); if (st.cuenta !== 'todas') st.cuenta = datos.cuenta; pintar();
+                    const a = document.getElementById('aviso'); a.textContent = (edita ? 'Movimiento actualizado' : 'Movimiento creado') + ' (guardado solo en este navegador).'; a.style.display = 'block';
+                });
+                setTimeout(() => $m('mBen').focus(), 0);
+            }
+
+            // ---------- Importar CSV de Simplifi (prototipo: se lee en el navegador y se carga solo en memoria) ----------
+            const MES_ABR = { ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7, ago: 8, aug: 8, sep: 9, oct: 10, nov: 11, dic: 12, dec: 12 };
+            function leerCSV(texto) {
+                texto = texto.replace(/^﻿/, '');
+                const filas = []; let f = [], c = '', q = false;
+                for (let i = 0; i < texto.length; i++) {
+                    const ch = texto[i];
+                    if (q) { if (ch === '"') { if (texto[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+                    else if (ch === '"') q = true;
+                    else if (ch === ',') { f.push(c); c = ''; }
+                    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && texto[i + 1] === '\n') i++; f.push(c); c = ''; if (f.some(x => x.trim() !== '')) filas.push(f); f = []; }
+                    else c += ch;
+                }
+                if (c !== '' || f.length) { f.push(c); if (f.some(x => x.trim() !== '')) filas.push(f); }
+                return filas;
+            }
+            function fechaCSV(t) {
+                t = String(t || '').trim();
+                let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t); if (m) return m[1] + '-' + m[2] + '-' + m[3];
+                m = /^(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]+)\.?,?\s+(\d{4})$/.exec(t);
+                if (m) { const mes = MES_ABR[m[2].toLowerCase().slice(0, 3)]; if (mes) return m[3] + '-' + String(mes).padStart(2, '0') + '-' + m[1].padStart(2, '0'); }
+                m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t); if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+                return null;
+            }
+            function interpretar(texto) {
+                const filas = leerCSV(texto);
+                if (filas.length < 2) return { error: 'El archivo no tiene movimientos.' };
+                const enc = filas[0].map(x => x.trim().toLowerCase());
+                const col = (...n) => enc.findIndex(x => n.includes(x));
+                const ix = { fecha: col('date', 'fecha'), pago: col('payee', 'beneficiario'), cat: col('category', 'categoría', 'categoria'), tags: col('tags', 'etiquetas'), nota: col('notes', 'notas'), monto: col('amount', 'monto', 'importe'), rev: col('reviewed', 'revisado') };
+                if (ix.fecha < 0 || ix.monto < 0) return { error: 'No reconozco las columnas. Espero las del CSV de Simplifi: Date, Payee, Category, Tags, Notes, Amount.' };
+                const filasOk = [], errores = [];
+                filas.slice(1).forEach((r, i) => {
+                    const fecha = fechaCSV(r[ix.fecha]);
+                    const monto = Number(String(r[ix.monto] ?? '').replace(/[$,\s"]/g, ''));
+                    if (!fecha || !Number.isFinite(monto) || String(r[ix.monto] ?? '').trim() === '') { errores.push(i + 2); return; }
+                    filasOk.push({ fecha, monto, beneficiario: (r[ix.pago] || '').trim(), categoria: (r[ix.cat] || '').trim(), etiquetas: (r[ix.tags] || '').split(/[|;]/).map(x => x.trim()).filter(Boolean), nota: (r[ix.nota] || '').trim(), revisado: ix.rev >= 0 && /^(yes|si|sí|true|1)$/i.test((r[ix.rev] || '').trim()) });
+                });
+                return { filas: filasOk, errores };
+            }
+            const llave = m => m.fecha + '|' + m.monto.toFixed(2) + '|' + (m.beneficiario || '').toLowerCase();
+
+            function abrirImportar() {
+                const fondo = document.createElement('div');
+                fondo.style.cssText = 'position:fixed;inset:0;background:rgba(27,36,48,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:1000';
+                const campoCss = 'width:100%;padding:8px 10px;border:1px solid var(--borde-control);border-radius:6px;font:inherit';
+                const etiqCss = 'display:block;font-size:12px;color:var(--tinta-suave);margin-bottom:4px';
+                fondo.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:860px;width:100%;padding:22px 26px">'
+                    + '<h2 style="margin:0 0 4px;font-size:20px;font-weight:900">Importar movimientos desde CSV</h2>'
+                    + '<p style="margin:0 0 16px;color:var(--tinta-suave);font-size:13px">Sube el CSV que exporta Simplifi (una cuenta por archivo). Se lee en tu navegador y se guarda solo en este navegador (en el prototipo): no se envía a ningún lado.</p>'
+                    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 18px">'
+                    + '<div><label style="' + etiqCss + '">Cuenta destino</label><select id="iCuenta" style="' + campoCss + '"></select></div>'
+                    + '<div id="iNuevaWrap" style="display:none"><label style="' + etiqCss + '">Nombre de la cuenta nueva</label><input id="iNueva" placeholder="Ej. 1_LAFABDECHOC" style="' + campoCss + '"></div>'
+                    + '<div><label style="' + etiqCss + '">Saldo inicial de la cuenta</label><input id="iSaldo" value="0" inputmode="decimal" style="' + campoCss + '"></div>'
+                    + '<div><label style="' + etiqCss + '">Archivo CSV</label><input id="iArchivo" type="file" accept=".csv,text/csv" style="width:100%;padding:6px 0;font:inherit"></div>'
+                    + '<label id="iQuitarWrap" style="grid-column:1/-1;display:none;gap:8px;align-items:center;font-size:13px"><input id="iQuitar" type="checkbox" checked> Quitar primero los movimientos de ejemplo de esa cuenta</label>'
+                    + '</div><div id="iVista" style="margin-top:16px"></div>'
+                    + '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button class="btn-sec" id="iCancelar">Cancelar</button><button class="btn" id="iCargar" disabled>Cargar movimientos</button></div></div>';
+                document.body.appendChild(fondo);
+                const $i = id => fondo.querySelector('#' + id);
+                $i('iCuenta').innerHTML = CUENTAS.map(c => '<option value="' + c.id + '" ' + (st.cuenta === c.id ? 'selected' : '') + '>' + esc(c.nombre) + '</option>').join('') + '<option value="__nueva">Cuenta nueva…</option>';
+                let leido = null;
+                const cierra = () => fondo.remove();
+                fondo.addEventListener('click', e => { if (e.target === fondo) cierra(); });
+                $i('iCancelar').addEventListener('click', cierra);
+
+                function vista() {
+                    const v = $i('iVista'), btn = $i('iCargar');
+                    $i('iNuevaWrap').style.display = $i('iCuenta').value === '__nueva' ? 'block' : 'none';
+                    if (!leido) { v.innerHTML = ''; btn.disabled = true; return; }
+                    if (leido.error) { v.innerHTML = '<div style="background:#fdecea;color:var(--peligro);padding:10px 14px;border-radius:8px;font-size:13px">' + esc(leido.error) + '</div>'; btn.disabled = true; return; }
+                    const destino = $i('iCuenta').value, quitar = $i('iQuitar').checked && destino !== '__nueva';
+                    const existentes = {}; MOVS.filter(m => m.cuenta === destino && !(quitar && m.ejemplo)).forEach(m => { const k = llave(m); existentes[k] = (existentes[k] || 0) + 1; });
+                    const vistos = {}, nuevas = [], dup = [];
+                    leido.filas.forEach(m => { const k = llave(m); const n = vistos[k] = (vistos[k] || 0); vistos[k]++; (n < (existentes[k] || 0) ? dup : nuevas).push(m); });
+                    leido.nuevas = nuevas;
+                    const ing = nuevas.filter(m => m.monto > 0).reduce((a, m) => a + m.monto, 0), gas = nuevas.filter(m => m.monto < 0).reduce((a, m) => a + m.monto, 0);
+                    const fechas = leido.filas.map(m => m.fecha).sort();
+                    const caja = (t, h) => '<div style="border:1px solid var(--linea);border-radius:8px;padding:8px 14px"><div style="font-size:11px;color:var(--tinta-suave);text-transform:uppercase">' + t + '</div>' + h + '</div>';
+                    v.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">'
+                        + [['Leídos', leido.filas.length], ['Nuevos', nuevas.length], ['Ya existían', dup.length], ['Con error', leido.errores.length]].map(([t, n]) => caja(t, '<div style="font-size:18px;font-weight:700">' + n + '</div>')).join('')
+                        + caja('Periodo', '<div style="font-size:14px;font-weight:600;margin-top:4px">' + (fechas.length ? fechas[0] + ' a ' + fechas[fechas.length - 1] : '-') + '</div>')
+                        + caja('Ingresos / gastos nuevos', '<div class="num" style="font-size:14px;font-weight:600;margin-top:4px"><span style="color:var(--exito)">+' + dinero(ing) + '</span> / ' + dinero(gas) + '</div>') + '</div>'
+                        + (leido.errores.length ? '<div style="font-size:12px;color:var(--peligro);margin-bottom:8px">Filas que no pude leer (número de renglón): ' + leido.errores.slice(0, 15).join(', ') + (leido.errores.length > 15 ? '…' : '') + '</div>' : '')
+                        + '<div style="max-height:260px;overflow:auto;border:1px solid var(--linea);border-radius:8px"><table style="min-width:0;font-size:13px"><thead><tr><th>Fecha</th><th>Beneficiario</th><th>Categoría</th><th>Etiquetas</th><th class="der">Monto</th></tr></thead><tbody>'
+                        + nuevas.slice(0, 12).map(m => '<tr><td class="nw">' + m.fecha + '</td><td>' + esc(m.beneficiario) + '</td><td>' + esc(m.categoria) + '</td><td>' + esc(m.etiquetas.join(' | ')) + '</td><td class="der num ' + (m.monto > 0 ? 'ingreso' : '') + '">' + (m.monto > 0 ? '+' : '') + dinero(m.monto) + '</td></tr>').join('')
+                        + (nuevas.length > 12 ? '<tr><td colspan="5" style="text-align:center;color:var(--tinta-suave)">… y ' + (nuevas.length - 12) + ' más</td></tr>' : '') + '</tbody></table></div>';
+                    btn.disabled = !nuevas.length; btn.textContent = nuevas.length ? 'Cargar ' + nuevas.length + ' movimiento' + (nuevas.length === 1 ? '' : 's') : 'Nada nuevo que cargar';
+                }
+                ['iCuenta', 'iQuitar'].forEach(id => $i(id).addEventListener('change', vista));
+                $i('iArchivo').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; leido = interpretar(await f.text()); vista(); });
+                $i('iCargar').addEventListener('click', () => {
+                    let destino = $i('iCuenta').value;
+                    if (destino === '__nueva') {
+                        const nombre = $i('iNueva').value.trim(); if (!nombre) { $i('iNueva').focus(); return; }
+                        destino = 'c' + Date.now(); CUENTAS.push({ id: destino, nombre, saldoInicial: 0 });
+                    } else if ($i('iQuitar').checked) { for (let k = MOVS.length - 1; k >= 0; k--) if (MOVS[k].cuenta === destino && MOVS[k].ejemplo) MOVS.splice(k, 1); }
+                    const cta = CUENTAS.find(c => c.id === destino);
+                    cta.saldoInicial = Number(String($i('iSaldo').value).replace(/[$,\s]/g, '')) || 0;
+                    let id = Math.max(0, ...MOVS.map(m => m.id)) + 1;
+                    leido.nuevas.forEach(m => MOVS.push({ id: id++, cuenta: destino, ...m }));
+                    sincronizarCatalogo();
+                    const n = leido.nuevas.length;
+                    cierra(); st.cuenta = destino; st.sel.clear(); pintar();
+                    const a = document.getElementById('aviso'); a.textContent = 'Se cargaron ' + n + ' movimientos en ' + cta.nombre + ' (guardados solo en este navegador).'; a.style.display = 'block';
+                });
+            }
+            pintar();
+        }
+
+        if (!isAuthenticated()) window.location.href = '/login.html';
+        else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p>Esta sección es solo para el administrador.</p>';
+            else iniciar();
+        }
+    </script>
+</body>
+</html>

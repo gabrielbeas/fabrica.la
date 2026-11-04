@@ -57,6 +57,8 @@ jobs:
           cp admin/public/personal/index.html dist/admin/personal/
           cp admin/public/cfe/index.html dist/admin/cfe/
           cp admin/public/pagos-mensuales/index.html dist/admin/pagos-mensuales/
+          mkdir -p dist/admin/tesoreria
+          cp admin/public/tesoreria/index.html dist/admin/tesoreria/
           cp admin/public/depositos/index.html dist/admin/depositos/
           cp admin/public/depositos/ficha.html dist/admin/depositos/
           cp admin/public/compras/index.html dist/admin/compras/

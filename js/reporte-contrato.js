@@ -1,9 +1,9 @@
 // Reporte completo de un contrato (botón «EXPORTAR REPORTE» de la carátula): junta en un solo documento todo lo del
 // arrendatario que el panel guarda: datos y condiciones, renta, pagos de renta, depósito, facturas, agua, seguro, CFE,
 // historial de cambios. Se arma al momento con lo que hay en Firestore y se imprime en hoja carta (Guardar como PDF).
-import { db } from './auth.js?v=20261023-1';
+import { db } from './auth.js?v=20261104-1';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261023-1';
+import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261104-1';
 import { LOGO_URL } from './facturacion.js?v=20261013-1';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
