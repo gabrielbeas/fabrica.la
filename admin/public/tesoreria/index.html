@@ -75,6 +75,7 @@
         .banda { background: none; border: none; color: var(--borde-control); cursor: pointer; padding: 2px; display: inline-flex; }
         .banda:hover { color: var(--tinta-suave); }
         .banda.on { color: var(--peligro); }
+        .banda.on svg { fill: currentColor; }
         tr.mov:hover .banda:not(.on) { color: var(--tinta-suave); }
         tr.mov { cursor: pointer; }
         .mod-fondo { position: fixed; inset: 0; background: rgba(27,36,48,.45); display: flex; align-items: flex-start; justify-content: center; padding: 36px 16px; overflow: auto; z-index: 1000; }
@@ -135,6 +136,7 @@
         .combo-vacio { padding: 10px 12px; font-size: 13px; color: var(--tinta-suave); }
         .sync { position: fixed; right: 18px; bottom: 14px; background: #fff; border: 1px solid var(--linea); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--tinta-suave); box-shadow: 0 4px 14px rgba(0,0,0,.12); z-index: 900; }
         .sync.err { color: var(--peligro); border-color: var(--peligro); }
+        td.numm { color: var(--tinta-tenue, #9aa2ad); text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -348,8 +350,8 @@
 
         function iniciar() {
             // Anchos de columna ajustables: se arrastra el borde derecho del título; se recuerdan en este navegador
-            const COLS = ['chk', 'fecha', 'ban', 'rev', 'beneficiario', 'categoria', 'etq', 'nota', 'monto', 'saldo'];
-            const ANCHO_BASE = { chk: 32, fecha: 120, ban: 30, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
+            const COLS = ['chk', 'num', 'fecha', 'ban', 'rev', 'beneficiario', 'categoria', 'etq', 'nota', 'monto', 'saldo'];
+            const ANCHO_BASE = { chk: 32, num: 40, fecha: 120, ban: 30, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
             const CLAVE_ANCHOS = 'tesoreria_anchos_v1';
             let anchosGuardados = {};
             try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
@@ -382,12 +384,12 @@
                 const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
                 const lista = orden(filtrados());
                 // Saldo después de cada movimiento: orden cronológico (fecha y, a igual fecha, id), con el saldo inicial de la cuenta o de todas
-                const saldos = {};
+                const saldos = {}, nums = {}, contadorMes = {};
                 {
                     let acc = st.cuenta === 'todas' ? CUENTAS.reduce((a, c) => a + c.saldoInicial, 0) : (cuentaAct?.saldoInicial || 0);
                     MOVS.filter(m => st.cuenta === 'todas' || m.cuenta === st.cuenta)
                         .sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.id - b.id))
-                        .forEach(m => { acc = Math.round((acc + m.monto) * 100) / 100; saldos[m.id] = acc; });
+                        .forEach(m => { acc = Math.round((acc + m.monto) * 100) / 100; saldos[m.id] = acc; const k = m.fecha.slice(0, 7); nums[m.id] = contadorMes[k] = (contadorMes[k] || 0) + 1; });
                 }
                 const categorias = [...new Set(MOVS.map(m => m.categoria).filter(Boolean))].sort();
                 const fijo = COLS.every(k => st.anchos[k] > 0);
@@ -401,9 +403,10 @@
                 if (st.col === 'fecha') grupos.sort((a, b) => (a.k < b.k ? -1 : 1) * st.dir);
                 const filas = grupos.map(g => {
                     const [a, mm] = g.k.split('-'), total = g.movs.reduce((s, m) => s + m.monto, 0), cerrado = st.cerrados.has(g.k);
-                    return `<tr class="mes" data-mes="${g.k}"><td colspan="8"><span class="flecha-mes">${cerrado ? '▸' : '▾'}</span> ${cap(MESES[+mm - 1])} ${a}</td><td class="der">${dinero(total)}</td><td></td></tr>`
+                    return `<tr class="mes" data-mes="${g.k}"><td colspan="9"><span class="flecha-mes">${cerrado ? '▸' : '▾'}</span> ${cap(MESES[+mm - 1])} ${a}</td><td class="der">${dinero(total)}</td><td></td></tr>`
                         + (cerrado ? '' : g.movs.map(m => `<tr class="mov ${st.sel.has(m.id) ? 'sel' : ''}" data-id="${m.id}">
                             <td><input type="checkbox" class="chk" ${st.sel.has(m.id) ? 'checked' : ''} aria-label="Seleccionar"></td>
+                            <td class="numm">${nums[m.id]}</td>
                             <td class="nw">${+m.fecha.slice(8)} de ${MESES[+m.fecha.slice(5, 7) - 1]}</td>
                             <td><button class="banda ${m.bandera ? 'on' : ''}" title="Marcar con bandera">${FLAG}</button></td>
                             <td><button class="rev ${m.revisado ? 'si' : ''}" title="${m.revisado ? 'Revisado' : 'Marcar como revisado'}">✓</button></td>
@@ -444,8 +447,8 @@
                                 </div>
                                 <div class="aviso" id="aviso"></div>
                                 <div class="tabla-wrap"><table style="${fijo ? 'width:' + sumaAnchos + 'px' : ''}"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
-                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos"></th>${th('fecha', 'Fecha')}<th></th><th></th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
-                                    <tbody>${filas || `<tr><td colspan="10" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
+                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos"></th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°</th>${th('fecha', 'Fecha')}<th></th><th></th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
+                                    <tbody>${filas || `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
                             </div>
                         </section>
