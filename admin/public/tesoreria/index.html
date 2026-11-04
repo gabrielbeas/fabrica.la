@@ -126,6 +126,13 @@
         .tabla-cfg tr.fila-cfg { cursor: pointer; }
         .tabla-cfg tr.fila-cfg:hover td { background: var(--fondo-hundido); }
         .tog { display: inline-block; width: 18px; color: var(--tinta-suave); }
+        .combo { position: relative; }
+        .combo-lista { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow: auto; background: #fff; border: 1px solid var(--borde-control); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.18); z-index: 20; }
+        .combo-lista.abierta { display: block; }
+        .combo-op { padding: 8px 12px; font-size: 14px; cursor: pointer; }
+        .combo-op.act { background: var(--accion-suave); color: var(--accion); }
+        .combo-op.nueva { color: var(--accion); font-weight: 600; border-top: 1px solid var(--linea); }
+        .combo-vacio { padding: 10px 12px; font-size: 13px; color: var(--tinta-suave); }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -540,7 +547,7 @@
                             <div class="mod-campo"><label for="mMonto">Monto</label><input id="mMonto" data-dinero value="${Math.abs(m.monto) || ''}" placeholder="$0.00"></div>
                             <div class="mod-campo"><label>Tipo</label><div class="seg"><button type="button" data-tipo="gasto" class="${m.monto > 0 ? '' : 'act'}">Gasto</button><button type="button" data-tipo="ingreso" class="${m.monto > 0 ? 'act' : ''}">Ingreso</button></div></div>
                             <div class="mod-campo"><label for="mCuenta">Cuenta</label><select id="mCuenta">${CUENTAS.map(c => `<option value="${c.id}" ${m.cuenta === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
-                            <div class="mod-campo"><label for="mCat">Categoría</label><select id="mCat"><option value="">Sin categoría</option>${categorias.map(c => `<option value="${esc(c.v)}" ${m.categoria === c.v ? 'selected' : ''}>${esc(c.t)}</option>`).join('')}<option value="__nueva">Categoría nueva…</option></select><input id="mCatNueva" placeholder="Nombre de la categoría nueva" style="display:none;margin-top:6px"></div>
+                            <div class="mod-campo"><label for="mCatIn">Categoría</label><div class="combo"><input id="mCatIn" autocomplete="off" placeholder="Sin categoría (escribe para buscar)" value="${esc(m.categoria)}"><div class="combo-lista" id="mCatLista" role="listbox"></div></div></div>
                             <div class="mod-campo ancho"><label for="mEtq">Etiquetas</label><div class="etq-caja" id="mEtqCaja"><input id="mEtq" list="mEtqLista" placeholder="Escribe una etiqueta y presiona Enter"><datalist id="mEtqLista">${CAT.etiquetas.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
                         </div>
                         <div class="mod-grid" style="margin-top:14px">
@@ -566,7 +573,37 @@
                 $m('mRev').addEventListener('click', () => { e.revisado = !e.revisado; $m('mRev').firstElementChild.classList.toggle('si', e.revisado); });
                 $m('mBan').addEventListener('click', () => { e.bandera = !e.bandera; $m('mBan').classList.toggle('on', e.bandera); });
                 fondo.querySelectorAll('[data-tipo]').forEach(b => b.addEventListener('click', () => { tipo = b.dataset.tipo; fondo.querySelectorAll('[data-tipo]').forEach(x => x.classList.toggle('act', x === b)); }));
-                $m('mCat').addEventListener('change', () => { const n = $m('mCatNueva'); n.style.display = $m('mCat').value === '__nueva' ? 'block' : 'none'; if (n.style.display === 'block') n.focus(); });
+                // Categoría "adivinable": al escribir se van descartando las opciones que no coinciden
+                {
+                    const inp = $m('mCatIn'), lista = $m('mCatLista');
+                    const todas = [{ v: '', t: 'Sin categoría', hijo: false }, ...categorias.map(c => ({ v: c.v, t: c.v.includes(':') ? c.v.replace(':', ' › ') : c.v, hijo: c.v.includes(':') }))];
+                    let activo = 0, opciones = [];
+                    const norm = x => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const pinta = (filtrar) => {
+                        const q = norm(inp.value.trim()).split(/\s+/).filter(Boolean);
+                        opciones = filtrar && q.length ? todas.filter(o => o.v && q.every(p => norm(o.v).includes(p))) : todas;
+                        const texto = inp.value.trim();
+                        const exacta = todas.some(o => o.v && o.v.toLowerCase() === texto.toLowerCase());
+                        if (filtrar && texto && !exacta) opciones = [...opciones, { v: texto.toUpperCase(), t: 'Crear categoría «' + texto.toUpperCase() + '»', nueva: true }];
+                        activo = Math.min(activo, Math.max(0, opciones.length - 1));
+                        lista.innerHTML = opciones.length ? opciones.map((o, i) => '<div class="combo-op ' + (i === activo ? 'act' : '') + (o.nueva ? ' nueva' : '') + '" data-i="' + i + '" role="option">' + esc(o.t) + '</div>').join('') : '<div class="combo-vacio">Sin coincidencias</div>';
+                        const act = lista.querySelector('.act'); if (act) act.scrollIntoView({ block: 'nearest' });
+                    };
+                    const abre = filtrar => { pinta(filtrar); lista.classList.add('abierta'); };
+                    const cierraLista = () => lista.classList.remove('abierta');
+                    const elige = o => { inp.value = o.v; activo = 0; cierraLista(); };
+                    inp.addEventListener('focus', () => { inp.select(); activo = Math.max(0, todas.findIndex(o => o.v === inp.value)); abre(false); });
+                    inp.addEventListener('input', () => { activo = 0; abre(true); });
+                    inp.addEventListener('keydown', ev => {
+                        if (ev.key === 'ArrowDown') { ev.preventDefault(); if (!lista.classList.contains('abierta')) abre(false); else { activo = Math.min(opciones.length - 1, activo + 1); pinta(inp.value.trim() !== '' && !todas.some(o => o.v === inp.value)); } }
+                        else if (ev.key === 'ArrowUp') { ev.preventDefault(); activo = Math.max(0, activo - 1); pinta(inp.value.trim() !== '' && !todas.some(o => o.v === inp.value)); }
+                        else if (ev.key === 'Enter' && lista.classList.contains('abierta')) { ev.preventDefault(); ev.stopPropagation(); if (opciones[activo]) elige(opciones[activo]); }
+                        else if (ev.key === 'Escape' && lista.classList.contains('abierta')) { ev.stopPropagation(); cierraLista(); }
+                        else if (ev.key === 'Tab') cierraLista();
+                    });
+                    lista.addEventListener('mousedown', ev => { ev.preventDefault(); const op = ev.target.closest('.combo-op'); if (op) elige(opciones[+op.dataset.i]); });
+                    inp.addEventListener('blur', cierraLista);
+                }
                 // Etiquetas como fichas
                 const pintaEtq = () => { fondo.querySelectorAll('.etq-ficha').forEach(x => x.remove()); e.etiquetas.forEach((t, i) => { const f = document.createElement('span'); f.className = 'etq-ficha'; f.innerHTML = esc(t) + ' <button type="button" aria-label="Quitar">×</button>'; f.querySelector('button').addEventListener('click', () => { e.etiquetas.splice(i, 1); pintaEtq(); }); $m('mEtqCaja').insertBefore(f, $m('mEtq')); }); };
                 const agregaEtq = () => { const t = $m('mEtq').value.trim().replace(/,$/, '').toUpperCase(); if (t && !e.etiquetas.includes(t)) e.etiquetas.push(t); $m('mEtq').value = ''; pintaEtq(); };
@@ -585,8 +622,8 @@
                     if (!ben) return err('Escribe el beneficiario.');
                     if (!$m('mFecha').value) return err('Elige la fecha completa (día, mes y año).');
                     if (!monto) return err('Escribe el monto.');
-                    let cat = $m('mCat').value;
-                    if (cat === '__nueva') { cat = $m('mCatNueva').value.trim().toUpperCase(); if (!cat) return err('Escribe el nombre de la categoría nueva.'); }
+                    let cat = $m('mCatIn').value.trim();
+                    if (cat) { const igual = categorias.find(c => c.v.toLowerCase() === cat.toLowerCase()); cat = igual ? igual.v : cat.toUpperCase(); }
                     const datos = { fecha: $m('mFecha').value, cuenta: $m('mCuenta').value, beneficiario: ben, categoria: cat, monto: tipo === 'ingreso' ? monto : -monto, etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: $m('mExc').checked, adjuntos: e.adjuntos };
                     if (edita) Object.assign(mov, datos); else { delete datos.ejemplo; MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, ...datos }); }
                     sincronizarCatalogo();
