@@ -59,6 +59,9 @@
         th.ord.act { color: var(--accion); }
         th .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
         th.ord.act .flecha { opacity: 1; }
+        th.th-ban { padding-left: 6px; padding-right: 4px; white-space: nowrap; }
+        th.th-ban .th-flag svg { width: 12px; height: 12px; vertical-align: -1px; }
+        th.th-ban .flecha { margin-left: 2px; }
         td { padding: 11px 12px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
         th.der, td.der { text-align: right; }
         tr.mes td { background: var(--fondo-hundido); font-weight: 600; cursor: pointer; }
@@ -138,8 +141,19 @@
         .sync.err { color: var(--peligro); border-color: var(--peligro); }
         td.numm { color: var(--tinta-tenue, #9aa2ad); text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
         .btn-dash { width: 100%; text-align: left; background: var(--fondo-hundido); border: none; border-radius: 8px; padding: 10px 12px; margin-bottom: 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta); cursor: pointer; }
+        .btn-cfg { margin: 22px 0 0; border-top: 1px solid var(--linea); border-radius: 8px; }
         .btn-dash:hover { background: var(--accion-suave); color: var(--accion); }
         .btn-dash.act { background: var(--accion-suave); color: var(--accion); box-shadow: inset 3px 0 0 var(--ambar); }
+        .cfg-sec[hidden] { display: none; }
+        .grp-fila td { background: var(--fondo-hundido); cursor: pointer; }
+        .grp-cnt { color: var(--tinta-suave); font-size: 13px; margin-left: 10px; }
+        .grp-ed { float: right; padding: 4px 12px; font-size: 12px; }
+        .sel-grupo { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--borde-control); border-radius: 6px; background: #fff; color: var(--tinta); max-width: 190px; }
+        .cfg-sub { display: flex; flex-direction: column; margin: 4px 0 0 14px; padding-left: 10px; border-left: 2px solid var(--linea); }
+        .cfg-sub button { background: none; border: none; text-align: left; padding: 8px 10px; font: inherit; font-size: 14px; color: var(--tinta-suave); cursor: pointer; border-radius: 6px; }
+        .cfg-sub button:hover { background: var(--fondo-hundido); color: var(--tinta); }
+        .cfg-sub button.act { color: var(--accion); font-weight: 600; background: var(--accion-suave); }
+        .cfg { max-width: 860px; margin: 0 auto; }
         .dash { max-width: 1000px; margin: 0 auto; }
         .grafica svg { display: block; width: 100%; max-width: 860px; height: auto; margin: 0 auto; }
         .dash { display: flex; flex-direction: column; gap: 16px; }
@@ -247,7 +261,7 @@
             { id: 'dep', nombre: '3_DEPÓSITOS / AP…', saldoInicial: 0 }
         ];
         const MOVS = [];
-        const CAT = { etiquetas: [], categorias: [], beneficiarios: [] };
+        const CAT = { etiquetas: [], categorias: [], beneficiarios: [], gruposBen: [], benGrupo: {} };
 
         // ---------- Persistencia en Firestore ----------
         // tesoreria_cuentas/{id} · tesoreria_movimientos/{fid} (+ subcolección historial) · tesoreria_config/catalogos · tesoreria_eliminados/{fid}
@@ -286,6 +300,8 @@
             CAT.etiquetas.splice(0, CAT.etiquetas.length, ...(c.etiquetas || []));
             CAT.categorias.splice(0, CAT.categorias.length, ...(c.categorias || []));
             CAT.beneficiarios.splice(0, CAT.beneficiarios.length, ...(c.beneficiarios || []));
+            CAT.gruposBen = c.gruposBen || [];
+            CAT.benGrupo = c.benGrupo || {};
             tomarFotoBase();
         }
 
@@ -432,7 +448,7 @@
         function iniciar() {
             // Anchos de columna ajustables: se arrastra el borde derecho del título; se recuerdan en este navegador
             const COLS = ['chk', 'num', 'fecha', 'ban', 'rev', 'beneficiario', 'categoria', 'etq', 'nota', 'monto', 'saldo'];
-            const ANCHO_BASE = { chk: 32, num: 40, fecha: 120, ban: 30, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
+            const ANCHO_BASE = { chk: 32, num: 40, fecha: 120, ban: 44, rev: 36, beneficiario: 190, categoria: 170, etq: 110, nota: 150, monto: 110, saldo: 120 };
             const CLAVE_ANCHOS = 'tesoreria_anchos_v2';
             const FLEX = ['beneficiario', 'categoria', 'etq', 'nota'];
             function aplicaAnchos() {
@@ -448,7 +464,7 @@
             window.addEventListener('resize', () => { if (st.vista !== 'config') aplicaAnchos(); });
             let anchosGuardados = {};
             try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
-            const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'dashboard', mesDash: '', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
+            const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'dashboard', cfgSec: 'cuentas', cfgOrd: {}, mesDash: '', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
 
             const saldoDe = c => c.saldoInicial + MOVS.filter(m => m.cuenta === c.id && m.fecha <= HOY).reduce((s, m) => s + m.monto, 0);
             const saldoTotal = () => CUENTAS.reduce((s, c) => s + saldoDe(c), 0);
@@ -468,8 +484,9 @@
                     && (!q || [m.beneficiario, m.categoria, m.nota, m.etiquetas.join(' ')].join(' ').toLowerCase().includes(q)));
             }
             const orden = lista => {
-                const k = { fecha: m => m.fecha, beneficiario: m => m.beneficiario.toLowerCase(), categoria: m => (m.categoria || '~').toLowerCase(), monto: m => m.monto };
-                return [...lista].sort((a, b) => { const x = k[st.col](a), y = k[st.col](b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || b.id - a.id; });
+                // ban: con bandera = 0, sin bandera = 1 (primer clic: las de bandera arriba); a igual valor, la más reciente primero
+                const k = { fecha: m => m.fecha, ban: m => (m.bandera ? 0 : 1), beneficiario: m => m.beneficiario.toLowerCase(), categoria: m => (m.categoria || '~').toLowerCase(), monto: m => m.monto };
+                return [...lista].sort((a, b) => { const x = k[st.col](a), y = k[st.col](b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || (st.col !== 'fecha' && (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0)) || b.id - a.id; });
             };
 
             // ---------- VERSIÓN MÓVIL de la cuenta (clon de la app de Simplifi): encabezado con saldo y lista de movimientos de dos renglones ----------
@@ -532,16 +549,20 @@
 
             // Lista lateral de cuentas con el botón Dashboard arriba; se usa en el dashboard y en los movimientos
             function asideHtml() {
-                const enDash = st.vista === 'dashboard';
+                const enDash = st.vista === 'dashboard', enCfg = st.vista === 'config', sinSel = enDash || enCfg;
                 return `<aside class="cuentas">
                             <button class="btn-dash ${enDash ? 'act' : ''}" data-dash="1">Dashboard</button>
                             <h2>Cuentas</h2>
-                            <div class="fila total ${!enDash && st.cuenta === 'todas' ? 'act' : ''}" data-cuenta="todas"><span>Todas las cuentas</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            <div class="fila total ${!sinSel && st.cuenta === 'todas' ? 'act' : ''}" data-cuenta="todas"><span>Todas las cuentas</span><span class="num">${dinero(saldoTotal())}</span></div>
                             <div class="fila grupo"><span>▾ Bancos y efectivo</span><span class="num">${dinero(saldoTotal())}</span></div>
-                            ${CUENTAS.map(c => `<div class="fila sub ${!enDash && st.cuenta === c.id ? 'act' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                            ${CUENTAS.map(c => `<div class="fila sub ${!sinSel && st.cuenta === c.id ? 'act' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                            <button class="btn-dash btn-cfg ${enCfg ? 'act' : ''}" data-cfg="1">Configuración</button>
+                            ${enCfg ? `<div class="cfg-sub">${[['cuentas', 'Cuentas'], ['etiquetas', 'Etiquetas'], ['categorias', 'Categorías'], ['beneficiarios', 'Beneficiarios']].map(([k, t]) => `<button class="${st.cfgSec === k ? 'act' : ''}" data-sec="${k}">${t}</button>`).join('')}</div>` : ''}
                         </aside>`;
             }
             function ligarAside() {
+                app.querySelectorAll('aside [data-sec]').forEach(e => e.addEventListener('click', () => { st.cfgSec = e.dataset.sec; pintar(); }));
+                app.querySelectorAll('[data-cfg]').forEach(e => e.addEventListener('click', () => { st.vista = 'config'; pintar(); }));
                 app.querySelectorAll('[data-dash]').forEach(e => e.addEventListener('click', () => { st.vista = 'dashboard'; pintar(); }));
                 app.querySelectorAll('aside [data-cuenta]').forEach(e => e.addEventListener('click', () => { st.cuenta = e.dataset.cuenta; st.sel.clear(); st.vista = 'movimientos'; pintar(); }));
             }
@@ -592,7 +613,7 @@
                     <div class="layout">
                         ${asideHtml()}
                         <section>
-                            <div class="cab-h"><h1>Tesorería</h1><div class="barra"><button class="btn-sec" id="bResumen">Resumen</button><button class="btn-sec" id="bConfig">Configuración</button></div></div>
+                            <div class="cab-h"><h1>Tesorería</h1><div class="barra"><button class="btn-sec" id="bResumen">Resumen</button></div></div>
                             <div class="tabs">${[['todos', 'Todos'], ['gastos', 'Gastos'], ['ingresos', 'Ingresos']].map(([k, t]) => `<button class="tab ${st.tab === k ? 'act' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
                             <div class="tarjeta-cuenta"><div><h3>${cuentaAct ? esc(cuentaAct.nombre) : 'Todas las cuentas'}</h3><div class="tipo">${cuentaAct ? 'Manual' : CUENTAS.length + ' cuentas'}</div></div>
                                 <div class="saldo num">${dinero(cuentaAct ? saldoDe(cuentaAct) : saldoTotal())}<small>Saldo a hoy</small></div></div>
@@ -612,7 +633,7 @@
                                 </div>
                                 <div class="aviso" id="aviso"></div>
                                 <div class="tabla-wrap"><table style="width:${sumaAnchos}px"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
-                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos">${rz('chk')}</th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°${rz('num')}</th>${th('fecha', 'Fecha')}<th>${rz('ban')}</th><th>${rz('rev')}</th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
+                                    <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos">${rz('chk')}</th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°${rz('num')}</th>${th('fecha', 'Fecha')}${th('ban', `<span class="th-flag" title="Ordenar por bandera">${FLAG}</span>`, 'th-ban')}<th>${rz('rev')}</th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
                                     <tbody>${filas || `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
                             </div>
@@ -655,7 +676,6 @@
                         h.addEventListener('pointermove', mover); h.addEventListener('pointerup', soltar);
                     });
                 });
-                document.getElementById('bConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
                 document.getElementById('bResumen').addEventListener('click', () => { st.vista = 'dashboard'; pintar(); });
                 document.getElementById('bNuevo').addEventListener('click', () => abrirMovimiento());
                 app.querySelectorAll('tr.mov').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.rev, .chk, .banda')) return; abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id)); }));
@@ -782,7 +802,7 @@
                         <div class="cab-h"><h1>Tesorería</h1><div class="barra">
                             <select id="dPer" aria-label="Periodo"><option value="" disabled ${todo || anio ? '' : 'selected'}>Periodo…</option><option value="todo" ${todo ? 'selected' : ''}>Todo el histórico</option>${aniosConDatos.slice().reverse().map(y => `<option value="${y}" ${anio && st.mesDash === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
                             <select id="dMes" aria-label="Mes"><option value="" disabled ${todo || anio ? 'selected' : ''}>Por mes…</option>${opcMeses.map(k => `<option value="${k}" ${!todo && !anio && k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select>
-                            <button class="btn-sec" id="dMov">Movimientos</button><button class="btn-sec" id="dConfig">Configuración</button><button class="btn" id="dNuevo">Nuevo movimiento</button></div></div>
+                            <button class="btn-sec" id="dMov">Movimientos</button><button class="btn" id="dNuevo">Nuevo movimiento</button></div></div>
                         <div class="dash-grid" id="dGrid">
                         <div class="kpis ancho2" data-w="kpis">
                             <div class="kpi"><span class="kpi-t">Saldo total a hoy</span><span class="kpi-v num">${dinero(saldoTotal())}</span><small>${CUENTAS.length} cuenta${CUENTAS.length === 1 ? '' : 's'}</small></div>
@@ -819,7 +839,6 @@
                 document.getElementById('dMes').addEventListener('change', e => { st.mesDash = e.target.value; pintar(); });
                 document.getElementById('dMov').addEventListener('click', () => ir());
                 document.getElementById('dMov2').addEventListener('click', () => ir());
-                document.getElementById('dConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
                 document.getElementById('dNuevo').addEventListener('click', () => abrirMovimiento());
                 app.querySelectorAll('.cta').forEach(e => e.addEventListener('click', () => ir({ cuenta: e.dataset.cuenta })));
                 app.querySelectorAll('.dash [data-rapido]').forEach(e => e.addEventListener('click', () => ir({ rapido: e.dataset.rapido })));
@@ -867,21 +886,41 @@
                 });
             }
 
+            const gruposOrdenados = () => CAT.gruposBen.slice().sort((a, b) => cmpEs(a.nombre, b.nombre));
+            const opcGrupos = sel => '<option value="">Sin grupo</option>' + gruposOrdenados().map(g => `<option value="${g.id}" ${sel === g.id ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('');
+            function modalGrupo(grupo) {
+                const edita = !!grupo;
+                const M = abrirModal({ titulo: edita ? 'Editar grupo' : 'Nuevo grupo de beneficiarios', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `<div class="mod-campo"><label for="xNombre">Nombre del grupo</label><input id="xNombre" value="${esc(grupo ? grupo.nombre : '')}" placeholder="Ej. Nómina, Proveedores, Impuestos" autocomplete="off"></div>${edita ? `<p class="mod-ayuda" style="margin:10px 0 0">Tiene ${Object.values(CAT.benGrupo).filter(v => v === grupo.id).length} beneficiario(s). Si lo eliminas, quedan sin grupo; no se borra ninguno.</p>` : ''}` });
+                M.$('xGuardar').addEventListener('click', () => {
+                    const n = M.$('xNombre').value.trim();
+                    if (!n) return M.error('Escribe el nombre.');
+                    if (CAT.gruposBen.some(g => g !== grupo && g.nombre.toLowerCase() === n.toLowerCase())) return M.error('Ya existe un grupo con ese nombre.');
+                    if (edita) grupo.nombre = n; else CAT.gruposBen.push({ id: nuevoId(), nombre: n });
+                    M.cierra(); pintar();
+                });
+                if (edita) M.$('xEliminar').addEventListener('click', () => {
+                    if (!confirm('¿Eliminar el grupo? Sus beneficiarios quedarán sin grupo.')) return;
+                    CAT.gruposBen.splice(CAT.gruposBen.indexOf(grupo), 1);
+                    Object.keys(CAT.benGrupo).forEach(k => { if (CAT.benGrupo[k] === grupo.id) delete CAT.benGrupo[k]; });
+                    M.cierra(); pintar();
+                });
+            }
             function modalBeneficiario(nombre) {
                 const edita = nombre !== undefined;
-                const M = abrirModal({ titulo: edita ? 'Editar beneficiario' : 'Nuevo beneficiario', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `<div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(nombre || '')}" placeholder="Nombre del beneficiario" autocomplete="off"></div>${edita ? `<p class="mod-ayuda" style="margin:10px 0 0">Tiene ${cuenta('ben', nombre)} movimiento(s). Si lo renombras, cambia en todos.</p>` : ''}` });
+                const M = abrirModal({ titulo: edita ? 'Editar beneficiario' : 'Nuevo beneficiario', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `<div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(nombre || '')}" placeholder="Nombre del beneficiario" autocomplete="off"></div><div class="mod-campo" style="margin-top:12px"><label for="xGrupo">Grupo</label><select id="xGrupo">${opcGrupos(CAT.benGrupo[nombre])}</select></div>${edita ? `<p class="mod-ayuda" style="margin:10px 0 0">Tiene ${cuenta('ben', nombre)} movimiento(s). Si lo renombras, cambia en todos.</p>` : ''}` });
                 M.$('xGuardar').addEventListener('click', () => {
                     const n = M.$('xNombre').value.trim();
                     if (!n) return M.error('Escribe el nombre.');
                     if (n !== nombre && CAT.beneficiarios.some(b => b.toLowerCase() === n.toLowerCase())) return M.error('Ya existe un beneficiario con ese nombre.');
-                    if (edita) { CAT.beneficiarios[CAT.beneficiarios.indexOf(nombre)] = n; MOVS.forEach(m => { if (m.beneficiario === nombre) m.beneficiario = n; }); } else CAT.beneficiarios.push(n);
+                    if (edita) { CAT.beneficiarios[CAT.beneficiarios.indexOf(nombre)] = n; MOVS.forEach(m => { if (m.beneficiario === nombre) m.beneficiario = n; }); delete CAT.benGrupo[nombre]; } else CAT.beneficiarios.push(n);
+                    const g = M.$('xGrupo').value; if (g) CAT.benGrupo[n] = g; else delete CAT.benGrupo[n];
                     M.cierra(); pintar();
                 });
                 if (edita) M.$('xEliminar').addEventListener('click', () => {
                     const c = cuenta('ben', nombre);
                     if (c) return M.error(`No se puede eliminar: tiene ${c} movimiento(s). Renómbralo o cambia esos movimientos primero.`);
                     if (!confirm('¿Eliminar el beneficiario?')) return;
-                    CAT.beneficiarios.splice(CAT.beneficiarios.indexOf(nombre), 1); M.cierra(); pintar();
+                    CAT.beneficiarios.splice(CAT.beneficiarios.indexOf(nombre), 1); delete CAT.benGrupo[nombre]; M.cierra(); pintar();
                 });
             }
 
@@ -946,12 +985,20 @@
                 const conteo = {}; const sumar = (k, v) => { conteo[k + '|' + v] = (conteo[k + '|' + v] || 0) + 1; };
                 MOVS.forEach(m => { m.etiquetas.forEach(t => sumar('etq', t)); if (m.beneficiario) sumar('ben', m.beneficiario); if (m.categoria) sumar('cat', m.categoria); });
                 const n = (k, v) => conteo[k + '|' + v] || 0;
-                const etqs = CAT.etiquetas.filter(t => !q('etq') || t.toLowerCase().includes(q('etq')));
-                const bens = CAT.beneficiarios.filter(b => !q('ben') || b.toLowerCase().includes(q('ben')));
-                const padres = CAT.categorias.filter(c => !c.padre).sort((a, b) => cmpEs(a.nombre, b.nombre));
+                // Orden de columnas (flechitas en los títulos): por defecto, por nombre
+                const ordDe = k => st.cfgOrd[k] || { col: 'nombre', dir: 1 };
+                const cmpPor = (k, get) => { const { col, dir } = ordDe(k); return (a, b) => { const x = get(a, col), y = get(b, col); return (typeof x === 'number' && typeof y === 'number' ? x - y : cmpEs(String(x), String(y))) * dir; }; };
+                const thO = (k, col, txt, cls = '', estilo = '') => `<th class="ord ${cls} ${ordDe(k).col === col ? 'act' : ''}" data-ord="${k}|${col}" ${estilo ? `style="${estilo}"` : ''}>${txt}<span class="flecha">${ordDe(k).col === col ? (ordDe(k).dir > 0 ? '▲' : '▼') : '▲▼'}</span></th>`;
+                const etqs = CAT.etiquetas.filter(t => !q('etq') || t.toLowerCase().includes(q('etq'))).sort(cmpPor('etq', (t, c) => (c === 'movs' ? n('etq', t) : t)));
+                const bens = CAT.beneficiarios.filter(b => !q('ben') || b.toLowerCase().includes(q('ben'))).sort(cmpPor('ben', (b, c) => (c === 'movs' ? n('ben', b) : b)));
+                const cuentasOrd = CUENTAS.slice().sort(cmpPor('cta', (c, col) => (col === 'ini' ? c.saldoInicial : col === 'movs' ? MOVS.filter(m => m.cuenta === c.id).length : col === 'saldo' ? saldoDe(c) : c.nombre)));
+                const hijosDe = p => CAT.categorias.filter(c => c.padre === p.id);
+                const totalCat = c => n('cat', catNombre(c)) + hijosDe(c).reduce((a, h) => a + n('cat', catNombre(h)), 0);
+                const getCat = (c, col) => (col === 'movs' ? (c.padre ? n('cat', catNombre(c)) : totalCat(c)) : col === 'tipo' ? (c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto') : c.nombre);
+                const padres = CAT.categorias.filter(c => !c.padre).sort(cmpPor('cat', getCat));
                 const filasCat = [];
                 padres.forEach(p => {
-                    const hs = CAT.categorias.filter(c => c.padre === p.id).sort((a, b) => cmpEs(a.nombre, b.nombre));
+                    const hs = CAT.categorias.filter(c => c.padre === p.id).sort(cmpPor('cat', getCat));
                     const coincideP = !q('cat') || p.nombre.toLowerCase().includes(q('cat'));
                     const hsF = hs.filter(h => !q('cat') || coincideP || h.nombre.toLowerCase().includes(q('cat')));
                     if (!coincideP && !hsF.length) return;
@@ -959,39 +1006,66 @@
                     filasCat.push({ c: p, nivel: 0, hijos: hs.length, abierto, total: n('cat', catNombre(p)) + hs.reduce((a, h) => a + n('cat', catNombre(h)), 0) });
                     if (abierto) hsF.forEach(h => filasCat.push({ c: h, nivel: 1, total: n('cat', catNombre(h)) }));
                 });
+                // Beneficiarios: con grupos se muestran agrupados (cada grupo se puede plegar); los que no tienen grupo van al final
+                const filaBen = b => `<tr class="fila-cfg" data-ben="${esc(b)}"><td>${esc(b)}</td><td><select class="sel-grupo" data-bg="${esc(b)}">${opcGrupos(CAT.benGrupo[b])}</select></td><td class="der num">${n('ben', b)}</td></tr>`;
+                let cuerpoBen = '';
+                if (!CAT.gruposBen.length) cuerpoBen = bens.map(filaBen).join('');
+                else {
+                    const encabezado = (id, nombre, miembros, editable) => {
+                        const cerrado = st.cfgCerrados.has('g:' + id);
+                        return `<tr class="grp-fila" data-gtog="${id}"><td colspan="3"><span class="tog">${cerrado ? '▸' : '▾'}</span><strong>${esc(nombre)}</strong> <span class="grp-cnt">${miembros.length} beneficiario${miembros.length === 1 ? '' : 's'} · ${miembros.reduce((a, b) => a + n('ben', b), 0)} movimientos</span>${editable ? `<button class="btn-sec grp-ed" data-gedit="${id}">Editar grupo</button>` : ''}</td></tr>${cerrado ? '' : miembros.map(filaBen).join('')}`;
+                    };
+                    const gs = gruposOrdenados(); if (ordDe('ben').col === 'grupo' && ordDe('ben').dir < 0) gs.reverse();
+                    gs.forEach(g => {
+                        const miembros = bens.filter(b => CAT.benGrupo[b] === g.id);
+                        if (!miembros.length && q('ben')) return;
+                        cuerpoBen += encabezado(g.id, g.nombre, miembros, true);
+                    });
+                    const sueltos = bens.filter(b => !CAT.gruposBen.some(g => g.id === CAT.benGrupo[b]));
+                    if (sueltos.length) cuerpoBen += encabezado('_sin', 'Sin grupo', sueltos, false);
+                }
                 const cab = (titulo, clave, boton, extra = '') => `<div class="cfg-cab"><h2>${titulo}</h2><div class="barra"><input type="search" data-q="${clave}" placeholder="Buscar" value="${esc(st.cfgQ[clave] || '')}"><button class="btn" data-nuevo="${clave}">${boton}</button></div></div>${extra}`;
                 app.innerHTML = `
-                    <div class="cfg-top"><button class="btn-sec" id="bVolver">← Movimientos</button><h1 style="margin:0">Configuración</h1></div>
+                    <div class="layout">${asideHtml()}<section><div class="cfg">
+                    <div class="cfg-top"><h1 style="margin:0">Configuración</h1></div>
                     <p class="sub" style="color:var(--tinta-suave);font-size:13px;margin:0 0 18px">Cuentas y catálogos de Tesorería. Etiquetas, categorías y beneficiarios se llenan solos con lo que traen los movimientos (CSV o captura); aquí los puedes crear, renombrar o eliminar.</p>
 
-                    <section class="caja cfg-sec"><div class="cfg-cab"><h2>Cuentas</h2><div class="barra"><button class="btn" data-nuevo="cta">Nueva cuenta</button></div></div>
-                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th class="der" style="width:170px">Saldo inicial</th><th class="der" style="width:140px">Movimientos</th><th class="der" style="width:170px">Saldo a hoy</th></tr></thead><tbody>
-                            ${CUENTAS.map(c => `<tr class="fila-cfg" data-cta="${c.id}"><td><strong>${esc(c.nombre)}</strong></td><td class="der num">${dinero(c.saldoInicial)}</td><td class="der num">${MOVS.filter(m => m.cuenta === c.id).length}</td><td class="der num">${dinero(saldoDe(c))}</td></tr>`).join('') || '<tr><td colspan="4" class="vacio">Sin cuentas.</td></tr>'}
+                    <section class="caja cfg-sec" data-sec="cuentas"><div class="cfg-cab"><h2>Cuentas</h2><div class="barra"><button class="btn" data-nuevo="cta">Nueva cuenta</button></div></div>
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('cta', 'nombre', 'Nombre')}${thO('cta', 'ini', 'Saldo inicial', 'der', 'width:170px')}${thO('cta', 'movs', 'Movimientos', 'der', 'width:140px')}${thO('cta', 'saldo', 'Saldo a hoy', 'der', 'width:170px')}</tr></thead><tbody>
+                            ${cuentasOrd.map(c => `<tr class="fila-cfg" data-cta="${c.id}"><td><strong>${esc(c.nombre)}</strong></td><td class="der num">${dinero(c.saldoInicial)}</td><td class="der num">${MOVS.filter(m => m.cuenta === c.id).length}</td><td class="der num">${dinero(saldoDe(c))}</td></tr>`).join('') || '<tr><td colspan="4" class="vacio">Sin cuentas.</td></tr>'}
                         </tbody></table></div>
                     </section>
 
-                    <section class="caja cfg-sec">${cab('Etiquetas', 'etq', 'Nueva etiqueta')}
-                        <div class="tag-grid">${etqs.map(t => `<button class="tag" data-etq="${esc(t)}" title="${n('etq', t)} movimiento(s)">${esc(t)}</button>`).join('') || '<span class="vacio" style="padding:10px">Sin etiquetas.</span>'}</div>
+                    <section class="caja cfg-sec" data-sec="etiquetas">${cab('Etiquetas', 'etq', 'Nueva etiqueta')}
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('etq', 'nombre', 'Etiqueta')}${thO('etq', 'movs', 'Movimientos', 'der', 'width:140px')}</tr></thead><tbody>
+                            ${etqs.map(t => `<tr class="fila-cfg" data-etq="${esc(t)}"><td>${esc(t)}</td><td class="der num">${n('etq', t)}</td></tr>`).join('') || '<tr><td colspan="2" class="vacio">Sin etiquetas.</td></tr>'}
+                        </tbody></table></div>
                     </section>
 
-                    <section class="caja cfg-sec">${cab('Categorías', 'cat', 'Nueva categoría')}
-                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th style="width:140px">Tipo</th><th class="der" style="width:140px">Movimientos</th></tr></thead><tbody>
+                    <section class="caja cfg-sec" data-sec="categorias">${cab('Categorías', 'cat', 'Nueva categoría')}
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('cat', 'nombre', 'Nombre')}${thO('cat', 'tipo', 'Tipo', '', 'width:140px')}${thO('cat', 'movs', 'Movimientos', 'der', 'width:140px')}</tr></thead><tbody>
                             ${filasCat.map(f => `<tr class="fila-cfg" data-cat="${f.c.id}"><td style="padding-left:${12 + f.nivel * 28}px">${f.nivel === 0 ? `<span class="tog" data-tog="${f.c.id}">${f.hijos ? (f.abierto ? '▾' : '▸') : ''}</span><strong>${esc(f.c.nombre)}</strong>` : esc(f.c.nombre)}</td><td>${f.c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</td><td class="der num">${f.total}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Sin categorías.</td></tr>'}
                         </tbody></table></div>
                     </section>
 
-                    <section class="caja cfg-sec">${cab('Beneficiarios', 'ben', 'Nuevo beneficiario')}
-                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th>Nombre</th><th class="der" style="width:140px">Movimientos</th></tr></thead><tbody>
-                            ${bens.map(b => `<tr class="fila-cfg" data-ben="${esc(b)}"><td>${esc(b)}</td><td class="der num">${n('ben', b)}</td></tr>`).join('') || '<tr><td colspan="2" class="vacio">Sin beneficiarios.</td></tr>'}
+                    <section class="caja cfg-sec" data-sec="beneficiarios"><div class="cfg-cab"><h2>Beneficiarios</h2><div class="barra"><input type="search" data-q="ben" placeholder="Buscar" value="${esc(st.cfgQ.ben || '')}"><button class="btn-sec" data-nuevo="grp">Nuevo grupo</button><button class="btn" data-nuevo="ben">Nuevo beneficiario</button></div></div>
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('ben', 'nombre', 'Nombre')}${CAT.gruposBen.length ? thO('ben', 'grupo', 'Grupo', '', 'width:210px') : '<th style="width:210px">Grupo</th>'}${thO('ben', 'movs', 'Movimientos', 'der', 'width:120px')}</tr></thead><tbody>
+                            ${cuerpoBen || '<tr><td colspan="3" class="vacio">Sin beneficiarios.</td></tr>'}
                         </tbody></table></div>
-                    </section>`;
-                document.getElementById('bVolver').addEventListener('click', () => { st.vista = 'movimientos'; pintar(); });
+                    </section>
+                    </div></section></div>`;
+                ligarAside();
+                app.querySelectorAll('.cfg-sec').forEach(s => { s.hidden = s.dataset.sec !== st.cfgSec; });
                 app.querySelectorAll('[data-cta]').forEach(e => e.addEventListener('click', () => modalCuenta(CUENTAS.find(c => c.id === e.dataset.cta))));
                 app.querySelectorAll('[data-etq]').forEach(e => e.addEventListener('click', () => modalEtiqueta(e.dataset.etq)));
-                app.querySelectorAll('[data-ben]').forEach(e => e.addEventListener('click', () => modalBeneficiario(e.dataset.ben)));
+                app.querySelectorAll('[data-ben]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('select')) return; modalBeneficiario(e.dataset.ben); }));
+                app.querySelectorAll('th[data-ord]').forEach(h => h.addEventListener('click', () => { const [k, col] = h.dataset.ord.split('|'), a = ordDe(k); st.cfgOrd[k] = { col, dir: a.col === col ? -a.dir : (col === 'movs' || col === 'saldo' || col === 'ini' ? -1 : 1) }; pintar(); }));
+                app.querySelectorAll('.sel-grupo').forEach(s => s.addEventListener('change', () => { if (s.value) CAT.benGrupo[s.dataset.bg] = s.value; else delete CAT.benGrupo[s.dataset.bg]; pintar(); }));
+                app.querySelectorAll('[data-gtog]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('[data-gedit]')) return; const k = 'g:' + e.dataset.gtog; st.cfgCerrados.has(k) ? st.cfgCerrados.delete(k) : st.cfgCerrados.add(k); pintar(); }));
+                app.querySelectorAll('[data-gedit]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); modalGrupo(CAT.gruposBen.find(g => g.id === e.dataset.gedit)); }));
                 app.querySelectorAll('[data-cat]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.tog')) return; modalCategoria(CAT.categorias.find(c => c.id === e.dataset.cat)); }));
                 app.querySelectorAll('[data-tog]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const id = e.dataset.tog; st.cfgCerrados.has(id) ? st.cfgCerrados.delete(id) : st.cfgCerrados.add(id); pintar(); }));
-                app.querySelectorAll('[data-nuevo]').forEach(e => e.addEventListener('click', () => ({ cta: () => modalCuenta(), etq: () => modalEtiqueta(), cat: () => modalCategoria(), ben: () => modalBeneficiario() })[e.dataset.nuevo]()));
+                app.querySelectorAll('[data-nuevo]').forEach(e => e.addEventListener('click', () => ({ cta: () => modalCuenta(), etq: () => modalEtiqueta(), cat: () => modalCategoria(), ben: () => modalBeneficiario(), grp: () => modalGrupo() })[e.dataset.nuevo]()));
                 app.querySelectorAll('[data-q]').forEach(inp => inp.addEventListener('input', () => { st.cfgQ[inp.dataset.q] = inp.value; const pos = inp.selectionStart, k = inp.dataset.q; pintar(); const nuevo = app.querySelector(`[data-q="${k}"]`); nuevo.focus(); nuevo.setSelectionRange(pos, pos); }));
             }
 
