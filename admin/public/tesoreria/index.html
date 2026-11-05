@@ -173,6 +173,51 @@
         .leyenda { font-size: 12px; color: var(--tinta-suave); display: inline-flex; align-items: center; gap: 6px; }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 8px; }
         @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } .bar-fila { grid-template-columns: 110px 1fr 90px 38px; } }
+        /* Móvil: cuenta clonada de Simplifi */
+        .m-cab { margin: -24px -28px 14px; padding: 18px 20px 20px; background: linear-gradient(180deg, var(--fondo) 0%, var(--accion-suave) 100%); }
+        .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+        .m-circ { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--linea); background: #fff; font-size: 28px; line-height: 1; color: var(--tinta); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 0 0 3px; }
+        .m-pill { position: relative; display: flex; align-items: center; height: 46px; border: 1px solid var(--linea); border-radius: 26px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 0 6px 0 8px; }
+        .m-nuevo, .m-menu-b { background: none; border: none; font: inherit; color: var(--tinta); cursor: pointer; }
+        .m-nuevo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; padding: 0 10px 0 2px; }
+        .m-mas { display: inline-flex; width: 30px; height: 30px; border-radius: 50%; background: var(--tinta); color: #fff; align-items: center; justify-content: center; font-size: 20px; line-height: 1; padding-bottom: 2px; }
+        .m-menu-b { font-size: 22px; padding: 0 10px; }
+        .m-menu { position: absolute; right: 0; top: 52px; min-width: 190px; background: #fff; border: 1px solid var(--linea); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); z-index: 30; overflow: hidden; }
+        .m-menu[hidden] { display: none; }
+        .m-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 13px 16px; font: inherit; font-size: 15px; cursor: pointer; }
+        .m-menu button:hover { background: var(--fondo-hundido); }
+        .m-tit { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+        .m-saldo { font-size: 36px; font-weight: 700; }
+        .m-sub { color: var(--tinta-suave); font-size: 14px; margin-top: 4px; }
+        .m-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
+        .m-chips { scrollbar-width: none; }
+        .m-chips::-webkit-scrollbar { display: none; }
+        .m-chips .chip { white-space: nowrap; flex: none; }
+        .m-h2 { font-size: 22px; font-weight: 400; margin: 18px 0 12px; }
+        .m-busca { display: flex; align-items: center; gap: 12px; }
+        .m-busca input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 13px 16px; border: 1px solid var(--linea); border-radius: 24px; background: var(--fondo-hundido); }
+        .m-filtro { background: none; border: none; font-size: 24px; color: var(--accion); cursor: pointer; padding: 4px 6px; }
+        .m-filtro.on { box-shadow: inset 0 -3px 0 var(--ambar); }
+        .m-filtros { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--linea); border-radius: 12px; }
+        .m-filtros[hidden] { display: none; }
+        .m-filtros select { font: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid var(--borde-control); border-radius: 8px; background: #fff; }
+        .m-filtros .seg { align-self: flex-start; }
+        .m-rap { display: flex; flex-wrap: wrap; gap: 8px; }
+        .m-cuenta { background: var(--fondo-hundido); border-radius: 12px; padding: 14px 18px; margin: 14px 0 4px; font-size: 15px; }
+        .m-mov { display: flex; justify-content: space-between; gap: 14px; padding: 16px 2px; border-bottom: 1px solid var(--linea); cursor: pointer; }
+        .m-izq { min-width: 0; flex: 1; }
+        .m-ben { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-flag { color: var(--peligro); display: inline-flex; vertical-align: middle; }
+        .m-flag svg { fill: currentColor; }
+        .m-cat { font-size: 15px; color: var(--tinta-suave); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-der { text-align: right; flex: none; }
+        .m-der .num { font-size: 16px; }
+        .m-fecha { font-size: 15px; color: var(--tinta-suave); margin-top: 4px; }
+        .m-mas-b { width: 100%; margin: 16px 0; padding: 13px; }
+        @media (max-width: 700px) {
+            .main { padding: 24px 16px 60px; }
+            .m-cab { margin: -24px -16px 14px; }
+        }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -427,6 +472,64 @@
                 return [...lista].sort((a, b) => { const x = k[st.col](a), y = k[st.col](b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || b.id - a.id; });
             };
 
+            // ---------- VERSIÓN MÓVIL de la cuenta (clon de la app de Simplifi): encabezado con saldo y lista de movimientos de dos renglones ----------
+            const mqMovil = window.matchMedia('(max-width: 700px)');
+            const esMovil = () => mqMovil.matches;
+            mqMovil.addEventListener('change', () => { if (st.vista === 'movimientos' || st.vista === 'dashboard') pintar(); });
+            const fechaCorta = f => +f.slice(8) + ' ' + MESES[+f.slice(5, 7) - 1].slice(0, 3) + ' ' + f.slice(0, 4);
+            function pintarMovil() {
+                const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
+                const lista = orden(filtrados());
+                const lim = st.limMov || 60, vis = lista.slice(0, lim);
+                const categorias = [...new Set(MOVS.map(m => m.categoria).filter(Boolean))].sort();
+                const hayFiltro = st.tab !== 'todos' || st.rapido || st.fecha !== 'todo' || st.cat;
+                app.innerHTML = `
+                    <div class="m-cab">
+                        <div class="m-top">
+                            <button class="m-circ" id="mAtras" aria-label="Volver al dashboard">&#8249;</button>
+                            <div class="m-pill"><button class="m-nuevo" id="mNuevo"><span class="m-mas">+</span> Nuevo</button><button class="m-menu-b" id="mMenuB" aria-label="Más opciones">&#8942;</button>
+                                <div class="m-menu" id="mMenu" hidden><button data-m="imp">Importar CSV</button><button data-m="dash">Resumen</button><button data-m="cfg">Configuración</button></div></div>
+                        </div>
+                        <h1 class="m-tit">${cuentaAct ? esc(cuentaAct.nombre) : 'Todas las cuentas'}</h1>
+                        <div class="m-saldo num">${dinero(cuentaAct ? saldoDe(cuentaAct) : saldoTotal())}</div>
+                        <div class="m-sub">Saldo a hoy</div>
+                    </div>
+                    <div class="m-chips">${[['todas', 'Todas']].concat(CUENTAS.map(c => [c.id, c.nombre])).map(([k, t]) => `<button class="chip ${st.cuenta === k ? 'act' : ''}" data-mc="${k}">${esc(t)}</button>`).join('')}</div>
+                    <h2 class="m-h2">Movimientos</h2>
+                    <div class="m-busca"><input type="search" id="mQ" placeholder="Buscar movimientos" value="${esc(st.q)}"><button class="m-filtro ${hayFiltro ? 'on' : ''}" id="mFiltroB" aria-label="Filtros">&#9776;</button></div>
+                    <div class="m-filtros" id="mFiltros" ${st.mFiltros ? '' : 'hidden'}>
+                        <div class="seg">${[['todos', 'Todos'], ['gastos', 'Gastos'], ['ingresos', 'Ingresos']].map(([k, t]) => `<button class="${st.tab === k ? 'act' : ''}" data-mt="${k}">${t}</button>`).join('')}</div>
+                        <select id="mFecha" aria-label="Fecha">${[['todo', 'Fecha: todas'], ['mes', 'Este mes'], ['pasado', 'Mes pasado'], ['90', 'Últimos 90 días']].map(([k, t]) => `<option value="${k}" ${st.fecha === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                        <select id="mCat" aria-label="Categoría"><option value="">Categoría: todas</option>${categorias.map(c => `<option ${st.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+                        <div class="m-rap">${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-mr="${k}">${t}</button>`).join('')}</div>
+                    </div>
+                    <div class="m-cuenta">${lista.length} movimiento${lista.length === 1 ? '' : 's'}</div>
+                    <div class="m-lista">${vis.map(m => `<div class="m-mov" data-id="${m.id}">
+                        <div class="m-izq"><div class="m-ben">${esc(m.beneficiario)}${m.bandera ? ` <span class="m-flag">${FLAG}</span>` : ''}</div><div class="m-cat">${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</div></div>
+                        <div class="m-der"><div class="num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</div><div class="m-fecha">${fechaCorta(m.fecha)}</div></div></div>`).join('') || `<div class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos.'}</div>`}</div>
+                    ${lista.length > lim ? `<button class="btn-sec m-mas-b" id="mMas">Mostrar más (${lista.length - lim})</button>` : ''}`;
+                const reset = () => { st.limMov = 60; pintar(); };
+                document.getElementById('mAtras').addEventListener('click', () => { st.vista = 'dashboard'; pintar(); });
+                document.getElementById('mNuevo').addEventListener('click', () => abrirMovimiento());
+                const menu = document.getElementById('mMenu');
+                document.getElementById('mMenuB').addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+                document.addEventListener('click', () => { menu.hidden = true; }, { once: true });
+                menu.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => {
+                    if (b.dataset.m === 'imp') abrirImportar(); else if (b.dataset.m === 'dash') { st.vista = 'dashboard'; pintar(); } else { st.vista = 'config'; pintar(); }
+                }));
+                app.querySelectorAll('[data-mc]').forEach(b => b.addEventListener('click', () => { st.cuenta = b.dataset.mc; st.sel.clear(); reset(); }));
+                const q = document.getElementById('mQ');
+                q.addEventListener('input', () => { st.q = q.value; st.limMov = 60; const pos = q.selectionStart; pintar(); const n = document.getElementById('mQ'); n.focus(); n.setSelectionRange(pos, pos); });
+                document.getElementById('mFiltroB').addEventListener('click', () => { st.mFiltros = !st.mFiltros; document.getElementById('mFiltros').hidden = !st.mFiltros; });
+                app.querySelectorAll('[data-mt]').forEach(b => b.addEventListener('click', () => { st.tab = b.dataset.mt; reset(); }));
+                app.querySelectorAll('[data-mr]').forEach(b => b.addEventListener('click', () => { st.rapido = st.rapido === b.dataset.mr ? '' : b.dataset.mr; reset(); }));
+                document.getElementById('mFecha').addEventListener('change', e => { st.fecha = e.target.value; reset(); });
+                document.getElementById('mCat').addEventListener('change', e => { st.cat = e.target.value; reset(); });
+                const mas = document.getElementById('mMas');
+                if (mas) mas.addEventListener('click', () => { st.limMov = lim + 100; pintar(); });
+                app.querySelectorAll('.m-mov').forEach(e => e.addEventListener('click', () => abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id))));
+            }
+
             // Lista lateral de cuentas con el botón Dashboard arriba; se usa en el dashboard y en los movimientos
             function asideHtml() {
                 const enDash = st.vista === 'dashboard';
@@ -447,6 +550,7 @@
                 programarSync();
                 if (st.vista === 'config') { pintarConfig(); return; }
                 if (st.vista === 'dashboard') { pintarDashboard(); return; }
+                if (esMovil()) { pintarMovil(); return; }
                 const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
                 const lista = orden(filtrados());
                 // Saldo después de cada movimiento: orden cronológico (fecha y, a igual fecha, id), con el saldo inicial de la cuenta o de todas
