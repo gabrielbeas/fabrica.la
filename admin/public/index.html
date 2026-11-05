@@ -94,6 +94,7 @@
         .app .ico svg { width: 24px; height: 24px; stroke: var(--accion); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
         .app .nom { font-weight: 600; font-size: 15px; }
         .app .des { font-size: 12px; color: var(--tinta-suave); line-height: 1.4; }
+        .app.moviendo { opacity: .55; outline: 2px dashed var(--accion); outline-offset: 2px; transform: none; cursor: grabbing; }
         .app.pendiente { cursor: default; opacity: .6; }
         .app.pendiente:hover { transform: none; box-shadow: none; border-color: var(--linea); }
         .app.pendiente .ico { background: var(--tinta-tenue); }
@@ -175,6 +176,45 @@
             ? `<div class="app pendiente" title="Este módulo todavía no está listo"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)} <span class="prox">Próximamente</span></span><span class="des">${esc(a.des)}</span></div>`
             : `<a class="app" href="${a.href}"><span class="ico">${ICO[a.id] || ''}</span><span class="nom">${esc(a.nombre)}</span><span class="des">${esc(a.des)}</span></a>`;
 
+        // Las tarjetas se acomodan en el orden guardado y se mueven con un clic sostenido (medio segundo) y arrastrando
+        const CLAVE_ORDEN_APPS = 'inicio_orden_v1';
+        let ctrlApps = null;
+        function acomodarApps(grid) {
+            if (ctrlApps) ctrlApps.abort();
+            ctrlApps = new AbortController();
+            const sig = { signal: ctrlApps.signal };
+            let guardado = [];
+            try { guardado = JSON.parse(localStorage.getItem(CLAVE_ORDEN_APPS) || '[]') || []; } catch (e) { /* sin orden guardado */ }
+            const ids = [...grid.children].map((el, i) => (el.dataset.w = APPS.filter(a => a.roles ? a.roles.includes(user.rol) : esAdmin() || !a.soloAdmin)[i].id));
+            const idx = el => { const i = guardado.indexOf(el.dataset.w); return i < 0 ? 999 : i; };
+            [...grid.children].sort((a, b) => idx(a) - idx(b)).forEach(el => grid.appendChild(el));
+            grid.querySelectorAll('a').forEach(a => a.setAttribute('draggable', 'false'));
+            let temp = null, mov = null, x0 = 0, y0 = 0, evitaClic = false;
+            grid.addEventListener('click', ev => { if (evitaClic) { ev.stopPropagation(); ev.preventDefault(); evitaClic = false; } }, true);
+            grid.addEventListener('pointerdown', ev => {
+                if (ev.button !== 0) return;
+                const w = ev.target.closest('[data-w]'); if (!w || w.parentNode !== grid) return;
+                x0 = ev.clientX; y0 = ev.clientY;
+                temp = setTimeout(() => { mov = w; w.classList.add('moviendo'); document.body.style.userSelect = 'none'; document.body.style.cursor = 'grabbing'; }, 500);
+            }, sig);
+            window.addEventListener('pointermove', ev => {
+                if (temp && !mov && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) { clearTimeout(temp); temp = null; }
+                if (!mov) return;
+                const bajo = document.elementFromPoint(ev.clientX, ev.clientY), otro = bajo && bajo.closest('[data-w]');
+                if (!otro || otro === mov || otro.parentNode !== grid) return;
+                const r = otro.getBoundingClientRect();
+                grid.insertBefore(mov, ev.clientX < r.left + r.width / 2 ? otro : otro.nextSibling);
+            }, sig);
+            const soltar = () => {
+                clearTimeout(temp); temp = null;
+                if (!mov) return;
+                mov.classList.remove('moviendo'); document.body.style.userSelect = ''; document.body.style.cursor = '';
+                try { localStorage.setItem(CLAVE_ORDEN_APPS, JSON.stringify([...grid.children].map(el => el.dataset.w))); } catch (e) { /* sin almacenamiento */ }
+                mov = null; evitaClic = true; setTimeout(() => { evitaClic = false; }, 0);
+            };
+            window.addEventListener('pointerup', soltar, sig); window.addEventListener('pointercancel', soltar, sig);
+        }
+
         let user = null, contratos = null;
 
         if (!isAuthenticated()) {
@@ -205,7 +245,8 @@
                 app.innerHTML = `
                     <h1>Bienvenido, ${esc(user.nombre || user.email)}</h1>
                     <p class="sub">La Fábrica de Chocolate</p>
-                    <div class="apps">${APPS.filter(a => a.roles ? a.roles.includes(user.rol) : admin || !a.soloAdmin).map(tarjetaApp).join('')}</div>`;
+                    <div class="apps" id="apps">${APPS.filter(a => a.roles ? a.roles.includes(user.rol) : admin || !a.soloAdmin).map(tarjetaApp).join('')}</div>`;
+                acomodarApps(document.getElementById('apps'));
                 return;
             }
             app.innerHTML = '<div class="cargando">Cargando...</div>';

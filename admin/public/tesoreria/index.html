@@ -137,6 +137,42 @@
         .sync { position: fixed; right: 18px; bottom: 14px; background: #fff; border: 1px solid var(--linea); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--tinta-suave); box-shadow: 0 4px 14px rgba(0,0,0,.12); z-index: 900; }
         .sync.err { color: var(--peligro); border-color: var(--peligro); }
         td.numm { color: var(--tinta-tenue, #9aa2ad); text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+        .btn-dash { width: 100%; text-align: left; background: var(--fondo-hundido); border: none; border-radius: 8px; padding: 10px 12px; margin-bottom: 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta); cursor: pointer; }
+        .btn-dash:hover { background: var(--accion-suave); color: var(--accion); }
+        .btn-dash.act { background: var(--accion-suave); color: var(--accion); box-shadow: inset 3px 0 0 var(--ambar); }
+        .dash { max-width: 1000px; margin: 0 auto; }
+        .grafica svg { display: block; width: 100%; max-width: 860px; height: auto; margin: 0 auto; }
+        .dash { display: flex; flex-direction: column; gap: 16px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .kpi { border: 1px solid var(--linea); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+        .kpi-t { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+        .kpi-v { font-size: 24px; font-weight: 700; }
+        .kpi small { font-size: 12px; color: var(--tinta-suave); }
+        .kpi small.bien { color: var(--exito); }
+        .kpi small.mal { color: var(--peligro); }
+        .neg { color: var(--peligro); }
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        .dash-grid .ancho2 { grid-column: 1 / -1; }
+        .dash-grid > [data-w] { cursor: default; }
+        .dash-grid > .moviendo { opacity: .55; outline: 2px dashed var(--accion); outline-offset: 2px; cursor: grabbing; }
+        .lin-top { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--linea); font-size: 14px; }
+        .lin-top:last-child { border-bottom: none; }
+        .lin-top.cta, .lin-top.pend, .bar-fila { cursor: pointer; }
+        .lin-top.cta:hover, .lin-top.pend:hover { background: var(--fondo-hundido); }
+        .lin-top.tot { font-weight: 700; }
+        .lin-ben { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .lin-cat { flex: 1; color: var(--tinta-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vacio-peq { color: var(--tinta-suave); font-size: 13px; padding: 10px 0; }
+        .bar-fila { display: grid; grid-template-columns: 170px 1fr 110px 44px; gap: 10px; align-items: center; padding: 6px 0; font-size: 13px; }
+        .bar-fila:hover .bar-n { color: var(--accion); }
+        .bar-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar-pista { background: var(--fondo-hundido); border-radius: 4px; height: 10px; overflow: hidden; }
+        .bar-rell { display: block; height: 100%; background: var(--accion); border-radius: 4px; }
+        .bar-v { text-align: right; }
+        .bar-p { text-align: right; color: var(--tinta-suave); }
+        .leyenda { font-size: 12px; color: var(--tinta-suave); display: inline-flex; align-items: center; gap: 6px; }
+        .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 8px; }
+        @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } .bar-fila { grid-template-columns: 110px 1fr 90px 38px; } }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -367,7 +403,7 @@
             window.addEventListener('resize', () => { if (st.vista !== 'config') aplicaAnchos(); });
             let anchosGuardados = {};
             try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
-            const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'movimientos', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
+            const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'dashboard', mesDash: '', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
 
             const saldoDe = c => c.saldoInicial + MOVS.filter(m => m.cuenta === c.id && m.fecha <= HOY).reduce((s, m) => s + m.monto, 0);
             const saldoTotal = () => CUENTAS.reduce((s, c) => s + saldoDe(c), 0);
@@ -381,6 +417,7 @@
                     && (st.rapido !== 'mes' || m.fecha.startsWith(mes))
                     && (st.rapido !== 'sincat' || !m.categoria)
                     && (st.rapido !== 'sinrev' || !m.revisado)
+                    && (st.rapido !== 'bandera' || m.bandera)
                     && (st.fecha === 'todo' || (st.fecha === 'mes' && m.fecha.startsWith(mes)) || (st.fecha === 'pasado' && m.fecha.startsWith(mesPasado)) || (st.fecha === '90' && m.fecha >= hace90.toISOString().slice(0, 10)))
                     && (!st.cat || m.categoria === st.cat)
                     && (!q || [m.beneficiario, m.categoria, m.nota, m.etiquetas.join(' ')].join(' ').toLowerCase().includes(q)));
@@ -390,9 +427,26 @@
                 return [...lista].sort((a, b) => { const x = k[st.col](a), y = k[st.col](b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || b.id - a.id; });
             };
 
+            // Lista lateral de cuentas con el botón Dashboard arriba; se usa en el dashboard y en los movimientos
+            function asideHtml() {
+                const enDash = st.vista === 'dashboard';
+                return `<aside class="cuentas">
+                            <button class="btn-dash ${enDash ? 'act' : ''}" data-dash="1">Dashboard</button>
+                            <h2>Cuentas</h2>
+                            <div class="fila total ${!enDash && st.cuenta === 'todas' ? 'act' : ''}" data-cuenta="todas"><span>Todas las cuentas</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            <div class="fila grupo"><span>▾ Bancos y efectivo</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            ${CUENTAS.map(c => `<div class="fila sub ${!enDash && st.cuenta === c.id ? 'act' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                        </aside>`;
+            }
+            function ligarAside() {
+                app.querySelectorAll('[data-dash]').forEach(e => e.addEventListener('click', () => { st.vista = 'dashboard'; pintar(); }));
+                app.querySelectorAll('aside [data-cuenta]').forEach(e => e.addEventListener('click', () => { st.cuenta = e.dataset.cuenta; st.sel.clear(); st.vista = 'movimientos'; pintar(); }));
+            }
+
             function pintar() {
                 programarSync();
                 if (st.vista === 'config') { pintarConfig(); return; }
+                if (st.vista === 'dashboard') { pintarDashboard(); return; }
                 const cuentaAct = CUENTAS.find(c => c.id === st.cuenta);
                 const lista = orden(filtrados());
                 // Saldo después de cada movimiento: orden cronológico (fecha y, a igual fecha, id), con el saldo inicial de la cuenta o de todas
@@ -432,14 +486,9 @@
 
                 app.innerHTML = `
                     <div class="layout">
-                        <aside class="cuentas">
-                            <h2>Cuentas</h2>
-                            <div class="fila total ${st.cuenta === 'todas' ? 'act' : ''}" data-cuenta="todas"><span>Todas las cuentas</span><span class="num">${dinero(saldoTotal())}</span></div>
-                            <div class="fila grupo"><span>▾ Bancos y efectivo</span><span class="num">${dinero(saldoTotal())}</span></div>
-                            ${CUENTAS.map(c => `<div class="fila sub ${st.cuenta === c.id ? 'act' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
-                        </aside>
+                        ${asideHtml()}
                         <section>
-                            <div class="cab-h"><h1>Tesorería</h1><button class="btn-sec" id="bConfig">Configuración</button></div>
+                            <div class="cab-h"><h1>Tesorería</h1><div class="barra"><button class="btn-sec" id="bResumen">Resumen</button><button class="btn-sec" id="bConfig">Configuración</button></div></div>
                             <div class="tabs">${[['todos', 'Todos'], ['gastos', 'Gastos'], ['ingresos', 'Ingresos']].map(([k, t]) => `<button class="tab ${st.tab === k ? 'act' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
                             <div class="tarjeta-cuenta"><div><h3>${cuentaAct ? esc(cuentaAct.nombre) : 'Todas las cuentas'}</h3><div class="tipo">${cuentaAct ? 'Manual' : CUENTAS.length + ' cuentas'}</div></div>
                                 <div class="saldo num">${dinero(cuentaAct ? saldoDe(cuentaAct) : saldoTotal())}<small>Saldo a hoy</small></div></div>
@@ -454,7 +503,7 @@
                                     </div>
                                 </div>
                                 <div class="rapidos">Filtros rápidos
-                                    ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
+                                    ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
                                     ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
@@ -467,7 +516,7 @@
                     </div>`;
 
                 const aviso = t => { const a = document.getElementById('aviso'); a.textContent = t; a.style.display = 'block'; };
-                app.querySelectorAll('[data-cuenta]').forEach(e => e.addEventListener('click', () => { st.cuenta = e.dataset.cuenta; st.sel.clear(); pintar(); }));
+                ligarAside();
                 app.querySelectorAll('[data-tab]').forEach(e => e.addEventListener('click', () => { st.tab = e.dataset.tab; pintar(); }));
                 app.querySelectorAll('[data-rapido]').forEach(e => e.addEventListener('click', () => { st.rapido = st.rapido === e.dataset.rapido ? '' : e.dataset.rapido; pintar(); }));
                 app.querySelectorAll('th.ord').forEach(e => e.addEventListener('click', () => { const c = e.dataset.col; st.dir = st.col === c ? -st.dir : (c === 'fecha' || c === 'monto' ? -1 : 1); st.col = c; pintar(); }));
@@ -503,6 +552,7 @@
                     });
                 });
                 document.getElementById('bConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
+                document.getElementById('bResumen').addEventListener('click', () => { st.vista = 'dashboard'; pintar(); });
                 document.getElementById('bNuevo').addEventListener('click', () => abrirMovimiento());
                 app.querySelectorAll('tr.mov').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.rev, .chk, .banda')) return; abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id)); }));
                 app.querySelectorAll('tr.mov .banda').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.bandera = !m.bandera; pintar(); }));
@@ -510,6 +560,158 @@
             }
 
 
+
+            // Módulos del dashboard: se acomodan en el orden guardado y se mueven con un clic sostenido (medio segundo) y arrastrando
+            const CLAVE_ORDEN = 'tesoreria_dash_orden_v1';
+            let ctrlOrden = null;
+            function ordenarYArrastrar(grid) {
+                if (ctrlOrden) ctrlOrden.abort();
+                ctrlOrden = new AbortController();
+                const sig = { signal: ctrlOrden.signal };
+                let guardado = [];
+                try { guardado = JSON.parse(localStorage.getItem(CLAVE_ORDEN) || '[]') || []; } catch (e) { /* sin orden guardado */ }
+                const idx = el => { const i = guardado.indexOf(el.dataset.w); return i < 0 ? 999 : i; };
+                [...grid.children].sort((a, b) => idx(a) - idx(b)).forEach(el => grid.appendChild(el));
+                let temp = null, mov = null, x0 = 0, y0 = 0, evitaClic = false;
+                grid.addEventListener('click', ev => { if (evitaClic) { ev.stopPropagation(); ev.preventDefault(); evitaClic = false; } }, true);
+                grid.addEventListener('pointerdown', ev => {
+                    if (ev.button !== 0 || ev.target.closest('button, select, input')) return;
+                    const w = ev.target.closest('[data-w]'); if (!w || w.parentNode !== grid) return;
+                    x0 = ev.clientX; y0 = ev.clientY;
+                    temp = setTimeout(() => {
+                        mov = w; w.classList.add('moviendo'); document.body.style.userSelect = 'none'; document.body.style.cursor = 'grabbing';
+                    }, 500);
+                });
+                window.addEventListener('pointermove', ev => {
+                    if (temp && !mov && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) { clearTimeout(temp); temp = null; }
+                    if (!mov) return;
+                    const bajo = document.elementFromPoint(ev.clientX, ev.clientY), otro = bajo && bajo.closest('[data-w]');
+                    if (!otro || otro === mov || otro.parentNode !== grid) return;
+                    const r = otro.getBoundingClientRect(), antes = ev.clientY < r.top + r.height / 2 || (ev.clientX < r.left + r.width / 2 && r.width < grid.clientWidth * 0.8);
+                    grid.insertBefore(mov, antes ? otro : otro.nextSibling);
+                }, sig);
+                const soltar = () => {
+                    clearTimeout(temp); temp = null;
+                    if (!mov) return;
+                    mov.classList.remove('moviendo'); document.body.style.userSelect = ''; document.body.style.cursor = '';
+                    try { localStorage.setItem(CLAVE_ORDEN, JSON.stringify([...grid.children].map(el => el.dataset.w))); } catch (e) { /* sin almacenamiento */ }
+                    mov = null; evitaClic = true; setTimeout(() => { evitaClic = false; }, 0);
+                };
+                window.addEventListener('pointerup', soltar, sig); window.addEventListener('pointercancel', soltar, sig);
+            }
+
+            // ---------- DASHBOARD: pantalla de entrada del módulo ----------
+            function pintarDashboard() {
+                const validos = MOVS.filter(m => !m.excluido);
+                const mesesConDatos = [...new Set(validos.map(m => m.fecha.slice(0, 7)))].sort();
+                if (!st.mesDash || !mesesConDatos.concat(HOY.slice(0, 7)).includes(st.mesDash)) {
+                    const pasados = mesesConDatos.filter(k => k <= HOY.slice(0, 7));
+                    st.mesDash = pasados.length ? pasados[pasados.length - 1] : HOY.slice(0, 7);
+                }
+                const mes = st.mesDash, [aa, mm] = mes.split('-').map(Number);
+                const opcMeses = [...new Set(mesesConDatos.concat(HOY.slice(0, 7)))].sort().reverse();
+                const delMes = validos.filter(m => m.fecha.startsWith(mes));
+                const ing = delMes.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0);
+                const gas = -delMes.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
+                // Mes anterior para comparar
+                const ant = new Date(aa, mm - 2, 1), kAnt = ant.getFullYear() + '-' + String(ant.getMonth() + 1).padStart(2, '0');
+                const delAnt = validos.filter(m => m.fecha.startsWith(kAnt));
+                const ingAnt = delAnt.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0);
+                const gasAnt = -delAnt.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
+                const comp = (v, a, masEsBueno) => {
+                    if (!a) return '<small>Sin mes anterior para comparar</small>';
+                    const p = (v - a) / a * 100, bien = masEsBueno ? p >= 0 : p <= 0;
+                    return `<small class="${bien ? 'bien' : 'mal'}">${p >= 0 ? '+' : ''}${p.toFixed(1)} % contra ${MESES[ant.getMonth()]}</small>`;
+                };
+                // Doce meses que terminan en el mes elegido
+                const serie = [];
+                for (let i = 11; i >= 0; i--) {
+                    const d = new Date(aa, mm - 1 - i, 1), k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    const ms = validos.filter(m => m.fecha.startsWith(k));
+                    serie.push({ k, etq: MESES[d.getMonth()].slice(0, 3), i: ms.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0), g: -ms.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0) });
+                }
+                const maxS = Math.max(1, ...serie.map(x => Math.max(x.i, x.g)));
+                const W = 720, H = 210, pb = 26, pt = 10, bw = W / 12;
+                const alto = v => (H - pb - pt) * v / maxS;
+                const barras = serie.map((x, n) => {
+                    const x0 = n * bw, w = (bw - 16) / 2;
+                    return `<g><title>${cap(MESES[+x.k.slice(5) - 1])} ${x.k.slice(0, 4)}: ingresos ${dinero(x.i)}, gastos ${dinero(x.g)}</title>
+                        <rect x="${x0 + 8}" y="${H - pb - alto(x.i)}" width="${w}" height="${alto(x.i)}" rx="2" fill="var(--exito)"/>
+                        <rect x="${x0 + 8 + w}" y="${H - pb - alto(x.g)}" width="${w}" height="${alto(x.g)}" rx="2" fill="var(--accion)"/>
+                        <text x="${x0 + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text></g>`;
+                }).join('');
+                // Saldo total al cierre de cada mes
+                const saldoAl = fin => CUENTAS.reduce((s, c) => s + c.saldoInicial, 0) + validos.filter(m => m.fecha <= fin).reduce((s, m) => s + m.monto, 0);
+                const puntos = serie.map(x => { const fin = x.k + '-' + String(new Date(+x.k.slice(0, 4), +x.k.slice(5), 0).getDate()).padStart(2, '0'); return saldoAl(fin > HOY ? HOY : fin); });
+                const mn = Math.min(...puntos), mx = Math.max(...puntos), rango = (mx - mn) || 1;
+                const HL = 150, px = i => 20 + i * (W - 40) / 11, py = v => 12 + (HL - 24) * (1 - (v - mn) / rango);
+                const linea = puntos.map((v, i) => (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(v).toFixed(1)).join(' ');
+                const ptsSvg = puntos.map((v, i) => `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3.5" fill="var(--accion)"><title>${cap(MESES[+serie[i].k.slice(5) - 1])}: ${dinero(v)}</title></circle>`).join('');
+                const etqLin = serie.map((x, i) => `<text x="${px(i).toFixed(1)}" y="${HL + 12}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text>`).join('');
+                // Gastos por categoría principal
+                const porCat = {};
+                delMes.filter(m => m.monto < 0).forEach(m => { const p = m.categoria ? m.categoria.split(':')[0] : 'Sin categoría'; porCat[p] = (porCat[p] || 0) - m.monto; });
+                const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]), topCat = cats.slice(0, 8), maxCat = topCat.length ? topCat[0][1] : 1;
+                const filasCat = topCat.map(([n, v]) => `<div class="bar-fila" data-cat="${esc(n)}"><span class="bar-n">${esc(n)}</span><span class="bar-pista"><span class="bar-rell" style="width:${(v / maxCat * 100).toFixed(1)}%"></span></span><span class="num bar-v">${dinero(v)}</span><span class="bar-p">${gas ? (v / gas * 100).toFixed(0) : 0} %</span></div>`).join('');
+                // Beneficiarios principales
+                const top = (signo) => {
+                    const t = {};
+                    delMes.filter(m => signo * m.monto > 0).forEach(m => { t[m.beneficiario || '(sin beneficiario)'] = (t[m.beneficiario || '(sin beneficiario)'] || 0) + Math.abs(m.monto); });
+                    return Object.entries(t).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                };
+                const listaTop = l => l.length ? l.map(([n, v]) => `<div class="lin-top"><span>${esc(n)}</span><span class="num">${dinero(v)}</span></div>`).join('') : '<div class="vacio-peq">Sin movimientos</div>';
+                // Pendientes
+                const sinCat = validos.filter(m => !m.categoria).length, sinRev = validos.filter(m => !m.revisado).length, conBand = MOVS.filter(m => m.bandera).length;
+                const ultimos = [...MOVS].sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : b.id - a.id)).slice(0, 8);
+                app.innerHTML = `
+                    <div class="layout">${asideHtml()}<section><div class="dash">
+                        <div class="cab-h"><h1>Tesorería</h1><div class="barra">
+                            <select id="dMes" aria-label="Mes">${opcMeses.map(k => `<option value="${k}" ${k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select>
+                            <button class="btn-sec" id="dMov">Movimientos</button><button class="btn-sec" id="dConfig">Configuración</button><button class="btn" id="dNuevo">Nuevo movimiento</button></div></div>
+                        <div class="dash-grid" id="dGrid">
+                        <div class="kpis ancho2" data-w="kpis">
+                            <div class="kpi"><span class="kpi-t">Saldo total a hoy</span><span class="kpi-v num">${dinero(saldoTotal())}</span><small>${CUENTAS.length} cuenta${CUENTAS.length === 1 ? '' : 's'}</small></div>
+                            <div class="kpi"><span class="kpi-t">Ingresos de ${MESES[mm - 1]}</span><span class="kpi-v num ingreso">${dinero(ing)}</span>${comp(ing, ingAnt, true)}</div>
+                            <div class="kpi"><span class="kpi-t">Gastos de ${MESES[mm - 1]}</span><span class="kpi-v num">${dinero(gas)}</span>${comp(gas, gasAnt, false)}</div>
+                            <div class="kpi"><span class="kpi-t">Resultado del mes</span><span class="kpi-v num ${ing - gas >= 0 ? 'ingreso' : 'neg'}">${(ing - gas >= 0 ? '+' : '') + dinero(ing - gas)}</span><small>${delMes.length} movimiento${delMes.length === 1 ? '' : 's'}</small></div>
+                        </div>
+                            <div class="caja" data-w="cuentas"><div class="cab-mov"><h3>Cuentas</h3></div>
+                                ${CUENTAS.map(c => `<div class="lin-top cta" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                                <div class="lin-top tot"><span>Total</span><span class="num">${dinero(saldoTotal())}</span></div>
+                            </div>
+                            <div class="caja" data-w="pendientes"><div class="cab-mov"><h3>Pendientes</h3></div>
+                                <div class="lin-top pend" data-rapido="sincat"><span>Sin categoría</span><span class="num ${sinCat ? 'sin' : ''}">${sinCat}</span></div>
+                                <div class="lin-top pend" data-rapido="sinrev"><span>Sin revisar</span><span class="num">${sinRev}</span></div>
+                                <div class="lin-top pend" data-rapido="bandera"><span>Con bandera</span><span class="num">${conBand}</span></div>
+                            </div>
+                        <div class="caja grafica ancho2" data-w="barras"><div class="cab-mov"><h3>Ingresos y gastos, últimos 12 meses</h3>
+                            <span class="leyenda"><i style="background:var(--exito)"></i>Ingresos <i style="background:var(--accion)"></i>Gastos</span></div>
+                            <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ingresos y gastos por mes"><line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" stroke="var(--linea)"/>${barras}</svg></div>
+                        <div class="caja grafica ancho2" data-w="saldo"><div class="cab-mov"><h3>Saldo total al cierre de cada mes</h3></div>
+                            <svg viewBox="0 0 ${W} ${HL + 20}" width="100%" role="img" aria-label="Saldo total por mes"><path d="${linea}" fill="none" stroke="var(--accion)" stroke-width="2"/>${ptsSvg}${etqLin}</svg></div>
+                            <div class="caja" data-w="categorias"><div class="cab-mov"><h3>Gastos por categoría</h3><small class="mod-ayuda">${cap(MESES[mm - 1])} ${aa}</small></div>
+                                ${filasCat || '<div class="vacio-peq">Sin gastos en este mes</div>'}</div>
+                            <div class="caja" data-w="mayores"><div class="cab-mov"><h3>Mayores gastos</h3></div>${listaTop(top(-1))}
+                                <div class="cab-mov" style="margin-top:16px"><h3>Mayores ingresos</h3></div>${listaTop(top(1))}</div>
+                        <div class="caja ancho2" data-w="ultimos"><div class="cab-mov"><h3>Últimos movimientos</h3><button class="btn-sec" id="dMov2">Ver todos</button></div>
+                            ${ultimos.length ? ultimos.map(m => `<div class="lin-top"><span class="nw">${+m.fecha.slice(8)} ${MESES[+m.fecha.slice(5, 7) - 1].slice(0, 3)}</span><span class="lin-ben">${esc(m.beneficiario)}</span><span class="lin-cat">${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</span><span class="num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</span></div>`).join('') : '<div class="vacio-peq">Todavía no hay movimientos. Entra a una cuenta para importar un CSV.</div>'}</div>
+                        </div>
+                    </div></section></div>`;
+                ligarAside();
+                ordenarYArrastrar(document.getElementById('dGrid'));
+                const ir = (cambios = {}) => { Object.assign(st, { cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '' }, cambios); st.vista = 'movimientos'; pintar(); };
+                document.getElementById('dMes').addEventListener('change', e => { st.mesDash = e.target.value; pintar(); });
+                document.getElementById('dMov').addEventListener('click', () => ir());
+                document.getElementById('dMov2').addEventListener('click', () => ir());
+                document.getElementById('dConfig').addEventListener('click', () => { st.vista = 'config'; pintar(); });
+                document.getElementById('dNuevo').addEventListener('click', () => abrirMovimiento());
+                app.querySelectorAll('.cta').forEach(e => e.addEventListener('click', () => ir({ cuenta: e.dataset.cuenta })));
+                app.querySelectorAll('.dash [data-rapido]').forEach(e => e.addEventListener('click', () => ir({ rapido: e.dataset.rapido })));
+                app.querySelectorAll('.bar-fila').forEach(e => e.addEventListener('click', () => {
+                    const n = e.dataset.cat, cat = categoriasOrdenadas().find(o => o.v === n)?.v;
+                    ir({ tab: 'gastos', fecha: 'todo', rapido: n === 'Sin categoría' ? 'sincat' : '', cat: cat || '' });
+                }));
+            }
 
             // ---------- CONFIGURACIÓN: etiquetas, categorías y beneficiarios ----------
             function abrirModal({ titulo, cuerpo, texto, eliminar, ancho = 560 }) {
