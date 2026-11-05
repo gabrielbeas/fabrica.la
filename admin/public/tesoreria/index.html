@@ -55,6 +55,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 0; }
         th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 10px 12px; border-bottom: 1px solid var(--linea); white-space: nowrap; user-select: none; }
         th.ord { cursor: pointer; }
+        .lin-top.cta.cta-sel { font-weight: 700; color: var(--accion); }
         th.ord:hover { color: var(--tinta); }
         th.ord.act { color: var(--accion); }
         th .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
@@ -130,6 +131,9 @@
         .tabla-cfg tr.fila-cfg { cursor: pointer; }
         .tabla-cfg tr.fila-cfg:hover td { background: var(--fondo-hundido); }
         .tog { display: inline-block; width: 18px; color: var(--tinta-suave); }
+        .mas-sub { margin-left: 10px; border: 1px solid var(--linea); background: #fff; color: var(--accion); border-radius: 12px; padding: 1px 9px; font: inherit; font-size: 12px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+        tr.fila-cfg:hover .mas-sub, .mas-sub:focus { opacity: 1; }
+        @media (hover: none) { .mas-sub { opacity: 1; } }
         .combo { position: relative; }
         .combo-lista { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow: auto; background: #fff; border: 1px solid var(--borde-control); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.18); z-index: 20; }
         .combo-lista.abierta { display: block; }
@@ -179,6 +183,18 @@
         .vacio-peq { color: var(--tinta-suave); font-size: 13px; padding: 10px 0; }
         .bar-fila { display: grid; grid-template-columns: 170px 1fr 110px 44px; gap: 10px; align-items: center; padding: 6px 0; font-size: 13px; }
         .bar-fila:hover .bar-n { color: var(--accion); }
+        .bar-fila.otros { cursor: default; color: var(--tinta-suave); }
+        .bar-fila.subsub { padding: 3px 0; font-size: 12px; color: var(--tinta-suave); }
+        .bar-fila.subsub .bar-n { padding-left: 18px; }
+        .bar-fila.subsub .bar-pista { height: 7px; }
+        .dona-caja .dona2 { width: 190px; height: 190px; }
+        .bar-fila .punto { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 0; }
+        .bar-n .sub-padre { display: block; font-size: 11px; color: var(--tinta-suave); margin-left: 16px; overflow: hidden; text-overflow: ellipsis; }
+        .dona-caja { display: flex; gap: 22px; align-items: center; }
+        .dona-caja .dona { width: 170px; height: 170px; flex: none; }
+        .dona-lista { flex: 1; min-width: 0; }
+        .dona-lista .bar-fila { grid-template-columns: minmax(180px, 280px) 1fr 120px 44px; }
+        @media (max-width: 1100px) { .dona-caja { flex-direction: column; align-items: stretch; } .dona-caja .dona { margin: 0 auto; } }
         .bar-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .bar-pista { background: var(--fondo-hundido); border-radius: 4px; height: 10px; overflow: hidden; }
         .bar-rell { display: block; height: 100%; background: var(--accion); border-radius: 4px; }
@@ -186,7 +202,7 @@
         .bar-p { text-align: right; color: var(--tinta-suave); }
         .leyenda { font-size: 12px; color: var(--tinta-suave); display: inline-flex; align-items: center; gap: 6px; }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 8px; }
-        @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } .bar-fila { grid-template-columns: 110px 1fr 90px 38px; } }
+        @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } .bar-fila, .dona-lista .bar-fila { grid-template-columns: minmax(0, 1fr) 60px 100px 38px; } }
         /* Móvil: cuenta clonada de Simplifi */
         .m-cab { margin: -24px -28px 14px; padding: 18px 20px 20px; background: linear-gradient(180deg, var(--fondo) 0%, var(--accion-suave) 100%); }
         .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
@@ -242,7 +258,7 @@
         import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261104-1';
         import { collection, getDocs, doc, getDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -418,13 +434,25 @@
         let _k = 0;
         const nuevoId = () => 'k' + Date.now().toString(36) + (++_k);
         const cmpEs = (a, b) => String(a).localeCompare(String(b), 'es');
-        const catNombre = c => { const p = c.padre ? CAT.categorias.find(x => x.id === c.padre) : null; return p ? p.nombre + ':' + c.nombre : c.nombre; };
+        // Categorías en árbol de hasta 3 niveles: CATEGORÍA:SUBCATEGORÍA:SUB-SUBCATEGORÍA (nivel 0, 1 y 2)
+        const MAX_NIVEL = 2;
+        const catPadre = c => (c && c.padre ? CAT.categorias.find(x => x.id === c.padre) : null);
+        const catNombre = c => { const p = catPadre(c); return p ? catNombre(p) + ':' + c.nombre : c.nombre; };
+        const catNivel = c => { let n = 0, p = catPadre(c); while (p && n < 10) { n++; p = catPadre(p); } return n; };
+        const catHijos = c => CAT.categorias.filter(x => x.padre === c.id);
+        const catDescendientes = c => catHijos(c).flatMap(h => [h, ...catDescendientes(h)]);
+        const catAltura = c => { const hs = catHijos(c); return hs.length ? 1 + Math.max(...hs.map(catAltura)) : 0; };
         function asegurarCategoria(completo, tipo) {
             if (!completo) return;
-            const [pn, ...resto] = completo.split(':'), hn = resto.join(':').trim();
-            let padre = CAT.categorias.find(c => !c.padre && c.nombre === pn.trim());
-            if (!padre) { padre = { id: nuevoId(), nombre: pn.trim(), padre: null, tipo }; CAT.categorias.push(padre); }
-            if (hn && !CAT.categorias.some(c => c.padre === padre.id && c.nombre === hn)) CAT.categorias.push({ id: nuevoId(), nombre: hn, padre: padre.id, tipo });
+            const partes = completo.split(':').map(x => x.trim()).filter(Boolean);
+            let padre = null;
+            partes.slice(0, MAX_NIVEL + 1).forEach((nombre, i) => {
+                // Si el CSV trae más niveles de los permitidos, el resto se junta en el último
+                const nom = i === MAX_NIVEL ? partes.slice(MAX_NIVEL).join(' · ') : nombre;
+                let c = CAT.categorias.find(x => (x.padre || null) === (padre ? padre.id : null) && x.nombre === nom);
+                if (!c) { c = { id: nuevoId(), nombre: nom, padre: padre ? padre.id : null, tipo }; CAT.categorias.push(c); }
+                padre = c;
+            });
         }
         function sincronizarCatalogo() {
             const tipos = {};
@@ -438,10 +466,8 @@
         }
         const categoriasOrdenadas = () => {
             const r = [];
-            CAT.categorias.filter(c => !c.padre).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(p => {
-                r.push({ v: catNombre(p), t: p.nombre });
-                CAT.categorias.filter(c => c.padre === p.id).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(h => r.push({ v: catNombre(h), t: '— ' + h.nombre }));
-            });
+            const agrega = (c, nivel) => { r.push({ v: catNombre(c), t: '— '.repeat(nivel) + c.nombre }); catHijos(c).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(h => agrega(h, nivel + 1)); };
+            CAT.categorias.filter(c => !c.padre).sort((a, b) => cmpEs(a.nombre, b.nombre)).forEach(p => agrega(p, 0));
             return r;
         };
 
@@ -480,7 +506,7 @@
                     && (st.rapido !== 'sinrev' || !m.revisado)
                     && (st.rapido !== 'bandera' || m.bandera)
                     && (st.fecha === 'todo' || (st.fecha === 'mes' && m.fecha.startsWith(mes)) || (st.fecha === 'pasado' && m.fecha.startsWith(mesPasado)) || (st.fecha === '90' && m.fecha >= hace90.toISOString().slice(0, 10)))
-                    && (!st.cat || m.categoria === st.cat)
+                    && (!st.cat || m.categoria === st.cat || (m.categoria || '').startsWith(st.cat + ':'))
                     && (!q || [m.beneficiario, m.categoria, m.nota, m.etiquetas.join(' ')].join(' ').toLowerCase().includes(q)));
             }
             const orden = lista => {
@@ -505,7 +531,7 @@
                         <div class="m-top">
                             <button class="m-circ" id="mAtras" aria-label="Volver al dashboard">&#8249;</button>
                             <div class="m-pill"><button class="m-nuevo" id="mNuevo"><span class="m-mas">+</span> Nuevo</button><button class="m-menu-b" id="mMenuB" aria-label="Más opciones">&#8942;</button>
-                                <div class="m-menu" id="mMenu" hidden><button data-m="imp">Importar CSV</button><button data-m="dash">Resumen</button><button data-m="cfg">Configuración</button></div></div>
+                                <div class="m-menu" id="mMenu" hidden><button data-m="imp">Importar CSV</button><button data-m="exp">Exportar PDF</button><button data-m="dash">Resumen</button><button data-m="cfg">Configuración</button></div></div>
                         </div>
                         <h1 class="m-tit">${cuentaAct ? esc(cuentaAct.nombre) : 'Todas las cuentas'}</h1>
                         <div class="m-saldo num">${dinero(cuentaAct ? saldoDe(cuentaAct) : saldoTotal())}</div>
@@ -532,7 +558,7 @@
                 document.getElementById('mMenuB').addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; });
                 document.addEventListener('click', () => { menu.hidden = true; }, { once: true });
                 menu.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => {
-                    if (b.dataset.m === 'imp') abrirImportar(); else if (b.dataset.m === 'dash') { st.vista = 'dashboard'; pintar(); } else { st.vista = 'config'; pintar(); }
+                    if (b.dataset.m === 'imp') abrirImportar(); else if (b.dataset.m === 'exp') abrirExportar(); else if (b.dataset.m === 'dash') { st.vista = 'dashboard'; pintar(); } else { st.vista = 'config'; pintar(); }
                 }));
                 app.querySelectorAll('[data-mc]').forEach(b => b.addEventListener('click', () => { st.cuenta = b.dataset.mc; st.sel.clear(); reset(); }));
                 const q = document.getElementById('mQ');
@@ -624,6 +650,7 @@
                                         <select id="fFecha" aria-label="Fecha">${[['todo', 'Fecha: todas'], ['mes', 'Este mes'], ['pasado', 'Mes pasado'], ['90', 'Últimos 90 días']].map(([k, t]) => `<option value="${k}" ${st.fecha === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
                                         <select id="fCat" aria-label="Categoría"><option value="">Categoría: todas</option>${categorias.map(c => `<option ${st.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
                                         <button class="btn-sec" id="bImp">Importar CSV</button>
+                                        <button class="btn-sec" id="bExp">Exportar PDF</button>
                                         <button class="btn" id="bNuevo">Nuevo</button>
                                     </div>
                                 </div>
@@ -681,6 +708,7 @@
                 app.querySelectorAll('tr.mov').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.rev, .chk, .banda')) return; abrirMovimiento(MOVS.find(x => x.id === +e.dataset.id)); }));
                 app.querySelectorAll('tr.mov .banda').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.bandera = !m.bandera; pintar(); }));
                 document.getElementById('bImp').addEventListener('click', abrirImportar);
+                document.getElementById('bExp').addEventListener('click', abrirExportar);
             }
 
 
@@ -694,7 +722,14 @@
                 const sig = { signal: ctrlOrden.signal };
                 let guardado = [];
                 try { guardado = JSON.parse(localStorage.getItem(CLAVE_ORDEN) || '[]') || []; } catch (e) { /* sin orden guardado */ }
-                const idx = el => { const i = guardado.indexOf(el.dataset.w); return i < 0 ? 999 : i; };
+                const idx = el => {
+                    const i = guardado.indexOf(el.dataset.w); if (i >= 0) return i;
+                    const m = guardado.indexOf('mayores');   // tarjeta vieja que se dividió en Mayores gastos y Mayores ingresos
+                    if (m >= 0 && (el.dataset.w === 'mgastos' || el.dataset.w === 'mingresos')) return m + (el.dataset.w === 'mgastos' ? 0.1 : 0.2);
+                    const c = guardado.indexOf('categorias');   // la de subcategorías va justo debajo de Gastos por categoría
+                    if (c >= 0 && el.dataset.w === 'subcategorias') return c + 0.05;
+                    return 999;
+                };
                 [...grid.children].sort((a, b) => idx(a) - idx(b)).forEach(el => grid.appendChild(el));
                 let temp = null, mov = null, x0 = 0, y0 = 0, evitaClic = false;
                 grid.addEventListener('click', ev => { if (evitaClic) { ev.stopPropagation(); ev.preventDefault(); evitaClic = false; } }, true);
@@ -726,7 +761,12 @@
 
             // ---------- DASHBOARD: pantalla de entrada del módulo ----------
             function pintarDashboard() {
-                const validos = MOVS.filter(m => !m.excluido);
+                // Cuenta del dashboard: todas o una sola (selector a la izquierda de Periodo)
+                const ctaD = CUENTAS.some(c => c.id === st.ctaDash) ? st.ctaDash : 'todas';
+                const ctasD = ctaD === 'todas' ? CUENTAS : CUENTAS.filter(c => c.id === ctaD);
+                const enCta = m => ctaD === 'todas' || m.cuenta === ctaD;
+                const saldoD = ctasD.reduce((s, c) => s + saldoDe(c), 0);
+                const validos = MOVS.filter(m => !m.excluido && enCta(m));
                 const mesesConDatos = [...new Set(validos.map(m => m.fecha.slice(0, 7)))].sort();
                 const aniosConDatos = [...new Set(mesesConDatos.map(k => k.slice(0, 4)))];
                 if (!st.mesDash || (st.mesDash !== 'todo' && !aniosConDatos.includes(st.mesDash) && !mesesConDatos.concat(HOY.slice(0, 7)).includes(st.mesDash))) {
@@ -775,43 +815,118 @@
                         <text x="${x0 + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text></g>`;
                 }).join('');
                 // Saldo total al cierre de cada mes
-                const saldoAl = fin => CUENTAS.reduce((s, c) => s + c.saldoInicial, 0) + validos.filter(m => m.fecha <= fin).reduce((s, m) => s + m.monto, 0);
+                const saldoAl = fin => ctasD.reduce((s, c) => s + c.saldoInicial, 0) + validos.filter(m => m.fecha <= fin).reduce((s, m) => s + m.monto, 0);
                 const puntos = serie.map(x => { const fin = x.k + '-' + String(new Date(+x.k.slice(0, 4), +x.k.slice(5), 0).getDate()).padStart(2, '0'); return saldoAl(fin > HOY ? HOY : fin); });
                 const mn = Math.min(...puntos), mx = Math.max(...puntos), rango = (mx - mn) || 1;
                 const HL = 150, px = i => 20 + i * (W - 40) / Math.max(1, nMeses - 1), py = v => 12 + (HL - 24) * (1 - (v - mn) / rango);
                 const linea = puntos.map((v, i) => (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(v).toFixed(1)).join(' ');
                 const ptsSvg = puntos.map((v, i) => `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="${nMeses > 24 ? 2.5 : 3.5}" fill="var(--accion)"><title>${cap(MESES[+serie[i].k.slice(5) - 1])}: ${dinero(v)}</title></circle>`).join('');
                 const etqLin = serie.map((x, i) => `<text x="${px(i).toFixed(1)}" y="${HL + 12}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text>`).join('');
-                // Gastos por categoría principal
+                // Gastos por categoría principal y mayores gastos / ingresos por beneficiario, cada uno con gráfica de dona
+                const PALETA = ['#1f4e79', '#17739f', '#d08a1e', '#2e7d32', '#7b5ea7', '#b3261e', '#3c78b4', '#8a5300', '#0f766e', '#a8487a'];
+                const OTROS_COLOR = '#c4c9d0';
+                const perTxt = todo ? 'Todo el histórico' : anio ? st.mesDash : cap(MESES[mm - 1]) + ' ' + aa;
+                // Agrupa en los primeros n y "Otros" con el resto, para que la dona sume el 100 %
+                const conOtros = (pares, n, nomOtros) => {
+                    const top = pares.slice(0, n), resto = pares.slice(n).reduce((a, [, v]) => a + v, 0);
+                    return resto > 0 ? top.concat([[nomOtros, resto, true]]) : top;
+                };
+                const dona = (items, total, etq) => {
+                    const R = 60, C = 2 * Math.PI * R;
+                    let acum = 0;
+                    const arcos = items.map(([n, v, esOtro], i) => {
+                        const largo = total ? v / total * C : 0, ini = acum; acum += largo;
+                        return `<circle r="${R}" cx="80" cy="80" fill="none" stroke="${esOtro ? OTROS_COLOR : PALETA[i % PALETA.length]}" stroke-width="22" stroke-dasharray="${Math.max(0, largo - 1.5).toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-ini).toFixed(2)}" transform="rotate(-90 80 80)"><title>${esc(n)}: ${dinero(v)} (${total ? (v / total * 100).toFixed(1) : 0} %)</title></circle>`;
+                    }).join('');
+                    return `<svg class="dona" viewBox="0 0 160 160" role="img" aria-label="${esc(etq)}"><circle r="${R}" cx="80" cy="80" fill="none" stroke="var(--fondo-hundido)" stroke-width="22"/>${arcos}
+                        <text x="80" y="76" text-anchor="middle" font-size="10" fill="var(--tinta-suave)">${esc(etq)}</text>
+                        <text x="80" y="94" text-anchor="middle" font-size="${dinero(total).length > 15 ? 8.5 : dinero(total).length > 12 ? 10 : 13}" font-weight="700" fill="var(--tinta)" font-family="Roboto Mono, monospace">${dinero(total)}</text></svg>`;
+                };
+                // Filas con punto de color, barra, monto y %; data-cat (categoría) o data-ben (beneficiario) para ir a los movimientos
+                const filasDona = (items, total, attr, etq = n => esc(n)) => {
+                    const maxV = Math.max(1, ...items.map(([, v]) => v));
+                    return items.map(([n, v, esOtro], i) => {
+                        const color = esOtro ? OTROS_COLOR : PALETA[i % PALETA.length];
+                        return `<div class="bar-fila ${esOtro ? 'otros' : ''}" ${esOtro ? '' : `${attr}="${esc(n)}"`}><span class="bar-n"><i class="punto" style="background:${color}"></i>${esOtro ? esc(n) : etq(n)}</span><span class="bar-pista"><span class="bar-rell" style="width:${(v / maxV * 100).toFixed(1)}%;background:${color}"></span></span><span class="num bar-v">${dinero(v)}</span><span class="bar-p">${total ? (v / total * 100).toFixed(0) : 0} %</span></div>`;
+                    }).join('');
+                };
                 const porCat = {};
                 delMes.filter(m => m.monto < 0).forEach(m => { const p = m.categoria ? m.categoria.split(':')[0] : 'Sin categoría'; porCat[p] = (porCat[p] || 0) - m.monto; });
-                const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]), topCat = cats.slice(0, 8), maxCat = topCat.length ? topCat[0][1] : 1;
-                const filasCat = topCat.map(([n, v]) => `<div class="bar-fila" data-cat="${esc(n)}"><span class="bar-n">${esc(n)}</span><span class="bar-pista"><span class="bar-rell" style="width:${(v / maxCat * 100).toFixed(1)}%"></span></span><span class="num bar-v">${dinero(v)}</span><span class="bar-p">${gas ? (v / gas * 100).toFixed(0) : 0} %</span></div>`).join('');
-                // Beneficiarios principales
-                const top = (signo) => {
+                const itemsCat = conOtros(Object.entries(porCat).sort((a, b) => b[1] - a[1]), 10, 'Otras categorías');
+                // Subcategorías (2º nivel, con todo lo que tienen debajo) y sus sub-subcategorías (3er nivel).
+                // Lo que no tiene subcategoría va como «Categoría (sin subcategoría)».
+                const porSub = {}, porSubSub = {};
+                delMes.filter(m => m.monto < 0).forEach(m => {
+                    const p = (m.categoria || '').split(':');
+                    const k = !m.categoria ? 'Sin categoría' : p.length > 1 ? p[0] + ':' + p[1] : m.categoria + ' (sin subcategoría)';
+                    porSub[k] = (porSub[k] || 0) - m.monto;
+                    if (p.length > 2) { const h = porSubSub[k] = porSubSub[k] || {}; h[m.categoria] = (h[m.categoria] || 0) - m.monto; }
+                });
+                const itemsSub = conOtros(Object.entries(porSub).sort((a, b) => b[1] - a[1]), 10, 'Otras subcategorías');
+                const porBen = signo => {
                     const t = {};
-                    delMes.filter(m => signo * m.monto > 0).forEach(m => { t[m.beneficiario || '(sin beneficiario)'] = (t[m.beneficiario || '(sin beneficiario)'] || 0) + Math.abs(m.monto); });
-                    return Object.entries(t).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                    delMes.filter(m => signo * m.monto > 0).forEach(m => { const k = m.beneficiario || '(sin beneficiario)'; t[k] = (t[k] || 0) + Math.abs(m.monto); });
+                    return Object.entries(t).sort((a, b) => b[1] - a[1]);
                 };
-                const listaTop = l => l.length ? l.map(([n, v]) => `<div class="lin-top"><span>${esc(n)}</span><span class="num">${dinero(v)}</span></div>`).join('') : '<div class="vacio-peq">Sin movimientos</div>';
+                const itemsGas = conOtros(porBen(-1), 10, 'Otros beneficiarios'), itemsIng = porBen(1);
+                const ingTot = itemsIng.reduce((a, [, v]) => a + v, 0);
+                const seccionDona = (items, total, etq, attr, vacio) => items.length
+                    ? `<div class="dona-caja">${dona(items, total, etq)}<div class="dona-lista">${filasDona(items, total, attr)}</div></div>`
+                    : `<div class="vacio-peq">${vacio}</div>`;
+                // Dona de dos anillos: adentro las subcategorías, afuera sus sub-subcategorías (mismo color, más claro)
+                const aclarar = (hex, f) => { const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * f)); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); };
+                const colorSub = (i, esOtro) => (esOtro ? OTROS_COLOR : PALETA[i % PALETA.length]);
+                const hijosSub = k => Object.entries(porSubSub[k] || {}).sort((a, b) => b[1] - a[1]);
+                const donaSub = (items, total) => {
+                    const cx = 90, R1 = 52, R2 = 74, C1 = 2 * Math.PI * R1, C2 = 2 * Math.PI * R2;
+                    let acum = 0, arcos = '';
+                    items.forEach(([n, v, esOtro], i) => {
+                        const fr = total ? v / total : 0, color = colorSub(i, esOtro), ini = acum;
+                        arcos += `<circle r="${R1}" cx="${cx}" cy="${cx}" fill="none" stroke="${color}" stroke-width="20" stroke-dasharray="${Math.max(0, fr * C1 - 1.5).toFixed(2)} ${C1.toFixed(2)}" stroke-dashoffset="${(-ini * C1).toFixed(2)}" transform="rotate(-90 ${cx} ${cx})"><title>${esc(n)}: ${dinero(v)} (${(fr * 100).toFixed(1)} %)</title></circle>`;
+                        let a2 = ini;
+                        if (!esOtro) hijosSub(n).forEach(([h, hv], j) => {
+                            const f2 = total ? hv / total : 0;
+                            arcos += `<circle r="${R2}" cx="${cx}" cy="${cx}" fill="none" stroke="${aclarar(color, 0.25 + 0.15 * (j % 3))}" stroke-width="14" stroke-dasharray="${Math.max(0, f2 * C2 - 1.5).toFixed(2)} ${C2.toFixed(2)}" stroke-dashoffset="${(-a2 * C2).toFixed(2)}" transform="rotate(-90 ${cx} ${cx})"><title>${esc(h.split(':').slice(1).join(' › '))}: ${dinero(hv)} (${(f2 * 100).toFixed(1)} %)</title></circle>`;
+                            a2 += f2;
+                        });
+                        acum += fr;
+                    });
+                    return `<svg class="dona dona2" viewBox="0 0 180 180" role="img" aria-label="Gastos por subcategoría y sub-subcategoría"><circle r="${R1}" cx="${cx}" cy="${cx}" fill="none" stroke="var(--fondo-hundido)" stroke-width="20"/>${arcos}
+                        <text x="${cx}" y="${cx - 4}" text-anchor="middle" font-size="9" fill="var(--tinta-suave)">Gastos</text>
+                        <text x="${cx}" y="${cx + 10}" text-anchor="middle" font-size="${dinero(total).length > 13 ? 8 : 10}" font-weight="700" fill="var(--tinta)" font-family="Roboto Mono, monospace">${dinero(total)}</text></svg>`;
+                };
+                // Lista: cada subcategoría y, debajo con sangría, sus sub-subcategorías
+                const filasSub = (items, total) => {
+                    const maxV = Math.max(1, ...items.map(([, v]) => v));
+                    return items.map(([n, v, esOtro], i) => {
+                        const color = colorSub(i, esOtro);
+                        const fila = `<div class="bar-fila ${esOtro ? 'otros' : ''}" ${esOtro ? '' : `data-cat="${esc(n)}"`}><span class="bar-n"><i class="punto" style="background:${color}"></i>${esOtro ? esc(n) : etqSub(n)}</span><span class="bar-pista"><span class="bar-rell" style="width:${(v / maxV * 100).toFixed(1)}%;background:${color}"></span></span><span class="num bar-v">${dinero(v)}</span><span class="bar-p">${total ? (v / total * 100).toFixed(0) : 0} %</span></div>`;
+                        const hijos = esOtro ? '' : hijosSub(n).map(([h, hv], j) => {
+                            const c2 = aclarar(color, 0.25 + 0.15 * (j % 3));
+                            return `<div class="bar-fila subsub" data-cat="${esc(h)}"><span class="bar-n"><i class="punto" style="background:${c2}"></i>${esc(h.split(':').slice(2).join(':'))}</span><span class="bar-pista"><span class="bar-rell" style="width:${(hv / maxV * 100).toFixed(1)}%;background:${c2}"></span></span><span class="num bar-v">${dinero(hv)}</span><span class="bar-p">${total ? (hv / total * 100).toFixed(0) : 0} %</span></div>`;
+                        }).join('');
+                        return fila + hijos;
+                    }).join('');
+                };
+                // En subcategorías el renglón muestra el nombre de la subcategoría y debajo, en gris, su categoría
+                const etqSub = n => { const i = n.lastIndexOf(':'); return i < 0 ? esc(n) : `${esc(n.slice(i + 1))}<small class="sub-padre">${esc(n.slice(0, i).replace(/:/g, ' › '))}</small>`; };
                 // Pendientes
-                const sinCat = validos.filter(m => !m.categoria).length, sinRev = validos.filter(m => !m.revisado).length, conBand = MOVS.filter(m => m.bandera).length;
-                const ultimos = [...MOVS].sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : b.id - a.id)).slice(0, 8);
+                const sinCat = validos.filter(m => !m.categoria).length, sinRev = validos.filter(m => !m.revisado).length, conBand = MOVS.filter(m => enCta(m) && m.bandera).length;
                 app.innerHTML = `
                     <div class="layout">${asideHtml()}<section><div class="dash">
                         <div class="cab-h"><h1>Tesorería</h1><div class="barra">
+                            <select id="dCta" aria-label="Cuenta"><option value="todas">Todas las cuentas</option>${CUENTAS.map(c => `<option value="${esc(c.id)}" ${ctaD === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>
                             <select id="dPer" aria-label="Periodo"><option value="" disabled ${todo || anio ? '' : 'selected'}>Periodo…</option><option value="todo" ${todo ? 'selected' : ''}>Todo el histórico</option>${aniosConDatos.slice().reverse().map(y => `<option value="${y}" ${anio && st.mesDash === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
-                            <select id="dMes" aria-label="Mes"><option value="" disabled ${todo || anio ? 'selected' : ''}>Por mes…</option>${opcMeses.map(k => `<option value="${k}" ${!todo && !anio && k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select>
-                            <button class="btn-sec" id="dMov">Movimientos</button><button class="btn" id="dNuevo">Nuevo movimiento</button></div></div>
+                            <select id="dMes" aria-label="Mes"><option value="" disabled ${todo || anio ? 'selected' : ''}>Por mes…</option>${opcMeses.map(k => `<option value="${k}" ${!todo && !anio && k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select></div></div>
                         <div class="dash-grid" id="dGrid">
                         <div class="kpis ancho2" data-w="kpis">
-                            <div class="kpi"><span class="kpi-t">Saldo total a hoy</span><span class="kpi-v num">${dinero(saldoTotal())}</span><small>${CUENTAS.length} cuenta${CUENTAS.length === 1 ? '' : 's'}</small></div>
+                            <div class="kpi"><span class="kpi-t">${ctaD === 'todas' ? 'Saldo total a hoy' : 'Saldo a hoy'}</span><span class="kpi-v num">${dinero(saldoD)}</span><small>${ctaD === 'todas' ? CUENTAS.length + ' cuenta' + (CUENTAS.length === 1 ? '' : 's') : esc(ctasD[0].nombre)}</small></div>
                             <div class="kpi"><span class="kpi-t">Ingresos ${lblPer}</span><span class="kpi-v num ingreso">${dinero(ing)}</span>${comp(ing, ingAnt, true)}</div>
                             <div class="kpi"><span class="kpi-t">Gastos ${lblPer}</span><span class="kpi-v num">${dinero(gas)}</span>${comp(gas, gasAnt, false)}</div>
                             <div class="kpi"><span class="kpi-t">${todo ? 'Resultado del histórico' : anio ? 'Resultado de ' + st.mesDash : 'Resultado del mes'}</span><span class="kpi-v num ${ing - gas >= 0 ? 'ingreso' : 'neg'}">${(ing - gas >= 0 ? '+' : '') + dinero(ing - gas)}</span><small>${delMes.length} movimiento${delMes.length === 1 ? '' : 's'}</small></div>
                         </div>
                             <div class="caja" data-w="cuentas"><div class="cab-mov"><h3>Cuentas</h3></div>
-                                ${CUENTAS.map(c => `<div class="lin-top cta" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
+                                ${CUENTAS.map(c => `<div class="lin-top cta ${ctaD === c.id ? 'cta-sel' : ''}" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
                                 <div class="lin-top tot"><span>Total</span><span class="num">${dinero(saldoTotal())}</span></div>
                             </div>
                             <div class="caja" data-w="pendientes"><div class="cab-mov"><h3>Pendientes</h3></div>
@@ -822,30 +937,216 @@
                         <div class="caja grafica ancho2" data-w="barras"><div class="cab-mov"><h3>${todo ? 'Ingresos y gastos por mes, todo el histórico' : anio ? 'Ingresos y gastos por mes, ' + st.mesDash : 'Ingresos y gastos, últimos 12 meses'}</h3>
                             <span class="leyenda"><i style="background:var(--exito)"></i>Ingresos <i style="background:var(--accion)"></i>Gastos</span></div>
                             <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ingresos y gastos por mes"><line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" stroke="var(--linea)"/>${barras}</svg></div>
-                        <div class="caja grafica ancho2" data-w="saldo"><div class="cab-mov"><h3>Saldo total al cierre de cada mes</h3></div>
+                        <div class="caja grafica ancho2" data-w="saldo"><div class="cab-mov"><h3>${ctaD === 'todas' ? 'Saldo total' : 'Saldo de ' + esc(ctasD[0].nombre)} al cierre de cada mes</h3></div>
                             <svg viewBox="0 0 ${W} ${HL + 20}" width="100%" role="img" aria-label="Saldo total por mes"><path d="${linea}" fill="none" stroke="var(--accion)" stroke-width="2"/>${ptsSvg}${etqLin}</svg></div>
-                            <div class="caja" data-w="categorias"><div class="cab-mov"><h3>Gastos por categoría</h3><small class="mod-ayuda">${todo ? 'Todo el histórico' : anio ? st.mesDash : cap(MESES[mm - 1]) + ' ' + aa}</small></div>
-                                ${filasCat || '<div class="vacio-peq">Sin gastos en este mes</div>'}</div>
-                            <div class="caja" data-w="mayores"><div class="cab-mov"><h3>Mayores gastos</h3></div>${listaTop(top(-1))}
-                                <div class="cab-mov" style="margin-top:16px"><h3>Mayores ingresos</h3></div>${listaTop(top(1))}</div>
-                        <div class="caja ancho2" data-w="ultimos"><div class="cab-mov"><h3>Últimos movimientos</h3><button class="btn-sec" id="dMov2">Ver todos</button></div>
-                            ${ultimos.length ? ultimos.map(m => `<div class="lin-top"><span class="nw">${+m.fecha.slice(8)} ${MESES[+m.fecha.slice(5, 7) - 1].slice(0, 3)}</span><span class="lin-ben">${esc(m.beneficiario)}</span><span class="lin-cat">${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</span><span class="num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</span></div>`).join('') : '<div class="vacio-peq">Todavía no hay movimientos. Entra a una cuenta para importar un CSV.</div>'}</div>
+                            <div class="caja ancho2" data-w="categorias"><div class="cab-mov"><h3>Gastos por categoría</h3><small class="mod-ayuda">${perTxt}</small></div>
+                                ${seccionDona(itemsCat, gas, 'Gastos', 'data-cat', 'Sin gastos en este periodo')}</div>
+                            <div class="caja ancho2" data-w="subcategorias"><div class="cab-mov"><h3>Gastos por subcategoría</h3><small class="mod-ayuda">${perTxt}</small></div>
+                                ${itemsSub.length ? `<div class="dona-caja">${donaSub(itemsSub, gas)}<div class="dona-lista">${filasSub(itemsSub, gas)}</div></div>
+                                ${Object.keys(porSubSub).length ? '<p class="mod-ayuda" style="margin:10px 0 0">Anillo de adentro: subcategorías. Anillo de afuera y renglones con sangría: sus sub-subcategorías.</p>' : ''}` : '<div class="vacio-peq">Sin gastos en este periodo</div>'}</div>
+                            <div class="caja ancho2" data-w="mgastos"><div class="cab-mov"><h3>Mayores gastos</h3><small class="mod-ayuda">${perTxt}</small></div>
+                                ${seccionDona(itemsGas, gas, 'Gastos', 'data-ben', 'Sin gastos en este periodo')}</div>
+                            <div class="caja ancho2" data-w="mingresos"><div class="cab-mov"><h3>Mayores ingresos</h3><small class="mod-ayuda">${perTxt}</small></div>
+                                ${seccionDona(itemsIng, ingTot, 'Ingresos', 'data-ben', 'Sin ingresos en este periodo')}</div>
                         </div>
                     </div></section></div>`;
                 ligarAside();
                 ordenarYArrastrar(document.getElementById('dGrid'));
-                const ir = (cambios = {}) => { Object.assign(st, { cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '' }, cambios); st.vista = 'movimientos'; pintar(); };
+                const ir = (cambios = {}) => { Object.assign(st, { cuenta: ctaD, tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '' }, cambios); st.vista = 'movimientos'; pintar(); };
+                document.getElementById('dCta').addEventListener('change', e => { st.ctaDash = e.target.value; pintar(); });
                 document.getElementById('dPer').addEventListener('change', e => { st.mesDash = e.target.value; pintar(); });
                 document.getElementById('dMes').addEventListener('change', e => { st.mesDash = e.target.value; pintar(); });
-                document.getElementById('dMov').addEventListener('click', () => ir());
-                document.getElementById('dMov2').addEventListener('click', () => ir());
-                document.getElementById('dNuevo').addEventListener('click', () => abrirMovimiento());
                 app.querySelectorAll('.cta').forEach(e => e.addEventListener('click', () => ir({ cuenta: e.dataset.cuenta })));
                 app.querySelectorAll('.dash [data-rapido]').forEach(e => e.addEventListener('click', () => ir({ rapido: e.dataset.rapido })));
-                app.querySelectorAll('.bar-fila').forEach(e => e.addEventListener('click', () => {
-                    const n = e.dataset.cat, cat = categoriasOrdenadas().find(o => o.v === n)?.v;
+                app.querySelectorAll('.bar-fila[data-ben]').forEach(e => e.addEventListener('click', () => ir({ q: e.dataset.ben === '(sin beneficiario)' ? '' : e.dataset.ben })));
+                app.querySelectorAll('.bar-fila[data-cat]').forEach(e => e.addEventListener('click', () => {
+                    const n = e.dataset.cat.replace(/ \(sin subcategoría\)$/, ''), cat = categoriasOrdenadas().find(o => o.v === n)?.v;
                     ir({ tab: 'gastos', fecha: 'todo', rapido: n === 'Sin categoría' ? 'sincat' : '', cat: cat || '' });
                 }));
+            }
+
+            // ---------- EXPORTAR PDF: periodo por año, mes o rango de días; cuenta y tipo; hoja carta horizontal vía impresión ----------
+            function abrirExportar() {
+                const fechas = MOVS.map(m => m.fecha).sort();
+                const anios = [...new Set(fechas.map(f => f.slice(0, 4)))].sort().reverse();
+                const meses = [...new Set(fechas.map(f => f.slice(0, 7)))].sort().reverse();
+                const mesHoy = HOY.slice(0, 7);
+                if (!anios.length) { alert('No hay movimientos para exportar.'); return; }
+                const nomMes = k => cap(MESES[+k.slice(5, 7) - 1]) + ' ' + k.slice(0, 4);
+                const M = abrirModal({ titulo: 'Exportar PDF', texto: 'Exportar PDF', ancho: 600, cuerpo: `
+                    <div class="mod-campo" style="margin-bottom:14px"><label>Periodo</label>
+                        <div class="seg" id="xTipoPer"><button type="button" data-p="anio">Año</button><button type="button" data-p="mes" class="act">Mes</button><button type="button" data-p="rango">Rango de días</button></div></div>
+                    <div class="mod-grid">
+                        <div class="mod-campo" data-per="anio" hidden><label for="xAnio">Año</label><select id="xAnio">${anios.map(a => `<option value="${a}" ${a === HOY.slice(0, 4) ? 'selected' : ''}>${a}</option>`).join('')}</select></div>
+                        <div class="mod-campo" data-per="mes"><label for="xMes">Mes</label><select id="xMes">${meses.map(k => `<option value="${k}" ${k === (meses.includes(mesHoy) ? mesHoy : meses[0]) ? 'selected' : ''}>${nomMes(k)}</option>`).join('')}</select></div>
+                        <div class="mod-campo" data-per="rango" hidden><label for="xDesde">Desde</label><input type="date" id="xDesde" value="${mesHoy}-01"></div>
+                        <div class="mod-campo" data-per="rango" hidden><label for="xHasta">Hasta</label><input type="date" id="xHasta" value="${HOY}"></div>
+                        <div class="mod-campo"><label for="xCta">Cuenta</label><select id="xCta"><option value="todas">Todas las cuentas</option>${CUENTAS.map(c => `<option value="${esc(c.id)}" ${st.cuenta === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+                        <div class="mod-campo"><label for="xTipo">Movimientos</label><select id="xTipo">${[['todos', 'Todos'], ['gastos', 'Solo gastos'], ['ingresos', 'Solo ingresos']].map(([k, t]) => `<option value="${k}" ${st.tab === k ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+                        <div class="mod-campo ancho"><label>Hoja: carta (US Letter)</label>
+                            <div class="seg" id="xOrient"><button type="button" data-o="landscape" class="act">Horizontal</button><button type="button" data-o="portrait">Vertical</button></div></div>
+                        <div class="mod-campo ancho"><label class="chk-lin"><input type="checkbox" id="xSaldo" checked> Incluir saldos (al inicio, al final y la columna Saldo)</label></div>
+                        <div class="mod-campo ancho"><label class="chk-lin"><input type="checkbox" id="xPant"> Usar también la búsqueda, la categoría y los filtros rápidos de la pantalla</label></div>
+                    </div>
+                    <p class="mod-ayuda" id="xCuenta" style="margin:12px 0 0"></p>` });
+                // Fechas en español (tres listas: día, mes y año)
+                const ini = Number(anios[anios.length - 1]), fin = Number(HOY.slice(0, 4));
+                const op = { atras: Math.max(1, fin - ini), adelante: 1 };
+                selectorFecha(M.$('xDesde'), op); selectorFecha(M.$('xHasta'), op);
+                let tipoPer = 'mes';
+                const rango = () => {
+                    if (tipoPer === 'anio') { const a = M.$('xAnio').value; return { desde: a + '-01-01', hasta: a + '-12-31', titulo: 'Año ' + a }; }
+                    if (tipoPer === 'mes') { const k = M.$('xMes').value, [a, mm] = k.split('-').map(Number), ult = new Date(a, mm, 0).getDate(); return { desde: k + '-01', hasta: k + '-' + String(ult).padStart(2, '0'), titulo: nomMes(k) }; }
+                    const d = M.$('xDesde').value, h = M.$('xHasta').value;
+                    return { desde: d, hasta: h, titulo: d && h ? `Del ${fechaTxt(d)} al ${fechaTxt(h)}` : '' };
+                };
+                const seleccion = () => {
+                    const r = rango(), cta = M.$('xCta').value, tipo = M.$('xTipo').value;
+                    const base = M.$('xPant').checked ? filtrados() : MOVS;
+                    const movs = base.filter(m => (cta === 'todas' || m.cuenta === cta)
+                        && (tipo === 'todos' || (tipo === 'gastos' ? m.monto < 0 : m.monto > 0))
+                        && r.desde && r.hasta && m.fecha >= r.desde && m.fecha <= r.hasta)
+                        .sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.id - b.id));
+                    return { r, cta, tipo, movs, conSaldo: M.$('xSaldo').checked, orientacion: M.$('xOrient').querySelector('.act').dataset.o };
+                };
+                const actualizar = () => {
+                    const { r, movs } = seleccion();
+                    const p = M.$('xCuenta');
+                    if (!r.desde || !r.hasta) { p.textContent = 'Elige las dos fechas del rango.'; return; }
+                    if (r.desde > r.hasta) { p.textContent = '«Desde» no puede ser después de «Hasta».'; return; }
+                    p.textContent = `${movs.length} movimiento${movs.length === 1 ? '' : 's'} en el periodo.`;
+                };
+                M.$('xTipoPer').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+                    tipoPer = b.dataset.p;
+                    M.$('xTipoPer').querySelectorAll('button').forEach(x => x.classList.toggle('act', x === b));
+                    document.querySelectorAll('.mod [data-per]').forEach(el => { el.hidden = el.dataset.per !== tipoPer; });
+                    actualizar();
+                }));
+                ['xAnio', 'xMes', 'xDesde', 'xHasta', 'xCta', 'xTipo', 'xPant'].forEach(id => M.$(id).addEventListener('change', actualizar));
+                M.$('xOrient').querySelectorAll('button').forEach(b => b.addEventListener('click', () => M.$('xOrient').querySelectorAll('button').forEach(x => x.classList.toggle('act', x === b))));
+                actualizar();
+                M.$('xGuardar').addEventListener('click', () => {
+                    const sel = seleccion();
+                    if (!sel.r.desde || !sel.r.hasta) return M.error('Elige las dos fechas del rango.');
+                    if (sel.r.desde > sel.r.hasta) return M.error('«Desde» no puede ser después de «Hasta».');
+                    if (!sel.movs.length) return M.error('No hay movimientos en ese periodo con esos filtros.');
+                    M.cierra();
+                    imprimirReporte(sel);
+                });
+            }
+            const fechaTxt = f => `${+f.slice(8, 10)} de ${MESES[+f.slice(5, 7) - 1]} de ${f.slice(0, 4)}`;
+
+            // Anchos (%) de Fecha, (Cuenta), Beneficiario, Categoría, Etiquetas, Notas, Monto, (Saldo); siempre suman 100
+            const anchosRep = (varias, conSaldo) => (varias
+                ? (conSaldo ? [8, 9, 17, 15, 8, 17, 13, 13] : [8, 10, 19, 16, 9, 23, 15])
+                : (conSaldo ? [8, 19, 17, 9, 21, 13, 13] : [8, 22, 19, 10, 26, 15]));
+            function imprimirReporte({ r, cta, tipo, movs, conSaldo = true, orientacion = 'landscape' }) {
+                const cuentas = cta === 'todas' ? CUENTAS : CUENTAS.filter(c => c.id === cta);
+                const ids = new Set(cuentas.map(c => c.id));
+                // Saldo corrido real de la cuenta (o de todas): con todos sus movimientos, no solo los filtrados
+                const todos = MOVS.filter(m => ids.has(m.cuenta)).sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.id - b.id));
+                let acc = cuentas.reduce((a, c) => a + (Number(c.saldoInicial) || 0), 0);
+                const saldos = {}; let saldoIni = acc;
+                todos.forEach(m => { if (m.fecha < r.desde) saldoIni = Math.round((acc + m.monto) * 100) / 100; acc = Math.round((acc + m.monto) * 100) / 100; saldos[m.id] = acc; });
+                const saldoFin = todos.filter(m => m.fecha <= r.hasta).reduce((a, m) => Math.round((a + m.monto) * 100) / 100, cuentas.reduce((a, c) => a + (Number(c.saldoInicial) || 0), 0));
+                const ingresos = movs.filter(m => m.monto > 0).reduce((a, m) => a + m.monto, 0);
+                const gastos = movs.filter(m => m.monto < 0).reduce((a, m) => a + m.monto, 0);
+                const nomCta = id => (CUENTAS.find(c => c.id === id) || {}).nombre || id;
+                const varias = cta === 'todas' && CUENTAS.length > 1;
+                const filtrosTxt = [cta === 'todas' ? 'Todas las cuentas' : nomCta(cta), tipo === 'gastos' ? 'Solo gastos' : tipo === 'ingresos' ? 'Solo ingresos' : 'Gastos e ingresos'].join(' · ');
+                // Agrupado por mes
+                const grupos = []; const por = {};
+                movs.forEach(m => { const k = m.fecha.slice(0, 7); if (!por[k]) { por[k] = { k, movs: [] }; grupos.push(por[k]); } por[k].movs.push(m); });
+                const d = n => `<span class="${n < 0 ? 'neg' : ''}">${dinero(n)}</span>`;
+                const antesMonto = varias ? 6 : 5;   // Fecha, (Cuenta), Beneficiario, Categoría, Etiquetas, Notas
+                const filas = grupos.map(g => {
+                    const tot = g.movs.reduce((a, m) => a + m.monto, 0);
+                    return `<tr class="mes"><td colspan="${antesMonto}">${cap(MESES[+g.k.slice(5, 7) - 1])} ${g.k.slice(0, 4)} · ${g.movs.length} movimiento${g.movs.length === 1 ? '' : 's'}</td><td class="n">${d(tot)}</td>${conSaldo ? '<td></td>' : ''}</tr>`
+                        + g.movs.map(m => `<tr>
+                            <td class="nw">${+m.fecha.slice(8)} ${MESES[+m.fecha.slice(5, 7) - 1].slice(0, 3)}${m.bandera ? ' <span class="band">&#9873;</span>' : ''}</td>
+                            ${varias ? `<td>${esc(nomCta(m.cuenta))}</td>` : ''}
+                            <td>${esc(m.beneficiario)}</td>
+                            <td>${m.categoria ? esc(m.categoria) : '<span class="tenue">Sin categoría</span>'}</td>
+                            <td>${esc(m.etiquetas.join(', '))}</td>
+                            <td>${esc(m.nota)}</td>
+                            <td class="n">${d(m.monto)}</td>
+                            ${conSaldo ? `<td class="n tenue">${dinero(saldos[m.id])}</td>` : ''}</tr>`).join('');
+                }).join('');
+                const html = `<div class="tr-rep">
+                    <div class="enc"><div class="enc-izq"><img class="logo" src="${basePath()}css/logo.png" alt="La Fábrica de Chocolate"><div><h1>Tesorería · ${esc(r.titulo)}</h1><div class="sub">${esc(filtrosTxt)}</div></div></div>
+                        <div class="der">${movs.length} movimiento${movs.length === 1 ? '' : 's'}<br>Generado el ${fechaTxt(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10))}</div></div>
+                    <div class="tarjetas" style="grid-template-columns:repeat(${conSaldo ? 5 : 3}, 1fr)">
+                        ${conSaldo ? `<div><span>Saldo al inicio</span><b>${d(saldoIni)}</b></div>` : ''}
+                        <div><span>Ingresos</span><b>${d(ingresos)}</b></div>
+                        <div><span>Gastos</span><b>${d(gastos)}</b></div>
+                        <div><span>Neto del periodo</span><b>${d(ingresos + gastos)}</b></div>
+                        ${conSaldo ? `<div><span>Saldo al final</span><b>${d(saldoFin)}</b></div>` : ''}
+                    </div>
+                    <table><colgroup>${anchosRep(varias, conSaldo).map(w => `<col style="width:${w}%">`).join('')}</colgroup>
+                        <thead><tr><th>Fecha</th>${varias ? '<th>Cuenta</th>' : ''}<th>Beneficiario</th><th>Categoría</th><th>Etiquetas</th><th>Notas</th><th class="n">Monto</th>${conSaldo ? '<th class="n">Saldo</th>' : ''}</tr></thead>
+                        <tbody>${filas}</tbody>
+                        <tfoot><tr><td colspan="${antesMonto}">Total del periodo (ingresos ${dinero(ingresos)} · gastos ${dinero(gastos)})</td><td class="n">${d(ingresos + gastos)}</td>${conSaldo ? '<td></td>' : ''}</tr></tfoot>
+                    </table>
+                    <p class="pie" ${conSaldo ? '' : 'hidden'}>Saldos al inicio y al final: de ${cta === 'todas' ? 'todas las cuentas' : 'la cuenta'}, con todos sus movimientos. La columna Saldo es el saldo de ${varias ? 'todas las cuentas' : 'la cuenta'} después de cada movimiento.</p>
+                </div>`;
+                let cont = document.getElementById('tr-impresion');
+                if (!cont) {
+                    cont = document.createElement('div'); cont.id = 'tr-impresion'; document.body.appendChild(cont);
+                    const est = document.createElement('style');
+                    est.textContent = `
+                        #tr-impresion { display: none; }
+                        @media print {
+                            body > *:not(#tr-impresion) { display: none !important; }
+                            #tr-impresion { display: block !important; }
+                            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        }
+                        #tr-impresion .tr-rep { font-family: Roboto, Arial, sans-serif; color: #1b2430; font-size: 9.5px; line-height: 1.35; }
+                        #tr-impresion .tr-rep .enc { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 6px; margin-bottom: 10px; }
+                        #tr-impresion .tr-rep .enc-izq { display: flex; align-items: center; gap: 14px; min-width: 0; }
+                        #tr-impresion .tr-rep .logo { height: 30px; width: auto; flex: none; display: block; }
+                        #tr-impresion.vertical .tr-rep .logo { height: 26px; }
+                        #tr-impresion .tr-rep h1 { font-size: 16px; line-height: 1.2; font-weight: 900; margin: 0; }
+                        #tr-impresion .tr-rep .sub, #tr-impresion .tr-rep .der { font-size: 9px; color: #5f6670; margin-top: 2px; }
+                        #tr-impresion .tr-rep .der { text-align: right; white-space: nowrap; }
+                        #tr-impresion .tr-rep .tarjetas { display: grid; gap: 8px; margin-bottom: 12px; }
+                        #tr-impresion .tr-rep .tarjetas div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 10px; }
+                        #tr-impresion .tr-rep .tarjetas span { display: block; font-size: 7.5px; text-transform: uppercase; letter-spacing: .06em; color: #5f6670; margin-bottom: 2px; }
+                        #tr-impresion .tr-rep .tarjetas b { display: block; font-size: 13px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; }
+                        #tr-impresion .tr-rep table { width: 100% !important; border-collapse: collapse; table-layout: fixed; margin: 0; }
+                        #tr-impresion .tr-rep th, #tr-impresion .tr-rep td { font-size: 9.5px; line-height: 1.35; overflow-wrap: break-word; word-break: normal; }
+                        #tr-impresion .tr-rep th { background: #1b2430; color: #fff; text-align: left; font-family: Roboto, Arial, sans-serif; font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 5px 6px; white-space: nowrap; border: none; }
+                        #tr-impresion .tr-rep td { padding: 4px 6px; border: none; border-bottom: 1px solid #e6e9ed; vertical-align: top; background: #fff; }
+                        #tr-impresion .tr-rep thead { display: table-header-group; }
+                        #tr-impresion .tr-rep tfoot { display: table-row-group; }
+                        #tr-impresion .tr-rep tr { break-inside: avoid; page-break-inside: avoid; }
+                        #tr-impresion .tr-rep th.n { text-align: right; }
+                        #tr-impresion .tr-rep td.n { text-align: right; font-family: 'Roboto Mono', monospace; font-size: 9px; white-space: nowrap; overflow: hidden; }
+                        #tr-impresion .tr-rep .nw { white-space: nowrap; }
+                        #tr-impresion .tr-rep tr.mes td { background: #f2f4f7; font-weight: 700; border-top: 1px solid #8a929c; border-bottom: 1px solid #8a929c; }
+                        #tr-impresion .tr-rep tfoot td { font-weight: 700; border-top: 2px solid #1b2430; border-bottom: 2px solid #1b2430; background: #f2f4f7; }
+                        #tr-impresion .tr-rep .neg { color: #b3261e; }
+                        #tr-impresion .tr-rep .tenue { color: #8a929c; }
+                        #tr-impresion .tr-rep .band { color: #d08a1e; font-size: 9px; }
+                        #tr-impresion .tr-rep .pie { font-size: 8px; color: #5f6670; margin-top: 8px; }
+                        #tr-impresion.vertical .tr-rep th, #tr-impresion.vertical .tr-rep td { font-size: 8.5px; }
+                        #tr-impresion.vertical .tr-rep td { padding: 3px 4px; }
+                        #tr-impresion.vertical .tr-rep th { padding: 4px; font-size: 7px; }
+                        #tr-impresion.vertical .tr-rep td.n { font-size: 8px; }
+                        #tr-impresion.vertical .tr-rep .tarjetas b { font-size: 11.5px; }`;
+                    document.head.appendChild(est);
+                }
+                // Tamaño carta (US Letter) en la orientación elegida
+                let pag = document.getElementById('tr-pagina');
+                if (!pag) { pag = document.createElement('style'); pag.id = 'tr-pagina'; document.head.appendChild(pag); }
+                pag.textContent = `@page { size: letter ${orientacion}; margin: ${orientacion === 'portrait' ? '12mm 10mm' : '10mm 12mm'}; }`;
+                cont.classList.toggle('vertical', orientacion === 'portrait');
+                cont.innerHTML = html;
+                const previo = document.title;
+                document.title = `Tesoreria ${r.titulo}${cta === 'todas' ? '' : ' ' + nomCta(cta)}`.replace(/[\\/:*?"<>|]/g, '-');
+                // Se espera a que cargue el logo para que salga en el PDF (máx. 2 s)
+                const logo = cont.querySelector('img.logo');
+                const listo = logo && !logo.complete ? new Promise(res => { logo.onload = logo.onerror = res; setTimeout(res, 2000); }) : Promise.resolve();
+                listo.then(() => { window.print(); setTimeout(() => { document.title = previo; }, 1000); });
             }
 
             // ---------- CONFIGURACIÓN: etiquetas, categorías y beneficiarios ----------
@@ -924,24 +1225,29 @@
                 });
             }
 
-            function modalCategoria(cat) {
+            function modalCategoria(cat, padreInicial = null) {
                 const edita = !!cat;
-                const hijos = edita ? CAT.categorias.filter(c => c.padre === cat.id) : [];
-                const posibles = CAT.categorias.filter(c => !c.padre && (!edita || c.id !== cat.id));
-                let tipo = cat?.tipo || 'gasto';
-                const M = abrirModal({ titulo: edita ? 'Editar categoría' : 'Crear categoría', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `
-                    <div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(cat?.nombre || '')}" placeholder="Nombre de la categoría" autocomplete="off"></div>
-                    <div class="mod-campo" style="margin-top:14px"><label for="xPadre">Subcategoría de</label><select id="xPadre" ${hijos.length ? 'disabled' : ''}><option value="">Ninguna</option>${posibles.sort((a, b) => cmpEs(a.nombre, b.nombre)).map(c => `<option value="${c.id}" ${cat?.padre === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>${hijos.length ? '<div class="mod-ayuda" style="margin-top:4px">Tiene subcategorías, por eso no puede ser subcategoría de otra.</div>' : ''}</div>
+                const padreSel = cat?.padre ?? padreInicial;
+                const hijos = edita ? catHijos(cat) : [];
+                // Padres posibles: que no rebasen los 3 niveles (contando las subcategorías que ya tenga) y que no sean ella misma ni sus descendientes
+                const altura = edita ? catAltura(cat) : 0, prohibidos = new Set(edita ? [cat.id, ...catDescendientes(cat).map(x => x.id)] : []);
+                const posibles = categoriasOrdenadas().map(o => CAT.categorias.find(c => catNombre(c) === o.v)).filter(c => c && !prohibidos.has(c.id) && catNivel(c) + 1 + altura <= MAX_NIVEL);
+                const nivelNuevo = padreInicial ? catNivel(CAT.categorias.find(c => c.id === padreInicial) || {}) + 1 : 0;
+                let tipo = cat?.tipo || CAT.categorias.find(c => c.id === padreInicial)?.tipo || 'gasto';
+                const M = abrirModal({ titulo: edita ? 'Editar categoría' : nivelNuevo === 2 ? 'Crear sub-subcategoría' : padreInicial ? 'Crear subcategoría' : 'Crear categoría', texto: edita ? 'Guardar' : 'Crear', eliminar: edita, cuerpo: `
+                    <div class="mod-campo"><label for="xNombre">Nombre</label><input id="xNombre" value="${esc(cat?.nombre || '')}" placeholder="${padreInicial ? 'Nombre de la subcategoría' : 'Nombre de la categoría'}" autocomplete="off"></div>
+                    <div class="mod-campo" style="margin-top:14px"><label for="xPadre">Subcategoría de</label><select id="xPadre"><option value="">Ninguna (categoría principal)</option>${posibles.map(c => `<option value="${c.id}" ${padreSel === c.id ? 'selected' : ''}>${'— '.repeat(catNivel(c))}${esc(c.nombre)}</option>`).join('')}</select><div class="mod-ayuda" style="margin-top:4px">Hasta tres niveles: categoría, subcategoría y sub-subcategoría.${altura ? ' Como ya tiene subcategorías, solo puede ir debajo de una categoría con espacio para ellas.' : ''}</div></div>
                     <div class="mod-campo" style="margin-top:14px"><label>Tipo</label><div class="seg"><button type="button" data-t="ingreso" class="${tipo === 'ingreso' ? 'act' : ''}">Ingreso</button><button type="button" data-t="gasto" class="${tipo === 'gasto' ? 'act' : ''}">Gasto</button></div></div>` });
                 M.$('xNombre').closest('.mod').querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => { tipo = b.dataset.t; M.$('xNombre').closest('.mod').querySelectorAll('[data-t]').forEach(x => x.classList.toggle('act', x === b)); }));
                 M.$('xGuardar').addEventListener('click', () => {
                     const n = M.$('xNombre').value.trim(), padre = M.$('xPadre').value || null;
                     if (!n) return M.error('Escribe el nombre.');
                     if (n.includes(':')) return M.error('El nombre no puede llevar dos puntos (:); para una subcategoría usa «Subcategoría de».');
+                    if (padre && catNivel(CAT.categorias.find(c => c.id === padre)) + 1 + (edita ? catAltura(cat) : 0) > MAX_NIVEL) return M.error('Solo se permiten tres niveles: categoría, subcategoría y sub-subcategoría.');
                     if (CAT.categorias.some(c => c !== cat && c.nombre.toLowerCase() === n.toLowerCase() && (c.padre || null) === padre)) return M.error('Ya existe una categoría con ese nombre en ese nivel.');
                     if (!edita) { CAT.categorias.push({ id: nuevoId(), nombre: n, padre, tipo }); }
                     else {
-                        const antes = [[cat, catNombre(cat)], ...hijos.map(h => [h, catNombre(h)])];
+                        const antes = [cat, ...catDescendientes(cat)].map(h => [h, catNombre(h)]);
                         cat.nombre = n; cat.padre = padre; cat.tipo = tipo;
                         antes.forEach(([c, viejo]) => { const nuevo = catNombre(c); if (nuevo !== viejo) MOVS.forEach(m => { if (m.categoria === viejo) m.categoria = nuevo; }); });
                     }
@@ -992,20 +1298,20 @@
                 const etqs = CAT.etiquetas.filter(t => !q('etq') || t.toLowerCase().includes(q('etq'))).sort(cmpPor('etq', (t, c) => (c === 'movs' ? n('etq', t) : t)));
                 const bens = CAT.beneficiarios.filter(b => !q('ben') || b.toLowerCase().includes(q('ben'))).sort(cmpPor('ben', (b, c) => (c === 'movs' ? n('ben', b) : b)));
                 const cuentasOrd = CUENTAS.slice().sort(cmpPor('cta', (c, col) => (col === 'ini' ? c.saldoInicial : col === 'movs' ? MOVS.filter(m => m.cuenta === c.id).length : col === 'saldo' ? saldoDe(c) : c.nombre)));
-                const hijosDe = p => CAT.categorias.filter(c => c.padre === p.id);
-                const totalCat = c => n('cat', catNombre(c)) + hijosDe(c).reduce((a, h) => a + n('cat', catNombre(h)), 0);
-                const getCat = (c, col) => (col === 'movs' ? (c.padre ? n('cat', catNombre(c)) : totalCat(c)) : col === 'tipo' ? (c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto') : c.nombre);
-                const padres = CAT.categorias.filter(c => !c.padre).sort(cmpPor('cat', getCat));
+                // Movimientos de una categoría contando los de todas sus subcategorías
+                const totalCat = c => n('cat', catNombre(c)) + catHijos(c).reduce((a, h) => a + totalCat(h), 0);
+                const getCat = (c, col) => (col === 'movs' ? totalCat(c) : col === 'tipo' ? (c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto') : c.nombre);
+                const coincide = c => !q('cat') || c.nombre.toLowerCase().includes(q('cat'));
+                const ramaCoincide = c => coincide(c) || catHijos(c).some(ramaCoincide);
                 const filasCat = [];
-                padres.forEach(p => {
-                    const hs = CAT.categorias.filter(c => c.padre === p.id).sort(cmpPor('cat', getCat));
-                    const coincideP = !q('cat') || p.nombre.toLowerCase().includes(q('cat'));
-                    const hsF = hs.filter(h => !q('cat') || coincideP || h.nombre.toLowerCase().includes(q('cat')));
-                    if (!coincideP && !hsF.length) return;
-                    const abierto = q('cat') || !st.cfgCerrados.has(p.id);
-                    filasCat.push({ c: p, nivel: 0, hijos: hs.length, abierto, total: n('cat', catNombre(p)) + hs.reduce((a, h) => a + n('cat', catNombre(h)), 0) });
-                    if (abierto) hsF.forEach(h => filasCat.push({ c: h, nivel: 1, total: n('cat', catNombre(h)) }));
-                });
+                const agregaFila = (c, nivel, ancestroCoincide) => {
+                    if (!ancestroCoincide && !ramaCoincide(c)) return;
+                    const hs = catHijos(c).sort(cmpPor('cat', getCat));
+                    const abierto = q('cat') || !st.cfgCerrados.has(c.id);
+                    filasCat.push({ c, nivel, hijos: hs.length, abierto, total: totalCat(c) });
+                    if (abierto) hs.forEach(h => agregaFila(h, nivel + 1, ancestroCoincide || coincide(c)));
+                };
+                CAT.categorias.filter(c => !c.padre).sort(cmpPor('cat', getCat)).forEach(p => agregaFila(p, 0, false));
                 // Beneficiarios: con grupos se muestran agrupados (cada grupo se puede plegar); los que no tienen grupo van al final
                 const filaBen = b => `<tr class="fila-cfg" data-ben="${esc(b)}"><td>${esc(b)}</td><td><select class="sel-grupo" data-bg="${esc(b)}">${opcGrupos(CAT.benGrupo[b])}</select></td><td class="der num">${n('ben', b)}</td></tr>`;
                 let cuerpoBen = '';
@@ -1042,9 +1348,9 @@
                         </tbody></table></div>
                     </section>
 
-                    <section class="caja cfg-sec" data-sec="categorias">${cab('Categorías', 'cat', 'Nueva categoría')}
+                    <section class="caja cfg-sec" data-sec="categorias">${cab('Categorías', 'cat', 'Nueva categoría').replace('<button class="btn" data-nuevo="cat">', '<button class="btn-sec" data-nuevo="sub">Nueva subcategoría</button><button class="btn" data-nuevo="cat">')}
                         <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('cat', 'nombre', 'Nombre')}${thO('cat', 'tipo', 'Tipo', '', 'width:140px')}${thO('cat', 'movs', 'Movimientos', 'der', 'width:140px')}</tr></thead><tbody>
-                            ${filasCat.map(f => `<tr class="fila-cfg" data-cat="${f.c.id}"><td style="padding-left:${12 + f.nivel * 28}px">${f.nivel === 0 ? `<span class="tog" data-tog="${f.c.id}">${f.hijos ? (f.abierto ? '▾' : '▸') : ''}</span><strong>${esc(f.c.nombre)}</strong>` : esc(f.c.nombre)}</td><td>${f.c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</td><td class="der num">${f.total}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Sin categorías.</td></tr>'}
+                            ${filasCat.map(f => `<tr class="fila-cfg" data-cat="${f.c.id}"><td style="padding-left:${12 + f.nivel * 28}px"><span class="tog" data-tog="${f.c.id}">${f.hijos ? (f.abierto ? '▾' : '▸') : ''}</span>${f.nivel === 0 ? `<strong>${esc(f.c.nombre)}</strong>` : esc(f.c.nombre)}${f.nivel < MAX_NIVEL ? `<button class="mas-sub" data-sub="${f.c.id}" title="Agregar ${f.nivel === 0 ? 'subcategoría' : 'sub-subcategoría'} a ${esc(f.c.nombre)}">+ ${f.nivel === 0 ? 'Subcategoría' : 'Sub-subcategoría'}</button>` : ''}</td><td>${f.c.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</td><td class="der num">${f.total}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Sin categorías.</td></tr>'}
                         </tbody></table></div>
                     </section>
 
@@ -1064,8 +1370,9 @@
                 app.querySelectorAll('[data-gtog]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('[data-gedit]')) return; const k = 'g:' + e.dataset.gtog; st.cfgCerrados.has(k) ? st.cfgCerrados.delete(k) : st.cfgCerrados.add(k); pintar(); }));
                 app.querySelectorAll('[data-gedit]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); modalGrupo(CAT.gruposBen.find(g => g.id === e.dataset.gedit)); }));
                 app.querySelectorAll('[data-cat]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('.tog')) return; modalCategoria(CAT.categorias.find(c => c.id === e.dataset.cat)); }));
+                app.querySelectorAll('[data-sub]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); st.cfgCerrados.delete(e.dataset.sub); modalCategoria(null, e.dataset.sub); }));
                 app.querySelectorAll('[data-tog]').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const id = e.dataset.tog; st.cfgCerrados.has(id) ? st.cfgCerrados.delete(id) : st.cfgCerrados.add(id); pintar(); }));
-                app.querySelectorAll('[data-nuevo]').forEach(e => e.addEventListener('click', () => ({ cta: () => modalCuenta(), etq: () => modalEtiqueta(), cat: () => modalCategoria(), ben: () => modalBeneficiario(), grp: () => modalGrupo() })[e.dataset.nuevo]()));
+                app.querySelectorAll('[data-nuevo]').forEach(e => e.addEventListener('click', () => ({ cta: () => modalCuenta(), etq: () => modalEtiqueta(), cat: () => modalCategoria(), sub: () => modalCategoria(null, CAT.categorias.find(c => !c.padre)?.id || null), ben: () => modalBeneficiario(), grp: () => modalGrupo() })[e.dataset.nuevo]()));
                 app.querySelectorAll('[data-q]').forEach(inp => inp.addEventListener('input', () => { st.cfgQ[inp.dataset.q] = inp.value; const pos = inp.selectionStart, k = inp.dataset.q; pintar(); const nuevo = app.querySelector(`[data-q="${k}"]`); nuevo.focus(); nuevo.setSelectionRange(pos, pos); }));
             }
 
