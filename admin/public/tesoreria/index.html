@@ -604,13 +604,16 @@
             function pintarDashboard() {
                 const validos = MOVS.filter(m => !m.excluido);
                 const mesesConDatos = [...new Set(validos.map(m => m.fecha.slice(0, 7)))].sort();
-                if (!st.mesDash || !mesesConDatos.concat(HOY.slice(0, 7)).includes(st.mesDash)) {
+                if (!st.mesDash || (st.mesDash !== 'todo' && !mesesConDatos.concat(HOY.slice(0, 7)).includes(st.mesDash))) {
                     const pasados = mesesConDatos.filter(k => k <= HOY.slice(0, 7));
                     st.mesDash = pasados.length ? pasados[pasados.length - 1] : HOY.slice(0, 7);
                 }
-                const mes = st.mesDash, [aa, mm] = mes.split('-').map(Number);
+                const todo = st.mesDash === 'todo';
+                const pasadosDatos = mesesConDatos.filter(k => k <= HOY.slice(0, 7));
+                const mes = todo ? (pasadosDatos.length ? pasadosDatos[pasadosDatos.length - 1] : HOY.slice(0, 7)) : st.mesDash, [aa, mm] = mes.split('-').map(Number);
                 const opcMeses = [...new Set(mesesConDatos.concat(HOY.slice(0, 7)))].sort().reverse();
-                const delMes = validos.filter(m => m.fecha.startsWith(mes));
+                const delMes = todo ? validos : validos.filter(m => m.fecha.startsWith(mes));
+                const lblPer = todo ? 'del histórico' : 'de ' + MESES[mm - 1];
                 const ing = delMes.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0);
                 const gas = -delMes.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
                 // Mes anterior para comparar
@@ -619,34 +622,38 @@
                 const ingAnt = delAnt.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0);
                 const gasAnt = -delAnt.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
                 const comp = (v, a, masEsBueno) => {
+                    if (todo) return '<small>Todas las capturas</small>';
                     if (!a) return '<small>Sin mes anterior para comparar</small>';
                     const p = (v - a) / a * 100, bien = masEsBueno ? p >= 0 : p <= 0;
                     return `<small class="${bien ? 'bien' : 'mal'}">${p >= 0 ? '+' : ''}${p.toFixed(1)} % contra ${MESES[ant.getMonth()]}</small>`;
                 };
                 // Doce meses que terminan en el mes elegido
                 const serie = [];
-                for (let i = 11; i >= 0; i--) {
+                const primero = mesesConDatos[0] || mes;
+                const nMeses = todo ? Math.max(1, (aa - +primero.slice(0, 4)) * 12 + mm - +primero.slice(5) + 1) : 12;
+                const paso = Math.ceil(nMeses / 12);
+                for (let i = nMeses - 1; i >= 0; i--) {
                     const d = new Date(aa, mm - 1 - i, 1), k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
                     const ms = validos.filter(m => m.fecha.startsWith(k));
-                    serie.push({ k, etq: MESES[d.getMonth()].slice(0, 3), i: ms.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0), g: -ms.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0) });
+                    serie.push({ k, etq: i % paso ? '' : MESES[d.getMonth()].slice(0, 3) + (todo ? ' ' + String(d.getFullYear()).slice(2) : ''), i: ms.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0), g: -ms.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0) });
                 }
                 const maxS = Math.max(1, ...serie.map(x => Math.max(x.i, x.g)));
-                const W = 720, H = 210, pb = 26, pt = 10, bw = W / 12;
+                const W = 720, H = 210, pb = 26, pt = 10, bw = W / nMeses;
                 const alto = v => (H - pb - pt) * v / maxS;
                 const barras = serie.map((x, n) => {
-                    const x0 = n * bw, w = (bw - 16) / 2;
+                    const x0 = n * bw, hueco = Math.min(16, bw * 0.3), w = (bw - hueco) / 2;
                     return `<g><title>${cap(MESES[+x.k.slice(5) - 1])} ${x.k.slice(0, 4)}: ingresos ${dinero(x.i)}, gastos ${dinero(x.g)}</title>
-                        <rect x="${x0 + 8}" y="${H - pb - alto(x.i)}" width="${w}" height="${alto(x.i)}" rx="2" fill="var(--exito)"/>
-                        <rect x="${x0 + 8 + w}" y="${H - pb - alto(x.g)}" width="${w}" height="${alto(x.g)}" rx="2" fill="var(--accion)"/>
+                        <rect x="${x0 + hueco / 2}" y="${H - pb - alto(x.i)}" width="${w}" height="${alto(x.i)}" rx="2" fill="var(--exito)"/>
+                        <rect x="${x0 + hueco / 2 + w}" y="${H - pb - alto(x.g)}" width="${w}" height="${alto(x.g)}" rx="2" fill="var(--accion)"/>
                         <text x="${x0 + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text></g>`;
                 }).join('');
                 // Saldo total al cierre de cada mes
                 const saldoAl = fin => CUENTAS.reduce((s, c) => s + c.saldoInicial, 0) + validos.filter(m => m.fecha <= fin).reduce((s, m) => s + m.monto, 0);
                 const puntos = serie.map(x => { const fin = x.k + '-' + String(new Date(+x.k.slice(0, 4), +x.k.slice(5), 0).getDate()).padStart(2, '0'); return saldoAl(fin > HOY ? HOY : fin); });
                 const mn = Math.min(...puntos), mx = Math.max(...puntos), rango = (mx - mn) || 1;
-                const HL = 150, px = i => 20 + i * (W - 40) / 11, py = v => 12 + (HL - 24) * (1 - (v - mn) / rango);
+                const HL = 150, px = i => 20 + i * (W - 40) / Math.max(1, nMeses - 1), py = v => 12 + (HL - 24) * (1 - (v - mn) / rango);
                 const linea = puntos.map((v, i) => (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(v).toFixed(1)).join(' ');
-                const ptsSvg = puntos.map((v, i) => `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3.5" fill="var(--accion)"><title>${cap(MESES[+serie[i].k.slice(5) - 1])}: ${dinero(v)}</title></circle>`).join('');
+                const ptsSvg = puntos.map((v, i) => `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="${nMeses > 24 ? 2.5 : 3.5}" fill="var(--accion)"><title>${cap(MESES[+serie[i].k.slice(5) - 1])}: ${dinero(v)}</title></circle>`).join('');
                 const etqLin = serie.map((x, i) => `<text x="${px(i).toFixed(1)}" y="${HL + 12}" text-anchor="middle" font-size="11" fill="var(--tinta-suave)">${x.etq}</text>`).join('');
                 // Gastos por categoría principal
                 const porCat = {};
@@ -666,14 +673,14 @@
                 app.innerHTML = `
                     <div class="layout">${asideHtml()}<section><div class="dash">
                         <div class="cab-h"><h1>Tesorería</h1><div class="barra">
-                            <select id="dMes" aria-label="Mes">${opcMeses.map(k => `<option value="${k}" ${k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select>
+                            <select id="dMes" aria-label="Mes"><option value="todo" ${todo ? 'selected' : ''}>Todo el histórico</option>${opcMeses.map(k => `<option value="${k}" ${!todo && k === mes ? 'selected' : ''}>${cap(MESES[+k.slice(5) - 1])} ${k.slice(0, 4)}</option>`).join('')}</select>
                             <button class="btn-sec" id="dMov">Movimientos</button><button class="btn-sec" id="dConfig">Configuración</button><button class="btn" id="dNuevo">Nuevo movimiento</button></div></div>
                         <div class="dash-grid" id="dGrid">
                         <div class="kpis ancho2" data-w="kpis">
                             <div class="kpi"><span class="kpi-t">Saldo total a hoy</span><span class="kpi-v num">${dinero(saldoTotal())}</span><small>${CUENTAS.length} cuenta${CUENTAS.length === 1 ? '' : 's'}</small></div>
-                            <div class="kpi"><span class="kpi-t">Ingresos de ${MESES[mm - 1]}</span><span class="kpi-v num ingreso">${dinero(ing)}</span>${comp(ing, ingAnt, true)}</div>
-                            <div class="kpi"><span class="kpi-t">Gastos de ${MESES[mm - 1]}</span><span class="kpi-v num">${dinero(gas)}</span>${comp(gas, gasAnt, false)}</div>
-                            <div class="kpi"><span class="kpi-t">Resultado del mes</span><span class="kpi-v num ${ing - gas >= 0 ? 'ingreso' : 'neg'}">${(ing - gas >= 0 ? '+' : '') + dinero(ing - gas)}</span><small>${delMes.length} movimiento${delMes.length === 1 ? '' : 's'}</small></div>
+                            <div class="kpi"><span class="kpi-t">Ingresos ${lblPer}</span><span class="kpi-v num ingreso">${dinero(ing)}</span>${comp(ing, ingAnt, true)}</div>
+                            <div class="kpi"><span class="kpi-t">Gastos ${lblPer}</span><span class="kpi-v num">${dinero(gas)}</span>${comp(gas, gasAnt, false)}</div>
+                            <div class="kpi"><span class="kpi-t">${todo ? 'Resultado del histórico' : 'Resultado del mes'}</span><span class="kpi-v num ${ing - gas >= 0 ? 'ingreso' : 'neg'}">${(ing - gas >= 0 ? '+' : '') + dinero(ing - gas)}</span><small>${delMes.length} movimiento${delMes.length === 1 ? '' : 's'}</small></div>
                         </div>
                             <div class="caja" data-w="cuentas"><div class="cab-mov"><h3>Cuentas</h3></div>
                                 ${CUENTAS.map(c => `<div class="lin-top cta" data-cuenta="${c.id}"><span>${esc(c.nombre)}</span><span class="num">${dinero(saldoDe(c))}</span></div>`).join('')}
@@ -684,12 +691,12 @@
                                 <div class="lin-top pend" data-rapido="sinrev"><span>Sin revisar</span><span class="num">${sinRev}</span></div>
                                 <div class="lin-top pend" data-rapido="bandera"><span>Con bandera</span><span class="num">${conBand}</span></div>
                             </div>
-                        <div class="caja grafica ancho2" data-w="barras"><div class="cab-mov"><h3>Ingresos y gastos, últimos 12 meses</h3>
+                        <div class="caja grafica ancho2" data-w="barras"><div class="cab-mov"><h3>${todo ? 'Ingresos y gastos por mes, todo el histórico' : 'Ingresos y gastos, últimos 12 meses'}</h3>
                             <span class="leyenda"><i style="background:var(--exito)"></i>Ingresos <i style="background:var(--accion)"></i>Gastos</span></div>
                             <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ingresos y gastos por mes"><line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" stroke="var(--linea)"/>${barras}</svg></div>
                         <div class="caja grafica ancho2" data-w="saldo"><div class="cab-mov"><h3>Saldo total al cierre de cada mes</h3></div>
                             <svg viewBox="0 0 ${W} ${HL + 20}" width="100%" role="img" aria-label="Saldo total por mes"><path d="${linea}" fill="none" stroke="var(--accion)" stroke-width="2"/>${ptsSvg}${etqLin}</svg></div>
-                            <div class="caja" data-w="categorias"><div class="cab-mov"><h3>Gastos por categoría</h3><small class="mod-ayuda">${cap(MESES[mm - 1])} ${aa}</small></div>
+                            <div class="caja" data-w="categorias"><div class="cab-mov"><h3>Gastos por categoría</h3><small class="mod-ayuda">${todo ? 'Todo el histórico' : cap(MESES[mm - 1]) + ' ' + aa}</small></div>
                                 ${filasCat || '<div class="vacio-peq">Sin gastos en este mes</div>'}</div>
                             <div class="caja" data-w="mayores"><div class="cab-mov"><h3>Mayores gastos</h3></div>${listaTop(top(-1))}
                                 <div class="cab-mov" style="margin-top:16px"><h3>Mayores ingresos</h3></div>${listaTop(top(1))}</div>
