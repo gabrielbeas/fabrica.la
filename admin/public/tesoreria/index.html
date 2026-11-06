@@ -248,6 +248,10 @@
             .main { padding: 24px 16px 60px; }
             .m-cab { margin: -24px -16px 14px; }
         }
+        tr.fila-total td { font-weight: 700; background: #fff8ec; border-bottom: 2px solid #d08a1e; padding-top: 11px; padding-bottom: 11px; }
+        tr.fila-total td b { font-weight: 700; }
+        tr.mov.excl td { color: var(--tinta-suave); }
+        .marca-excl { font-size: 11px; color: var(--tinta-suave); border: 1px solid #d5dbe3; border-radius: 10px; padding: 0 6px; white-space: nowrap; }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
 </head>
@@ -290,8 +294,24 @@
         const cyrb53 = (str, seed = 0) => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
         const llaveMov = m => m.fecha + '|' + Number(m.monto).toFixed(2) + '|' + (m.beneficiario || '').toLowerCase();
         const fidDe = (cuenta, llave, k) => 'm' + cyrb53(cuenta + '|' + llave + '|' + k).toString(36);
+        // Suma de lo que muestra la lista con los filtros puestos (ingresos, gastos y neto)
+        const totalesLista = lista => {
+            if (!lista.length) return '';
+            const ing = lista.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0), gas = lista.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
+            const neto = Math.round((ing + gas) * 100) / 100;
+            const partes = [];
+            if (ing && gas) partes.push('Ingresos <b class="num ingreso">+' + dinero(ing) + '</b>', 'Gastos <b class="num">' + dinero(gas) + '</b>');
+            partes.push((ing && gas ? 'Neto ' : 'Total ') + '<b class="num ' + (neto > 0 ? 'ingreso' : '') + '">' + (neto > 0 ? '+' : '') + dinero(neto) + '</b>');
+            return ' · ' + partes.join(' · ');
+        };
+        // Fila de total de la tabla: la suma queda en la columna Monto
+        const filaTotal = lista => {
+            const ing = lista.filter(m => m.monto > 0).reduce((s, m) => s + m.monto, 0), gas = lista.filter(m => m.monto < 0).reduce((s, m) => s + m.monto, 0);
+            const neto = Math.round((ing + gas) * 100) / 100, mixto = ing && gas;
+            return `<tr class="fila-total"><td colspan="9">${mixto ? 'Neto del filtro' : 'Total del filtro'} · ${lista.length} movimiento${lista.length === 1 ? '' : 's'}${mixto ? ' · Ingresos <b class="num ingreso">+' + dinero(ing) + '</b> · Gastos <b class="num">' + dinero(gas) + '</b>' : ''}</td><td class="der num ${neto > 0 ? 'ingreso' : ''}">${neto > 0 ? '+' : ''}${dinero(neto)}</td><td></td></tr>`;
+        };
         const fidNuevo = () => 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        const serMov = m => ({ cuenta: m.cuenta, fecha: m.fecha, beneficiario: m.beneficiario || '', categoria: m.categoria || '', monto: m.monto, etiquetas: m.etiquetas || [], nota: m.nota || '', revisado: !!m.revisado, bandera: !!m.bandera, estado: m.estado || 'conciliado', excluido: !!m.excluido, adjuntos: m.adjuntos || [], orden: m.orden });
+        const serMov = m => ({ cuenta: m.cuenta, fecha: m.fecha, beneficiario: m.beneficiario || '', categoria: m.categoria || '', monto: m.monto, etiquetas: m.etiquetas || [], nota: m.nota || '', revisado: !!m.revisado, bandera: !!m.bandera, estado: m.estado || 'conciliado', excluido: !!m.excluido, adjuntos: m.adjuntos || [], transferId: m.transferId || '', orden: m.orden });
         const serCuenta = c => ({ nombre: c.nombre, saldoInicial: Number(c.saldoInicial) || 0, orden: c.orden ?? 0 });
         const snap = { movs: new Map(), cuentas: new Map(), cat: '' };
         let sincTimer = null, sincEnCurso = false, onEstado = () => {};
@@ -546,7 +566,7 @@
                         <select id="mCat" aria-label="Categoría"><option value="">Categoría: todas</option>${categorias.map(c => `<option ${st.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
                         <div class="m-rap">${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-mr="${k}">${t}</button>`).join('')}</div>
                     </div>
-                    <div class="m-cuenta">${lista.length} movimiento${lista.length === 1 ? '' : 's'}</div>
+                    <div class="m-cuenta">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${totalesLista(lista)}</div>
                     <div class="m-lista">${vis.map(m => `<div class="m-mov" data-id="${m.id}">
                         <div class="m-izq"><div class="m-ben">${esc(m.beneficiario)}${m.bandera ? ` <span class="m-flag">${FLAG}</span>` : ''}</div><div class="m-cat">${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</div></div>
                         <div class="m-der"><div class="num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</div><div class="m-fecha">${fechaCorta(m.fecha)}</div></div></div>`).join('') || `<div class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos.'}</div>`}</div>
@@ -621,14 +641,14 @@
                 const filas = grupos.map(g => {
                     const [a, mm] = g.k.split('-'), total = g.movs.reduce((s, m) => s + m.monto, 0), cerrado = st.cerrados.has(g.k);
                     return `<tr class="mes" data-mes="${g.k}"><td colspan="9"><span class="flecha-mes">${cerrado ? '▸' : '▾'}</span> ${cap(MESES[+mm - 1])} ${a}</td><td class="der">${dinero(total)}</td><td></td></tr>`
-                        + (cerrado ? '' : g.movs.map(m => `<tr class="mov ${st.sel.has(m.id) ? 'sel' : ''}" data-id="${m.id}">
+                        + (cerrado ? '' : g.movs.map(m => `<tr class="mov ${st.sel.has(m.id) ? 'sel' : ''} ${m.excluido ? 'excl' : ''}" data-id="${m.id}">
                             <td><input type="checkbox" class="chk" ${st.sel.has(m.id) ? 'checked' : ''} aria-label="Seleccionar"></td>
                             <td class="numm">${nums[m.id]}</td>
                             <td class="nw">${+m.fecha.slice(8)} de ${MESES[+m.fecha.slice(5, 7) - 1]}</td>
                             <td><button class="banda ${m.bandera ? 'on' : ''}" title="Marcar con bandera">${FLAG}</button></td>
                             <td><button class="rev ${m.revisado ? 'si' : ''}" title="${m.revisado ? 'Revisado' : 'Marcar como revisado'}">✓</button></td>
                             <td>${esc(m.beneficiario)}</td>
-                            <td>${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}</td>
+                            <td>${m.categoria ? esc(m.categoria) : '<span class="sin">Sin categoría</span>'}${m.excluido ? ' <span class="marca-excl" title="Excluido de reportes y del dashboard">fuera de reportes</span>' : ''}</td>
                             <td>${m.etiquetas.map(e => `<span class="etq">${esc(e)}</span>`).join('')}</td>
                             <td>${esc(m.nota)}</td>
                             <td class="der num ${m.monto > 0 ? 'ingreso' : ''}">${m.monto > 0 ? '+' : ''}${dinero(m.monto)}</td>
@@ -656,12 +676,12 @@
                                 </div>
                                 <div class="rapidos">Filtros rápidos
                                     ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
-                                    ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
+                                    ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}${st.sel.size ? `<button class="chip" id="bTransf" style="margin-left:8px" title="Los deja fuera de reportes y del dashboard, sin cambiar el saldo de la cuenta">Marcar como transferencia</button><button class="chip" id="bQuitaTransf" title="Vuelve a contarlos en reportes y en el dashboard">Quitar de transferencia</button>` : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
                                 <div class="tabla-wrap"><table style="width:${sumaAnchos}px"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
                                     <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos">${rz('chk')}</th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°${rz('num')}</th>${th('fecha', 'Fecha')}${th('ban', `<span class="th-flag" title="Ordenar por bandera">${FLAG}</span>`, 'th-ban')}<th>${rz('rev')}</th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
-                                    <tbody>${filas || `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
+                                    <tbody>${filas ? filaTotal(lista) + filas : `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
                             </div>
                         </section>
@@ -676,6 +696,14 @@
                 app.querySelectorAll('tr.mov .rev').forEach(e => e.addEventListener('click', ev => { ev.stopPropagation(); const m = MOVS.find(x => x.id === +e.closest('tr').dataset.id); m.revisado = !m.revisado; pintar(); }));
                 app.querySelectorAll('tr.mov .chk').forEach(e => e.addEventListener('change', () => { const id = +e.closest('tr').dataset.id; e.checked ? st.sel.add(id) : st.sel.delete(id); pintar(); }));
                 document.getElementById('chkTodos').addEventListener('change', e => { lista.forEach(m => e.target.checked ? st.sel.add(m.id) : st.sel.delete(m.id)); pintar(); });
+                const marcaSel = (fuera) => {
+                    const ms = MOVS.filter(m => st.sel.has(m.id)); if (!ms.length) return;
+                    ms.forEach(m => { m.excluido = fuera; if (fuera && !m.categoria) m.categoria = 'TRANSFERENCIA'; });
+                    sincronizarCatalogo(); pintar();
+                    const a = document.getElementById('aviso'); a.textContent = ms.length + (ms.length === 1 ? ' movimiento' : ' movimientos') + (fuera ? ' fuera de reportes (transferencia).' : ' de nuevo en reportes.'); a.style.display = 'block';
+                };
+                const bT = document.getElementById('bTransf'); if (bT) bT.addEventListener('click', () => marcaSel(true));
+                const bQ = document.getElementById('bQuitaTransf'); if (bQ) bQ.addEventListener('click', () => marcaSel(false));
                 document.getElementById('fFecha').addEventListener('change', e => { st.fecha = e.target.value; pintar(); });
                 document.getElementById('fCat').addEventListener('change', e => { st.cat = e.target.value; pintar(); });
                 const q = document.getElementById('q');
@@ -1399,9 +1427,10 @@
                             <div class="mod-campo"><label for="mBen">Beneficiario</label><input id="mBen" list="mBenLista" placeholder="Seleccionar o escribir beneficiario" value="${esc(m.beneficiario)}" autocomplete="off"><datalist id="mBenLista">${beneficiarios.map(b => `<option value="${esc(b)}">`).join('')}</datalist></div>
                             <div class="mod-campo"><label>Fecha</label><input type="date" id="mFecha" value="${m.fecha}"></div>
                             <div class="mod-campo"><label for="mMonto">Monto</label><input id="mMonto" data-dinero value="${Math.abs(m.monto) || ''}" placeholder="$0.00"></div>
-                            <div class="mod-campo"><label>Tipo</label><div class="seg"><button type="button" data-tipo="gasto" class="${m.monto > 0 ? '' : 'act'}">Gasto</button><button type="button" data-tipo="ingreso" class="${m.monto > 0 ? 'act' : ''}">Ingreso</button></div></div>
-                            <div class="mod-campo"><label for="mCuenta">Cuenta</label><select id="mCuenta">${CUENTAS.map(c => `<option value="${c.id}" ${m.cuenta === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
-                            <div class="mod-campo"><label for="mCatIn">Categoría</label><div class="combo"><input id="mCatIn" autocomplete="off" placeholder="Sin categoría (escribe para buscar)" value="${esc(m.categoria)}"><div class="combo-lista" id="mCatLista" role="listbox"></div></div></div>
+                            <div class="mod-campo"><label>Tipo</label><div class="seg"><button type="button" data-tipo="gasto" class="${m.monto > 0 ? '' : 'act'}">Gasto</button><button type="button" data-tipo="ingreso" class="${m.monto > 0 ? 'act' : ''}">Ingreso</button>${edita ? '' : '<button type="button" data-tipo="transferencia">Transferencia</button>'}</div></div>
+                            <div class="mod-campo"><label for="mCuenta" id="lCuenta">Cuenta</label><select id="mCuenta">${CUENTAS.map(c => `<option value="${c.id}" ${m.cuenta === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+                            <div class="mod-campo" id="cDestino" style="display:none"><label for="mDestino">Cuenta destino</label><select id="mDestino">${CUENTAS.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>
+                            <div class="mod-campo" id="cCategoria"><label for="mCatIn">Categoría</label><div class="combo"><input id="mCatIn" autocomplete="off" placeholder="Sin categoría (escribe para buscar)" value="${esc(m.categoria)}"><div class="combo-lista" id="mCatLista" role="listbox"></div></div></div>
                             <div class="mod-campo ancho"><label for="mEtq">Etiquetas</label><div class="etq-caja" id="mEtqCaja"><input id="mEtq" list="mEtqLista" placeholder="Escribe una etiqueta y presiona Enter"><datalist id="mEtqLista">${CAT.etiquetas.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
                         </div>
                         <div class="mod-grid" style="margin-top:14px">
@@ -1426,7 +1455,13 @@
                 $m('mCerrar').addEventListener('click', cierra); $m('mCancelar').addEventListener('click', cierra);
                 $m('mRev').addEventListener('click', () => { e.revisado = !e.revisado; $m('mRev').firstElementChild.classList.toggle('si', e.revisado); });
                 $m('mBan').addEventListener('click', () => { e.bandera = !e.bandera; $m('mBan').classList.toggle('on', e.bandera); });
-                fondo.querySelectorAll('[data-tipo]').forEach(b => b.addEventListener('click', () => { tipo = b.dataset.tipo; fondo.querySelectorAll('[data-tipo]').forEach(x => x.classList.toggle('act', x === b)); }));
+                fondo.querySelectorAll('[data-tipo]').forEach(b => b.addEventListener('click', () => {
+                    tipo = b.dataset.tipo; fondo.querySelectorAll('[data-tipo]').forEach(x => x.classList.toggle('act', x === b));
+                    const tr = tipo === 'transferencia';
+                    $m('cDestino').style.display = tr ? '' : 'none'; $m('cCategoria').style.display = tr ? 'none' : '';
+                    $m('lCuenta').textContent = tr ? 'Cuenta origen' : 'Cuenta';
+                    if (tr) { const o = $m('mCuenta').value; if ($m('mDestino').value === o) { const otra = CUENTAS.find(c => c.id !== o); if (otra) $m('mDestino').value = otra.id; } $m('mExc').checked = true; }
+                }));
                 // Categoría "adivinable": al escribir se van descartando las opciones que no coinciden
                 {
                     const inp = $m('mCatIn'), lista = $m('mCatLista');
@@ -1473,12 +1508,24 @@
                     const err = t => { $m('mError').textContent = t; };
                     const monto = Math.abs(Number($m('mMonto').value) || 0);
                     const ben = $m('mBen').value.trim();
-                    if (!ben) return err('Escribe el beneficiario.');
+                    if (!ben && tipo !== 'transferencia') return err('Escribe el beneficiario.');
                     if (!$m('mFecha').value) return err('Elige la fecha completa (día, mes y año).');
                     if (!monto) return err('Escribe el monto.');
+                    if (tipo === 'transferencia') {
+                        const o = $m('mCuenta').value, d = $m('mDestino').value;
+                        if (o === d) return err('Elige una cuenta destino distinta a la de origen.');
+                        const nom = id => (CUENTAS.find(c => c.id === id) || {}).nombre || id, tid = fidNuevo(), base = Date.now() * 1000;
+                        const comun = { fecha: $m('mFecha').value, categoria: 'TRANSFERENCIA', etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: true, adjuntos: e.adjuntos, transferId: tid };
+                        let nid = Math.max(0, ...MOVS.map(x => x.id));
+                        MOVS.push({ id: ++nid, fid: fidNuevo(), orden: base, ...comun, cuenta: o, beneficiario: ben || 'Transferencia a ' + nom(d), monto: -monto });
+                        MOVS.push({ id: ++nid, fid: fidNuevo(), orden: base + 1, ...comun, cuenta: d, beneficiario: ben || 'Transferencia de ' + nom(o), monto: monto });
+                        sincronizarCatalogo(); cierra(); st.cuenta = o; pintar();
+                        const a = document.getElementById('aviso'); a.textContent = 'Transferencia creada: salida en ' + nom(o) + ' y entrada en ' + nom(d) + ' (fuera de reportes).'; a.style.display = 'block';
+                        return;
+                    }
                     let cat = $m('mCatIn').value.trim();
                     if (cat) { const igual = categorias.find(c => c.v.toLowerCase() === cat.toLowerCase()); cat = igual ? igual.v : cat.toUpperCase(); }
-                    const datos = { fecha: $m('mFecha').value, cuenta: $m('mCuenta').value, beneficiario: ben, categoria: cat, monto: tipo === 'ingreso' ? monto : -monto, etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: $m('mExc').checked, adjuntos: e.adjuntos };
+                    const datos = { fecha: $m('mFecha').value, cuenta: $m('mCuenta').value, beneficiario: ben, categoria: cat, monto: tipo === 'ingreso' ? monto : -monto, transferId: m.transferId || '', etiquetas: e.etiquetas, nota: $m('mNota').value.trim(), revisado: e.revisado, bandera: e.bandera, estado: $m('mEstado').value, excluido: $m('mExc').checked, adjuntos: e.adjuntos };
                     if (edita) Object.assign(mov, datos); else { delete datos.ejemplo; MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, fid: fidNuevo(), orden: Date.now() * 1000, ...datos }); }
                     sincronizarCatalogo();
                     cierra(); if (st.cuenta !== 'todas') st.cuenta = datos.cuenta; pintar();
