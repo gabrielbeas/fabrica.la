@@ -3,6 +3,8 @@ import { cuentaDeposito } from './depositos.js?v=20261112-1';
 // Lo usan locales/index.html (punto de color) y locales/caratula.html (detalle).
 
 export const VENTANA_DIAS = 90;
+// El incremento de renta avisa solo 30 días antes (un mes); el fin de contrato sigue con 90.
+export const VENTANA_INCREMENTO_DIAS = 30;
 export const PESO_NIVEL = { vencido: 0, '30': 1, '60': 2, '90': 3 };
 // Fin de contrato: círculo con color según cuánto falta (la leyenda de Contratos usa estos mismos colores).
 // Las demás alertas (incremento de renta, depósito por pagar): cuadrito de un solo color, sin escala de tiempo.
@@ -27,7 +29,7 @@ export function alertasContrato(c) {
     if (esFecha(c.fin)) ev.push({ fecha: c.fin, tipo: 'Fin de contrato', det: c.plazo ? `Plazo ${c.plazo}` : '' });
     if (esFecha(c.incremento)) ev.push({ fecha: c.incremento, tipo: 'Incremento de renta', det: c.incrementoTipo ? `Tipo ${c.incrementoTipo}` : '' });
     const lista = ev.map(e => ({ ...e, dias: diasHasta(e.fecha) }))
-        .filter(e => e.dias <= VENTANA_DIAS)
+        .filter(e => e.dias <= (e.tipo === 'Incremento de renta' ? VENTANA_INCREMENTO_DIAS : VENTANA_DIAS))
         .map(e => ({ ...e, nivel: nivelDe(e.dias) }))
         .sort((a, b) => a.dias - b.dias);
     const saldo = cuentaDeposito(c).saldo > 0.005 ? cuentaDeposito(c).saldo : 0;
