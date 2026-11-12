@@ -1,10 +1,10 @@
 // Orden de compra a un proveedor: cuentas, hoja para imprimir (PDF vía impresión) y correo desde admin@fabrica.la.
 // El catálogo (productos_compra), los proveedores y las órdenes (ordenes_compra) viven en Firestore; aquí solo está la lógica común.
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261111-2';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261112-1';
 import { abrirCorreo, CORREO_REMITENTE } from './correos-contrato.js?v=20261014-6';
 
 export const IVA_COMPRAS = 0.16;
-const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const r2 = n => (x => (x < 0 ? -1 : 1) * Math.round(Number((Math.abs(x) * 100).toPrecision(13))) / 100 + 0)(Number(n) || 0);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 export const dinero = n => (r2(n) < 0 ? '-$' : '$') + Math.abs(r2(n)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];

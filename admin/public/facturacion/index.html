@@ -17,10 +17,12 @@
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 25px; }
         .controles { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 22px; }
         .controles label { display: block; font-size: 13px; color: var(--tinta-suave); margin-bottom: 6px; }
-        .controles input { padding: 9px 12px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 15px; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .controles input { padding: 9px 12px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 15px; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
 
         .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
         .tarjeta { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 18px; }
@@ -92,7 +94,7 @@
         .lineas-g td.num { font-family: var(--font-mono); }
         /* Corte del mes */
         .pie-corte { display: flex; justify-content: flex-end; margin-top: 16px; }
-        .btn-corte { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 12px 22px; font-size: 14px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+        .btn-corte { background: var(--accion); color: var(--on-accion); border: none; border-radius: var(--radio-sm); padding: 12px 22px; font-size: 14px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
         .btn-corte:hover { background: var(--accion-hover); }
         .tag-corte { font-size: 12px; color: var(--exito); background: var(--exito-suave); padding: 3px 10px; border-radius: 999px; margin-bottom: 10px; white-space: nowrap; }
         .corte-lista { margin: 4px 0 0; padding-left: 18px; font-size: 13px; line-height: 19px; }
@@ -104,14 +106,14 @@
 
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, getDoc, setDoc, doc, writeBatch, updateDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             ESTADOS, mesTxt, mesActual, mesMas, resumenCorte, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura, conceptoAgua,
             documentoContadores, imprimirHojas, totalesFactura, normalizarCorreos, correoValido, calcGBD, conceptoGBDTxt, montosGBD, rentaDelMes
-        } from '../../../js/facturacion.js?v=20261111-2';
+        } from '../../../js/facturacion.js?v=20261112-1';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
@@ -165,7 +167,7 @@
 
             app.innerHTML = `
                 <h1>Facturación</h1>
-                <p class="sub">Facturas mensuales de LAFABDECHOC a cada locatario. <span style="color:#ccc">· v4 (agua del mes anterior)</span></p>
+                <p class="sub">Facturas mensuales de LAFABDECHOC a cada locatario.</p>
                 <div class="controles">
                     <div><label for="mes">Mes de facturación</label><input type="month" id="mes" value="${mes}"></div>
                     ${faltan.length ? `<button class="btn" id="generar">Generar ${facturas.length ? `faltantes (${faltan.length})` : `facturas de ${mesTxt(mes)}`}</button>` : ''}
@@ -194,7 +196,7 @@
                                 <tr class="fila-f" data-id="${esc(f.id)}" data-href="ficha.html?id=${encodeURIComponent(f.contratoId)}&mes=${mes}" title="Ver factura">
                                     <td><label class="switch sw-sel" title="Activa: se incluye con montos. Apagada: los montos salen tachados (redacted) y no suman."><input type="checkbox" class="sel" data-id="${esc(f.id)}" checked><span class="slider"></span></label></td>
                                     <td><strong>${esc((f.locales || []).join(', '))}</strong></td>
-                                    <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">⚠ ${esc(a)}</span>`).join('')}</td>
+                                    <td>${esc(f.razonSocial)}${(f.avisos || []).map(a => `<span class="aviso">Aviso: ${esc(a)}</span>`).join('')}</td>
                                     <td class="mor-td">${celdaMoratorios(f)}</td>
                                     <td class="num"><span class="monto">${montoC(f, 'basura') === null ? '–' : dinero(montoC(f, 'basura'))}</span></td>
                                     <td class="num">${celdaAgua(f)}</td>

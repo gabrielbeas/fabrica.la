@@ -15,10 +15,11 @@
         .main { max-width: 900px; margin: 0 auto; padding: 30px 20px 60px; }
         .barra { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .barra a { color: var(--accion); text-decoration: none; font-size: 14px; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .btn-mini { margin-top: 12px; padding: 7px 14px; font-size: 13px; }
 
         /* Ventana de historial de depósitos */
@@ -29,7 +30,7 @@
         .modal-cab h3 { margin: 6px 0 0; font-size: 18px; }
         .inc-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
         .inc-form label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
-        .inc-form input { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font: inherit; font-size: 14px; box-sizing: border-box; }
+        .inc-form input { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font: inherit; font-size: 14px; box-sizing: border-box; }
         .inc-form .ancho { grid-column: 1 / -1; }
         .inc-vista { border: 1px solid var(--linea); border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 14px; line-height: 22px; background: var(--fondo-hundido); }
         .inc-vista strong { font-family: var(--font-mono); font-weight: 500; }
@@ -106,7 +107,7 @@
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
         .logo-print { display: none; height: 40px; width: auto; margin: 0 0 10px; }
-        @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 8px; } }
+        @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 10px; align-items: flex-start; } .barra > div { flex-wrap: wrap; width: 100%; gap: 8px !important; } .barra > div .btn, .barra > div .btn-sec { flex: 1 1 auto; } .inc-form { grid-template-columns: 1fr; } .alerta-fila { flex-wrap: wrap; } .alerta-fila .que { flex: 1 1 70%; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
@@ -120,21 +121,21 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261111-2';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261112-1';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261104-1';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261111-1';
-        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261111-1';
-        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261104-1';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261112-1';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261112-1';
+        import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261112-1';
 
         const app = document.getElementById('app');
         let diaLimitePago = 10; // Configuración → facturacion_config/general; pagos después de ese día son tarde
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        const dinero = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+        const dinero = n => typeof n === 'number' ? (n <= -0.005 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
         const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         const fechaTxt = f => { if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return f || '-'; const [y, m, d] = f.split('-'); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
@@ -394,7 +395,7 @@
         //   desde / hasta (YYYY-MM-DD): vigencia de esa renta; hasta = null mientras sigue abierta.
         //   incrementoPct: fracción (0.0419 = 4.19%) con la que se calculó respecto al periodo anterior.
         // Sin fechas se muestra el texto `periodo` original (contratos que todavía no se especifican).
-        const r2 = n => Math.round(n * 100) / 100;
+        const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
         const mesAnio = f => { const [y, m] = f.split('-'); return `${MESES[+m - 1].toUpperCase()} ${y}`; };
         const periodoRenta = r => r.desde ? `${mesAnio(r.desde)} – ${r.hasta ? mesAnio(r.hasta) : 'VIGENTE'}` : (r.periodo || '');
         const pctTxt = f => `${+(f * 100).toFixed(4)}%`;

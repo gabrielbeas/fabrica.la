@@ -164,6 +164,7 @@
 
   .hero-logo-img {
     width: clamp(280px, 45vw, 520px);
+    max-width: 100%;
     height: auto;
     display: block;
   }
@@ -1260,6 +1261,8 @@
     }
 
     section { padding: 4rem 1.5rem; }
+    /* El carrusel llega a la orilla sin salirse: sus márgenes siguen al relleno de la sección */
+    .hc-wrap { margin-left: -1.5rem !important; margin-right: -1.5rem !important; }
 
     .about, .location, .contact, .historia-inner {
       grid-template-columns: 1fr;
@@ -1535,7 +1538,7 @@
   </div>
 
   <!-- Carrusel histórico -->
-  <div style="margin-top: 3rem; margin-left: -3rem; margin-right: -3rem;">
+  <div class="hc-wrap" style="margin-top: 3rem; margin-left: -3rem; margin-right: -3rem;">
     <div class="historia-carousel" style="position: relative; overflow: hidden; aspect-ratio: 2/1;">
       <div class="hc-track">
         <div class="hc-slide active"><img src="img/lfdc0.jpg" alt="La Fábrica de Chocolate — historia" loading="lazy"></div>

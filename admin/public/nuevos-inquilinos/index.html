@@ -17,10 +17,11 @@
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
         .cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
         .chips { align-items: center; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .chip { border: 1px solid var(--linea); background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--tinta-suave); }
         .chip.act { border-color: var(--accion); background: var(--accion-suave); color: var(--accion); font-weight: 600; }
@@ -34,9 +35,10 @@
         .etapa.activado { background: var(--exito-suave); color: var(--exito); } .etapa.descartado { background: var(--fondo-hundido); color: var(--tinta-suave); }
         .puntos { display: inline-flex; gap: 3px; margin-left: 8px; vertical-align: middle; }
         .puntos i { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); } .puntos i.on { background: var(--accion); }
-        .borrar { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; color: var(--tinta-suave); line-height: 0; }
+        .borrar { background: none; border: none; cursor: pointer; padding: 6px; border-radius: var(--radio-sm); color: var(--tinta-suave); line-height: 0; }
         .borrar:hover { background: var(--peligro-suave, #fdecea); color: var(--peligro); }
         .borrar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        @media (max-width: 700px) { .tabla-movil tbody tr { position: relative; } .tabla-movil td:last-child { position: absolute; top: 6px; right: 8px; width: auto; padding: 0 !important; } .tabla-movil td:first-child { padding-right: 44px !important; } .tabla-movil td.vacio { position: static; padding: 20px 0 !important; text-align: center !important; } }
         .vacio { padding: 40px; text-align: center; color: var(--tinta-suave); }
         .err { color: var(--peligro); } .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
         .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; z-index: 1000; overflow-y: auto; }
@@ -52,7 +54,7 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, getDoc, setDoc, doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -91,7 +93,7 @@
                 <p class="sub">Cambios de inquilino y renovaciones de un local que ya existe: propuesta, cuestionario, contrato, firma y pagos. Al activar, el contrato nuevo entra a Contratos, Facturación y Depósitos, y el anterior pasa a inactivo sin perder su información.</p></div>
                 </div>
                 <div class="chips">${[['en_proceso', 'En proceso'], ['activado', 'Activados'], ['descartado', 'Descartados'], ['todos', 'Todos']].map(([k, t]) => `<button class="chip ${filtro === k ? 'act' : ''}" data-f="${k}">${t}${k !== 'todos' ? ` (${cuenta(k)})` : ` (${procesos.length})`}</button>`).join('')}<button class="btn" id="btnNuevo" style="margin-left:auto">Nuevo proceso</button></div>
-                <div class="tabla-wrap"><table>
+                <div class="tabla-wrap"><table class="tabla-movil">
                     <thead><tr><th>Local</th><th>Inquilino actual</th><th>Interesado</th><th>Tipo</th><th>Etapa</th><th class="num">Renta propuesta</th><th>Inicio propuesto</th><th></th></tr></thead>
                     <tbody>${lista.map(p => {
                         const d = p.datos || {}, c = actual(p.contratoId) || {}, et = etapaDe(p), est = p.estado || 'en_proceso';

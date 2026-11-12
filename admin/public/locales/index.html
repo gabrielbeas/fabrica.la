@@ -87,11 +87,11 @@
     <div class="main" id="app"><div class="cargando">Cargando contratos...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261104-1';
+        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261112-1';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -244,7 +244,7 @@
         //         subtotal, iva, retIsr, retIva, total (= subtotal + iva - retIsr - retIva), correos [], estado, fuente.
         const ESTADOS_GBD = { pendiente: ['Pendiente', 'est-pend'], en_proceso: ['En proceso', 'e-termina'], pagado: ['Pagado a tiempo', 'e-vigente'], pago_tarde: ['Pagado tarde', 'e-vencido'] };
         const pct = f => `${+(f * 100).toFixed(4)}%`;
-        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
         const correoValido = x => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x);
         let gbd = [];
         let facturasMesGBD = {};          // factura de GBD del mes en curso por contrato (de ahí sale el estado)

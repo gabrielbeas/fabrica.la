@@ -19,14 +19,15 @@
 
         .barra { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
         .nav-mes { display: flex; align-items: center; gap: 6px; }
-        .nav-mes button { border: 1px solid var(--borde-control); background: var(--fondo); border-radius: 6px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; color: var(--tinta-suave); }
+        .nav-mes button { border: 1px solid var(--borde-control); background: var(--fondo); border-radius: var(--radio-sm); width: 34px; height: 34px; font-size: 18px; cursor: pointer; color: var(--tinta-suave); }
         .nav-mes button:hover { border-color: var(--accion); color: var(--accion); }
         .nav-mes strong { font-size: 18px; min-width: 190px; text-align: center; text-transform: capitalize; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
-        .btn-borrar { background: var(--fondo); color: var(--peligro); border: 1px solid var(--peligro-suave); border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 9px 14px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
+        .btn-borrar { background: var(--fondo); color: var(--peligro); border: 1px solid var(--peligro-suave); border-radius: var(--radio-sm); padding: 9px 14px; font-size: 13px; cursor: pointer; }
         .btn-borrar:hover { background: var(--peligro); color: var(--on-accion); }
         .derecha { margin-left: auto; display: flex; gap: 8px; }
 
@@ -108,7 +109,7 @@
         .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
         .campos .ancho { grid-column: 1 / -1; }
         .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 5px; }
-        .campos input, .campos select, .campos textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .campos input, .campos select, .campos textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 14px; font-family: inherit; }
         .campos input:focus, .campos select:focus, .campos textarea:focus { outline: none; border-color: var(--accion); }
         .acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
         .acciones .izq { margin-right: auto; }
@@ -121,7 +122,7 @@
     <div class="main" id="app"><div class="cargando">Cargando calendario...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { FERIADOS } from '../../../js/feriados.js?v=20261104-1';

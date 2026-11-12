@@ -3,12 +3,12 @@
 // historial de cambios. Se arma al momento con lo que hay en Firestore y se imprime en hoja carta (Guardar como PDF).
 import { db } from './auth.js?v=20261111-1';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261104-1';
-import { LOGO_URL } from './facturacion.js?v=20261111-2';
+import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261112-1';
+import { LOGO_URL } from './facturacion.js?v=20261112-1';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const dinero = n => typeof n === 'number' && Number.isFinite(n) ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+const dinero = n => typeof n === 'number' && Number.isFinite(n) ? (n <= -0.005 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
 const numero = (n, d = 3) => typeof n === 'number' && Number.isFinite(n) ? n.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d }) : '';
 const fecha = f => {
   if (!f) return '';

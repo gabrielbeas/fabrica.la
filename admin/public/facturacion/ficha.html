@@ -15,11 +15,13 @@
         .main { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; }
         .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .barra a { color: var(--accion); text-decoration: none; font-size: 14px; }
-        h1 { font-size: 24px; margin: 0 0 4px; }
+        h1 { font-size: 26px; margin: 0 0 4px; }
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 22px; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .btn-mini { font-size: 12px; padding: 4px 10px; border: 1px solid var(--borde-control); background: var(--fondo); border-radius: 10px; cursor: pointer; }
 
         .layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
@@ -29,7 +31,7 @@
         dt { color: var(--tinta-suave); } dd { margin: 0; word-break: break-word; }
 
         .mes-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
-        .mes-bar input { padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; }
+        .mes-bar input { padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 14px; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; padding: 8px; border-bottom: 1px solid var(--linea); }
         td { padding: 8px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: middle; }
@@ -50,11 +52,11 @@
         .tot td { font-weight: 700; border-top: 1px solid var(--borde-control); border-bottom: none; }
         .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 16px; }
         .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
-        .campos input, .campos select, .campos textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font: inherit; font-size: 14px; }
+        .campos input, .campos select, .campos textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font: inherit; font-size: 14px; }
         .campos .ancho { grid-column: 1 / -1; }
-        .avisos { background: var(--atencion-suave); color: var(--atencion); border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+        .avisos { background: var(--atencion-suave); color: var(--atencion); border-radius: var(--radio-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
         .hist a { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid var(--fondo-hundido); color: var(--tinta); text-decoration: none; font-size: 14px; }
-        .hist a.act { background: var(--ambar-suave); border-radius: 6px; }
+        .hist a.act { background: var(--ambar-suave); border-radius: var(--radio-sm); }
         .pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
         .e-pendiente { background: var(--linea); color: var(--tinta-suave); } .e-proceso { background: var(--atencion-suave); color: var(--atencion); }
         .e-pagado { background: var(--exito); color: var(--fondo); } select.estado option { background: var(--fondo); color: var(--tinta); } .e-tarde { background: var(--peligro-suave); color: var(--peligro); }
@@ -72,7 +74,7 @@
 
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -80,7 +82,7 @@
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
             documentoContadores, imprimirHojas, normalizarConceptos, normalizarCorreos, correoValido, CORREO_COPIA
-        } from '../../../js/facturacion.js?v=20261111-2';
+        } from '../../../js/facturacion.js?v=20261112-1';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);
@@ -260,7 +262,7 @@
             }
             borrador = JSON.parse(JSON.stringify(factura));
             el.innerHTML = `
-                ${(factura.avisos || []).length ? `<div class="avisos">${factura.avisos.map(a => '⚠ ' + esc(a)).join('<br>')}</div>` : ''}
+                ${(factura.avisos || []).length ? `<div class="avisos">${factura.avisos.map(a => 'Aviso: ' + esc(a)).join('<br>')}</div>` : ''}
                 <table class="tabla-movil">
                     <thead><tr><th>Concepto</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th><th></th></tr></thead>
                     <tbody id="filas"></tbody>

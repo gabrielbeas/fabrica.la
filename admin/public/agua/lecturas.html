@@ -18,7 +18,7 @@
 
         .controles { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 20px; }
         .campo label { display: block; font-size: 13px; color: var(--tinta-suave); margin-bottom: 6px; font-weight: 500; }
-        .campo input { padding: 10px 12px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 15px; }
+        .campo input { padding: 10px 12px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 15px; }
         .campo input:focus { outline: none; border-color: var(--accion); }
         .costo-fijo { font-size: 18px; font-weight: 600; padding: 9px 0; }
         .nota-costo { font-size: 12px; color: var(--tinta-suave); margin: -12px 0 16px; }
@@ -35,7 +35,7 @@
         td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
         .tubo { font-weight: 600; }
         .fecha-ant { display: block; font-size: 12px; color: var(--tinta-tenue); }
-        td input { width: 130px; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; text-align: right; }
+        td input { width: 130px; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 14px; text-align: right; }
         td input:focus { outline: none; border-color: var(--accion); }
         tr.alerta td { background: var(--atencion-suave); }
         tr.alerta .consumo { color: var(--atencion); font-weight: 600; }
@@ -46,26 +46,28 @@
         tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
 
         .acciones { display: flex; gap: 12px; align-items: center; margin-top: 20px; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .mensaje { font-size: 14px; }
         .ok { color: var(--exito); } .err { color: var(--peligro); }
         .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
 
         /* Calendario propio (para poder marcar días con lecturas) */
         .cal-wrap { position: relative; }
-        .cal-btn { padding: 10px 12px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 15px; background: var(--fondo); cursor: pointer; min-width: 190px; text-align: left; color: var(--tinta); }
+        .cal-btn { padding: 10px 12px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 15px; background: var(--fondo); cursor: pointer; min-width: 190px; text-align: left; color: var(--tinta); }
         .cal-btn:hover, .cal-btn:focus { border-color: var(--accion); outline: none; }
         .cal { position: absolute; top: calc(100% + 6px); left: 0; z-index: 900; background: var(--fondo); border: 1px solid var(--borde-control); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.15); padding: 12px; width: 290px; }
         .cal-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .cal-cab strong { font-size: 15px; text-transform: capitalize; }
-        .cal-cab button { border: none; background: none; font-size: 22px; line-height: 1; padding: 2px 10px; cursor: pointer; color: var(--tinta-suave); border-radius: 6px; }
+        .cal-cab button { border: none; background: none; font-size: 22px; line-height: 1; padding: 2px 10px; cursor: pointer; color: var(--tinta-suave); border-radius: var(--radio-sm); }
         .cal-cab button:hover:not(:disabled) { background: var(--ambar-suave); }
         .cal-cab button:disabled { color: var(--borde-control); cursor: default; }
         .cal-sem, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
         .cal-sem span { font-size: 11px; color: var(--tinta-suave); padding: 4px 0; }
-        .cal-dias button { position: relative; border: none; background: none; height: 36px; border-radius: 6px; font-size: 14px; cursor: pointer; color: var(--tinta); }
+        .cal-dias button { position: relative; border: none; background: none; height: 36px; border-radius: var(--radio-sm); font-size: 14px; cursor: pointer; color: var(--tinta); }
         .cal-dias button:hover:not(:disabled) { background: var(--ambar-suave); }
         .cal-dias button:disabled { color: var(--tinta-tenue); cursor: default; }
         .cal-dias button.hoy { font-weight: 700; }
@@ -123,7 +125,7 @@
     <div class="main" id="app"><div class="cargando">Cargando lecturas...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { getCurrentUser, isAuthenticated, esAdmin, db, auth } from '../../../js/auth.js?v=20261111-1';
         import {

@@ -70,6 +70,9 @@
     }
     @media (max-width: 700px) {
       .table-wrap:has(> .tabla-movil) { overflow: visible; border: none; }
+      .heading .actions { flex-wrap: wrap; width: 100%; }
+      .heading .actions .btn { flex: 1 1 auto; white-space: nowrap; }
+      .heading .actions .btn-primary { flex-basis: 100%; }
       .panel-head { flex-wrap: wrap; gap: 10px; }
       .panel-head > input, .panel-head .selmes2 { width: 100%; }
       .toolbar { flex-wrap: wrap; }
@@ -147,7 +150,7 @@
 
   <script type="module">
     import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
-    import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+    import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
     import '../../../js/dinero-input.js?v=20261028-1';
     import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261111-1';
     import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -166,7 +169,7 @@
     // Movimientos guardados antes del 04/10/2026 traen la grafía anterior «Victor Navaro»
     const normResp = r => r === 'Victor Navaro' ? 'Victor Navarro' : r;
     let movimientos = [], config = null, ultimoCorte = null, archivo = null, urlPreview = '', editingMovementId = null;
-    const money = n => { const v = Number(n) || 0; return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    const money = n => { const v = Number(n) || 0; return (v <= -0.005 ? '-$' : '$') + Math.abs(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
     const parseDate = value => { const d = new Date(`${value}T12:00:00`); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); };
@@ -241,12 +244,13 @@
     // Saldo de una cuenta con los movimientos no rechazados; excluirId deja fuera un movimiento (al editarlo)
     function saldoDe(cuenta, excluirId = null) {
       if (!config) return null;
-      return movimientos.reduce((saldo, m) => {
+      // Se redondea a centavos: la suma de decimales deja residuos (0.1 + 0.2) que alteran comparaciones y signos
+      return Math.round(movimientos.reduce((saldo, m) => {
         if (m.estado === 'rechazado' || m.previo || m.id === excluirId || cuentaDe(m.metodoPago) !== cuenta || (inicioDe(cuenta) && String(m.fecha || '') < inicioDe(cuenta))) return saldo;
         return saldo + efecto(m);
-      }, saldoInicialDe(cuenta));
+      }, saldoInicialDe(cuenta)) * 100) / 100;
     }
-    const saldoActual = () => config ? saldoDe('efectivo') + saldoDe('tarjeta') : null;
+    const saldoActual = () => config ? Math.round((saldoDe('efectivo') + saldoDe('tarjeta')) * 100) / 100 : null;
 
     // Vista previa en la forma: cómo quedarían los dos saldos con lo capturado
     function actualizarPrevia() {

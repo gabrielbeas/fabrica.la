@@ -4,7 +4,7 @@
 //   'sin' = renta SIN mantenimiento (contratos donde el mantenimiento va desglosado de la renta): total ÷ (1 + mantenimientoPct), o total − mantenimientoMonto.
 // requerido = meses de depósito × base (sin IVA); pagado = pagos que cuentan (los `compartido` no suman); saldo = requerido − pagado.
 // Todo se calcula en vivo del contrato: no se guarda ningún total aparte que pueda desfasarse.
-const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const r2 = n => (x => (x < 0 ? -1 : 1) * Math.round(Number((Math.abs(x) * 100).toPrecision(13))) / 100 + 0)(Number(n) || 0);
 
 export const BASES_DEPOSITO = {
   con: 'Renta con mantenimiento incluido',

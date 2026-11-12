@@ -155,8 +155,7 @@ function marcarSeccionActiva(secciones) {
  * Agregar estilos del navbar
  */
 function agregarEstilosNavbar() {
-  const style = document.createElement('style');
-  style.textContent = `
+  const css = `
     /* Colores y medidas del sistema «Panel LFdC» (css/panel.css); el valor tras la coma es el respaldo */
     .navbar {
       background: var(--fondo, #ffffff);
@@ -300,8 +299,8 @@ function agregarEstilosNavbar() {
       display: none;
     }
 
-    /* Responsive: el menú completo (9 secciones) no cabe por debajo de ~1180px */
-    @media (max-width: 1180px) {
+    /* Responsive: por debajo del ancho en que ya no cabe el menú completo, pasa a hamburguesa */
+    @media (max-width: __CORTE__px) {
       .navbar-container {
         height: 60px;
         padding: 0 16px;
@@ -387,7 +386,25 @@ function agregarEstilosNavbar() {
 
   `;
 
+  // Primero los estilos base, para medir cuánto ocupa el menú de este usuario en un renglón;
+  // el corte a hamburguesa se pone justo donde deja de caber (las secciones cambian con el rol).
+  const [base, movil] = css.split('    /* Responsive:');
+  const style = document.createElement('style');
+  style.textContent = base;
   document.head.appendChild(style);
+
+  let corte = 1180;
+  try {
+    const ancho = sel => { const e = document.querySelector(sel); return e ? e.offsetWidth : 0; };
+    const enlaces = [...document.querySelectorAll('#navbarMenu .nav-link')];
+    const menu = enlaces.reduce((a, e) => a + e.offsetWidth, 0) + Math.max(0, enlaces.length - 1) * 4;
+    // 32 de márgenes de la barra + 32 y 16 de separación + 48 de holgura (la letra puede cargar después)
+    if (menu > 0) corte = Math.max(760, Math.ceil(Math.max(ancho('.navbar-brand'), 100) + menu + Math.max(ancho('.navbar-user'), 140) + 128));
+  } catch (e) { /* se queda el corte por defecto */ }
+
+  const estiloMovil = document.createElement('style');
+  estiloMovil.textContent = '    /* Responsive:' + movil.replace('__CORTE__', corte);
+  document.head.appendChild(estiloMovil);
 }
 
 /**

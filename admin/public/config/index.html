@@ -21,10 +21,11 @@
         .pestanas button { border: none; background: none; padding: 10px 16px; font-size: 15px; color: var(--tinta-suave); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
         .pestanas button.act { color: var(--accion); border-bottom-color: var(--accion); font-weight: 600; }
 
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
+        .btn-sec { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 9px 14px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .btn-sec:disabled { opacity: .5; cursor: not-allowed; }
 
         .panel { border: 1px solid var(--linea); border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; }
@@ -36,7 +37,7 @@
         td { padding: 10px 14px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
         tbody tr:last-child td { border-bottom: none; }
         tr.inactivo td { color: var(--tinta-tenue); }
-        td input[type=text], td select { padding: 7px 9px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; font-family: inherit; background: var(--fondo); }
+        td input[type=text], td select { padding: 7px 9px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 14px; font-family: inherit; background: var(--fondo); }
         td input[type=text] { width: 100%; min-width: 140px; }
         .tu { font-size: 11px; color: var(--accion); font-weight: 600; margin-left: 6px; }
         .gris { color: var(--tinta-suave); font-size: 12px; }
@@ -52,7 +53,7 @@
         .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
         .campos .ancho { grid-column: 1 / -1; }
         .campos label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 5px; }
-        .campos input, .campos select { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 14px; font-family: inherit; background: var(--fondo); }
+        .campos input, .campos select { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 14px; font-family: inherit; background: var(--fondo); }
         .campos input:focus, .campos select:focus, td input:focus, td select:focus { outline: none; border-color: var(--accion); }
         .campos .ayuda { font-size: 12px; color: var(--tinta-suave); margin-top: 4px; }
         .pasos { margin: 0 0 16px; padding-left: 20px; color: var(--tinta-suave); font-size: 14px; line-height: 1.7; }
@@ -63,7 +64,7 @@
         .valor .nom { font-weight: 600; font-size: 14px; }
         .valor .des { font-size: 12px; color: var(--tinta-suave); margin-top: 3px; line-height: 1.4; }
         .valor .entrada { display: flex; align-items: center; gap: 6px; }
-        .valor .entrada input { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: 6px; font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+        .valor .entrada input { width: 100%; padding: 9px 11px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
         .valor .entrada input:focus { outline: none; border-color: var(--accion); }
         .valor .entrada span { color: var(--tinta-suave); font-size: 13px; white-space: nowrap; }
         .valor .calc { grid-column: 2; font-size: 12px; color: var(--tinta-suave); text-align: right; }
@@ -93,7 +94,7 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db, auth } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, getDoc, doc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -101,8 +102,8 @@
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        const dinero = n => typeof n === 'number' ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const dinero = n => typeof n === 'number' ? (n <= -0.005 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+        const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
 
         // Igual que en js/facturacion.js (no se importa para no depender de su versión en caché)
         const IVA = 0.16;
@@ -185,7 +186,7 @@
                         <div class="ancho"><label>User UID</label><input id="n_uid" placeholder="Cadena de unas 28 letras y números" autocomplete="off" spellcheck="false"></div>
                         <div><label>Correo</label><input id="n_email" type="email" placeholder="correo@ejemplo.com" autocomplete="off"></div>
                         <div><label>Nombre</label><input id="n_nombre" placeholder="Nombre que se ve en el panel" autocomplete="off"></div>
-                        <div><label>Rol</label><select id="n_rol"><option value="operario">Operario (lecturas de agua y calendario)</option><option value="admin">Administrador (todo el panel)</option></select></div>
+                        <div><label>Rol</label><select id="n_rol"><option value="operario">Operario (acceso limitado)</option><option value="admin">Administrador (todo el panel)</option></select></div>
                     </div>
                     <div class="pie" style="margin-top:16px">
                         <span class="msg" id="msgN"></span>

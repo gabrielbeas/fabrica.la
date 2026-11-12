@@ -17,10 +17,11 @@
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
         .volver { font-size: 13px; color: var(--accion); text-decoration: none; display: inline-block; margin-bottom: 12px; }
         .volver:hover { text-decoration: underline; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         .flujo div { border: 1px solid var(--linea); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--tinta-suave); background: #fff; }
         .flujo div b { display: block; font-size: 14px; color: var(--tinta); }
@@ -71,11 +72,11 @@
     <div id="hoja"></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
-        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261111-2';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261112-1';
         import { resumenDocumentos } from '../../../js/nuevos-inquilinos.js?v=20261111-5';
         import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261111-1';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -83,7 +84,7 @@
         const app = document.getElementById('app');
         const hoja = document.getElementById('hoja');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
         const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const IVA = 0.16;
         const qs = new URLSearchParams(location.search), procId = qs.get('proceso'), idLegado = qs.get('id');   // proceso de Nuevos inquilinos (el contrato que se reemplaza va dentro)

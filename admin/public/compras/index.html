@@ -13,15 +13,16 @@
         /* Solo lo propio de Compras; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
         .main { max-width: 1400px; margin: 0 auto; padding: 30px 20px 60px; }
-        h1 { font-size: 24px; margin: 0 0 4px; }
+        h1 { font-size: 26px; margin: 0 0 4px; }
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0; }
         .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; border: none; background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 8px 14px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { font: inherit; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
-        .btn-sec:hover { background: var(--fondo-hundido); }
-        .btn-mini { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--accion); cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 8px 14px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
+        .btn-mini { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--accion); cursor: pointer; }
         .msg { font-size: 13px; } .ok { color: var(--exito); } .err { color: var(--peligro); }
         .prov { border: 1px solid var(--linea); border-radius: 10px; margin-bottom: 22px; overflow: hidden; }
         .prov-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); }
@@ -31,7 +32,7 @@
         .datos-prov { padding: 6px 18px 0; border-bottom: 1px solid var(--linea); }
         .datos-prov[hidden] { display: none; }
         .prov-cab h2 { display: flex; align-items: center; gap: 8px; }
-        button.flecha { width: 28px; height: 28px; border: none; background: none; border-radius: 6px; cursor: pointer; color: var(--accion); padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        button.flecha { width: 28px; height: 28px; border: none; background: none; border-radius: var(--radio-sm); cursor: pointer; color: var(--accion); padding: 0; display: inline-flex; align-items: center; justify-content: center; }
         button.flecha:hover { background: var(--accion-suave); }
         button.flecha svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
         button.flecha[aria-expanded="true"] svg { transform: rotate(180deg); }
@@ -52,7 +53,7 @@
         table.cat th.num { font-family: var(--font-sans); }
         table.cat button.nombre { font: inherit; font-weight: 600; border: none; background: none; padding: 0; cursor: pointer; color: var(--tinta); text-align: left; }
         table.cat button.nombre:hover { color: var(--accion); text-decoration: underline; }
-        table.cat input.cant { width: 84px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--borde-control); border-radius: 6px; background: var(--fondo); color: var(--tinta); }
+        table.cat input.cant { width: 84px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: var(--fondo); color: var(--tinta); }
         .btn-lapiz { width: 22px; height: 22px; padding: 0; margin-right: 4px; border: none; background: none; color: var(--accion); cursor: pointer; vertical-align: -5px; border-radius: 4px; }
         .btn-lapiz:hover { background: var(--accion-suave); }
         .btn-lapiz svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -61,14 +62,14 @@
         th.ord.act { color: var(--accion); }
         th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
         th.ord.act .flecha { opacity: 1; }
-        table.cat input.precio { width: 100px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--accion); border-radius: 6px; background: var(--accion-suave); color: var(--tinta); }
+        table.cat input.precio { width: 100px; box-sizing: border-box; font: inherit; font-family: var(--font-mono); text-align: right; padding: 5px 7px; border: 1px solid var(--accion); border-radius: var(--radio-sm); background: var(--accion-suave); color: var(--tinta); }
         table.cat input.precio.cambio { border-color: var(--atencion); background: var(--atencion-suave); }
         table.cat input.cant.con { border-color: var(--accion); background: var(--accion-suave); }
         table.cat tfoot td { border-bottom: none; padding: 4px 10px; font-weight: 600; }
         .gris { color: var(--tinta-suave); font-size: 12px; }
         .vacio { color: var(--tinta-suave); text-align: center; padding: 26px 16px; }
         .ordenes h2 { font-size: 16px; margin: 30px 0 10px; }
-        .btn-basura { width: 28px; height: 28px; padding: 0; border: 1px solid var(--borde-control); border-radius: 6px; background: var(--fondo); color: var(--peligro); cursor: pointer; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-basura { width: 28px; height: 28px; padding: 0; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: var(--fondo); color: var(--peligro); cursor: pointer; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
         .btn-basura:hover { background: var(--peligro-suave); border-color: var(--peligro); }
         .btn-basura svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .estado { font: inherit; font-size: 12px; border: 1px solid var(--borde-control); border-radius: 999px; padding: 4px 8px; background: var(--fondo); color: var(--tinta); }
@@ -92,12 +93,12 @@
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261111-2';
-        import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261104-1';
+        import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261112-1';
+        import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261112-1';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -201,8 +202,8 @@
                         <td><button type="button" class="nombre" data-editar-prod="${esc(p.id)}" title="Editar producto">${esc(p.nombre)}</button>${p.notas ? `<div class="gris">${esc(p.notas)}</div>` : ''}</td>
                         <td>${esc(p.marca || '')}</td><td>${esc(p.clave || '')}</td><td>${esc(p.contenido || '')}</td><td>${esc(p.unidad || '')}</td>
                         ${prov && editandoPrecios.has(prov.id)
-                            ? `<td class="num"><input type="text" class="precio" data-dinero inputmode="decimal" data-precio="${esc(p.id)}" value="${Number(p.precioSinIva) || 0}" aria-label="Precio sin IVA de ${esc(p.nombre)}"></td><td class="num" data-precio-iva="${esc(p.id)}">${dinero(conIva(p.precioSinIva))}</td>`
-                            : `<td class="num">${dinero(p.precioSinIva)}</td><td class="num">${dinero(conIva(p.precioSinIva))}</td>`}
+                            ? `<td class="num" data-label="Precio s/IVA"><input type="text" class="precio" data-dinero inputmode="decimal" data-precio="${esc(p.id)}" value="${Number(p.precioSinIva) || 0}" aria-label="Precio sin IVA de ${esc(p.nombre)}"></td><td class="num" data-precio-iva="${esc(p.id)}">${dinero(conIva(p.precioSinIva))}</td>`
+                            : `<td class="num" data-label="Precio s/IVA">${dinero(p.precioSinIva)}</td><td class="num">${dinero(conIva(p.precioSinIva))}</td>`}
                         <td class="num"><input type="text" class="cant ${q > 0 ? 'con' : ''}" inputmode="decimal" data-cant="${esc(p.id)}" value="${q > 0 ? q : ''}" placeholder="0" aria-label="Cantidad de ${esc(p.nombre)}"></td>
                         <td class="num" data-importe="${esc(p.id)}">${q > 0 ? dinero(importeConIva(p, q)) : ''}</td></tr>`; }).join('')}</tbody>
                     ${prov ? `<tfoot><tr><td colspan="8" class="num">Total del pedido con IVA</td><td class="num" data-tot="${esc(prov.id)}">${lineas.length ? dinero(t.total) : ''}</td></tr></tfoot>` : ''}

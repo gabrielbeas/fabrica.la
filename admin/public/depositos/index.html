@@ -13,7 +13,7 @@
         /* Solo lo propio de Depósitos; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
         .main { max-width: 1500px; margin: 0 auto; padding: 30px 20px 60px; }
-        h1 { font-size: 24px; margin: 0 0 4px; }
+        h1 { font-size: 26px; margin: 0 0 4px; }
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 18px; }
         .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
         .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
@@ -47,12 +47,14 @@
         .detalle td { padding: 5px 6px; border-bottom: 1px solid var(--fondo-hundido); vertical-align: top; }
         .campo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
         .campo label { display: block; font-size: 11px; color: var(--tinta-suave); margin-bottom: 3px; }
-        .campo input, .campo select, .campo textarea { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 6px; box-sizing: border-box; background: var(--fondo); color: var(--tinta); }
+        .campo input, .campo select, .campo textarea { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); box-sizing: border-box; background: var(--fondo); color: var(--tinta); }
         .campo .ancho { grid-column: 1 / -1; }
         .acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-        .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 6px; border: none; background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 7px 14px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-sec { font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec { font: inherit; font-size: 13px; font-weight: 600; line-height: 20px; padding: 7px 14px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .msg { font-size: 13px; } .ok { color: var(--exito); } .err { color: var(--peligro); }
         .vacio { color: var(--tinta-suave); text-align: center; padding: 30px 16px; }
         .pie { color: var(--tinta-suave); font-size: 12px; margin-top: 10px; }
@@ -70,14 +72,14 @@
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
-        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261104-1';
+        import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
                 import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+        const r2 = n => (x => (x < 0 ? -1 : 1) * Math.round(Number((Math.abs(x) * 100).toPrecision(13))) / 100 + 0)(Number(n) || 0);
         const dinero = n => (r2(n) < 0 ? '-$' : '$') + Math.abs(r2(n)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const fechaCorta = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? `${+f.slice(8, 10)} ${MESES_C[+f.slice(5, 7) - 1]} ${f.slice(0, 4)}` : (f || '-');

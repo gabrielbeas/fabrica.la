@@ -13,7 +13,7 @@
         /* Solo lo propio de Pagos mensuales; lo demás viene de panel.css (sistema «Panel LFdC») */
         body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
         .main { max-width: 1500px; margin: 0 auto; padding: 30px 20px 60px; }
-        h1 { font-size: 24px; margin: 0 0 4px; }
+        h1 { font-size: 26px; margin: 0 0 4px; }
         .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 22px; }
         .cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
         .anio { display: inline-flex; align-items: center; gap: 4px; }
@@ -70,7 +70,7 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, setDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 

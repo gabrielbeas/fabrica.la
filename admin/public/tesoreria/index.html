@@ -27,9 +27,10 @@
         .cuentas .sub { padding-left: 22px; font-size: 13px; }
         .nw { white-space: nowrap; }
         .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 14px; font-size: 14px; cursor: pointer; }
-        .btn-sec:hover { background: var(--linea); }
+        .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
+        .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
+        .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+        .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         /* Cabecera */
         h1 { font-size: 26px; margin: 0 0 14px; font-weight: 900; }
         .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--linea); margin-bottom: 16px; }
@@ -45,7 +46,7 @@
         .cab-mov { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
         .cab-mov h3 { margin: 0; font-size: 17px; font-weight: 900; }
         .barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .barra input[type=search], .barra select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 6px; background: #fff; color: var(--tinta); }
+        .barra input[type=search], .barra select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: #fff; color: var(--tinta); }
         .barra input[type=search] { width: 190px; }
         .rapidos { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--tinta-suave); flex-wrap: wrap; }
         .chip { background: var(--fondo); border: 1px solid var(--borde-control); border-radius: 16px; padding: 5px 13px; font-size: 13px; color: var(--tinta-suave); cursor: pointer; }
@@ -125,7 +126,7 @@
         .cfg-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
         .cfg-cab h2 { margin: 0; font-size: 18px; font-weight: 900; }
         .tag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tag { background: var(--fondo-hundido); border: none; border-radius: 6px; padding: 6px 14px; font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: .02em; color: var(--tinta); cursor: pointer; }
+        .tag { background: var(--fondo-hundido); border: none; border-radius: var(--radio-sm); padding: 6px 14px; font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: .02em; color: var(--tinta); cursor: pointer; }
         .tag:hover { background: var(--accion-suave); color: var(--accion); }
         .tabla-cfg { table-layout: auto; }
         .tabla-cfg tr.fila-cfg { cursor: pointer; }
@@ -152,16 +153,16 @@
         .grp-fila td { background: var(--fondo-hundido); cursor: pointer; }
         .grp-cnt { color: var(--tinta-suave); font-size: 13px; margin-left: 10px; }
         .grp-ed { float: right; padding: 4px 12px; font-size: 12px; }
-        .sel-grupo { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--borde-control); border-radius: 6px; background: #fff; color: var(--tinta); max-width: 190px; }
+        .sel-grupo { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: #fff; color: var(--tinta); max-width: 190px; }
         .cfg-sub { display: flex; flex-direction: column; margin: 4px 0 0 14px; padding-left: 10px; border-left: 2px solid var(--linea); }
-        .cfg-sub button { background: none; border: none; text-align: left; padding: 8px 10px; font: inherit; font-size: 14px; color: var(--tinta-suave); cursor: pointer; border-radius: 6px; }
+        .cfg-sub button { background: none; border: none; text-align: left; padding: 8px 10px; font: inherit; font-size: 14px; color: var(--tinta-suave); cursor: pointer; border-radius: var(--radio-sm); }
         .cfg-sub button:hover { background: var(--fondo-hundido); color: var(--tinta); }
         .cfg-sub button.act { color: var(--accion); font-weight: 600; background: var(--accion-suave); }
         .cfg { max-width: 860px; margin: 0 auto; }
         .dash { max-width: 1000px; margin: 0 auto; }
         .grafica svg { display: block; width: 100%; max-width: 860px; height: auto; margin: 0 auto; }
         .dash { display: flex; flex-direction: column; gap: 16px; }
-        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
         .kpi { border: 1px solid var(--linea); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
         .kpi-t { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
         .kpi-v { font-size: 24px; font-weight: 700; }
@@ -169,7 +170,8 @@
         .kpi small.bien { color: var(--exito); }
         .kpi small.mal { color: var(--peligro); }
         .neg { color: var(--peligro); }
-        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        .dash-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+        .dash-grid > * { min-width: 0; }
         .dash-grid .ancho2 { grid-column: 1 / -1; }
         .dash-grid > [data-w] { cursor: default; }
         .dash-grid > .moviendo { opacity: .55; outline: 2px dashed var(--accion); outline-offset: 2px; cursor: grabbing; }
@@ -202,7 +204,7 @@
         .bar-p { text-align: right; color: var(--tinta-suave); }
         .leyenda { font-size: 12px; color: var(--tinta-suave); display: inline-flex; align-items: center; gap: 6px; }
         .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 8px; }
-        @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } .bar-fila, .dona-lista .bar-fila { grid-template-columns: minmax(0, 1fr) 60px 100px 38px; } }
+        @media (max-width: 900px) { .kpis { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .dash-grid { grid-template-columns: minmax(0, 1fr); } .bar-fila, .dona-lista .bar-fila { grid-template-columns: minmax(0, 1fr) 60px 100px 38px; } }
         /* Móvil: cuenta clonada de Simplifi */
         .m-cab { margin: -24px -28px 14px; padding: 18px 20px 20px; background: linear-gradient(180deg, var(--fondo) 0%, var(--accion-suave) 100%); }
         .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
@@ -246,7 +248,15 @@
         .m-mas-b { width: 100%; margin: 16px 0; padding: 13px; }
         @media (max-width: 700px) {
             .main { padding: 24px 16px 60px; }
-            .m-cab { margin: -24px -16px 14px; }
+            .m-cab { margin: -18px -14px 14px; }
+            .cab-h { flex-wrap: wrap; }
+            .cab-h .barra { width: 100%; }
+            .cab-h .barra select { flex: 1 1 140px; min-width: 0; }
+            .kpis { gap: 10px; }
+            .kpi { padding: 12px 14px; }
+            .kpi-v { font-size: 18px; }
+            .caja { padding: 14px; }
+            .tarjeta-cuenta { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
         }
         .tabla-cfg td.chk-c { width: 34px; text-align: center; }
         .tabla-cfg tr.fila-sel td { background: #eaf1f8; }
@@ -261,7 +271,7 @@
     <div class="main" id="app"><div style="color:var(--tinta-suave);padding:40px 0;text-align:center">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261111-1';
@@ -269,7 +279,7 @@
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        const dinero = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const dinero = n => (n <= -0.005 ? '-' : '') + '$' + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
         const HOY = '2026-11-04';
@@ -515,7 +525,7 @@
             try { anchosGuardados = JSON.parse(localStorage.getItem(CLAVE_ANCHOS) || '{}') || {}; } catch (e) { /* sin anchos guardados */ }
             const st = { anchos: anchosGuardados, cuenta: 'todas', tab: 'todos', rapido: '', q: '', fecha: 'todo', cat: '', col: 'fecha', dir: -1, cerrados: new Set(), sel: new Set(), vista: 'dashboard', cfgSec: 'cuentas', cfgOrd: {}, mesDash: '', cfgQ: { etq: '', cat: '', ben: '' }, cfgCerrados: new Set() };
 
-            const saldoDe = c => c.saldoInicial + MOVS.filter(m => m.cuenta === c.id && m.fecha <= HOY).reduce((s, m) => s + m.monto, 0);
+            const saldoDe = c => Math.round((c.saldoInicial + MOVS.filter(m => m.cuenta === c.id && m.fecha <= HOY).reduce((s, m) => s + m.monto, 0)) * 100) / 100;
             const saldoTotal = () => CUENTAS.reduce((s, c) => s + saldoDe(c), 0);
 
             function filtrados() {
