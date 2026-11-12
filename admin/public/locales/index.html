@@ -37,6 +37,11 @@
         /* Tabla */
         .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th.ord { cursor: pointer; user-select: none; }
+        th.ord:hover { color: var(--tinta); }
+        th.ord.act { color: var(--accion); }
+        th.ord .flecha { font-size: 9px; margin-left: 5px; opacity: .35; letter-spacing: -1px; }
+        th.ord.act .flecha { opacity: 1; }
         th { text-align: left; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 12px 14px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
         td { padding: 11px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
         tbody tr:last-child td { border-bottom: none; }
@@ -186,7 +191,7 @@
 
                 <div class="tabla-wrap">
                     <table class="tabla-movil">
-                        <thead><tr><th class="col-alerta"></th><th>Locales</th><th>Inquilino</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Incremento</th><th class="num">Renta mensual</th><th class="num">Con IVA</th></tr></thead>
+                        <thead><tr><th class="col-alerta"></th><th class="ord" data-col="locales">Locales<span class="flecha">▲▼</span></th><th class="ord" data-col="inquilino">Inquilino<span class="flecha">▲▼</span></th><th class="ord" data-col="estado">Estado<span class="flecha">▲▼</span></th><th class="ord" data-col="inicio">Inicio<span class="flecha">▲▼</span></th><th class="ord" data-col="fin">Fin<span class="flecha">▲▼</span></th><th class="ord" data-col="incremento">Incremento<span class="flecha">▲▼</span></th><th class="ord num" data-col="renta">Renta mensual<span class="flecha">▲▼</span></th><th class="ord num" data-col="iva">Con IVA<span class="flecha">▲▼</span></th></tr></thead>
                         <tbody id="cuerpo"></tbody>
                         <tfoot><tr><td></td><td colspan="6">Total</td>
                             <td class="num">${dinero(contratos.reduce((s, c) => s + (c.total || 0), 0))}</td>
@@ -206,12 +211,32 @@
             app.querySelectorAll('tr[data-ant]').forEach(tr => tr.addEventListener('click', () => { location.href = 'caratula.html?id=' + encodeURIComponent(tr.dataset.ant); }));
 
             const cuerpo = document.getElementById('cuerpo');
+            // Columnas ordenables (flechas en el encabezado); sin columna elegida, el orden por local (o por urgencia en «Con alertas»)
+            const COL = {
+                locales: c => parseInt(c.locales?.[0] || 999),
+                inquilino: c => (c.razonSocial || c.nombreComercial || '').toLowerCase(),
+                estado: c => c._e.txt.toLowerCase(),
+                inicio: c => c.inicio || '',
+                fin: c => c.fin || '',
+                incremento: c => c.incremento || '',
+                renta: c => c.total || 0,
+                iva: c => c.totalIva || 0
+            };
+            const orden = { col: null, dir: 1 };
+            let filtroAct = 'todos';
             function pintar(filtro) {
+                filtroAct = filtro;
                 let lista = contratos;
                 if (filtro === 'alertas') {
                     lista = contratos.filter(c => c._a.peor)
                         .sort((a, b) => PESO[a._a.peor] - PESO[b._a.peor] || (a._a.lista[0]?.dias ?? 999) - (b._a.lista[0]?.dias ?? 999));
                 }
+                if (orden.col) {
+                    const f = COL[orden.col];
+                    // Las fechas vacías quedan al final en cualquier dirección
+                    lista = [...lista].sort((a, b) => { const x = f(a), y = f(b); if (x === '' && y !== '') return 1; if (y === '' && x !== '') return -1; return (x < y ? -1 : x > y ? 1 : 0) * orden.dir; });
+                }
+                app.querySelectorAll('th.ord').forEach(t => { const act = t.dataset.col === orden.col; t.classList.toggle('act', act); t.querySelector('.flecha').textContent = act ? (orden.dir > 0 ? '▲' : '▼') : '▲▼'; t.title = 'Ordenar por ' + t.firstChild.textContent.toLowerCase(); });
                 cuerpo.innerHTML = lista.length ? lista.map(c => `
                     <tr data-id="${esc(c.id)}">
                         <td class="col-alerta">${punto(c._a)}</td>
@@ -232,6 +257,11 @@
             app.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
                 app.querySelectorAll('.chip').forEach(x => x.classList.toggle('activa', x === ch));
                 pintar(ch.dataset.f);
+            }));
+            app.querySelectorAll('th.ord').forEach(t => t.addEventListener('click', () => {
+                const col = t.dataset.col;
+                if (orden.col === col) orden.dir = -orden.dir; else { orden.col = col; orden.dir = 1; }
+                pintar(filtroAct);
             }));
             pintar('todos');
             await cargarGBD();

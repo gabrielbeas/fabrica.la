@@ -276,6 +276,7 @@
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, getDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { cuentaDeposito } from '../../../js/depositos.js?v=20261112-1';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -324,7 +325,9 @@
             return `<tr class="fila-total"><td colspan="9">${mixto ? 'Neto del filtro' : 'Total del filtro'} · ${lista.length} movimiento${lista.length === 1 ? '' : 's'}${mixto ? ' · Ingresos <b class="num ingreso">+' + dinero(ing) + '</b> · Gastos <b class="num">' + dinero(gas) + '</b>' : ''}</td><td class="der num ${neto > 0 ? 'ingreso' : ''}">${neto > 0 ? '+' : ''}${dinero(neto)}</td><td></td></tr>`;
         };
         const fidNuevo = () => 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        const serMov = m => ({ cuenta: m.cuenta, fecha: m.fecha, beneficiario: m.beneficiario || '', categoria: m.categoria || '', monto: m.monto, etiquetas: m.etiquetas || [], nota: m.nota || '', revisado: !!m.revisado, bandera: !!m.bandera, estado: m.estado || 'conciliado', excluido: !!m.excluido, adjuntos: m.adjuntos || [], transferId: m.transferId || '', orden: m.orden });
+        const serMov = m => ({ cuenta: m.cuenta, fecha: m.fecha, beneficiario: m.beneficiario || '', categoria: m.categoria || '', monto: m.monto, etiquetas: m.etiquetas || [], nota: m.nota || '', revisado: !!m.revisado, bandera: !!m.bandera, estado: m.estado || 'conciliado', excluido: !!m.excluido, adjuntos: m.adjuntos || [], transferId: m.transferId || '', depositoContrato: m.depositoContrato || '', depositoPagoId: m.depositoPagoId || '', orden: m.orden });
+        // Ingreso que parece un depósito en garantía y todavía no se aplica a un contrato (filtro «Depósitos por aplicar»)
+        const esDepPend = m => m.monto > 0 && !m.excluido && !m.depositoContrato && /dep[oó]sito/i.test([m.nota, m.beneficiario, m.categoria].join(' '));
         const serCuenta = c => ({ nombre: c.nombre, saldoInicial: Number(c.saldoInicial) || 0, orden: c.orden ?? 0 });
         const snap = { movs: new Map(), cuentas: new Map(), cat: '' };
         let sincTimer = null, sincEnCurso = false, onEstado = () => {};
@@ -538,6 +541,7 @@
                     && (st.rapido !== 'sincat' || !m.categoria)
                     && (st.rapido !== 'sinrev' || !m.revisado)
                     && (st.rapido !== 'bandera' || m.bandera)
+                    && (st.rapido !== 'depos' || esDepPend(m))
                     && (st.fecha === 'todo' || (st.fecha === 'mes' && m.fecha.startsWith(mes)) || (st.fecha === 'pasado' && m.fecha.startsWith(mesPasado)) || (st.fecha === '90' && m.fecha >= hace90.toISOString().slice(0, 10)))
                     && (!st.cat || m.categoria === st.cat || (m.categoria || '').startsWith(st.cat + ':'))
                     && (!q || [m.beneficiario, m.categoria, m.nota, m.etiquetas.join(' ')].join(' ').toLowerCase().includes(q)));
@@ -577,7 +581,7 @@
                         <div class="seg">${[['todos', 'Todos'], ['gastos', 'Gastos'], ['ingresos', 'Ingresos']].map(([k, t]) => `<button class="${st.tab === k ? 'act' : ''}" data-mt="${k}">${t}</button>`).join('')}</div>
                         <select id="mFecha" aria-label="Fecha">${[['todo', 'Fecha: todas'], ['mes', 'Este mes'], ['pasado', 'Mes pasado'], ['90', 'Últimos 90 días']].map(([k, t]) => `<option value="${k}" ${st.fecha === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
                         <select id="mCat" aria-label="Categoría"><option value="">Categoría: todas</option>${categorias.map(c => `<option ${st.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
-                        <div class="m-rap">${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-mr="${k}">${t}</button>`).join('')}</div>
+                        <div class="m-rap">${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera'], ['depos', 'Depósitos por aplicar']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-mr="${k}">${t}</button>`).join('')}</div>
                     </div>
                     <div class="m-cuenta">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${totalesLista(lista)}</div>
                     <div class="m-lista">${vis.map(m => `<div class="m-mov" data-id="${m.id}">
@@ -688,7 +692,7 @@
                                     </div>
                                 </div>
                                 <div class="rapidos">Filtros rápidos
-                                    ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
+                                    ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera'], ['depos', 'Depósitos por aplicar']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
                                     ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}${st.sel.size ? `<button class="chip" id="bTransf" style="margin-left:8px" title="Los deja fuera de reportes y del dashboard, sin cambiar el saldo de la cuenta">Marcar como transferencia</button><button class="chip" id="bQuitaTransf" title="Vuelve a contarlos en reportes y en el dashboard">Quitar de transferencia</button>` : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
@@ -952,7 +956,7 @@
                 // En subcategorías el renglón muestra el nombre de la subcategoría y debajo, en gris, su categoría
                 const etqSub = n => { const i = n.lastIndexOf(':'); return i < 0 ? esc(n) : `${esc(n.slice(i + 1))}<small class="sub-padre">${esc(n.slice(0, i).replace(/:/g, ' › '))}</small>`; };
                 // Pendientes
-                const sinCat = validos.filter(m => !m.categoria).length, sinRev = validos.filter(m => !m.revisado).length, conBand = MOVS.filter(m => enCta(m) && m.bandera).length;
+                const sinCat = validos.filter(m => !m.categoria).length, sinRev = validos.filter(m => !m.revisado).length, conBand = MOVS.filter(m => enCta(m) && m.bandera).length; const depPend = MOVS.filter(m => enCta(m) && esDepPend(m)).length;
                 app.innerHTML = `
                     <div class="layout">${asideHtml()}<section><div class="dash">
                         <div class="cab-h"><h1>Tesorería</h1><div class="barra">
@@ -974,6 +978,7 @@
                                 <div class="lin-top pend" data-rapido="sincat"><span>Sin categoría</span><span class="num ${sinCat ? 'sin' : ''}">${sinCat}</span></div>
                                 <div class="lin-top pend" data-rapido="sinrev"><span>Sin revisar</span><span class="num">${sinRev}</span></div>
                                 <div class="lin-top pend" data-rapido="bandera"><span>Con bandera</span><span class="num">${conBand}</span></div>
+                                ${depPend ? `<div class="lin-top pend" data-rapido="depos"><span>Depósitos por aplicar</span><span class="num sin">${depPend}</span></div>` : ""}
                             </div>
                         <div class="caja grafica ancho2" data-w="barras"><div class="cab-mov"><h3>${todo ? 'Ingresos y gastos por mes, todo el histórico' : anio ? 'Ingresos y gastos por mes, ' + st.mesDash : 'Ingresos y gastos, últimos 12 meses'}</h3>
                             <span class="leyenda"><i style="background:var(--exito)"></i>Ingresos <i style="background:var(--accion)"></i>Gastos</span></div>
@@ -1489,6 +1494,7 @@
                                 <div class="mod-campo" style="margin-top:10px"><label for="mAdj">Adjuntos</label><input type="file" id="mAdj" multiple><div id="mAdjLista" class="mod-ayuda"></div></div>
                             </div>
                         </div>
+                        <div id="mDep"></div>
                         <div class="mod-error" id="mError"></div>
                     </div>
                     <div class="mod-pie">${edita ? '<button class="btn-sec" id="mEliminar" style="margin-right:auto;color:var(--peligro)">Eliminar</button>' : ''}<button class="btn-sec" id="mCancelar">Cancelar</button><button class="btn" id="mGuardar">${edita ? 'Guardar' : 'Crear'}</button></div>
@@ -1580,6 +1586,116 @@
                     cierra(); if (st.cuenta !== 'todas') st.cuenta = datos.cuenta; pintar();
                     const a = document.getElementById('aviso'); a.textContent = (edita ? 'Movimiento actualizado' : 'Movimiento creado') + ' (guardado en Firestore).'; a.style.display = 'block';
                 });
+
+                // ---------- Aplicar un ingreso al depósito en garantía de un contrato ----------
+                {
+                    const caja = $m('mDep');
+                    if (!edita || !(m.monto > 0) || !m.fid) caja.remove();
+                    else {
+                        const estilo = 'margin-top:16px;padding:12px 14px;border:1px solid var(--linea);border-radius:8px;background:var(--fondo-hundido);font-size:13px';
+                        const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const nombreCto = c => 'Local ' + (c.locales || []).join(', ') + ' · ' + (c.razonSocial || c.nombreComercial || c.id);
+                        const aplicado = async () => {
+                            let c = null;
+                            try { const sn = await getDoc(doc(db, 'contratos', m.depositoContrato)); c = sn.exists() ? { id: sn.id, ...sn.data() } : null; } catch (err) { /* se muestra sin nombre */ }
+                            caja.innerHTML = '<div style="' + estilo + '"><b>Depósito en garantía</b><div style="margin-top:4px">Aplicado al depósito de ' + esc(c ? nombreCto(c) : m.depositoContrato) + '. <a href="' + basePath() + 'depositos/ficha.html?id=' + encodeURIComponent(m.depositoContrato) + '" target="_blank" rel="noopener">Ver ficha del depósito</a></div></div>';
+                        };
+                        const inicio = () => {
+                            if (m.depositoContrato) { aplicado(); return; }
+                            caja.innerHTML = '<div style="' + estilo + '"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="button" class="btn-sec" id="mDepBtn">Aplicar a depósito de un contrato</button><span class="mod-ayuda">Registra este ingreso como pago en el depósito en garantía del contrato (Depósitos).</span></div></div>';
+                            caja.querySelector('#mDepBtn').addEventListener('click', formulario);
+                        };
+                        const formulario = async () => {
+                            caja.innerHTML = '<div style="' + estilo + '">Cargando contratos…</div>';
+                            let lista;
+                            try {
+                                const sn = await getDocs(collection(db, 'contratos'));
+                                lista = sn.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && !c.propio)
+                                    .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999));
+                            } catch (err) { caja.innerHTML = '<div style="' + estilo + ';color:var(--peligro)">No se pudieron leer los contratos: ' + esc(err.message) + '</div>'; return; }
+                            // Sugerencia: el local que menciona el texto («LOCAL 1 DEPOSITO») o el nombre del contrato
+                            const texto = [m.nota, m.beneficiario].join(' ');
+                            const loc = /locales?\s*(\d+)/i.exec(texto);
+                            const palabras = norm(m.beneficiario).split(/\W+/).filter(w => w.length > 3);
+                            let sug = loc ? lista.find(c => (c.locales || []).map(String).includes(loc[1])) : null;
+                            if (!sug && palabras.length) sug = lista.find(c => { const n = norm((c.razonSocial || '') + ' ' + (c.nombreComercial || '')); return palabras.filter(w => n.includes(w)).length >= Math.min(2, palabras.length); });
+                            const banco = (CUENTAS.find(c => c.id === m.cuenta) || {}).nombre || '';
+                            caja.innerHTML = '<div style="' + estilo + '"><b>Aplicar a depósito en garantía</b>'
+                                + '<div class="mod-grid" style="margin-top:10px">'
+                                + '<div class="mod-campo ancho"><label for="dCto">Contrato</label><select id="dCto"><option value="">Elige un contrato…</option>' + lista.map(c => { const k = cuentaDeposito(c); return '<option value="' + esc(c.id) + '" ' + (sug && sug.id === c.id ? 'selected' : '') + '>' + esc(nombreCto(c)) + ' · por pagar ' + dinero(Math.max(0, k.saldo)) + '</option>'; }).join('') + '</select></div>'
+                                + '<div class="mod-campo"><label for="dTipo">Tipo de pago</label><select id="dTipo"><option value="directo">Directo (suma)</option><option value="asignado">Asignado (suma)</option><option value="compartido">Compartido (no suma)</option></select></div>'
+                                + '<div class="mod-campo"><label for="dPago">Quién pagó</label><input id="dPago" value="' + esc(m.beneficiario) + '"></div>'
+                                + '<div class="mod-campo"><label for="dBanco">Banco</label><input id="dBanco" value="' + esc(banco) + '"></div>'
+                                + '<div class="mod-campo"><label for="dNota">Nota</label><input id="dNota" value="' + esc(m.nota) + '"></div>'
+                                + '</div><div id="dVista" style="margin-top:8px"></div>'
+                                + '<div id="dError" class="mod-error"></div>'
+                                + '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px"><button type="button" class="btn-sec" id="dCancelar">Cancelar</button><button type="button" class="btn-sec" id="dEnlazar" style="display:none">Ya está registrado: enlazar</button><button type="button" class="btn" id="dAplicar">Aplicar al depósito</button></div></div>';
+                            const $d = id => caja.querySelector('#' + id);
+                            // Pago ya capturado a mano con el mismo monto y sin enlace a Tesorería
+                            const posibleDup = c => (c.historialDepositos || []).find(p => !p.tesoreriaId && Math.round((Number(p.monto) || 0) * 100) === Math.round(m.monto * 100));
+                            const vista = () => {
+                                const c = lista.find(x => x.id === $d('dCto').value), v = $d('dVista');
+                                if (!c) { v.textContent = ''; $d('dEnlazar').style.display = 'none'; return; }
+                                const dup = posibleDup(c);
+                                $d('dEnlazar').style.display = dup ? '' : 'none';
+                                const k = cuentaDeposito(c), suma = $d('dTipo').value !== 'compartido', nuevo = Math.round((k.saldo - (suma ? m.monto : 0)) * 100) / 100;
+                                const exceso = nuevo < -0.005 ? ' <b style="color:var(--atencion)">Este pago deja el depósito pagado de más por ' + dinero(-nuevo) + '.</b>' : '';
+                                v.innerHTML = 'Requerido ' + dinero(k.requerido) + ' · pagado ' + dinero(k.pagado) + ' · por pagar ' + dinero(Math.max(0, k.saldo)) + (suma ? ' → después de este pago: ' + (nuevo > 0.005 ? 'por pagar ' + dinero(nuevo) : 'liquidado') + '.' : ' (compartido: no cambia el saldo).') + exceso
+                                    + (dup ? '<div style="margin-top:6px;color:var(--atencion)"><b>Ojo:</b> este contrato ya tiene un pago de ' + dinero(dup.monto) + ' del ' + esc(dup.fecha || '') + '. Si es este mismo depósito, usa «Ya está registrado: enlazar» para no sumarlo dos veces.</div>' : '');
+                            };
+                            ['dCto', 'dTipo'].forEach(i => $d(i).addEventListener('change', vista)); vista();
+                            $d('dCancelar').addEventListener('click', inicio);
+                            $d('dEnlazar').addEventListener('click', async () => {
+                                const err = t => { $d('dError').textContent = t; };
+                                err('');
+                                const id = $d('dCto').value; if (!id) return err('Elige el contrato.');
+                                const btn = $d('dEnlazar'); btn.disabled = true;
+                                try {
+                                    const ref = doc(db, 'contratos', id), sn = await getDoc(ref);
+                                    if (!sn.exists()) throw new Error('El contrato ya no existe.');
+                                    const c = { id, ...sn.data() }, hist = [...(c.historialDepositos || [])];
+                                    const i = hist.findIndex(p => !p.tesoreriaId && Math.round((Number(p.monto) || 0) * 100) === Math.round(m.monto * 100));
+                                    if (i < 0) throw new Error('No encontré un pago por ese monto sin enlazar en el contrato.');
+                                    const antes = hist[i].fecha + ' ' + dinero(hist[i].monto);
+                                    hist[i] = { ...hist[i], tesoreriaId: m.fid };
+                                    const por = usuario(), lote = writeBatch(db);
+                                    lote.update(ref, { historialDepositos: hist, actualizadoPor: por, actualizadoEn: serverTimestamp() });
+                                    lote.set(doc(collection(db, 'contratos', id, 'historial')), { antes: { pagoDeposito: antes }, despues: { pagoDeposito: antes + ' (enlazado con un movimiento de Tesorería, sin cambiar el monto)' }, por, en: serverTimestamp() });
+                                    await lote.commit();
+                                    mov.depositoContrato = id; mov.depositoPagoId = m.fid;
+                                    pintar();
+                                    aplicado();
+                                } catch (e2) { console.error(e2); err('No se pudo enlazar: ' + (e2.message || e2)); btn.disabled = false; }
+                            });
+                            $d('dAplicar').addEventListener('click', async () => {
+                                const err = t => { $d('dError').textContent = t; };
+                                err('');
+                                const id = $d('dCto').value;
+                                if (!id) return err('Elige el contrato.');
+                                const cSel = lista.find(x => x.id === id), dupSel = cSel && posibleDup(cSel);
+                                if (dupSel && !confirm('Este contrato ya tiene un pago de ' + dinero(dupSel.monto) + ' del ' + (dupSel.fecha || '') + '. Si es el mismo depósito, cancela y usa «Ya está registrado: enlazar». ¿Aplicarlo como un pago nuevo de todos modos?')) return;
+                                const btn = $d('dAplicar'); btn.disabled = true;
+                                try {
+                                    const ref = doc(db, 'contratos', id), sn = await getDoc(ref);   // se lee de nuevo para no pisar un pago registrado mientras tanto
+                                    if (!sn.exists()) throw new Error('El contrato ya no existe.');
+                                    const c = { id, ...sn.data() };
+                                    if ((c.historialDepositos || []).some(p => p.tesoreriaId === m.fid)) throw new Error('Este movimiento ya está registrado en ese contrato.');
+                                    const pago = { fecha: m.fecha, monto: Math.round(m.monto * 100) / 100, tipo: $d('dTipo').value, banco: $d('dBanco').value.trim(), pago: $d('dPago').value.trim(), nota: $d('dNota').value.trim(), locales: (c.locales || []).join(', '), tesoreriaId: m.fid };
+                                    const historial = [...(c.historialDepositos || []), pago];
+                                    const porPagar = cuentaDeposito({ ...c, historialDepositos: historial }).saldo;
+                                    const por = usuario(), lote = writeBatch(db);
+                                    lote.update(ref, { historialDepositos: historial, porPagar, actualizadoPor: por, actualizadoEn: serverTimestamp() });
+                                    lote.set(doc(collection(db, 'contratos', id, 'historial')), { antes: { pagoDeposito: null }, despues: { pagoDeposito: pago.fecha + ' ' + dinero(pago.monto) + ' ' + pago.tipo + ' (desde Tesorería)' }, por, en: serverTimestamp() });
+                                    await lote.commit();
+                                    mov.depositoContrato = id; mov.depositoPagoId = m.fid;   // el movimiento queda enlazado y se guarda con el resto
+                                    pintar();
+                                    aplicado();
+                                } catch (e2) { console.error(e2); err('No se pudo aplicar: ' + (e2.message || e2)); btn.disabled = false; }
+                            });
+                        };
+                        inicio();
+                    }
+                }
                 setTimeout(() => $m('mBen').focus(), 0);
             }
 

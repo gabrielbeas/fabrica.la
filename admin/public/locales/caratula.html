@@ -192,6 +192,22 @@
                 <div><div class="vig-titulo" style="color:${color}">${titulo}</div><div class="vig-det">${detalle}</div></div>
             </div>`;
         }
+        // Estado del depósito en garantía: verde si está cubierto, rojo si falta (misma cuenta que Depósitos)
+        function alertaDeposito(c) {
+            if (c.propio) return '';
+            const k = cuentaDeposito(c);
+            if (!(k.requerido > 0.005)) return '';
+            const ok = k.saldo <= 0.005;
+            const color = ok ? '#3d8a5a' : COLOR_NIVEL.vencido;
+            const titulo = ok ? 'Depósito completo' : 'Falta depósito';
+            const detalle = ok
+                ? `Pagado ${dinero(k.pagado)} de ${dinero(k.requerido)}${k.saldo < -0.005 ? ` (de más por ${dinero(-k.saldo)})` : ''}`
+                : `Faltan ${dinero(k.saldo)} · pagado ${dinero(k.pagado)} de ${dinero(k.requerido)}`;
+            return `<div class="vig-cajas"><div class="vig-alerta" style="border-color:${color}">
+                <span class="vig-punto" style="background:${color}"></span>
+                <div><div class="vig-titulo" style="color:${color}">${titulo}</div><div class="vig-det">${detalle}</div></div>
+            </div></div>`;
+        }
         function alertaVigencia(c) {
             const cajas = [
                 cajaFecha(c.fin, { escala: true, ok: 'Vigente', para: 'para el vencimiento', verbo: 'Vence', pasado: 'Contrato vencido', hace: 'Venció', etiqueta: 'Fin del contrato' }),
@@ -298,6 +314,8 @@
                         </div>
                         <div class="seccion">
                             <h2>Depósito</h2>
+                            <div class="vig-wrap">
+                            ${alertaDeposito(c)}
                             <dl>
                                 ${fila('Meses de depósito', c.mesesDeposito)}
                                 ${fila('Base del depósito', BASES_DEPOSITO[cuentaDeposito(c).baseClave] + ' · ' + dinero(cuentaDeposito(c).base))}
@@ -308,6 +326,7 @@
                                 ${fila('Meses de gracia', c.mesesGracia)}
                                 ${fila('Por pagar', dinero(cuentaDeposito(c).saldo) + (c.porPagarNota ? ` · ${esc(c.porPagarNota)}` : ''))}
                             </dl>
+                            </div>
                             ${Array.isArray(c.historialDepositos) ? `<button class="btn-sec btn-mini no-print" id="btnDepositos">Ver historial de pagos de depósito</button>` : ''}
                             ${!c.propio ? `<button class="btn-sec btn-mini no-print" id="btnRequerimiento" title="Hoja de requerimiento de pago del saldo del depósito en garantía">Requerimiento de cobro (PDF)</button>` : ''}
                         </div>
