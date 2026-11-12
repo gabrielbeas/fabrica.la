@@ -1,6 +1,6 @@
 // Orden de compra a un proveedor: cuentas, hoja para imprimir (PDF vía impresión) y correo desde admin@fabrica.la.
 // El catálogo (productos_compra), los proveedores y las órdenes (ordenes_compra) viven en Firestore; aquí solo está la lógica común.
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261013-1';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261111-2';
 import { abrirCorreo, CORREO_REMITENTE } from './correos-contrato.js?v=20261014-6';
 
 export const IVA_COMPRAS = 0.16;

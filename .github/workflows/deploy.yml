@@ -64,7 +64,9 @@ jobs:
           cp admin/public/compras/index.html dist/admin/compras/
           cp -r admin/public/css dist/admin/css
           cp admin/public/agua/lecturas.html admin/public/agua/siapa.html dist/admin/agua/
-          cp admin/public/locales/index.html admin/public/locales/caratula.html admin/public/locales/propuesta.html dist/admin/locales/
+          cp admin/public/locales/index.html admin/public/locales/caratula.html admin/public/locales/propuesta.html admin/public/locales/contrato-nuevo.html dist/admin/locales/
+          mkdir -p dist/admin/nuevos-inquilinos
+          cp admin/public/nuevos-inquilinos/index.html admin/public/nuevos-inquilinos/ficha.html dist/admin/nuevos-inquilinos/
           # Verificación: nada privado debe quedar publicado
           if find dist -name 'data.json' -o -path '*_privado*' -o -name '*.gs' -o -path '*herramientas*' | grep -q .; then
             echo "ERROR: archivos privados en dist"; exit 1

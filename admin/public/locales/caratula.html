@@ -120,15 +120,15 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261013-1';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261111-2';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261104-1';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261014-10';
-        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261027-2';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261111-1';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261111-1';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS } from '../../../js/alertas-contrato.js?v=20261104-1';
 
         const app = document.getElementById('app');
@@ -222,7 +222,8 @@
 
         function vista(c) {
             contratoActual = c;
-            const estado = c.estado === 'terminacion_anticipada' ? ['e-termina', 'Terminación anticipada']
+            const estado = c.estado === 'terminado' ? ['e-termina', 'Terminado']
+                : c.estado === 'terminacion_anticipada' ? ['e-termina', 'Terminación anticipada']
                 : (c.fin && c.fin < hoyISO()) ? ['e-vencido', 'Vencido'] : ['e-vigente', 'Vigente'];
             document.title = `Carátula · ${c.razonSocial}`;
 
@@ -236,12 +237,14 @@
                     <a href="./">← Locales</a>
                     <div style="display:flex;gap:10px">
                         <button class="btn-sec" id="btnEditar">Editar</button>
+                        ${!c.propio && c.estado !== 'terminado' ? `<a class="btn-sec" style="text-decoration:none;display:inline-flex;align-items:center" href="propuesta.html?id=${encodeURIComponent(contratoId)}" title="Propuesta de arrendamiento de este local: para renovar o para un inquilino nuevo">Propuesta</a><a class="btn-sec" style="text-decoration:none;display:inline-flex;align-items:center" href="../nuevos-inquilinos/?local=${encodeURIComponent(contratoId)}" title="Abrir un proceso de cambio de inquilino o renovación para este local">Nuevo inquilino</a><button class="btn-sec" id="btnLiquidar" title="Cerrar este contrato: fecha de salida, depósito y saldos">Liquidar contrato</button>` : ''}
                         <button class="btn-sec" id="btnReporte" title="Reporte completo del contrato: renta, pagos, depósito, facturas, agua, historial">EXPORTAR REPORTE</button>
                         <button class="btn" onclick="window.print()">Imprimir / PDF</button>
                     </div>
                 </div>
                 <div id="aviso"></div>
-                ${cajaAlertas(c)}
+                ${c.estado === 'terminado' ? `<div class="aviso-term" style="background:var(--fondo-hundido);border:1px solid var(--linea);border-left:4px solid var(--ambar);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px">Contrato terminado${c.terminadoEn ? ` el <b>${fechaTxt(c.terminadoEn)}</b>` : ''}.${c.reemplazadoPor ? ` Lo reemplaza <a href="caratula.html?id=${encodeURIComponent(c.reemplazadoPor)}">${esc(c.reemplazadoPor)}</a>.` : ''}${c.liquidacion?.nota ? `<br>Liquidación: ${esc(c.liquidacion.nota)}` : ''}</div>`
+                    : `${c.reemplazaA ? `<div style="font-size:13px;color:var(--tinta-suave);margin-bottom:12px">Reemplaza al contrato <a href="caratula.html?id=${encodeURIComponent(c.reemplazaA)}">${esc(c.reemplazaA)}</a>.</div>` : ''}${cajaAlertas(c)}`}
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
@@ -379,6 +382,7 @@
             document.getElementById('btnRequerimiento')?.addEventListener('click', e => requerimientoDeposito({ ...c, id: contratoId }, e.currentTarget));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
             document.getElementById('btnIncremento')?.addEventListener('click', () => ventanaIncremento(c));
+            document.getElementById('btnLiquidar')?.addEventListener('click', () => ventanaLiquidar(c));
             if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
         }
 
@@ -589,6 +593,53 @@
                 <td class="num">${dinero(total)}</td></tr>`;
         }
 
+        // Liquidar contrato: cierra el contrato (queda como «Terminado») con fecha de salida, estado del depósito y nota.
+        // No borra nada: facturas, pagos y depósito siguen en el contrato. Deja entrada en historial.
+        async function ventanaLiquidar(c) {
+            const d = cuentaDeposito(c);
+            let facturas = [];
+            try { facturas = (await getDocs(query(collection(db, 'facturas'), where('contratoId', '==', contratoId)))).docs.map(x => ({ id: x.id, ...x.data() })); } catch (e) { console.warn('No se pudieron leer las facturas', e); }
+            const sinPagar = facturas.filter(f => !esPagada(f));
+            const saldoFact = sinPagar.reduce((s, f) => s + (Number(f.total) || 0), 0);
+            abrirVentana(`
+                <div class="modal-cab">
+                    <div><div class="emp">${esc(c.razonSocial)}</div><h3>Liquidar contrato</h3></div>
+                    <button class="btn-sec" data-cerrar>Cerrar</button>
+                </div>
+                <div class="resumen-dep">
+                    <div><span>Depósito pagado</span><strong>${dinero(d.pagado)}</strong></div>
+                    <div><span>Depósito requerido</span><strong>${dinero(d.requerido)}</strong></div>
+                    <div><span>Facturas sin pagar</span><strong>${dinero(saldoFact)}</strong></div>
+                </div>
+                ${sinPagar.length ? `<p class="nota-dep">Facturas sin pagar: ${sinPagar.map(f => esc(mesTxt(f.mes))).join(', ')}.</p>` : '<p class="nota-dep">No hay facturas sin pagar.</p>'}
+                <div class="inc-form" style="margin-top:16px">
+                    <div><label for="liqFecha">Fecha de salida del inquilino</label><input id="liqFecha" type="date" value="${hoyISO()}"></div>
+                    <div><label for="liqDep">Qué pasa con el depósito</label><select id="liqDep" style="width:100%;padding:8px 10px;border:1px solid var(--borde-control);border-radius:6px;font:inherit;font-size:14px"><option value="pendiente">Pendiente de decidir</option><option value="devuelto">Se devuelve completo</option><option value="aplicado">Se aplica a adeudos</option><option value="parcial">Se devuelve una parte</option><option value="retenido">Se retiene</option></select></div>
+                    <div class="ancho"><label for="liqNota">Nota de la liquidación (monto devuelto, adeudos, estado del local)</label><textarea id="liqNota" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--borde-control);border-radius:6px;font:inherit;font-size:14px;box-sizing:border-box"></textarea></div>
+                </div>
+                <p class="nota-dep">El contrato queda como «Terminado»: sale de Inicio, Depósitos, Facturación (de la fecha de salida en adelante), Alertas y demás listas, pero su carátula, facturas, pagos e historial se conservan. No se borra nada.</p>
+                <div class="inc-pie"><span class="err" id="liqMsg"></span><button class="btn-sec" data-cerrar>Cancelar</button><button class="btn" id="liqOk">Liquidar contrato</button></div>`, 'Liquidar contrato');
+            document.getElementById('liqOk').addEventListener('click', async () => {
+                const fecha = document.getElementById('liqFecha').value, msg = document.getElementById('liqMsg');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { msg.textContent = 'Elige la fecha de salida.'; return; }
+                if (!confirm(`Se liquida el contrato de ${c.razonSocial} con salida el ${fechaTxt(fecha)}. ¿Continuar?`)) return;
+                const user = getCurrentUser();
+                const liquidacion = { fecha, deposito: document.getElementById('liqDep').value, nota: document.getElementById('liqNota').value.trim(), depositoPagado: d.pagado, facturasSinPagar: r2(saldoFact), por: user.email };
+                try {
+                    const batch = writeBatch(db);
+                    batch.update(doc(db, 'contratos', contratoId), { estado: 'terminado', terminadoEn: fecha, liquidacion, editadoPor: user.email, editadoEn: serverTimestamp() });
+                    batch.set(doc(collection(db, 'contratos', contratoId, 'historial')), {
+                        antes: { estado: c.estado ?? null }, despues: { estado: 'terminado', terminadoEn: fecha, liquidacion },
+                        por: user.email, en: serverTimestamp(), nota: 'Liquidación del contrato'
+                    });
+                    await batch.commit();
+                    document.querySelector('.modal-fondo')?.remove();
+                    const sn = await getDoc(doc(db, 'contratos', contratoId));
+                    vista(sn.data());
+                } catch (err) { console.error(err); msg.textContent = 'No se pudo liquidar: ' + err.message; }
+            });
+        }
+
         // Abre una ventana (modal) con el HTML dado; se cierra con el botón, Esc o clic fuera.
         function abrirVentana(html, etiqueta) {
             const fondo = document.createElement('div');
@@ -766,8 +817,9 @@
             const val = esc(valorInput(c, campo));
             const id = 'f_' + k.replace('.', '_');
             if (tipo === 'estado') return `<select id="${id}">
-                <option value="vigente" ${c.estado !== 'terminacion_anticipada' ? 'selected' : ''}>Vigente (vencido si ya pasó la fecha de fin)</option>
-                <option value="terminacion_anticipada" ${c.estado === 'terminacion_anticipada' ? 'selected' : ''}>Terminación anticipada</option></select>`;
+                <option value="vigente" ${c.estado !== 'terminacion_anticipada' && c.estado !== 'terminado' ? 'selected' : ''}>Vigente (vencido si ya pasó la fecha de fin)</option>
+                <option value="terminacion_anticipada" ${c.estado === 'terminacion_anticipada' ? 'selected' : ''}>Terminación anticipada</option>
+                <option value="terminado" ${c.estado === 'terminado' ? 'selected' : ''}>Terminado (liquidado)</option></select>`;
             if (tipo === 'lineas' || tipo === 'textarea') return `<textarea id="${id}" rows="${tipo === 'textarea' ? 4 : 3}">${val}</textarea>`;
             const t = tipo === 'fecha' ? 'date' : (tipo === 'numero' || tipo === 'porcentaje') ? 'number' : 'text';
             return `<input id="${id}" type="${t}" ${tipo === 'dinero' ? 'data-dinero' : ''} ${t === 'number' ? 'step="any"' : ''} value="${val}">`;

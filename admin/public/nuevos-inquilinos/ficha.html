@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Proceso de nuevo inquilino - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261104-1">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
+        .main { max-width: 900px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
+        .volver { font-size: 13px; color: var(--accion); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-sec:hover { background: var(--linea); }
+        .resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        @media (max-width: 700px) { .resumen { grid-template-columns: 1fr; } }
+        .caja { border: 1px solid var(--linea); border-radius: 10px; padding: 14px 18px; background: #fff; font-size: 14px; line-height: 1.7; }
+        .caja .et { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--tinta-suave); }
+        .paso { border: 1px solid var(--linea); border-left: 4px solid var(--linea); border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: start; background: #fff; }
+        .paso.hecho { border-left-color: var(--exito); } .paso.actual { border-left-color: var(--accion); background: var(--accion-suave); }
+        .num { width: 30px; height: 30px; border-radius: 50%; background: var(--fondo-hundido); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+        .hecho .num { background: var(--exito); color: #fff; } .actual .num { background: var(--accion); color: #fff; }
+        .paso h2 { font-size: 15px; margin: 0 0 4px; } .paso p { margin: 0; font-size: 13px; color: var(--tinta-suave); }
+        .paso .acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .fecha { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 13px; }
+        input[type=date] { padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
+        .err { color: var(--peligro); } .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
+        .badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; background: var(--accion-suave); color: var(--accion); vertical-align: middle; margin-left: 8px; }
+        .badge.activado { background: var(--exito-suave); color: var(--exito); } .badge.descartado { background: var(--fondo-hundido); color: var(--tinta-suave); }
+        .pie { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .docs { margin-top: 28px; } .docs h2 { font-size: 18px; margin: 0 0 4px; } .docs h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 20px 0 8px; }
+        .doc { display: grid; grid-template-columns: 1fr 150px 230px; gap: 12px; align-items: center; padding: 9px 12px; border: 1px solid var(--linea); border-radius: 8px; margin-bottom: 6px; background: #fff; }
+        .doc.ok { background: var(--exito-suave); border-color: transparent; }
+        .doc .chk { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; } .doc .chk input { margin-top: 3px; }
+        .doc small { color: var(--tinta-suave); font-size: 12px; } .doc .dfecha { font-size: 12px; color: var(--exito); }
+        .doc input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; font-size: 13px; background: #fff; }
+        @media (max-width: 760px) { .doc { grid-template-columns: 1fr; } }
+        #hoja { display: none; }
+        @media print {
+            @page { size: letter portrait; margin: 14mm 16mm 12mm; }
+            body > .main, #navbar-root, nav { display: none !important; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #hoja { display: block; color: #1b2430; font: 11px/1.45 Roboto, Arial, sans-serif; }
+            #hoja .enc { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
+            #hoja .enc img { height: 44px; }
+            #hoja .tit { text-align: right; } #hoja .tit h1 { font-size: 19px; margin: 0; font-weight: 900; line-height: 1.15; } #hoja .tit div { font-size: 11px; color: #5f6670; margin-top: 2px; }
+            #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #d5dbe3; }
+            #hoja .ficha .et { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: #5f6670; } #hoja .ficha .v { font-size: 12px; font-weight: 700; }
+            #hoja .intro { margin: 0 0 6px; font-size: 11.5px; } #hoja .nota { margin: 0 0 4px; font-size: 10.5px; color: #5f6670; font-style: italic; }
+            #hoja .g { break-inside: avoid; margin-bottom: 6px; }
+            #hoja .g h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 12px 0 4px; border-bottom: 2px solid #1f4e79; padding-bottom: 3px; }
+            #hoja .d { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 3.5px 0; border-bottom: 1px solid #d5dbe3; break-inside: avoid; }
+            #hoja .cbx { width: 13px; height: 13px; border: 1.5px solid #1b2430; border-radius: 2px; margin-top: 1px; text-align: center; font-size: 11px; line-height: 11px; font-weight: 700; color: #2e7d32; }
+            #hoja .d b { font-weight: 700; } #hoja .d small { display: block; color: #5f6670; font-size: 9.5px; margin-top: 1px; }
+            #hoja .rec { display: block; font-size: 9.5px; color: #2e7d32; margin-top: 1px; }
+            #hoja .pie { margin-top: 14px; padding-top: 8px; border-top: 1px solid #d5dbe3; font-size: 9.5px; color: #5f6670; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+    <div id="hoja"></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
+        import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-inquilinos.js?v=20261111-5';
+
+        const app = document.getElementById('app');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fechaTxt = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? fechaLarga(f) : '-';
+        const id = new URLSearchParams(location.search).get('id');
+        let p = null, c = null;
+
+        if (!isAuthenticated()) window.location.href = '/login.html';
+        else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else cargar().catch(e => { console.error(e); app.innerHTML = `<p class="err">No se pudo cargar: ${esc(e.message)}</p>`; });
+        }
+
+        async function cargar() {
+            const sp = await getDoc(doc(db, 'nuevos_inquilinos', id || '_'));
+            if (!sp.exists()) { app.innerHTML = '<a class="volver" href="./">Volver a Nuevos inquilinos</a><h1>Proceso no encontrado</h1>'; return; }
+            p = { id: sp.id, ...sp.data() };
+            const sc = await getDoc(doc(db, 'contratos', p.contratoId || '_'));
+            c = sc.exists() ? { id: sc.id, ...sc.data() } : {};
+            pintar();
+        }
+
+        async function guardar(cambios) {
+            const user = getCurrentUser();
+            await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { ...cambios, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+            Object.assign(p, cambios); pintar();
+        }
+
+        const hoyISO = () => { const x = new Date(); return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        async function guardarDoc(clave, valor) {
+            const user = getCurrentUser();
+            await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { ['documentos.' + clave]: valor, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+            p.documentos = { ...(p.documentos || {}), [clave]: valor }; pintar();
+        }
+
+        function pintar() {
+            const d = p.datos || {}, pasos = pasosDe(p), et = etapaDe(p), est = p.estado || 'en_proceso';
+            const locales = (p.locales || c.locales || []).join(', ');
+            const q = `?proceso=${encodeURIComponent(p.id)}`;
+            const pagos = p.pagos || [];
+            const acciones = {
+                local: '',
+                propuesta: `<a class="btn" href="../locales/propuesta.html${q}">Abrir propuesta</a>`,
+                cuestionario: `<a class="btn" href="../locales/propuesta.html${q}&paso=2">Abrir cuestionario</a>`,
+                contrato: `<a class="btn" href="../locales/contrato-nuevo.html${q}">Abrir contrato</a>`,
+                pagos: `<a class="btn" href="../locales/contrato-nuevo.html${q}#seccionPagos">Registrar pagos</a>`,
+                activo: p.contratoNuevoId ? `<a class="btn" href="../locales/caratula.html?id=${encodeURIComponent(p.contratoNuevoId)}">Ver contrato nuevo</a>` : ''
+            };
+            const detalle = {
+                local: `Local ${esc(locales)}${c.m2 ? ` · ${esc(c.m2)} m²` : ''}. Inquilino actual: ${esc(c.razonSocial || '-')}.`,
+                propuesta: p.propuestaEnviada ? `Enviada el ${esc(fechaTxt(p.propuestaEnviada))}.` : 'Es el primer documento que se manda: renta, plazo, depósito y condiciones generales.',
+                cuestionario: p.aceptada ? `Documentos recibidos: ${resumenDocumentos(p).recibidos} de ${resumenDocumentos(p).total}. Propuesta aceptada el ${esc(fechaTxt(p.aceptada))}.${d.razonSocial ? ` Datos de ${esc(d.razonSocial)}${d.rfc ? '' : ' (falta el RFC)'}.` : ' Faltan los datos del interesado.'}` : 'Cuando acepten la propuesta, se manda el cuestionario y se capturan sus datos.',
+                contrato: (p.versionPdf || 0) > 0 ? `Contrato generado en PDF (versión ${p.versionPdf}).` : 'Borrador del contrato y PDF a partir de la propuesta y el cuestionario.',
+                pagos: `${d.firma ? `Firmado el ${esc(fechaTxt(d.firma))}.` : 'Falta la fecha de firma.'} ${pagos.length ? pagos.map(x => `${esc(x.concepto === 'deposito' ? 'Depósito' : x.concepto === 'primera_renta' ? 'Primera renta' : 'Pago')} ${dinero(x.monto)} (${esc(fechaTxt(x.fecha))})`).join(' · ') : 'Sin pagos registrados (depósito y primera renta).'}`,
+                activo: est === 'activado' ? `Activado${p.contratoNuevoId ? ` como ${esc(p.contratoNuevoId)}` : ''}. El contrato anterior quedó inactivo.` : 'Se activa desde el contrato, cuando están el contrato firmado, el depósito y la primera renta.'
+            };
+            const docsLista = documentosDe(d, true), recDocs = p.documentos || {}, resDocs = resumenDocumentos(p);
+            const seccionDocs = `<div class="docs"><h2>Documentos que debe enviar</h2>
+                <p class="sub" style="margin-bottom:6px">Recibidos <b>${resDocs.recibidos} de ${resDocs.total}</b> obligatorios. Es un checklist: no bloquea la activación.</p>
+                <div class="fecha" style="margin:0 0 6px"><label for="tipoPers">Tipo de persona del arrendatario</label><select id="tipoPers" style="padding:6px 8px;border:1px solid var(--borde-control);border-radius:8px;font:inherit"><option value="" ${!d.tipoPersona ? 'selected' : ''}>Sin definir (se muestran A y B)</option><option value="fisica" ${d.tipoPersona === 'fisica' ? 'selected' : ''}>Persona física</option><option value="moral" ${d.tipoPersona === 'moral' ? 'selected' : ''}>Persona moral</option></select></div>
+                ${d.tipoPersona ? '' : '<p class="sub" style="margin-bottom:6px">Mientras no se defina, el avance solo cuenta el grupo C y la lista y el PDF incluyen A y B.</p>'}
+                ${Object.keys(GRUPOS_DOCUMENTOS).filter(g => docsLista.some(x => x.grupo === g)).map(g => `<h3>${esc(GRUPOS_DOCUMENTOS[g])}</h3>${docsLista.filter(x => x.grupo === g).map(x => { const r = recDocs[x.clave] || {}; return `<div class="doc ${r.recibido ? 'ok' : ''}"><label class="chk"><input type="checkbox" data-doc="${esc(x.clave)}" ${r.recibido ? 'checked' : ''}><span><b>${esc(x.nombre)}</b>${x.opcional ? ' <i>(opcional)</i>' : ''}${x.detalle ? `<br><small>${esc(x.detalle)}</small>` : ''}</span></label><div class="dfecha">${r.recibido ? 'Recibido el ' + esc(fechaTxt(r.recibido)) : ''}</div><input type="text" data-nota="${esc(x.clave)}" placeholder="Nota o archivo" value="${esc(r.nota || '')}"></div>`; }).join('')}`).join('')}
+                <div class="pie"><button class="btn" id="btnPdfDocs">Exportar PDF de la lista</button><button class="btn-sec" id="btnCopiarDocs">Copiar la lista de lo que falta</button></div></div>`;
+            const fechaCampo = (k, t) => est === 'en_proceso' ? `<div class="fecha"><label for="f_${k}">${t}</label><input type="date" id="f_${k}" value="${esc(p[k] || '')}"></div>` : '';
+            app.innerHTML = `
+                <a class="volver" href="./">Volver a Nuevos inquilinos</a>
+                <h1>Local ${esc(locales)}<span class="badge ${est}">${esc(est === 'activado' ? 'Activado' : est === 'descartado' ? 'Descartado' : et.nombre)}</span></h1>
+                <p class="sub">${d.tipoContrato === 'renovacion' ? 'Renovación' : 'Inquilino nuevo'} · interesado: <b>${esc(p.interesado || d.razonSocial || d.dirigidaA || 'sin nombre todavía')}</b></p>
+                <div class="resumen">
+                    <div class="caja"><div class="et">Contrato actual del local</div><b>${esc(c.razonSocial || '-')}</b><br>Renta ${dinero(c.total)} + IVA · vence ${esc(fechaTxt(c.fin))}</div>
+                    <div class="caja"><div class="et">Condiciones propuestas</div>Renta <b>${dinero(d.renta)}</b> + IVA · inicio ${esc(fechaTxt(d.inicio))} · ${esc(d.anios || '-')} año(s)<br>Depósito: ${esc(d.mesesDeposito ?? '-')} mes(es)</div>
+                </div>
+                ${pasos.map((x, i) => `<div class="paso ${x.hecho ? 'hecho' : (x.clave === et.clave && est === 'en_proceso' ? 'actual' : '')}">
+                    <div class="num">${x.hecho ? '✓' : i + 1}</div>
+                    <div><h2>${esc(x.nombre)}</h2><p>${detalle[x.clave]}</p>${x.clave === 'propuesta' ? fechaCampo('propuestaEnviada', 'Enviada el') : ''}${x.clave === 'cuestionario' ? fechaCampo('aceptada', 'Propuesta aceptada el') : ''}</div>
+                    <div class="acc">${est === 'descartado' ? '' : acciones[x.clave]}</div></div>`).join('')}
+                ${seccionDocs}
+                <div class="pie">${est === 'en_proceso' ? '<button class="btn-sec" id="btnDescartar">Descartar este proceso</button>' : ''}${est === 'descartado' ? '<button class="btn-sec" id="btnReabrir">Reabrir</button>' : ''}${est !== 'activado' ? '<button class="btn-sec" id="btnBorrar" style="color:var(--peligro)">Borrar proceso</button>' : ''}</div>
+                ${p.descartadoMotivo ? `<p class="sub" style="margin-top:12px">Descartado: ${esc(p.descartadoMotivo)}</p>` : ''}`;
+            ['propuestaEnviada', 'aceptada'].forEach(k => document.getElementById('f_' + k)?.addEventListener('change', e => guardar({ [k]: e.target.value || null })));
+            document.getElementById('tipoPers')?.addEventListener('change', async e => {
+                const user = getCurrentUser();
+                await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { 'datos.tipoPersona': e.target.value, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+                p.datos = { ...(p.datos || {}), tipoPersona: e.target.value }; pintar();
+            });
+            app.querySelectorAll('[data-doc]').forEach(el => el.addEventListener('change', () => guardarDoc(el.dataset.doc, { recibido: el.checked ? hoyISO() : '', nota: (recDocs[el.dataset.doc] || {}).nota || '' })));
+            app.querySelectorAll('[data-nota]').forEach(el => el.addEventListener('change', () => guardarDoc(el.dataset.nota, { recibido: (recDocs[el.dataset.nota] || {}).recibido || '', nota: el.value.trim() })));
+            document.getElementById('btnPdfDocs')?.addEventListener('click', () => {
+                const hoja = document.getElementById('hoja');
+                const quien = p.interesado || d.razonSocial || d.dirigidaA || '';
+                const tipoTxt = d.tipoPersona === 'moral' ? 'Persona moral' : d.tipoPersona === 'fisica' ? 'Persona física' : '';
+                const dato = (et, v) => v ? `<div><div class="et">${et}</div><div class="v">${esc(v)}</div></div>` : '';
+                hoja.innerHTML = `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div class="tit"><h1>Documentos que debe enviar</h1><div>Contrato de arrendamiento · Local ${esc(locales)}</div></div></div>
+                    <div class="ficha">${dato('Interesado', quien)}${dato('Arrendatario', tipoTxt)}${dato('Fecha', fechaTxt(hoyISO()))}</div>
+                    <p class="intro">Para preparar el contrato de arrendamiento del Local ${esc(locales)}, le pedimos enviar los siguientes documentos en PDF o en imagen legible a <b>admin@fabrica.la</b>.</p>
+                    ${d.tipoPersona ? '' : '<p class="nota">Según el arrendatario sea persona moral o persona física, se entregan los documentos del grupo A o del grupo B.</p>'}
+                    ${Object.keys(GRUPOS_DOCUMENTOS).filter(g => docsLista.some(x => x.grupo === g)).map(g => `<div class="g"><h3>${esc(GRUPOS_DOCUMENTOS[g])}</h3>${docsLista.filter(x => x.grupo === g).map(x => { const r = recDocs[x.clave] || {}; return `<div class="d"><div class="cbx">${r.recibido ? '✓' : ''}</div><div><b>${esc(x.nombre)}</b>${x.opcional ? ' <i>(opcional)</i>' : ''}${x.detallePdf ? `<small>${esc(x.detallePdf)}</small>` : ''}${r.recibido ? `<span class="rec">Recibido el ${esc(fechaTxt(r.recibido))}${r.nota ? ' · ' + esc(r.nota) : ''}</span>` : (r.nota ? `<small>${esc(r.nota)}</small>` : '')}</div></div>`; }).join('')}</div>`).join('')}
+                    <div class="pie">Los datos y documentos se usarán únicamente para la elaboración del contrato de arrendamiento.</div>`;
+                const previo = document.title; document.title = 'Documentos que debe enviar - Local ' + locales + (quien ? ' - ' + quien : '');
+                const img = hoja.querySelector('img');
+                const ir = () => { window.print(); document.title = previo; };
+                if (img && !img.complete) { let listo = false; const una = () => { if (!listo) { listo = true; ir(); } }; img.addEventListener('load', una); img.addEventListener('error', una); setTimeout(una, 1500); } else ir();
+            });
+            document.getElementById('btnCopiarDocs')?.addEventListener('click', async () => {
+                const falta = docsLista.filter(x => !recDocs[x.clave]?.recibido);
+                const texto = 'Documentos que debe enviar (Local ' + locales + '):\n\n' + (Object.keys(GRUPOS_DOCUMENTOS).filter(g => falta.some(x => x.grupo === g)).map(g => GRUPOS_DOCUMENTOS[g] + '\n' + falta.filter(x => x.grupo === g).map(x => '- ' + x.nombre + (x.opcional ? ' (opcional)' : '')).join('\n')).join('\n\n') || 'No falta ningún documento.');
+                try { await navigator.clipboard.writeText(texto); alert('Lista copiada. Ya puedes pegarla en un correo o mensaje.'); } catch (err) { prompt('Copia la lista:', texto); }
+            });
+            document.getElementById('btnDescartar')?.addEventListener('click', () => {
+                const motivo = prompt('¿Por qué se descarta? (opcional)');
+                if (motivo === null) return;
+                guardar({ estado: 'descartado', descartadoMotivo: motivo.trim() });
+            });
+            document.getElementById('btnBorrar')?.addEventListener('click', async () => {
+                if (!confirm('¿Borrar este proceso (Local ' + locales + ', ' + (p.interesado || d.razonSocial || d.dirigidaA || 'sin nombre') + ')?\n\nSe pierde su propuesta, cuestionario, pagos registrados y documentos. Queda una copia de respaldo en el panel, pero ya no aparecerá en la lista.')) return;
+                if (!confirm('SEGUNDA CONFIRMACIÓN\n\n¿Seguro que quieres borrar este proceso? Esta es la última pregunta.')) return;
+                try {
+                    const user = getCurrentUser(), { id: pid, ...datosP } = p, batch = writeBatch(db);
+                    batch.set(doc(db, 'nuevos_inquilinos_eliminados', pid), { ...datosP, eliminadoPor: user.email, eliminadoEn: serverTimestamp() });
+                    batch.delete(doc(db, 'nuevos_inquilinos', pid));
+                    await batch.commit();
+                    location.href = './';
+                } catch (err) { console.error(err); alert('No se pudo borrar: ' + err.message); }
+            });
+            document.getElementById('btnReabrir')?.addEventListener('click', () => guardar({ estado: 'en_proceso', descartadoMotivo: '' }));
+        }
+    </script>
+</body>
+</html>

@@ -87,9 +87,9 @@
     <div class="main" id="app"><div class="cargando">Cargando contratos...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261104-1';
 
@@ -127,7 +127,9 @@
 
         async function iniciar() {
             const snap = await getDocs(collection(db, 'contratos'));
-            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            const anteriores = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado === 'terminado')
+                .sort((a, b) => (b.terminadoEn || b.fin || '').localeCompare(a.terminadoEn || a.fin || ''));
+            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado')
                 .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
                 .map(c => ({ ...c, _e: estadoDe(c), _a: alertasContrato(c) }));
 
@@ -191,7 +193,17 @@
                             <td class="num">${dinero(contratos.reduce((s, c) => s + (c.totalIva || 0), 0))}</td></tr></tfoot>
                     </table>
                 </div>
-                <div id="gbd"></div>`;
+                <div id="gbd"></div>
+                ${anteriores.length ? `
+                <h2 style="font-size:18px;margin:34px 0 4px">Contratos anteriores</h2>
+                <p class="sub">Contratos terminados (inactivos). Conservan su carátula, facturas, pagos, depósito e historial.</p>
+                <div class="tabla-wrap"><table>
+                    <thead><tr><th>Locales</th><th>Inquilino</th><th>Inicio</th><th>Salida</th><th>Lo reemplaza</th></tr></thead>
+                    <tbody>${anteriores.map(c => `<tr data-ant="${esc(c.id)}" style="cursor:pointer"><td><strong>${esc((c.locales || []).join(', '))}</strong></td>
+                        <td>${esc(c.razonSocial)}${c.nombreComercial ? `<div class="gris" style="font-size:12px">${esc(c.nombreComercial)}</div>` : ''}</td>
+                        <td class="nw">${fechaTxt(c.inicio)}</td><td class="nw">${fechaTxt(c.terminadoEn || c.fin)}</td><td>${esc(c.reemplazadoPor || '-')}</td></tr>`).join('')}</tbody>
+                </table></div>` : ''}`;
+            app.querySelectorAll('tr[data-ant]').forEach(tr => tr.addEventListener('click', () => { location.href = 'caratula.html?id=' + encodeURIComponent(tr.dataset.ant); }));
 
             const cuerpo = document.getElementById('cuerpo');
             function pintar(filtro) {

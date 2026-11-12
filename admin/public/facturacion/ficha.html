@@ -72,15 +72,15 @@
 
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
             documentoContadores, imprimirHojas, normalizarConceptos, normalizarCorreos, correoValido, CORREO_COPIA
-        } from '../../../js/facturacion.js?v=20261013-1';
+        } from '../../../js/facturacion.js?v=20261111-2';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);

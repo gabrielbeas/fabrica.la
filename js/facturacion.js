@@ -1,5 +1,5 @@
 // Facturación mensual a locatarios: cálculo y utilidades compartidas
-import { db } from './auth.js?v=20261104-1';
+import { db } from './auth.js?v=20261111-1';
 import {
   collection, getDocs, getDoc, doc, query, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -211,8 +211,16 @@ export function generarFactura(contrato, mes, lecturas, general, facturadas = ne
 
 // Contratos que se facturan: todos los que tienen datos de facturación
 // (un contrato vencido se sigue facturando mientras el locatario ocupe el local; se avisa)
-export function contratosFacturables(contratos) {
-  return contratos.filter(c => c.facturacion && c.facturacion.activo !== false);
+export function contratosFacturables(contratos, mes = null) {
+  return contratos.filter(c => c.facturacion && c.facturacion.activo !== false && (!mes || contratoEnMes(c, mes)));
+}
+/** ¿El contrato rige en ese mes (AAAA-MM)? Solo cambia algo en los cambios de inquilino:
+ *  un contrato «terminado» deja de regir después del mes de su salida (`terminadoEn`) y el que lo reemplaza
+ *  (`reemplazaA`) no rige antes del mes de su inicio. Cualquier otro contrato siempre rige. */
+export function contratoEnMes(c, mes) {
+  if (c.estado === 'terminado' && /^\d{4}-\d{2}/.test(c.terminadoEn || '') && mes > c.terminadoEn.slice(0, 7)) return false;
+  if (c.reemplazaA && /^\d{4}-\d{2}/.test(c.inicio || '') && mes < c.inicio.slice(0, 7)) return false;
+  return true;
 }
 export const contratoVencidoEn = (c, mes) => !!(c.fin && c.fin < `${mes}-01`);
 
@@ -455,7 +463,7 @@ export function calcGBD(f) {
 export function montosGBD(c, contratos, mes) {
   const fijo = { subtotal: c.subtotal || 0, iva: c.iva || 0, retIsr: c.retIsr || 0, retIva: c.retIva || 0, total: c.total || 0 };
   if (c.tipo !== 'renta' || typeof c.porcentaje !== 'number' || !contratos.length || !(c.subtotal > 0)) return { ...fijo, automatico: false };
-  const baseRentas = r2(contratos.reduce((s, x) => s + rentaDelMes(x, mes).renta, 0));
+  const baseRentas = r2(contratos.filter(x => contratoEnMes(x, mes)).reduce((s, x) => s + rentaDelMes(x, mes).renta, 0));
   const subtotal = r2(baseRentas * c.porcentaje), iva = r2(subtotal * IVA);
   const retIsr = r2(subtotal * (c.retIsr || 0) / c.subtotal), retIva = r2(subtotal * (c.retIva || 0) / c.subtotal);
   return { subtotal, iva, retIsr, retIva, total: r2(subtotal + iva - retIsr - retIva), automatico: true, baseRentas };

@@ -70,8 +70,8 @@
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261104-1';
                 import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -113,7 +113,7 @@
             try {
                 const snap = await getDocs(collection(db, 'contratos'));
                 contratos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-                    .filter(c => !c.propio)
+                    .filter(c => !c.propio && c.estado !== 'terminado')
                     .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999));
                 render(msg);
             } catch (err) {

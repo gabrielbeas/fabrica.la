@@ -92,11 +92,11 @@
     <div class="main" id="app"><div class="vacio">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, esOperario, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261013-1';
+        import { correoValido, normalizarCorreos } from '../../../js/facturacion.js?v=20261111-2';
         import { totalesOrden, conIva, dinero, imprimirOrden, correoOrden, CORREO_REMITENTE } from '../../../js/orden-compra.js?v=20261104-1';
 
         const app = document.getElementById('app');

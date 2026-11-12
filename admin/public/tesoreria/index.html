@@ -248,6 +248,8 @@
             .main { padding: 24px 16px 60px; }
             .m-cab { margin: -24px -16px 14px; }
         }
+        .tabla-cfg td.chk-c { width: 34px; text-align: center; }
+        .tabla-cfg tr.fila-sel td { background: #eaf1f8; }
         tr.fila-total td { font-weight: 700; background: #fff8ec; border-bottom: 2px solid #d08a1e; padding-top: 11px; padding-bottom: 11px; }
         tr.fila-total td b { font-weight: 700; }
         tr.mov.excl td { color: var(--tinta-suave); }
@@ -259,10 +261,10 @@
     <div class="main" id="app"><div style="color:var(--tinta-suave);padding:40px 0;text-align:center">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, getDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -281,6 +283,7 @@
             { id: 'dep', nombre: '3_DEPÓSITOS / AP…', saldoInicial: 0 }
         ];
         const MOVS = [];
+        const SEL_BEN = new Set(); // beneficiarios marcados en Configuración para fusionar
         const CAT = { etiquetas: [], categorias: [], beneficiarios: [], gruposBen: [], benGrupo: {} };
 
         // ---------- Persistencia en Firestore ----------
@@ -1253,6 +1256,38 @@
                 });
             }
 
+            function modalFusion() {
+                const nombres = [...SEL_BEN].filter(b => CAT.beneficiarios.includes(b)).sort(cmpEs);
+                if (nombres.length < 2) return;
+                const total = nombres.reduce((a, b) => a + cuenta('ben', b), 0);
+                const masUsado = nombres.slice().sort((a, b) => cuenta('ben', b) - cuenta('ben', a))[0];
+                const M = abrirModal({ titulo: 'Fusionar beneficiarios', texto: 'Fusionar', cuerpo: `
+                    <p class="mod-ayuda" style="margin:0 0 10px">Se juntan ${nombres.length} beneficiarios (${total} movimientos) en uno solo. Los movimientos pasan al nombre que elijas y los demás beneficiarios desaparecen de la lista.</p>
+                    <ul style="margin:0 0 12px;padding-left:18px;font-size:13px">${nombres.map(b => `<li>${esc(b)} <span style="color:var(--tinta-suave)">· ${cuenta('ben', b)} movimiento(s)</span></li>`).join('')}</ul>
+                    <div class="mod-campo"><label for="xDestino">Dejar con el nombre</label><select id="xDestino">${nombres.map(b => `<option value="${esc(b)}" ${b === masUsado ? 'selected' : ''}>${esc(b)}</option>`).join('')}<option value="">Otro nombre…</option></select></div>
+                    <div class="mod-campo" id="xOtroC" style="margin-top:10px;display:none"><label for="xOtro">Nombre nuevo</label><input id="xOtro" autocomplete="off" placeholder="Nombre del beneficiario"></div>` });
+                M.$('xDestino').addEventListener('change', () => { const o = M.$('xDestino').value === ''; M.$('xOtroC').style.display = o ? '' : 'none'; if (o) M.$('xOtro').focus(); });
+                M.$('xGuardar').addEventListener('click', () => {
+                    let destino = M.$('xDestino').value;
+                    if (destino === '') {
+                        destino = M.$('xOtro').value.trim();
+                        if (!destino) return M.error('Escribe el nombre nuevo.');
+                        const choca = CAT.beneficiarios.find(b => b.toLowerCase() === destino.toLowerCase() && !nombres.includes(b));
+                        if (choca) return M.error('Ya existe «' + choca + '». Fusiona con ese nombre agregándolo a la selección.');
+                    }
+                    const fuentes = nombres.filter(b => b !== destino);
+                    const grupo = CAT.benGrupo[destino] || nombres.map(b => CAT.benGrupo[b]).find(Boolean);
+                    let movidos = 0;
+                    MOVS.forEach(m => { if (fuentes.includes(m.beneficiario)) { m.beneficiario = destino; movidos++; } });
+                    nombres.forEach(b => delete CAT.benGrupo[b]);
+                    CAT.beneficiarios = CAT.beneficiarios.filter(b => !nombres.includes(b));
+                    CAT.beneficiarios.push(destino);
+                    if (grupo) CAT.benGrupo[destino] = grupo;
+                    SEL_BEN.clear(); M.cierra(); pintar();
+                    const a = document.getElementById('aviso'); if (a) { a.textContent = nombres.length + ' beneficiarios fusionados en «' + destino + '» (' + movidos + ' movimientos cambiados).'; a.style.display = 'block'; }
+                });
+            }
+
             function modalCategoria(cat, padreInicial = null) {
                 const edita = !!cat;
                 const padreSel = cat?.padre ?? padreInicial;
@@ -1341,13 +1376,13 @@
                 };
                 CAT.categorias.filter(c => !c.padre).sort(cmpPor('cat', getCat)).forEach(p => agregaFila(p, 0, false));
                 // Beneficiarios: con grupos se muestran agrupados (cada grupo se puede plegar); los que no tienen grupo van al final
-                const filaBen = b => `<tr class="fila-cfg" data-ben="${esc(b)}"><td>${esc(b)}</td><td><select class="sel-grupo" data-bg="${esc(b)}">${opcGrupos(CAT.benGrupo[b])}</select></td><td class="der num">${n('ben', b)}</td></tr>`;
+                const filaBen = b => `<tr class="fila-cfg ${SEL_BEN.has(b) ? 'fila-sel' : ''}" data-ben="${esc(b)}"><td class="chk-c"><input type="checkbox" class="chk-ben" data-bs="${esc(b)}" ${SEL_BEN.has(b) ? 'checked' : ''} aria-label="Seleccionar para fusionar"></td><td>${esc(b)}</td><td><select class="sel-grupo" data-bg="${esc(b)}">${opcGrupos(CAT.benGrupo[b])}</select></td><td class="der num">${n('ben', b)}</td></tr>`;
                 let cuerpoBen = '';
                 if (!CAT.gruposBen.length) cuerpoBen = bens.map(filaBen).join('');
                 else {
                     const encabezado = (id, nombre, miembros, editable) => {
                         const cerrado = st.cfgCerrados.has('g:' + id);
-                        return `<tr class="grp-fila" data-gtog="${id}"><td colspan="3"><span class="tog">${cerrado ? '▸' : '▾'}</span><strong>${esc(nombre)}</strong> <span class="grp-cnt">${miembros.length} beneficiario${miembros.length === 1 ? '' : 's'} · ${miembros.reduce((a, b) => a + n('ben', b), 0)} movimientos</span>${editable ? `<button class="btn-sec grp-ed" data-gedit="${id}">Editar grupo</button>` : ''}</td></tr>${cerrado ? '' : miembros.map(filaBen).join('')}`;
+                        return `<tr class="grp-fila" data-gtog="${id}"><td colspan="4"><span class="tog">${cerrado ? '▸' : '▾'}</span><strong>${esc(nombre)}</strong> <span class="grp-cnt">${miembros.length} beneficiario${miembros.length === 1 ? '' : 's'} · ${miembros.reduce((a, b) => a + n('ben', b), 0)} movimientos</span>${editable ? `<button class="btn-sec grp-ed" data-gedit="${id}">Editar grupo</button>` : ''}</td></tr>${cerrado ? '' : miembros.map(filaBen).join('')}`;
                     };
                     const gs = gruposOrdenados(); if (ordDe('ben').col === 'grupo' && ordDe('ben').dir < 0) gs.reverse();
                     gs.forEach(g => {
@@ -1382,9 +1417,10 @@
                         </tbody></table></div>
                     </section>
 
-                    <section class="caja cfg-sec" data-sec="beneficiarios"><div class="cfg-cab"><h2>Beneficiarios</h2><div class="barra"><input type="search" data-q="ben" placeholder="Buscar" value="${esc(st.cfgQ.ben || '')}"><button class="btn-sec" data-nuevo="grp">Nuevo grupo</button><button class="btn" data-nuevo="ben">Nuevo beneficiario</button></div></div>
-                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr>${thO('ben', 'nombre', 'Nombre')}${CAT.gruposBen.length ? thO('ben', 'grupo', 'Grupo', '', 'width:210px') : '<th style="width:210px">Grupo</th>'}${thO('ben', 'movs', 'Movimientos', 'der', 'width:120px')}</tr></thead><tbody>
-                            ${cuerpoBen || '<tr><td colspan="3" class="vacio">Sin beneficiarios.</td></tr>'}
+                    <section class="caja cfg-sec" data-sec="beneficiarios"><div class="cfg-cab"><h2>Beneficiarios</h2><div class="barra"><input type="search" data-q="ben" placeholder="Buscar" value="${esc(st.cfgQ.ben || '')}">${SEL_BEN.size >= 2 ? `<button class="btn-sec" data-fusion="1">Fusionar ${SEL_BEN.size} seleccionados</button>` : ''}${SEL_BEN.size ? '<button class="btn-sec" data-fusion-quitar="1">Quitar selección</button>' : ''}<button class="btn-sec" data-nuevo="grp">Nuevo grupo</button><button class="btn" data-nuevo="ben">Nuevo beneficiario</button></div></div>
+                        <p class="mod-ayuda" style="margin:0 0 8px">Para juntar beneficiarios repetidos o mal escritos, marca 2 o más con la casilla y pulsa «Fusionar».</p>
+                        <div class="tabla-wrap"><table class="tabla-cfg"><thead><tr><th style="width:34px"></th>${thO('ben', 'nombre', 'Nombre')}${CAT.gruposBen.length ? thO('ben', 'grupo', 'Grupo', '', 'width:210px') : '<th style="width:210px">Grupo</th>'}${thO('ben', 'movs', 'Movimientos', 'der', 'width:120px')}</tr></thead><tbody>
+                            ${cuerpoBen || '<tr><td colspan="4" class="vacio">Sin beneficiarios.</td></tr>'}
                         </tbody></table></div>
                     </section>
                     </div></section></div>`;
@@ -1392,7 +1428,10 @@
                 app.querySelectorAll('.cfg-sec').forEach(s => { s.hidden = s.dataset.sec !== st.cfgSec; });
                 app.querySelectorAll('[data-cta]').forEach(e => e.addEventListener('click', () => modalCuenta(CUENTAS.find(c => c.id === e.dataset.cta))));
                 app.querySelectorAll('[data-etq]').forEach(e => e.addEventListener('click', () => modalEtiqueta(e.dataset.etq)));
-                app.querySelectorAll('[data-ben]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('select')) return; modalBeneficiario(e.dataset.ben); }));
+                app.querySelectorAll('[data-ben]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('select') || ev.target.closest('.chk-c')) return; modalBeneficiario(e.dataset.ben); }));
+                app.querySelectorAll('.chk-ben').forEach(c => c.addEventListener('change', () => { c.checked ? SEL_BEN.add(c.dataset.bs) : SEL_BEN.delete(c.dataset.bs); pintar(); }));
+                app.querySelectorAll('[data-fusion]').forEach(b => b.addEventListener('click', modalFusion));
+                app.querySelectorAll('[data-fusion-quitar]').forEach(b => b.addEventListener('click', () => { SEL_BEN.clear(); pintar(); }));
                 app.querySelectorAll('th[data-ord]').forEach(h => h.addEventListener('click', () => { const [k, col] = h.dataset.ord.split('|'), a = ordDe(k); st.cfgOrd[k] = { col, dir: a.col === col ? -a.dir : (col === 'movs' || col === 'saldo' || col === 'ini' ? -1 : 1) }; pintar(); }));
                 app.querySelectorAll('.sel-grupo').forEach(s => s.addEventListener('change', () => { if (s.value) CAT.benGrupo[s.dataset.bg] = s.value; else delete CAT.benGrupo[s.dataset.bg]; pintar(); }));
                 app.querySelectorAll('[data-gtog]').forEach(e => e.addEventListener('click', ev => { if (ev.target.closest('[data-gedit]')) return; const k = 'g:' + e.dataset.gtog; st.cfgCerrados.has(k) ? st.cfgCerrados.delete(k) : st.cfgCerrados.add(k); pintar(); }));

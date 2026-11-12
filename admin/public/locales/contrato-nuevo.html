@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Nuevo contrato - La Fábrica de Chocolate</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
+    <meta name="apple-mobile-web-app-title" content="LFdC">
+    <link rel="stylesheet" href="../css/panel.css?v=20261104-1">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); background: var(--fondo); color: var(--tinta); margin: 0; }
+        .main { max-width: 980px; margin: 0 auto; padding: 30px 20px 60px; }
+        h1 { font-size: 26px; margin: 0 0 6px; }
+        .sub { color: var(--tinta-suave); font-size: 14px; margin: 0 0 20px; }
+        .volver { font-size: 13px; color: var(--accion); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+        .volver:hover { text-decoration: underline; }
+        .btn { background: var(--accion); color: var(--on-accion); border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec { background: var(--fondo-hundido); color: var(--tinta-suave); border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+        .btn-sec:hover { background: var(--linea); }
+        .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .flujo div { border: 1px solid var(--linea); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--tinta-suave); background: #fff; }
+        .flujo div b { display: block; font-size: 14px; color: var(--tinta); }
+        .flujo div.act { border-color: var(--accion); background: var(--accion-suave); box-shadow: inset 0 0 0 1px var(--accion); }
+        .flujo div.hecho { background: var(--fondo-hundido); }
+        @media (max-width: 700px) { .flujo { grid-template-columns: 1fr 1fr; } }
+        .actual { font-size: 13px; color: var(--tinta-suave); background: var(--fondo-hundido); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
+        .actual b { color: var(--tinta); }
+        .sec { border: 1px solid var(--linea); border-left: 4px solid var(--accion); border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+        .sec h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 0 0 4px; }
+        .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+        .grid .ancho { grid-column: 1 / -1; }
+        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
+        input[type=text], input[type=number], input[type=date], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
+        textarea { resize: vertical; }
+        .calc { background: var(--fondo-hundido); border-radius: 8px; padding: 8px 12px; font-variant-numeric: tabular-nums; min-height: 38px; display: flex; align-items: center; }
+        .revision { border: 1px solid var(--linea); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; background: #fffdf8; border-left: 4px solid var(--ambar); }
+        .revision h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #9a6310; margin: 0 0 10px; }
+        .revision ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+        .revision li { padding: 3px 0; }
+        .revision li.ok { color: var(--exito); }
+        .revision li.falta { color: var(--peligro); }
+        .revision li.aviso { color: #9a6310; }
+        .acciones { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; align-items: center; }
+        .err { color: var(--peligro); }
+        .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
+        .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 1000; overflow-y: auto; }
+        .modal { background: var(--fondo); border-radius: 12px; width: 100%; max-width: 640px; padding: 26px 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+        .modal h3 { margin: 0 0 12px; font-size: 18px; }
+        .modal p { font-size: 14px; margin: 0 0 12px; }
+        .modal .resumen { border: 1px solid var(--linea); border-radius: 8px; padding: 12px 16px; background: var(--fondo-hundido); font-size: 14px; line-height: 1.7; margin-bottom: 14px; }
+        .modal .pie { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; align-items: center; }
+        .modal .pie .err { margin-right: auto; font-size: 13px; }
+        #hoja { display: none; }
+        @media print {
+            @page { size: letter portrait; margin: 14mm; }
+            body > .main, .modal-fondo, #navbar-root, nav { display: none !important; }
+            #hoja { display: flex; min-height: 240mm; align-items: center; justify-content: center; text-align: center; color: #1b2430; font-family: Roboto, Arial, sans-serif; }
+            #hoja h1 { font-size: 34px; font-weight: 900; margin: 0 0 10px; }
+            #hoja p { font-size: 13px; color: #5f6670; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main" id="app"><div class="cargando">Cargando...</div></div>
+    <div id="hoja"></div>
+
+    <script type="module">
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
+        import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261111-2';
+        import { resumenDocumentos } from '../../../js/nuevos-inquilinos.js?v=20261111-5';
+        import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261111-1';
+        import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const app = document.getElementById('app');
+        const hoja = document.getElementById('hoja');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+        const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const IVA = 0.16;
+        const qs = new URLSearchParams(location.search), procId = qs.get('proceso'), idLegado = qs.get('id');   // proceso de Nuevos inquilinos (el contrato que se reemplaza va dentro)
+        const fechaTxt = fechaLarga;
+        const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const sumaDia = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+        const sumaMeses = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1 + n, 1)); const ult = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate(); t.setUTCDate(Math.min(d, ult)); return t.toISOString().slice(0, 10); };
+        const lineas = t => String(t || '').split('\n').map(s => s.trim()).filter(Boolean);
+
+        if (!isAuthenticated()) {
+            window.location.href = '/login.html';
+        } else {
+            crearNavbar();
+            if (!esAdmin()) app.innerHTML = '<h1>Acceso restringido</h1><p class="sub">Esta sección es solo para el administrador.</p>';
+            else iniciar().catch(e => { console.error(e); app.innerHTML = `<p class="err">No se pudo cargar: ${esc(e.message)}</p>`; });
+        }
+
+        // [clave, etiqueta, tipo, ancho, solo]  (solo = 'fisica' | 'moral' | 'renovacion' | 'nuevo')
+        const SECCIONES = [
+            { t: 'Tipo de contrato', ayuda: 'Un cambio de inquilino es un contrato nuevo; una renovación es el mismo inquilino que continúa (cambian las declaraciones de posesión y de depósito).', campos: [
+                ['tipoContrato', 'Tipo', 'tcontrato'], ['entradaLocal', 'Entrada del local (como irá en el contrato, p. ej. «calle ... número ... (con letra)»)', 'texto'],
+                ['posesionDesde', 'En posesión del local desde', 'fecha', false, 'renovacion'], ['depositoAnterior', 'Depósito entregado en el contrato anterior', 'dinero', false, 'renovacion']
+            ] },
+            { t: 'Arrendatario', ayuda: 'Datos del inquilino, como irán en el contrato.', campos: [
+                ['tipoPersona', 'Tipo de persona', 'tipo'], ['razonSocial', 'Nombre completo o razón social', 'texto'],
+                ['rfc', 'RFC', 'texto'], ['curp', 'CURP', 'texto', false, 'fisica'],
+                ['nombreComercial', 'Nombre comercial', 'texto'], ['giro', 'Giro o proyecto', 'texto'],
+                ['telefono', 'Teléfono de contacto', 'texto'],
+                ['correosNotificacion', 'Correos de notificación (uno por renglón)', 'lineas'],
+                ['correosFacturacion', 'Correos para enviar las facturas (uno por renglón)', 'lineas'],
+                ['direccion', 'Dirección fiscal (una línea por renglón)', 'lineas', true],
+                ['constitucion', 'Constitución de la sociedad (escritura, notario, registro; como irá en la declaración)', 'textarea', true, 'moral']
+            ] },
+            { t: 'Representante legal', solo: 'moral', ayuda: 'Persona moral: quien firma el contrato.', campos: [
+                ['representante', 'Nombre completo', 'texto'], ['repRfc', 'RFC', 'texto'], ['repCurp', 'CURP', 'texto'],
+                ['poderRepresentante', 'Poder del representante (escritura, notario, folio; como irá en la declaración)', 'textarea', true]
+            ] },
+            { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas.', campos:
+                [1, 2, 3, 4].flatMap(n => [[`socio${n}`, `Socio ${n} · nombre completo`, 'texto'], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
+            { t: 'Vigencia', ayuda: 'Fechas y plazo del contrato nuevo.', campos: [
+                ['firma', 'Fecha de firma', 'fecha'], ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'],
+                ['fechaLimite', 'Fecha límite de pago', 'texto'], ['incrementoTipo', 'Tipo de incremento anual', 'texto'],
+                ['mesesGracia', 'Periodo de gracia (meses; 0 = sin gracia)', 'numero']
+            ], calc: ['fin', 'incremento'] },
+            { t: 'Renta y depósito', ayuda: 'Si el mantenimiento va aparte, escribe su porcentaje (0 = incluido en la renta). El depósito se calcula sobre la renta sin mantenimiento.', campos: [
+                ['renta', 'Renta mensual (sin IVA y sin mantenimiento)', 'dinero'], ['mantenimientoPct', 'Mantenimiento aparte (% de la renta; 0 = incluido)', 'numero'],
+                ['moratoriosContrato', 'Intereses moratorios', 'texto'], ['mesesDeposito', 'Meses de depósito', 'numero']
+            ], calc: ['rentaIva', 'deposito'] },
+            { t: 'Garantías', campos: [
+                ['garantia', 'Garantía', 'texto', true],
+                ['obligadosSolidarios', 'Obligado solidario (nombre, domicilio y teléfono; uno por renglón)', 'lineas', true],
+                ['garantiaDetalle', 'Detalle de la garantía', 'textarea', true]
+            ] },
+            { t: 'Obligado solidario (para el contrato)', ayuda: 'Datos que se imprimen en las declaraciones y cláusulas del contrato.', campos: [
+                ['osNombre', 'Nombre completo', 'texto'], ['osCurp', 'CURP', 'texto'], ['osRfc', 'RFC', 'texto'], ['osDomicilio', 'Domicilio', 'texto', true],
+                ['osInmueble', 'Inmueble en garantía (calle, colonia, municipio)', 'textarea', true],
+                ['osEscritura', 'Escritura del inmueble (como irá: «la escritura pública número ... folio real ... cuenta catastral ...»)', 'textarea', true]
+            ] }
+        ];
+        const CALC = { fin: 'Fin del contrato', incremento: 'Primer incremento de renta', rentaIva: 'Renta mensual con IVA (16 %)', deposito: 'Depósito requerido' };
+
+        async function iniciar() {
+            if (!procId) { location.href = '../nuevos-inquilinos/' + (idLegado ? '?local=' + encodeURIComponent(idLegado) : ''); return; }
+            const refProc = doc(db, 'nuevos_inquilinos', procId);
+            const sproc = await getDoc(refProc);
+            if (!sproc.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-inquilinos/">Volver a Nuevos inquilinos</a><h1>Proceso no encontrado</h1>'; return; }
+            const borr = sproc.data();
+            const snap = await getDoc(doc(db, 'contratos', borr.contratoId || '_'));
+            if (!snap.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-inquilinos/">Volver a Nuevos inquilinos</a><h1>Contrato del local no encontrado</h1>'; return; }
+            const c = { id: snap.id, ...snap.data() };
+            const locales = (c.locales || []).join(', ');
+            const hrefProceso = '../nuevos-inquilinos/ficha.html?id=' + encodeURIComponent(procId);
+
+            if (borr.estado === 'activado' || borr.estado === 'descartado') {
+                app.innerHTML = `<a class="volver" href="${hrefProceso}">Volver al proceso</a><h1>Contrato nuevo · Local ${esc(locales)}</h1>
+                    <p class="sub">Este proceso está ${borr.estado === 'activado' ? 'activado' : 'descartado'}${borr.contratoNuevoId ? `: <a href="caratula.html?id=${encodeURIComponent(borr.contratoNuevoId)}">ver el contrato nuevo</a>` : ''}.</p>`;
+                return;
+            }
+            if (c.estado === 'terminado') {
+                app.innerHTML = `<a class="volver" href="${hrefProceso}">Volver al proceso</a><h1>Contrato nuevo · Local ${esc(locales)}</h1>
+                    <p class="sub">El contrato de este local ya terminó${c.reemplazadoPor ? `; lo reemplaza <a href="caratula.html?id=${encodeURIComponent(c.reemplazadoPor)}">${esc(c.reemplazadoPor)}</a>` : ''}.</p>`;
+                return;
+            }
+
+            // Prioridad: lo guardado en el proceso > valores del contrato actual / por defecto
+            const base = {
+                tipoContrato: 'nuevo', mantenimientoPct: 0, mesesGracia: 0, entradaLocal: '', tipoPersona: '', inicio: c.fin ? sumaDia(c.fin, 1) : hoyISO(), anios: 5, firma: '', fechaLimite: c.fechaLimite || '',
+                renta: Number(c.total) || 0, incrementoTipo: 'INPC + 2', mesesDeposito: c.mesesDeposito ?? 1,
+                periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || ''
+            };
+            const v = { ...base, ...(borr.datos || {}) };
+            let versionPdf = borr.versionPdf || 0;
+            let pagos = [...(borr.pagos || [])];
+            let sucio = false;
+
+            const entrada = ([k, et, tipo, ancho, solo]) => {
+                const idc = 'p_' + k, val = esc(v[k] ?? '');
+                let ctl;
+                if (tipo === 'tcontrato') ctl = `<select id="${idc}"><option value="nuevo" ${v[k] !== 'renovacion' ? 'selected' : ''}>Contrato nuevo (cambio de inquilino)</option><option value="renovacion" ${v[k] === 'renovacion' ? 'selected' : ''}>Renovación (mismo inquilino)</option></select>`;
+                else if (tipo === 'tipo') ctl = `<select id="${idc}"><option value="">Seleccionar</option><option value="fisica" ${v[k] === 'fisica' ? 'selected' : ''}>Persona física</option><option value="moral" ${v[k] === 'moral' ? 'selected' : ''}>Persona moral</option></select>`;
+                else if (tipo === 'lineas' || tipo === 'textarea') ctl = `<textarea id="${idc}" rows="3">${val}</textarea>`;
+                else if (tipo === 'fecha') ctl = `<input type="date" id="${idc}" value="${val}">`;
+                else if (tipo === 'dinero') ctl = `<input type="text" id="${idc}" data-dinero value="${val}">`;
+                else if (tipo === 'numero') ctl = `<input type="number" id="${idc}" step="any" min="0" value="${val}">`;
+                else if (tipo === 'plazo') ctl = `<select id="${idc}">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option value="${n}" ${+v.anios === n ? 'selected' : ''}>${n} año${n > 1 ? 's' : ''}</option>`).join('')}</select>`;
+                else ctl = `<input type="text" id="${idc}" value="${val}">`;
+                return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
+            };
+            const seccionHtml = s => `<div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}><h2>${s.t}</h2>${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
+                <div class="grid">${s.campos.map(entrada).join('')}${(s.calc || []).map(k => `<div><label>${CALC[k]}</label><div class="calc" id="c_${k}"></div></div>`).join('')}</div></div>`;
+
+            const nota = 'Los datos son los del proceso (propuesta y cuestionario).';
+            app.innerHTML = `
+                <a class="volver" href="${hrefProceso}">Volver al proceso</a>
+                <h1>Contrato nuevo · Local ${esc(locales)}</h1>
+                <p class="sub">Sustituye al contrato actual de este local. ${nota} Se guarda solo conforme lo llenas. <span id="estadoGuardado" style="font-weight:600"></span></p>
+                <div class="flujo">
+                    <div class="hecho"><b>1-3 · Propuesta y cuestionario</b>En el proceso</div>
+                    <div class="act"><b>4 · Contrato</b>Aquí: borrador y PDF</div>
+                    <div class="act"><b>5 · Firma y pagos</b>Aquí abajo</div>
+                    <div><b>6 · Activar</b>Reemplaza al actual</div>
+                </div>
+                <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · renta <b>${dinero(c.total)}</b> sin IVA · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. No cambia nada de él hasta que actives el contrato nuevo. <a href="propuesta.html?proceso=${encodeURIComponent(procId)}">Ver propuesta</a></div>
+                ${SECCIONES.map(seccionHtml).join('')}
+                <div class="sec" id="seccionPagos"><h2>Firma y pagos</h2>
+                    <p class="ayuda">Para activar el contrato deben estar la fecha de firma (arriba, en Vigencia), el depósito y la primera renta. Registra aquí cada pago recibido.</p>
+                    <div id="listaPagos"></div>
+                    <div class="grid" style="margin-top:12px">
+                        <div><label for="pgConcepto">Concepto</label><select id="pgConcepto"><option value="deposito">Depósito en garantía</option><option value="primera_renta">Primera renta</option><option value="otro">Otro</option></select></div>
+                        <div><label for="pgFecha">Fecha del pago</label><input type="date" id="pgFecha" value="${hoyISO()}"></div>
+                        <div><label for="pgMonto">Monto recibido</label><input type="text" id="pgMonto" data-dinero></div>
+                        <div><label for="pgNota">Nota (forma de pago, referencia)</label><input type="text" id="pgNota"></div>
+                    </div>
+                    <div class="acciones" style="margin-top:12px"><button class="btn-sec" id="pgAgregar">Registrar pago</button><span class="err" id="pgMsg"></span></div>
+                </div>
+                <div class="revision"><h2>Antes de activar</h2><ul id="revision"></ul></div>
+                <div class="acciones">
+                    <button class="btn-sec" id="btnPdf">PDF del contrato</button>
+                    <button class="btn" id="btnActivar">Activar contrato</button>
+                    <span class="err" id="msg"></span>
+                </div>
+                <p class="sub" style="margin-top:14px;font-size:12px">Al activar, el contrato nuevo se crea con su propio id, hereda del local los m², el acceso, el tubo de agua, la basura y los servicios de CFE, y el contrato actual pasa a «Terminado» sin borrarse (facturas, pagos y depósito se conservan). Queda nota en el historial de los dos.</p>`;
+
+            const $ = x => document.getElementById(x);
+            activarSelectoresFecha(app, { atras: 2, adelante: 12 });
+            const CONCEPTO_PAGO = { deposito: 'Depósito en garantía', primera_renta: 'Primera renta', otro: 'Otro' };
+            const campos = SECCIONES.flatMap(s => s.campos.map(f => f[0]));
+            const val = k => ($('p_' + k)?.value ?? '').trim();
+
+            function calcular() {
+                const inicio = val('inicio') || v.inicio, anios = +val('anios') || 1, renta = +val('renta') || 0, meses = +val('mesesDeposito') || 0;
+                return { inicio, anios, renta, meses, fin: sumaDia(sumaMeses(inicio, anios * 12), -1), incr: sumaMeses(inicio, 12), deposito: r2(meses * renta), conIva: r2(renta * (1 + IVA)) };
+            }
+            function revision(d) {
+                const tp = val('tipoPersona');
+                const req = [
+                    [!!tp, 'Tipo de persona'], [!!val('razonSocial'), 'Nombre o razón social'], [!!val('rfc'), 'RFC'],
+                    [!!val('firma'), 'Fecha de firma'], [!!val('inicio'), 'Fecha de inicio'], [d.renta > 0, 'Renta mensual'],
+                    [normalizarCorreos(lineas(val('correosFacturacion'))).length > 0, 'Correos de facturación'],
+                    [pagos.some(p => p.concepto === 'deposito'), 'Depósito en garantía registrado'], [pagos.some(p => p.concepto === 'primera_renta'), 'Primera renta registrada']
+                ];
+                const avisos = [];
+                if (tp === 'moral' && !val('representante')) avisos.push('Falta el representante legal.');
+                if (!val('garantia')) avisos.push('No hay garantía capturada.');
+                const rd = resumenDocumentos({ datos: datos(), documentos: borr.documentos || {} });
+                if (rd.recibidos < rd.total) avisos.push(`Faltan documentos por recibir (${rd.recibidos} de ${rd.total}); se ven en la ficha del proceso.`);
+                if (!lineas(val('correosNotificacion')).length) avisos.push('No hay correos de notificación.');
+                const malos = lineas(val('correosFacturacion')).filter(x => !correoValido(x.replace(/\(.*?\)/g, '')));
+                if (malos.length) avisos.push('Revisa estos correos de facturación: ' + malos.join(', '));
+                const faltan = req.filter(r => !r[0]);
+                $('revision').innerHTML = req.map(r => `<li class="${r[0] ? 'ok' : 'falta'}">${r[0] ? 'Listo' : 'Falta'}: ${r[1]}</li>`).join('') + avisos.map(a => `<li class="aviso">Revisar: ${esc(a)}</li>`).join('');
+                return { faltan, malos };
+            }
+            function pintar() {
+                const d = calcular();
+                $('c_fin').textContent = fechaTxt(d.fin); $('c_incremento').textContent = fechaTxt(d.incr);
+                $('c_rentaIva').textContent = dinero(d.conIva);
+                $('c_deposito').textContent = dinero(d.deposito) + (d.meses ? ` (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '');
+                const tp = val('tipoPersona'), tc = val('tipoContrato') || 'nuevo';
+                app.querySelectorAll('[data-solo]').forEach(el => { const so = el.dataset.solo; el.style.display = (so === 'renovacion' || so === 'nuevo') ? (so === tc ? '' : 'none') : (tp && so !== tp ? 'none' : ''); });
+                revision(d);
+            }
+            function datos() {
+                const g = {}; campos.forEach(k => { g[k] = ($('p_' + k).value ?? '').trim(); }); return g;
+            }
+
+            // Guardado automático del borrador (contratos_borradores/{id del contrato actual})
+            const estado = $('estadoGuardado');
+            const pone = (t, color) => { estado.textContent = t; estado.style.color = color || 'var(--tinta-suave)'; };
+            let temporizador = null;
+            async function guardar() {
+                clearTimeout(temporizador); pone('Guardando…');
+                try {
+                    const dd = datos();
+                    await setDoc(refProc, { datos: dd, interesado: dd.razonSocial || dd.nombreComercial || '', versionPdf, pagos, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' }, { merge: true });
+                    sucio = false; pone('Guardado', 'var(--exito)');
+                } catch (e) { console.error(e); pone('No se pudo guardar. Revisa tu conexión.', 'var(--peligro)'); }
+            }
+            campos.forEach(k => $('p_' + k).addEventListener('input', () => { sucio = true; pone('Cambios sin guardar…'); clearTimeout(temporizador); temporizador = setTimeout(guardar, 900); pintar(); }));
+            window.addEventListener('pagehide', () => { if (sucio) guardar(); });
+            function pintarPagos() {
+                $('listaPagos').innerHTML = pagos.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="text-align:left">Concepto</th><th style="text-align:left">Fecha</th><th style="text-align:right">Monto</th><th style="text-align:left">Nota</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td>${esc(CONCEPTO_PAGO[p.concepto] || p.concepto)}</td><td>${esc(fechaTxt(p.fecha))}</td><td style="text-align:right">${dinero(p.monto)}</td><td>${esc(p.nota || '')}</td><td style="text-align:right"><button class="btn-sec" data-quitar="${i}" style="padding:4px 10px;font-size:12px">Quitar</button></td></tr>`).join('')}</tbody></table>` : '<p class="ayuda">Todavía no hay pagos registrados.</p>';
+                $('listaPagos').querySelectorAll('[data-quitar]').forEach(b => b.addEventListener('click', () => { pagos.splice(+b.dataset.quitar, 1); guardar().then(pintarPagos); pintar(); }));
+            }
+            $('pgAgregar').addEventListener('click', () => {
+                const monto = parseFloat($('pgMonto').value), fecha = $('pgFecha').value;
+                if (!(monto > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { $('pgMsg').textContent = 'Escribe el monto y la fecha.'; return; }
+                $('pgMsg').textContent = '';
+                pagos.push({ concepto: $('pgConcepto').value, fecha, monto: r2(monto), nota: $('pgNota').value.trim(), por: getCurrentUser()?.email || '' });
+                $('pgMonto').value = ''; $('pgNota').value = '';
+                guardar().then(pintarPagos); pintar();
+            });
+            pintar(); pintarPagos();
+
+            // PDF del contrato: la plantilla está en Firestore (contratos_plantillas); si no existe, sale un documento de prueba
+            const PLANTILLA = 'arrendamiento-local2';
+            $('btnPdf').addEventListener('click', async () => {
+                const btn = $('btnPdf'); btn.disabled = true;
+                try {
+                    versionPdf += 1;
+                    let pl = null;
+                    try { const sp2 = await getDoc(doc(db, 'contratos_plantillas', PLANTILLA)); if (sp2.exists()) pl = sp2.data(); } catch (e) { console.warn('No se pudo leer la plantilla', e); }
+                    let nombre;
+                    if (pl) {
+                        if (!document.getElementById('estilosContrato')) { const st = document.createElement('style'); st.id = 'estilosContrato'; st.textContent = ESTILOS_CONTRATO; document.head.appendChild(st); }
+                        hoja.className = 'contrato';
+                        hoja.innerHTML = htmlContrato(pl, datos(), c, '../css/logo.png');
+                        nombre = `CONTRATO LOCAL ${locales}_V${versionPdf}`;
+                    } else {
+                        hoja.className = '';
+                        nombre = `DOCUMENTO DE PRUEBA_V${versionPdf}`;
+                        hoja.innerHTML = `<div><h1>${esc(nombre)}</h1><p>Local ${esc(locales)} · no hay plantilla en Firestore</p></div>`;
+                    }
+                    await guardar();
+                    const img = hoja.querySelector('img');
+                    if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 1500); });
+                    const previo = document.title; document.title = nombre;
+                    window.print();
+                    document.title = previo;
+                } finally { btn.disabled = false; }
+            });
+
+            // Activación
+            $('btnActivar').addEventListener('click', () => {
+                const d = calcular(), r = revision(d);
+                if (r.faltan.length) { $('msg').textContent = 'Falta: ' + r.faltan.map(x => x[1]).join(', ') + '.'; return; }
+                if (r.malos.length) { $('msg').textContent = 'Revisa los correos de facturación.'; return; }
+                $('msg').textContent = '';
+                const salida = sumaDia(d.inicio, -1);
+                const fondo = document.createElement('div');
+                fondo.className = 'modal-fondo';
+                fondo.innerHTML = `<div class="modal" role="dialog" aria-label="Activar contrato">
+                    <h3>Activar el contrato nuevo</h3>
+                    <div class="resumen"><b>${esc(val('razonSocial'))}</b> · Local ${esc(locales)}<br>Inicio ${fechaTxt(d.inicio)} · ${d.anios} año${d.anios > 1 ? 's' : ''} · fin ${fechaTxt(d.fin)}<br>Renta ${dinero(d.renta)} + IVA · depósito ${dinero(d.deposito)}<br>Reemplaza a <b>${esc(c.razonSocial)}</b></div>
+                    <p>El contrato de <b>${esc(c.razonSocial)}</b> pasará a «Terminado». Fecha de salida del inquilino actual:</p>
+                    <input type="date" id="fSalida" value="${salida}" style="margin-bottom:6px">
+                    <p style="font-size:12px;color:var(--tinta-suave)">Sus facturas, pagos y depósito se conservan. Después conviene revisar el seguro, el titular de CFE y el medidor de agua del local.</p>
+                    <div class="pie"><span class="err" id="aMsg"></span><button class="btn-sec" data-x>Cancelar</button><button class="btn" id="aOk">Activar</button></div></div>`;
+                fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-x')) fondo.remove(); });
+                document.body.appendChild(fondo);
+                fondo.querySelector('#aOk').addEventListener('click', async e => {
+                    const salidaF = fondo.querySelector('#fSalida').value, aMsg = fondo.querySelector('#aMsg');
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(salidaF)) { aMsg.textContent = 'Elige la fecha de salida.'; return; }
+                    e.target.disabled = true; aMsg.textContent = 'Activando…';
+                    try { const nuevoId = await activar(d, salidaF); location.href = 'caratula.html?id=' + encodeURIComponent(nuevoId); }
+                    catch (err) { console.error(err); aMsg.textContent = 'No se pudo activar: ' + err.message; e.target.disabled = false; }
+                });
+            });
+
+            async function activar(d, salidaF) {
+                const user = getCurrentUser();
+                if (sucio) await guardar();
+                const g = datos(), moral = g.tipoPersona === 'moral';
+                const mantPct = +g.mantenimientoPct || 0, totalConMant = r2(d.renta * (1 + mantPct / 100));
+                // id propio del contrato nuevo: contrato_{locales}_{año de inicio}, con sufijo si ya existe
+                let nuevoId = `contrato_${(c.locales || [c.id]).join('-')}_${d.inicio.slice(0, 4)}`, n = 1;
+                while ((await getDoc(doc(db, 'contratos', nuevoId))).exists()) { n += 1; nuevoId = `contrato_${(c.locales || [c.id]).join('-')}_${d.inicio.slice(0, 4)}_${n}`; }
+
+                const fcViejo = c.facturacion || {};
+                const nuevo = {
+                    razonSocial: g.razonSocial, rfc: g.rfc, nombreComercial: g.nombreComercial, giro: g.giro, telefono: g.telefono,
+                    tipoPersona: g.tipoPersona, ...(g.tipoPersona === 'fisica' && g.curp ? { curp: g.curp } : {}),
+                    direccion: lineas(g.direccion),
+                    ...(moral ? { representante: g.representante, repRfc: g.repRfc, repCurp: g.repCurp,
+                        socios: [1, 2, 3, 4].map(i => ({ nombre: g[`socio${i}`], rfc: g[`socio${i}Rfc`], curp: g[`socio${i}Curp`] })).filter(s => s.nombre) } : {}),
+                    correosNotificacion: normalizarCorreos(lineas(g.correosNotificacion)),
+                    garantia: g.garantia, obligadosSolidarios: lineas(g.obligadosSolidarios), garantiaDetalle: g.garantiaDetalle,
+                    // Del local (no cambian con el inquilino)
+                    locales: c.locales || [], m2: c.m2 ?? null, acceso: c.acceso || '',
+                    cfe: c.cfe || '', cfeServicio: c.cfeServicio || '', cfeRmu: c.cfeRmu || '', cfeCuenta: c.cfeCuenta || '',
+                    ...(c.cfe2Servicio ? { cfe2Direccion: c.cfe2Direccion || '', cfe2Servicio: c.cfe2Servicio, cfe2Rmu: c.cfe2Rmu || '', cfe2Cuenta: c.cfe2Cuenta || '' } : {}),
+                    // Vigencia y renta
+                    firma: g.firma, plazo: `${d.anios} año${d.anios > 1 ? 's' : ''}`, inicio: d.inicio, fin: d.fin, incremento: d.incr, incrementoTipo: g.incrementoTipo,
+                    fechaLimite: g.fechaLimite, periodoGracia: g.periodoGracia, moratoriosContrato: g.moratoriosContrato,
+                    total: totalConMant, totalIva: r2(totalConMant * (1 + IVA)), ...(mantPct > 0 ? { mantenimientoPct: mantPct / 100 } : {}),
+                    rentas: [{ concepto: `RENTA MENSUAL ${d.inicio.slice(0, 4)}`, anio: +d.inicio.slice(0, 4), monto: totalConMant, nota: '', periodo: '', desde: d.inicio, hasta: sumaDia(d.incr, -1), incrementoPct: null }],
+                    mesesDeposito: d.meses, depositoBase: mantPct > 0 ? 'sin' : 'con', mesesGracia: +g.mesesGracia || 0,
+                    datosContrato: { tipoContrato: g.tipoContrato, entradaLocal: g.entradaLocal, constitucion: g.constitucion, poderRepresentante: g.poderRepresentante, osNombre: g.osNombre, osCurp: g.osCurp, osRfc: g.osRfc, osDomicilio: g.osDomicilio, osInmueble: g.osInmueble, osEscritura: g.osEscritura }, historialDepositos: [], pagosRenta: [],
+                    // Facturación: mismo tubo de agua y basura del local, correos y razón social del inquilino nuevo
+                    facturacion: { activo: true, razonSocialFactura: g.razonSocial, correos: normalizarCorreos(lineas(g.correosFacturacion)),
+                        metodoPago: fcViejo.metodoPago || 'PUE', conceptoRenta: fcViejo.conceptoRenta || 'RENTA', basura: !!fcViejo.basura,
+                        tubos: (fcViejo.tubos || []).map(t => ({ ...t })), notas: '' },
+                    reemplazaA: c.id, origen: 'cambio_inquilino', creadoPor: user.email, creadoEn: serverTimestamp()
+                };
+                const batch = writeBatch(db);
+                batch.set(doc(db, 'contratos', nuevoId), nuevo);
+                batch.set(doc(collection(db, 'contratos', nuevoId, 'historial')), { antes: null, despues: { alta: 'Contrato nuevo que reemplaza a ' + c.id }, por: user.email, en: serverTimestamp(), nota: 'Alta por cambio de inquilino' });
+                batch.update(doc(db, 'contratos', c.id), { estado: 'terminado', terminadoEn: salidaF, reemplazadoPor: nuevoId, editadoPor: user.email, editadoEn: serverTimestamp() });
+                batch.set(doc(collection(db, 'contratos', c.id, 'historial')), { antes: { estado: c.estado ?? null }, despues: { estado: 'terminado', terminadoEn: salidaF, reemplazadoPor: nuevoId }, por: user.email, en: serverTimestamp(), nota: 'Contrato reemplazado por ' + nuevoId });
+                batch.set(refProc, { estado: 'activado', contratoNuevoId: nuevoId, activadoEn: serverTimestamp(), activadoPor: user.email }, { merge: true });
+                const otros = await getDocs(query(collection(db, 'nuevos_inquilinos'), where('contratoId', '==', c.id)));
+                otros.docs.filter(x => x.id !== procId && x.data().estado === 'en_proceso').forEach(x => batch.update(x.ref, { estado: 'descartado', descartadoEn: serverTimestamp(), descartadoMotivo: 'Se activó otro contrato en este local' }));
+                await batch.commit();
+                return nuevoId;
+            }
+        }
+    </script>
+</body>
+</html>

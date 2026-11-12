@@ -166,12 +166,13 @@ export function getSeccionesPermitidas() {
     cfe:         { id: 'cfe',         nombre: 'CFE',              url: b + 'cfe/' },
     compras:     { id: 'compras',     nombre: 'Compras',          url: b + 'compras/' },
     depositos:   { id: 'depositos',   nombre: 'Depósitos',        url: b + 'depositos/' },
+    nuevosInquilinos: { id: 'nuevosInquilinos', nombre: 'Nuevos inquilinos', url: b + 'nuevos-inquilinos/' },
     pagosMensuales: { id: 'pagosMensuales', nombre: 'Pagos mensuales', url: b + 'pagos-mensuales/' },
     tesoreria:   { id: 'tesoreria',   nombre: 'Tesorería',        url: b + 'tesoreria/' }
   };
 
   const porRol = {
-    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'facturacion', 'depositos', 'pagosMensuales', 'tesoreria', 'cajaChica', 'compras', 'agua', 'siapa', 'bitacora', 'calendarios', 'cfe', 'personal'],
+    admin: ['inicio', 'directorio', 'locales', 'metrajes', 'nuevosInquilinos', 'facturacion', 'depositos', 'pagosMensuales', 'tesoreria', 'cajaChica', 'compras', 'agua', 'siapa', 'bitacora', 'calendarios', 'cfe', 'personal'],
     operario: ['inicio', 'cajaChica', 'compras', 'agua', 'bitacora', 'calendarios']
   };
 

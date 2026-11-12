@@ -65,11 +65,11 @@
     <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { ESTADOS, mesTxt, dinero, esc, r2, ordenLocales, rentaDelMes, calcGBD, conceptoGBDTxt, normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261013-1';
+        import { ESTADOS, mesTxt, dinero, esc, r2, ordenLocales, rentaDelMes, contratoEnMes, calcGBD, conceptoGBDTxt, normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261111-2';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);
@@ -110,7 +110,7 @@
         async function origenHTML(c) {
             if (f.tipo !== 'prestamo' && typeof f.porcentaje === 'number') {
                 const locs = (await getDocs(collection(db, 'contratos'))).docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
-                const filas = locs.map(x => ({ x, renta: rentaDelMes(x, f.mes).renta }));
+                const filas = locs.filter(x => contratoEnMes(x, f.mes)).map(x => ({ x, renta: rentaDelMes(x, f.mes).renta }));
                 const base = r2(filas.reduce((a, r) => a + r.renta, 0)), esperado = r2(base * f.porcentaje);
                 return { formula: `${pct(f.porcentaje)} de ${dinero(base)} (rentas del mes sin IVA)`, html: `<div class="panel">
                     <h2>Rentas del mes que se toman de base</h2>

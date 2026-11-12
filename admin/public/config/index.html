@@ -93,9 +93,9 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db, auth } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db, auth } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, getDoc, doc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
@@ -279,7 +279,7 @@
                 diaLimitePago: Number.isInteger(fac.diaLimitePago) ? fac.diaLimitePago : DEF.diaLimitePago
             };
             const conBasura = snapC.docs.map(d => d.data())
-                .filter(c => c.facturacion?.basura && !c.vencido)
+                .filter(c => c.facturacion?.basura && !c.vencido && c.estado !== 'terminado')
                 .map(c => `Local ${(c.locales || []).join(', ')}`);
             const historial = [...(fac.cambios || [])].reverse().slice(0, 8);
 

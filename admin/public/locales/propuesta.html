@@ -100,10 +100,10 @@
     <div id="hoja"></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261104-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261111-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261104-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -113,7 +113,8 @@
         const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const IVA = 0.16;
-        const id = new URLSearchParams(location.search).get('id');
+        const qs = new URLSearchParams(location.search), procId = qs.get('proceso');   // ?proceso= = dentro de un proceso de Nuevos inquilinos; ?id= = propuesta del contrato (renovaciones)
+        let id = qs.get('id');
 
         if (!isAuthenticated()) {
             window.location.href = '/login.html';
@@ -189,6 +190,14 @@
         };
 
         async function iniciar() {
+            let proc = null;
+            if (procId) {
+                const spr = await getDoc(doc(db, 'nuevos_inquilinos', procId));
+                if (!spr.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-inquilinos/">Volver a Nuevos inquilinos</a><h1>Proceso no encontrado</h1>'; return; }
+                proc = { id: spr.id, ...spr.data() }; id = proc.contratoId;
+            }
+            const volverHref = procId ? '../nuevos-inquilinos/ficha.html?id=' + encodeURIComponent(procId) : '../#metrajes';
+            const volverTxt = procId ? 'Volver al proceso' : 'Volver a Locales';
             const snap = await getDoc(doc(db, 'contratos', id || '_'));
             if (!snap.exists()) { app.innerHTML = '<a class="volver" href="../#metrajes">Volver a Locales</a><h1>Local no encontrado</h1>'; return; }
             const c = { id: snap.id, ...snap.data() };
@@ -196,13 +205,13 @@
             const m2 = Number(c.m2) || 0;
             const rentaActual = Number(c.total) || 0;
             const inicioSug = c.fin ? sumaDia(c.fin, 1) : hoyISO();
-            const clave = 'propuesta2_' + c.id;
+            const clave = 'propuesta2_' + (procId || c.id);
             // La propuesta se guarda en Firestore (propuestas/{id del contrato}) conforme se llena; el borrador del navegador solo es respaldo
-            const refProp = doc(db, 'propuestas', c.id);
+            const refProp = procId ? doc(db, 'nuevos_inquilinos', procId) : doc(db, 'propuestas', c.id);
             let guardado = {}, ultimaVez = null, hayGuardada = false;
             try {
-                const ps = await getDoc(refProp);
-                if (ps.exists()) { guardado = ps.data().datos || {}; ultimaVez = ps.data().actualizadoEn?.toDate?.() || null; hayGuardada = true; }
+                const ps = proc ? { exists: () => true, data: () => proc } : await getDoc(refProp);
+                if (ps.exists()) { guardado = ps.data().datos || {}; ultimaVez = ps.data().actualizadoEn?.toDate?.() || null; hayGuardada = !procId || Object.keys(guardado).length > 0; }
             } catch (e) { console.warn('No se pudo leer la propuesta guardada', e); }
             if (!hayGuardada) { try { guardado = JSON.parse(localStorage.getItem(clave) || '{}'); } catch (e) { /* sin borrador */ } }
             let sucio = !hayGuardada && Object.keys(guardado).length > 0;   // un borrador viejo del navegador se sube a Firestore
@@ -249,7 +258,7 @@
                 </div>`;
 
             app.innerHTML = `
-                <a class="volver" href="../#metrajes">Volver a Locales</a>
+                <a class="volver" href="${volverHref}">${volverTxt}</a>
                 <h1>Propuesta de arrendamiento · Local ${esc(locales)}</h1>
                 <p class="sub">Primero se prepara la propuesta (paso 1) y, si el interesado la acepta, se le envía el cuestionario de datos generales (paso 2). Se guarda sola conforme la llenas: puedes cerrar y seguir después. <span id="estadoGuardado" style="font-weight:600"></span></p>
                 <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · ${m2 ? '<b>' + m2.toLocaleString('es-MX') + ' m²</b> · ' : ''}renta <b>${dinero(rentaActual)}</b> sin IVA${m2 ? ' (' + dinero(rentaActual / m2) + ' por m²)' : ''} · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. El paso 1 arranca con estos valores.</div>
@@ -277,6 +286,7 @@
                         <button class="btn-sec" id="btnBlanco" title="Sale con todos los espacios vacíos, para enviarlo y que el interesado lo llene">PDF del cuestionario en blanco</button>
                         <button class="btn-sec" id="btnLimpiar">Limpiar el cuestionario</button>
                         <button class="btn-sec" id="volverPaso1">Volver al paso 1</button>
+                        ${procId ? `<a class="btn" style="text-decoration:none" href="contrato-nuevo.html?proceso=${encodeURIComponent(procId)}" title="Sigue con el borrador del contrato">Seguir con el contrato</a>` : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos inquilinos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
                     </div>
                 </div>
                 <div class="panel-paso p3" id="paso3">
@@ -284,7 +294,7 @@
                     ${PASOS[3].map(seccionHtml).join('')}
                     <div id="proyeccion"></div>
                 </div>
-                <p class="sub" style="margin-top:14px;font-size:12px">La propuesta se guarda en el panel (una por local), así que puedes retomarla desde cualquier equipo. Agua y basura se facturan aparte; IVA de 16 %.</p>`;
+                <p class="sub" style="margin-top:14px;font-size:12px">La propuesta se guarda en el panel (una por local), así que puedes retomarla desde cualquier equipo. El agua se factura aparte; IVA de 16 %.</p>`;
 
             const $ = x => document.getElementById(x);
             activarSelectoresFecha(app, { atras: 1, adelante: 12 });   // fechas con el mes en letra, en español
@@ -301,6 +311,19 @@
             app.querySelectorAll('.paso-tab').forEach(b => b.addEventListener('click', () => irAPaso(+b.dataset.paso)));
             $('irPaso2').addEventListener('click', () => irAPaso(2));
             $('volverPaso1').addEventListener('click', () => irAPaso(1));
+            if (qs.get('paso') === '2') irAPaso(2);
+            // Renovación: abre un proceso en Nuevos inquilinos con lo capturado en esta propuesta
+            $('btnProceso')?.addEventListener('click', async e => {
+                if (!confirm('Se abre un proceso de renovación en Nuevos inquilinos con lo capturado en esta propuesta. ¿Continuar?')) return;
+                e.target.disabled = true;
+                try {
+                    const datos = {}; todos.forEach(fl => { const el = $('p_' + fl[0]); datos[fl[0]] = el.type === 'checkbox' ? el.checked : el.value; });
+                    datos.tipoContrato = 'renovacion';
+                    const pid = 'ni_' + Date.now().toString(36), user = getCurrentUser();
+                    await setDoc(doc(db, 'nuevos_inquilinos', pid), { contratoId: c.id, locales: c.locales || [], estado: 'en_proceso', interesado: datos.razonSocial || datos.dirigidaA || '', datos, propuestaEnviada: null, aceptada: null, versionPdf: 0, pagos: [], creadoPor: user.email, creadoEn: serverTimestamp(), actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+                    location.href = '../nuevos-inquilinos/ficha.html?id=' + encodeURIComponent(pid);
+                } catch (err) { console.error(err); alert('No se pudo abrir el proceso: ' + err.message); e.target.disabled = false; }
+            });
 
             function calcular() {
                 const anios = +val('anios') || 1;
@@ -411,7 +434,8 @@
                 const datos = pendiente; pendiente = null; clearTimeout(temporizador);
                 pone('Guardando…');
                 try {
-                    await setDoc(refProp, { contratoId: c.id, locales: c.locales || [], datos, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' });
+                    if (procId) await setDoc(refProp, { datos, interesado: datos.razonSocial || datos.dirigidaA || '', actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' }, { merge: true });
+                    else await setDoc(refProp, { contratoId: c.id, locales: c.locales || [], datos, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' });
                     if (!pendiente) pone('Guardada ' + horaTxt(new Date()), 'var(--exito)');
                 } catch (e) {
                     console.error(e);
@@ -486,7 +510,7 @@
                     ${datos}
                     <div class="carta" style="margin-top:14px"><p>Si la propuesta es de su interés, le enviaremos un cuestionario para recopilar los datos generales del arrendatario, como persona física o persona moral, y preparar el contrato.${hasta ? ` Esta propuesta tiene vigencia hasta el ${hasta}.` : ''}</p></div>
                     <div class="firmas una"><div>La Fábrica de Chocolate</div></div>
-                    <p class="pie">Cifras en pesos mexicanos. La renta se factura con IVA de 16 %; el agua y la recolección de basura se facturan aparte. Esta propuesta no constituye contrato y está sujeta a la firma del contrato de arrendamiento.</p>`;
+                    <p class="pie">Cifras en pesos mexicanos. La renta se factura con IVA de 16 %; el agua se factura aparte. Esta propuesta no constituye contrato y está sujeta a la firma del contrato de arrendamiento.</p>`;
                 imprimirHoja();
             }
 
