@@ -73,7 +73,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
-        import { requerimientoDeposito, emailRequerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261112-1';
+        import { requerimientoDeposito, emailRequerimientoDeposito, otrosPorCobrar } from '../../../js/requerimiento-deposito.js?v=20261112-3';
         import { reciboDeposito, emailReciboDeposito } from '../../../js/recibo-deposito.js?v=20261112-1';
         import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -129,6 +129,7 @@
                     <div><div class="et">Requerido</div><div class="val">${dinero(k.requerido)}</div><div class="gris">${k.meses} mes${k.meses === 1 ? '' : 'es'} × ${dinero(k.base)} (${k.baseClave === 'sin' ? 'sin' : 'con'} mantenimiento)</div></div>
                     <div><div class="et">Pagado</div><div class="val">${dinero(k.pagado)}</div><div class="gris">${k.cuentan.length} pago${k.cuentan.length === 1 ? '' : 's'} que cuentan</div></div>
                 </div>
+                ${otrosPorCobrar(c).length ? `<div class="resumen" style="grid-template-columns:1fr"><div class="alerta"><div class="et">Otros por cobrar (no son depósito)</div><div class="val">${dinero(otrosPorCobrar(c).reduce((t, x) => t + x.importe, 0))}</div>${otrosPorCobrar(c).map(x => `<div class="gris">${esc(x.concepto)}: ${dinero(x.importe)}</div>`).join('')}<div class="gris">Salen en un bloque aparte del requerimiento de cobro.</div></div></div>` : ''}
                 <span id="msg" class="msg">${msg}</span>
                 <div class="dos" style="margin-top:12px">
                     <div class="panel">

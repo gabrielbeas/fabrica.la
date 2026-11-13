@@ -10,12 +10,21 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<':
 const dinero = n => typeof n === 'number' ? (n <= -0.005 ? '-$' : '$') + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
 const fechaTxt = f => { if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return f || '-'; const [y, m, d] = f.split('-'); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
 
+// Otros conceptos por cobrar que NO son depósito (p. ej. reembolso de honorarios): el contrato trae `porCobrarOtros` [{concepto, importe}].
+// Salen en un bloque aparte del requerimiento y suman al total a pagar; el saldo del depósito se calcula sin ellos.
+export function otrosPorCobrar(c) {
+    return (Array.isArray(c.porCobrarOtros) ? c.porCobrarOtros : []).filter(x => x && x.concepto && Number(x.importe) > 0)
+        .map(x => ({ concepto: String(x.concepto), importe: Math.round(Number(x.importe) * 100) / 100 }));
+}
+const sumaOtros = l => Math.round(l.reduce((t, x) => t + x.importe, 0) * 100) / 100;
+
 // Requerimiento de cobro del saldo del depósito: carta vertical con membrete, cuadro de saldos y datos bancarios
 const PLAZO_REQUERIMIENTO_DIAS = 7;   // fecha límite sugerida; se puede cambiar al generar
 export async function requerimientoDeposito(c, btn = null) {
     const r = cuentaDeposito(c);
     const baseTxt = r.baseClave === 'sin' ? 'sin mantenimiento' : 'con mantenimiento';
-    if (r.saldo <= 0.005) { alert(`Este contrato no tiene saldo de depósito por cobrar.
+    const otros = otrosPorCobrar(c), totalOtros = sumaOtros(otros), totalPagar = Math.round((Math.max(0, r.saldo) + totalOtros) * 100) / 100;
+    if (r.saldo <= 0.005 && !otros.length) { alert(`Este contrato no tiene saldo de depósito por cobrar.
 
 Depósito requerido: ${dinero(r.requerido)}
 Depósito pagado: ${dinero(r.pagado)}`); return; }
@@ -25,7 +34,9 @@ Depósito pagado: ${dinero(r.pagado)}`); return; }
 
 Depósito requerido (${c.mesesDeposito || 1} mes${(c.mesesDeposito || 1) === 1 ? '' : 'es'} de renta vigente ${baseTxt}): ${dinero(r.requerido)}
 Depósito pagado: ${dinero(r.pagado)}
-Saldo a cobrar: ${dinero(r.saldo)}
+Saldo a cobrar: ${dinero(r.saldo)}${otros.length ? `
+${otros.map(x => `${x.concepto}: ${dinero(x.importe)}`).join('\n')}
+Total a pagar: ${dinero(totalPagar)}` : ''}
 
 ¿Generar el PDF?`)) return;
     const limTxt = prompt('Fecha límite de pago (AAAA-MM-DD)', isoDe(def));
@@ -69,22 +80,33 @@ Saldo a cobrar: ${dinero(r.saldo)}
             <div class="cab"><img src="${LOGO_URL}" alt="La Fábrica de Chocolate">
                 <div class="der">Guadalajara, Jalisco, a ${larga(hoy)}<br>Referencia: Local ${esc(locales)} · Depósito en garantía</div></div>
             <h1>REQUERIMIENTO DE PAGO</h1>
-            <div class="sub">Saldo del depósito en garantía</div>
+            <div class="sub">${otros.length ? 'Saldo del depósito en garantía y otros conceptos' : 'Saldo del depósito en garantía'}</div>
             <div class="dest"><strong>${esc(c.razonSocial)}</strong><br>
                 ${c.representante ? `Atención: ${esc(c.representante)}, representante<br>` : ''}
                 <span class="gris">Local ${esc(locales)}${dir ? ` · ${dir}` : ''}${obligados ? `<br>Con copia al obligado solidario: ${esc(obligados)}` : ''}</span></div>
-            <p>LAFABDECHOC S DE RL DE CV, arrendador del local ${esc(locales)} conforme al contrato de arrendamiento ${c.inicio ? `con inicio el ${esc(fechaTxt(c.inicio))}` : 'vigente'}, le requiere el pago del saldo pendiente del depósito en garantía pactado en dicho contrato, equivalente a ${(c.mesesDeposito || 1) === 1 ? 'un mes' : `${c.mesesDeposito} meses`} de renta vigente ${baseTxt}.</p>
+            <p>LAFABDECHOC S DE RL DE CV, arrendador del local ${esc(locales)} conforme al contrato de arrendamiento ${c.inicio ? `con inicio el ${esc(fechaTxt(c.inicio))}` : 'vigente'}, le requiere el pago del saldo pendiente del depósito en garantía pactado en dicho contrato, equivalente a ${(c.mesesDeposito || 1) === 1 ? 'un mes' : `${c.mesesDeposito} meses`} de renta vigente ${baseTxt}.${otros.length ? ' Asimismo, le requiere el pago de los otros conceptos que se detallan a continuación.' : ''}</p>
             <table>
                 <thead><tr><th>Concepto</th><th class="n">Importe</th></tr></thead>
                 <tbody>
                     <tr><td>${requeridoTxt}</td><td class="n">${dinero(r.requerido)}</td></tr>
                     <tr><td>${pagadoTxt}</td><td class="n">−${dinero(r.pagado)}</td></tr>
-                    <tr class="tot"><td>Saldo por pagar</td><td class="n">${dinero(r.saldo)}</td></tr>
+                    <tr class="tot"><td>${otros.length ? 'Saldo del depósito por pagar' : 'Saldo por pagar'}</td><td class="n">${dinero(Math.max(0, r.saldo))}</td></tr>
                 </tbody>
             </table>
-            <p class="nota">Este depósito no se factura por tratarse de un depósito en garantía.</p>
+            ${otros.length ? `<table>
+                <thead><tr><th>Otros conceptos</th><th class="n">Importe</th></tr></thead>
+                <tbody>
+                    ${otros.map(x => `<tr><td>${esc(x.concepto)}</td><td class="n">${dinero(x.importe)}</td></tr>`).join('')}
+                </tbody>
+            </table>
+            <table>
+                <tbody>
+                    <tr class="tot"><td>Total a pagar</td><td class="n">${dinero(totalPagar)}</td></tr>
+                </tbody>
+            </table>` : ''}
+            <p class="nota">${otros.length ? 'El saldo del depósito no se factura por tratarse de un depósito en garantía.' : 'Este depósito no se factura por tratarse de un depósito en garantía.'}</p>
 
-            <p>Le pedimos cubrir este saldo a más tardar el <strong>${larga(lim)}</strong>, mediante transferencia a la cuenta siguiente, y enviar su comprobante a facturas@fabrica.la.</p>
+            <p>Le pedimos cubrir ${otros.length ? 'el total' : 'este saldo'} a más tardar el <strong>${larga(lim)}</strong>, mediante transferencia a la cuenta siguiente, y enviar su comprobante a facturas@fabrica.la.</p>
             <div class="banco">
                 <b>Beneficiario</b><span>${esc(cta.beneficiario)}</span>
                 <b>Banco</b><span>${esc(cta.banco)}</span>
@@ -99,7 +121,7 @@ Saldo a cobrar: ${dinero(r.saldo)}
         const user = getCurrentUser();
         await addDoc(collection(db, 'contratos', c.id, 'historial'), {
             antes: { requerimientoDeposito: null },
-            despues: { requerimientoDeposito: `${iso(hoy).split('-').reverse().join('/')}: saldo ${dinero(r.saldo)}, límite ${iso(lim).split('-').reverse().join('/')}` },
+            despues: { requerimientoDeposito: `${iso(hoy).split('-').reverse().join('/')}: ${otros.length ? `total ${dinero(totalPagar)} (depósito ${dinero(Math.max(0, r.saldo))} + otros ${dinero(totalOtros)})` : `saldo ${dinero(r.saldo)}`}, límite ${iso(lim).split('-').reverse().join('/')}` },
             por: user.email, en: serverTimestamp()
         });
     } catch (err) {
@@ -115,7 +137,8 @@ import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './co
 
 export async function emailRequerimientoDeposito(c) {
   const r = cuentaDeposito(c);
-  if (r.saldo <= 0.005) { alert(`Este contrato no tiene saldo de depósito por cobrar.\n\nDepósito requerido: ${dinero(r.requerido)}\nDepósito pagado: ${dinero(r.pagado)}`); return; }
+  const otros = otrosPorCobrar(c), totalOtros = sumaOtros(otros), totalPagar = Math.round((Math.max(0, r.saldo) + totalOtros) * 100) / 100;
+  if (r.saldo <= 0.005 && !otros.length) { alert(`Este contrato no tiene saldo de depósito por cobrar.\n\nDepósito requerido: ${dinero(r.requerido)}\nDepósito pagado: ${dinero(r.pagado)}`); return; }
   const correos = correosDeContrato(c);
   const locales = (c.locales || []).join(', ');
   const baseTxt = r.baseClave === 'sin' ? 'sin mantenimiento' : 'con mantenimiento';
@@ -123,9 +146,10 @@ export async function emailRequerimientoDeposito(c) {
   const larga = iso => { const [y, m, d] = iso.split('-'); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
   const def = isoDe(new Date(Date.now() + PLAZO_REQUERIMIENTO_DIAS * 86400000));
   const asunto = `Requerimiento de pago · Saldo del depósito en garantía · Local ${locales}`;
+  const detalle = otros.length ? `\n\nAdemás, se requiere el pago de:\n${otros.map(x => `- ${x.concepto}: ${dinero(x.importe)}`).join('\n')}\n\nTotal a pagar: ${dinero(totalPagar)}` : '';
   const cuerpo = lim => `Estimados ${c.razonSocial}:
 
-Les hacemos llegar el requerimiento de pago del saldo del depósito en garantía del local ${locales}, por ${dinero(r.saldo)} (${r.meses} mes${r.meses === 1 ? '' : 'es'} de renta vigente ${baseTxt}, menos ${dinero(r.pagado)} ya pagados).
+Les hacemos llegar el requerimiento de pago del saldo del depósito en garantía del local ${locales}, por ${dinero(r.saldo)} (${r.meses} mes${r.meses === 1 ? '' : 'es'} de renta vigente ${baseTxt}, menos ${dinero(r.pagado)} ya pagados).${detalle}
 
 Les pedimos realizar la transferencia a más tardar el ${larga(lim)}, a la cuenta indicada en el documento adjunto, y enviar su comprobante a facturas@fabrica.la. Este depósito es una garantía, por lo que no genera factura.
 
