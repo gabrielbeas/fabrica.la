@@ -122,6 +122,7 @@ export async function reciboDeposito(c, btn = null) {
       if (!confirm(`Recibo de depósito en garantía\n\n${c.razonSocial} · local ${locales}\nDepósito requerido: ${dinero(r.requerido)}\nDepósito pagado: ${dinero(r.pagado)} (${r.cuentan.length} pago${r.cuentan.length === 1 ? '' : 's'})\n\nSe asignará un folio nuevo. ¿Generar el PDF?`)) return;
       rec = await emitir(c, r);
     }
+    const pagos = rec.pagos || [];
     const html = htmlRecibo(c, r, rec);
     imprimirHojas(html, `Recibo de depósito ${rec.folio} · Local ${locales}`, { vertical: true });
     const user = getCurrentUser();
