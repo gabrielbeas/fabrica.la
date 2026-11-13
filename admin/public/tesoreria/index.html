@@ -263,6 +263,7 @@
         tr.fila-total td { font-weight: 700; background: #fff8ec; border-bottom: 2px solid #d08a1e; padding-top: 11px; padding-bottom: 11px; }
         tr.fila-total td b { font-weight: 700; }
         tr.mov.excl td { color: var(--tinta-suave); }
+        .tabla-wrap.sin-rev th:nth-child(5), .tabla-wrap.sin-rev td:nth-child(5), .tabla-wrap.sin-rev col[data-k="rev"] { display: none; }
         .marca-excl { font-size: 11px; color: var(--tinta-suave); border: 1px solid #d5dbe3; border-radius: 10px; padding: 0 6px; white-space: nowrap; }
         .flecha-mes { display: inline-block; width: 14px; color: var(--tinta-suave); }
     </style>
@@ -646,6 +647,7 @@
                         .forEach(m => { acc = Math.round((acc + m.monto) * 100) / 100; saldos[m.id] = acc; const k = m.fecha.slice(0, 7); nums[m.id] = contadorMes[k] = (contadorMes[k] || 0) + 1; });
                 }
                 const categorias = [...new Set(MOVS.map(m => m.categoria).filter(Boolean))].sort();
+                if (st.ocultaRev === undefined) { try { st.ocultaRev = localStorage.getItem('tesoreria_ocultar_rev') === '1'; } catch (e) { st.ocultaRev = false; } }
                 const fijo = COLS.every(k => st.anchos[k] > 0);
                 const ancho = k => fijo ? st.anchos[k] : ANCHO_BASE[k];
                 const sumaAnchos = COLS.reduce((a, k) => a + ancho(k), 0);
@@ -693,10 +695,10 @@
                                 </div>
                                 <div class="rapidos">Filtros rápidos
                                     ${[['mes', 'Este mes'], ['sincat', 'Sin categoría'], ['sinrev', 'Sin revisar'], ['bandera', 'Con bandera'], ['depos', 'Depósitos por aplicar']].map(([k, t]) => `<button class="chip ${st.rapido === k ? 'act' : ''}" data-rapido="${k}">${t}</button>`).join('')}
-                                    ${fijo ? '<button class="chip" id="bRestCols" style="margin-left:auto">Restablecer columnas</button>' : ''}${st.sel.size ? `<button class="chip" id="bTransf" style="margin-left:8px" title="Los deja fuera de reportes y del dashboard, sin cambiar el saldo de la cuenta">Marcar como transferencia</button><button class="chip" id="bQuitaTransf" title="Vuelve a contarlos en reportes y en el dashboard">Quitar de transferencia</button>` : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
+                                    <button class="chip" id="bOcultaRev" style="margin-left:auto" title="Muestra u oculta la columna de la palomita (Revisado)">${st.ocultaRev ? 'Mostrar columna Revisado' : 'Ocultar columna Revisado'}</button>${fijo ? '<button class="chip" id="bRestCols" style="margin-left:8px">Restablecer columnas</button>' : ''}${st.sel.size ? `<button class="chip" id="bTransf" style="margin-left:8px" title="Los deja fuera de reportes y del dashboard, sin cambiar el saldo de la cuenta">Marcar como transferencia</button><button class="chip" id="bQuitaTransf" title="Vuelve a contarlos en reportes y en el dashboard">Quitar de transferencia</button>` : ''}<span style="margin-left:${fijo ? '8px' : 'auto'}">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${st.sel.size ? ' · ' + st.sel.size + ' seleccionado' + (st.sel.size === 1 ? '' : 's') : ''}</span>
                                 </div>
                                 <div class="aviso" id="aviso"></div>
-                                <div class="tabla-wrap"><table style="width:${sumaAnchos}px"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
+                                <div class="tabla-wrap${st.ocultaRev ? ' sin-rev' : ''}"><table style="width:${sumaAnchos}px"><colgroup>${COLS.map(k => `<col data-k="${k}" style="width:${ancho(k)}px">`).join('')}</colgroup>
                                     <thead><tr><th><input type="checkbox" id="chkTodos" aria-label="Seleccionar todos">${rz('chk')}</th><th class="der" title="Número del movimiento dentro del mes, en orden cronológico">N°${rz('num')}</th>${th('fecha', 'Fecha')}${th('ban', `<span class="th-flag" title="Ordenar por bandera">${FLAG}</span>`, 'th-ban')}<th>${rz('rev')}</th>${th('beneficiario', 'Beneficiario')}${th('categoria', 'Categoría')}<th>Etiquetas${rz('etq')}</th><th>Notas${rz('nota')}</th>${th('monto', 'Monto', 'der')}<th class="der" title="Saldo de la cuenta después de este movimiento">Saldo${rz('saldo')}</th></tr></thead>
                                     <tbody>${filas ? filaTotal(lista) + filas : `<tr><td colspan="11" class="vacio">${MOVS.length ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos. Usa «Importar CSV» para cargar el CSV de Simplifi o «Nuevo» para capturar uno.'}</td></tr>`}</tbody>
                                 </table></div>
@@ -728,6 +730,8 @@
                 aplicaAnchos();
                 const guardarAnchos = () => { try { localStorage.setItem(CLAVE_ANCHOS, JSON.stringify(st.anchos)); } catch (e) { /* sin almacenamiento */ } };
                 const bRest = document.getElementById('bRestCols');
+                const bOcRev = document.getElementById('bOcultaRev');
+                if (bOcRev) bOcRev.addEventListener('click', () => { st.ocultaRev = !st.ocultaRev; try { localStorage.setItem('tesoreria_ocultar_rev', st.ocultaRev ? '1' : '0'); } catch (e) { /* sin almacenamiento */ } pintar(); });
                 if (bRest) bRest.addEventListener('click', () => { st.anchos = {}; try { localStorage.removeItem(CLAVE_ANCHOS); } catch (e) { /* sin almacenamiento */ } pintar(); });
                 app.querySelectorAll('.rz').forEach(h => {
                     h.addEventListener('click', ev => ev.stopPropagation());
@@ -1587,6 +1591,16 @@
                     const a = document.getElementById('aviso'); a.textContent = (edita ? 'Movimiento actualizado' : 'Movimiento creado') + ' (guardado en Firestore).'; a.style.display = 'block';
                 });
 
+                // Copia del pago en la cuenta de depósitos (3_DEPÓSITOS, fuera de reportes). Si ya hay una con la misma fecha y monto, solo se enlaza.
+                const reflejoDeposito = (orig, cto, ctoId) => {
+                    const ctaDep = CUENTAS.find(x => /dep[oó]sitos/i.test(x.nombre) && x.id !== orig.cuenta);
+                    if (!ctaDep) return;
+                    const existe = MOVS.find(x => x.cuenta === ctaDep.id && x.fecha === orig.fecha && Math.round(x.monto * 100) === Math.round(orig.monto * 100));
+                    if (existe) { existe.depositoContrato = ctoId; existe.depositoPagoId = orig.fid; return; }
+                    const locs = (cto.locales || []).join(', ');
+                    const nomOrig = (CUENTAS.find(x => x.id === orig.cuenta) || {}).nombre || '';
+                    MOVS.push({ id: Math.max(0, ...MOVS.map(x => x.id)) + 1, fid: fidNuevo(), orden: Date.now() * 1000, fecha: orig.fecha, cuenta: ctaDep.id, beneficiario: orig.beneficiario, categoria: orig.categoria || '02_DEPOSITO', monto: orig.monto, etiquetas: locs ? ['LOCAL ' + locs] : [], nota: 'Reflejo del pago recibido en ' + nomOrig, revisado: !!orig.revisado, bandera: false, estado: 'conciliado', excluido: true, adjuntos: [], depositoContrato: ctoId, depositoPagoId: orig.fid });
+                };
                 // ---------- Aplicar un ingreso al depósito en garantía de un contrato ----------
                 {
                     const caja = $m('mDep');
@@ -1619,7 +1633,8 @@
                             const palabras = norm(m.beneficiario).split(/\W+/).filter(w => w.length > 3);
                             let sug = loc ? lista.find(c => (c.locales || []).map(String).includes(loc[1])) : null;
                             if (!sug && palabras.length) sug = lista.find(c => { const n = norm((c.razonSocial || '') + ' ' + (c.nombreComercial || '')); return palabras.filter(w => n.includes(w)).length >= Math.min(2, palabras.length); });
-                            const banco = (CUENTAS.find(c => c.id === m.cuenta) || {}).nombre || '';
+                            const nombreCta = (CUENTAS.find(c => c.id === m.cuenta) || {}).nombre || '';
+                            const banco = /lafabdechoc/i.test(nombreCta) ? 'BBVA LFDC' : nombreCta;   // así se llama el banco en los pagos de Depósitos
                             caja.innerHTML = '<div style="' + estilo + '"><b>Aplicar a depósito en garantía</b>'
                                 + '<div class="mod-grid" style="margin-top:10px">'
                                 + '<div class="mod-campo ancho"><label for="dCto">Contrato</label><select id="dCto"><option value="">Elige un contrato…</option>' + lista.map(c => { const k = cuentaDeposito(c); return '<option value="' + esc(c.id) + '" ' + (sug && sug.id === c.id ? 'selected' : '') + '>' + esc(nombreCto(c)) + ' · por pagar ' + dinero(Math.max(0, k.saldo)) + '</option>'; }).join('') + '</select></div>'
@@ -1663,6 +1678,7 @@
                                     lote.set(doc(collection(db, 'contratos', id, 'historial')), { antes: { pagoDeposito: antes }, despues: { pagoDeposito: antes + ' (enlazado con un movimiento de Tesorería, sin cambiar el monto)' }, por, en: serverTimestamp() });
                                     await lote.commit();
                                     mov.depositoContrato = id; mov.depositoPagoId = m.fid;
+                                    reflejoDeposito(m, c, id);
                                     pintar();
                                     aplicado();
                                 } catch (e2) { console.error(e2); err('No se pudo enlazar: ' + (e2.message || e2)); btn.disabled = false; }
@@ -1688,6 +1704,7 @@
                                     lote.set(doc(collection(db, 'contratos', id, 'historial')), { antes: { pagoDeposito: null }, despues: { pagoDeposito: pago.fecha + ' ' + dinero(pago.monto) + ' ' + pago.tipo + ' (desde Tesorería)' }, por, en: serverTimestamp() });
                                     await lote.commit();
                                     mov.depositoContrato = id; mov.depositoPagoId = m.fid;   // el movimiento queda enlazado y se guarda con el resto
+                                    reflejoDeposito(m, c, id);
                                     pintar();
                                     aplicado();
                                 } catch (e2) { console.error(e2); err('No se pudo aplicar: ' + (e2.message || e2)); btn.disabled = false; }

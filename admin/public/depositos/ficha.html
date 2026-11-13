@@ -74,6 +74,7 @@
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
         import { requerimientoDeposito, emailRequerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261112-1';
+        import { reciboDeposito, emailReciboDeposito } from '../../../js/recibo-deposito.js?v=20261112-1';
         import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -131,7 +132,7 @@
                 <span id="msg" class="msg">${msg}</span>
                 <div class="dos" style="margin-top:12px">
                     <div class="panel">
-                        <h2>Pagos del depósito <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimiento" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro (PDF)</button> <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimientoCorreo" title="Preparar el correo con el requerimiento para las direcciones del Directorio">Requerimiento de cobro (correo)</button></h2>
+                        <h2>Pagos del depósito <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimiento" title="${k.saldo > 0.005 ? 'Generar el requerimiento de cobro del saldo (PDF)' : 'Este contrato no tiene saldo por cobrar'}">Requerimiento de cobro (PDF)</button> <button type="button" class="req ${k.saldo > 0.005 ? '' : 'sin-saldo'}" id="btnRequerimientoCorreo" title="Preparar el correo con el requerimiento para las direcciones del Directorio">Requerimiento de cobro (correo)</button> <button type="button" class="req ${k.saldo <= 0.005 && k.requerido > 0.005 ? '' : 'sin-saldo'}" id="btnRecibo" title="${k.saldo <= 0.005 && k.requerido > 0.005 ? 'Recibo del depósito completo (PDF), con folio' : 'El recibo se emite cuando el depósito está completo'}">Recibo de depósito (PDF)</button> <button type="button" class="req ${k.saldo <= 0.005 && k.requerido > 0.005 ? '' : 'sin-saldo'}" id="btnReciboCorreo" title="Preparar el correo con el recibo para las direcciones del Directorio">Recibo de depósito (correo)</button></h2>
                         ${k.pagos.length ? `<table class="tabla-movil"><thead><tr><th>Fecha</th><th class="num">Monto</th><th>Tipo</th><th>Banco</th><th>Quién pagó</th></tr></thead><tbody>
                             ${k.pagos.map(p => `<tr><td>${fechaCorta(p.fecha)}</td><td class="num">${dinero(p.monto)}</td><td>${esc(TIPOS[p.tipo] || p.tipo || '')}</td><td>${esc(p.banco || '')}</td><td>${esc(p.pago || '')}${p.nota ? `<div class="gris">${esc(p.nota)}</div>` : ''}</td></tr>`).join('')}
                             </tbody></table>` : '<div class="vacio">Sin pagos registrados.</div>'}
@@ -181,6 +182,8 @@
         function enlazar() {
             document.getElementById('btnRequerimiento').addEventListener('click', e => requerimientoDeposito(c, e.currentTarget));
             document.getElementById('btnRequerimientoCorreo').addEventListener('click', () => emailRequerimientoDeposito(c));
+            document.getElementById('btnRecibo').addEventListener('click', e => reciboDeposito(c, e.currentTarget));
+            document.getElementById('btnReciboCorreo').addEventListener('click', () => emailReciboDeposito(c));
             document.getElementById('d_guardarAcuerdo').addEventListener('click', async () => {
                 const msg = document.getElementById('d_msg'), btn = document.getElementById('d_guardarAcuerdo');
                 const meses = Number(document.getElementById('d_meses').value);

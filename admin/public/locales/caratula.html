@@ -129,6 +129,7 @@
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
         import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261112-1';
+        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261112-1';
         import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261112-1';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS, VENTANA_INCREMENTO_DIAS } from '../../../js/alertas-contrato.js?v=20261112-2';
 
@@ -329,6 +330,7 @@
                             </div>
                             ${Array.isArray(c.historialDepositos) ? `<button class="btn-sec btn-mini no-print" id="btnDepositos">Ver historial de pagos de depósito</button>` : ''}
                             ${!c.propio ? `<button class="btn-sec btn-mini no-print" id="btnRequerimiento" title="Hoja de requerimiento de pago del saldo del depósito en garantía">Requerimiento de cobro (PDF)</button>` : ''}
+                            ${!c.propio && cuentaDeposito(c).requerido > 0.005 && cuentaDeposito(c).saldo <= 0.005 ? `<button class="btn-sec btn-mini no-print" id="btnRecibo" title="Recibo del depósito completo, con folio">Recibo de depósito (PDF)</button>` : ''}
                         </div>
                         ${(c.rentas || []).length ? `
                         <div class="seccion ancha">
@@ -400,6 +402,7 @@
                 .catch(err => { console.error(err); alert('No se pudo armar el reporte: ' + err.message); }));
             document.getElementById('btnDepositos')?.addEventListener('click', () => ventanaDepositos(c));
             document.getElementById('btnRequerimiento')?.addEventListener('click', e => requerimientoDeposito({ ...c, id: contratoId }, e.currentTarget));
+            document.getElementById('btnRecibo')?.addEventListener('click', e => reciboDeposito({ ...c, id: contratoId }, e.currentTarget));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
             document.getElementById('btnIncremento')?.addEventListener('click', () => ventanaIncremento(c));
             document.getElementById('btnLiquidar')?.addEventListener('click', () => ventanaLiquidar(c));

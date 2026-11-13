@@ -58,9 +58,9 @@
         /* Punto de alerta (el detalle está en la carátula) */
         .col-alerta { width: 36px; text-align: center; padding-left: 8px; padding-right: 0; }
         .punto { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
-        .cuadro { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-top: 4px; }
+        .triangulo { display: inline-block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 11px solid #2e7d32; margin-top: 4px; }
         .marcas { display: inline-flex; gap: 5px; align-items: center; }
-        .leyenda i.cuadro-ley { border-radius: 2px; }
+        .leyenda i.triangulo-ley { width: 0; height: 0; border-radius: 0; background: none !important; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #2e7d32; margin-right: 4px; vertical-align: -1px; }
 
         tfoot td { font-weight: 600; background: var(--fondo-hundido); border-top: 1px solid var(--linea); }
         .cargando { color: var(--tinta-suave); padding: 40px 0; text-align: center; }
@@ -96,7 +96,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
         import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261112-2';
+        import { alertasContrato, hoyISO, VENTANA_DIAS as VENTANA, PESO_NIVEL as PESO, COLOR_NIVEL, TEXTO_NIVEL } from '../../../js/alertas-contrato.js?v=20261112-2';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -121,13 +121,15 @@
             return { clase: 'e-vigente', txt: 'Vigente' };
         }
 
-        // Círculo: fin de contrato, con color según cuánto falta. Cuadrito: incremento o depósito (un solo color).
-        // El detalle se ve en la carátula.
+        // Círculo: fin de contrato, con color según cuánto falta. Triángulo verde: incremento de renta próximo (30 días).
+        // El depósito no genera alerta en esta tabla. El detalle se ve en la carátula.
+        const alertasTabla = a => a.lista.length;
         function punto(a) {
-            if (!a.total) return '';
+            if (!alertasTabla(a)) return '';
+            const incr = a.lista.filter(e => e.tipo === 'Incremento de renta').length;
             const circulo = a.contrato ? `<span class="punto" style="background:${COLOR_NIVEL[a.contrato]}" title="${esc('Fin de contrato · ' + TEXTO_NIVEL[a.contrato] + ' · ver detalle en la carátula')}"></span>` : '';
-            const cuadro = a.otras ? `<span class="cuadro" style="background:${COLOR_OTRA}" title="${esc(a.otras + ' alerta' + (a.otras > 1 ? 's' : '') + ' de incremento o depósito · ver detalle en la carátula')}"></span>` : '';
-            return `<span class="marcas">${circulo}${cuadro}</span>`;
+            const triangulo = incr ? `<span class="triangulo" title="${esc('Incremento de renta próximo · ver detalle en la carátula')}"></span>` : '';
+            return `<span class="marcas">${circulo}${triangulo}</span>`;
         }
 
         async function iniciar() {
@@ -148,7 +150,7 @@
             const todasAlertas = contratos.flatMap(c => c._a.lista);
             const urgentes = todasAlertas.filter(e => e.dias <= 30).length;
             const atrasadas = todasAlertas.filter(e => e.dias < 0).length;
-            const conAlertas = contratos.filter(c => c._a.peor).length;
+            const conAlertas = contratos.filter(c => alertasTabla(c._a)).length;
             const saldoTotal = contratos.reduce((s, c) => s + c._a.saldo, 0);
             const conSaldo = contratos.filter(c => c._a.saldo).length;
 
@@ -185,7 +187,7 @@
                     <div class="leyenda">
                         <span>Fin de contrato:</span>
                         ${['vencido', '30', '60', '90'].map(n => `<span><i style="background:${COLOR_NIVEL[n]}"></i>${n === 'vencido' ? 'Vencido' : n + ' días'}</span>`).join('')}
-                        <span><i class="cuadro-ley" style="background:${COLOR_OTRA}"></i>Incremento o depósito</span>
+                        <span><i class="triangulo-ley"></i>Incremento de renta</span>
                     </div>
                 </div>
 
@@ -228,7 +230,7 @@
                 filtroAct = filtro;
                 let lista = contratos;
                 if (filtro === 'alertas') {
-                    lista = contratos.filter(c => c._a.peor)
+                    lista = contratos.filter(c => alertasTabla(c._a))
                         .sort((a, b) => PESO[a._a.peor] - PESO[b._a.peor] || (a._a.lista[0]?.dias ?? 999) - (b._a.lista[0]?.dias ?? 999));
                 }
                 if (orden.col) {
