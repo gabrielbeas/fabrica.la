@@ -59,7 +59,7 @@
         .hoja { border: 1px solid var(--linea); border-radius: 10px; padding: 36px 40px; }
         .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--tinta); padding-bottom: 16px; margin-bottom: 24px; }
         .encabezado .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
-        .encabezado h1 { font-size: 22px; margin: 6px 0 4px; }
+        .encabezado h1 { font-size: 22px; margin: 10px 0 6px; }
         .encabezado .loc { font-size: 15px; color: var(--tinta-suave); }
         .estado { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 10px; }
         .e-vigente { background: var(--exito-suave); color: var(--exito); } .e-vencido { background: var(--peligro-suave); color: var(--peligro); } .e-termina { background: var(--atencion-suave); color: var(--atencion); }
@@ -106,7 +106,8 @@
         .alerta-fila .que span { color: var(--tinta-suave); font-size: 13px; }
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
-        .logo-print { display: none; height: 40px; width: auto; margin: 0 0 10px; }
+        .encabezado .der { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex: none; }
+        .logo-print { display: none; height: 40px; width: auto; margin: 0; }   /* el logo va a la derecha, sobre el estado; el título queda a la izquierda */
         @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 10px; align-items: flex-start; } .barra > div { flex-wrap: wrap; width: 100%; gap: 8px !important; } .barra > div .btn, .barra > div .btn-sec { flex: 1 1 auto; } .inc-form { grid-template-columns: 1fr; } .alerta-fila { flex-wrap: wrap; } .alerta-fila .que { flex: 1 1 70%; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
@@ -266,12 +267,14 @@
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
-                            <img class="logo-print" src="../css/logo.png" alt="La Fábrica de Chocolate">
                             <div class="emp">La Fábrica de Chocolate · Carátula de contrato de arrendamiento</div>
                             <h1>${esc(c.razonSocial)}</h1>
                             <div class="loc">Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}</div>
                         </div>
-                        <span class="estado ${estado[0]}">${estado[1]}</span>
+                        <div class="der">
+                            <img class="logo-print" src="../css/logo.png" alt="La Fábrica de Chocolate">
+                            <span class="estado ${estado[0]}">${estado[1]}</span>
+                        </div>
                     </div>
 
                     <div class="secciones">
