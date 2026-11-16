@@ -246,6 +246,7 @@
                 : (c.fin && c.fin < hoyISO()) ? ['e-vencido', 'Vencido'] : ['e-vigente', 'Vigente'];
             document.title = `Carátula · ${c.razonSocial}`;
 
+            const gbdTipo = c.tipo === 'arrendamiento_gbd' || c.tipo === 'prestamo_gbd', esPrestamo = c.tipo === 'prestamo_gbd';
             const mant = [
                 typeof c.mantenimientoPct === 'number' ? (c.mantenimientoPct * 100).toFixed(0) + '%' : '',
                 typeof c.mantenimientoMonto === 'number' ? dinero(c.mantenimientoMonto) : ''
@@ -267,7 +268,7 @@
                 <div class="hoja">
                     <div class="encabezado">
                         <div>
-                            <div class="emp">La Fábrica de Chocolate · Carátula de contrato de arrendamiento</div>
+                            <div class="emp">La Fábrica de Chocolate · Carátula de contrato de ${esPrestamo ? 'crédito' : 'arrendamiento'}</div>
                             <h1>${esc(c.razonSocial)}</h1>
                             <div class="loc">${c.ubicacion ? esc(c.ubicacion) : `Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}`}</div>
                         </div>
@@ -279,16 +280,18 @@
 
                     <div class="secciones">
                         <div class="seccion">
-                            <h2>Arrendatario</h2>
+                            <h2>${esPrestamo ? 'Prestataria' : 'Arrendatario'}</h2>
                             <dl>
                                 ${fila('Razón social', esc(c.razonSocial))}
                                 ${fila('RFC', esc(c.rfc))}
-                                ${fila('Arrendador', esc(c.arrendador))}
+                                ${fila(esPrestamo ? 'Prestamista' : 'Arrendador', esc(c.arrendador))}
                                 ${fila('Nombre comercial', esc(c.nombreComercial))}
                                 ${fila((c.locales || []).length > 1 ? 'Locales' : 'Local', esc((c.locales || []).join(', ')))}
                                 ${fila('Superficie', c.m2 ? `${esc(c.m2)} m²` : '')}
                                 ${fila('Giro', esc(c.giro))}
                                 ${fila('Representante', esc(c.representante))}
+                                ${fila('Aval', esc(c.aval))}
+                                ${fila('Pagaré', esc(c.pagare))}
                                 ${fila('Teléfono', telefonoWhatsApp(c.telefono))}
                                 ${fila('Dirección', (c.direccion || []).map(esc).join('<br>'))}
                                 ${fila('Acceso al local', esc(c.acceso))}
@@ -310,15 +313,15 @@
                             </div>
                         </div>
                         <div class="seccion">
-                            <h2>Renta actual</h2>
+                            <h2>${esPrestamo ? 'Condiciones económicas' : 'Renta actual'}</h2>
                             <dl>
-                                ${fila('Renta variable', esc(c.rentaVariable))}
+                                ${fila(esPrestamo ? 'Capital e intereses' : 'Renta variable', esc(c.rentaVariable))}
                                 ${fila('Mantenimiento', mant)}
                                 ${c.rentaVariable ? '' : fila('Renta mensual', dinero(c.total))}
                                 ${c.rentaVariable ? '' : fila('Con IVA', dinero(c.totalIva))}
                             </dl>
                         </div>
-                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
+                        ${gbdTipo ? '' : `<div class="seccion">
                             <h2>Depósito</h2>
                             <div class="vig-wrap">
                             ${alertaDeposito(c)}
@@ -353,11 +356,11 @@
                                 ${(c.pagosRenta || []).length ? `<button class="btn-sec btn-mini" id="btnPagosRenta">Ver historial de pagos de renta</button>` : ''}
                             </div>
                         </div>` : ''}
-                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
+                        ${gbdTipo ? '' : `<div class="seccion">
                             <h2>CFE</h2>
                             ${bloquesCFE(c)}
                         </div>`}
-                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
+                        ${gbdTipo ? '' : `<div class="seccion">
                             <h2>Seguro y servicios</h2>
                             <dl>
                                 ${filaSiempre('Aseguradora', esc(c.seguro?.aseguradora))}
@@ -779,7 +782,9 @@
         const CAMPOS = [
             ['razonSocial', 'Razón social', 'texto', 'Arrendatario'],
             ['rfc', 'RFC', 'texto', 'Arrendatario'],
-            ['arrendador', 'Arrendador', 'texto', 'Arrendatario'],
+            ['arrendador', 'Arrendador / prestamista', 'texto', 'Arrendatario'],
+            ['aval', 'Aval (contratos de crédito)', 'texto', 'Arrendatario'],
+            ['pagare', 'Pagaré (contratos de crédito)', 'texto', 'Arrendatario'],
             ['ubicacion', 'Ubicación (encabezado, para contratos del inmueble)', 'texto', 'Arrendatario'],
             ['locales', 'Locales (separados por coma)', 'lista', 'Arrendatario'],
             ['m2', 'm²', 'numero', 'Arrendatario'],

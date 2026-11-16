@@ -112,7 +112,7 @@
         async function origenHTML(c) {
             if (f.tipo !== 'prestamo' && typeof f.porcentaje === 'number') {
                 const locs = (await getDocs(collection(db, 'contratos'))).docs.map(d => ({ id: d.id, ...d.data() })).sort(ordenLocales);
-                const filas = locs.filter(x => x.tipo !== 'arrendamiento_gbd' && contratoEnMes(x, f.mes)).map(x => ({ x, renta: rentaDelMes(x, f.mes).renta }));
+                const filas = locs.filter(x => !['arrendamiento_gbd', 'prestamo_gbd'].includes(x.tipo) && contratoEnMes(x, f.mes)).map(x => ({ x, renta: rentaDelMes(x, f.mes).renta }));
                 const base = r2(filas.reduce((a, r) => a + r.renta, 0)), esperado = r2(base * f.porcentaje);
                 return { formula: `${pct(f.porcentaje)} de ${dinero(base)} (rentas del mes sin IVA)`, html: `<div class="panel">
                     <h2>Rentas del mes que se toman de base</h2>

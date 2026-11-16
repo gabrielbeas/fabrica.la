@@ -137,8 +137,8 @@
             const snap = await getDocs(collection(db, 'contratos'));
             const anteriores = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado === 'terminado')
                 .sort((a, b) => (b.terminadoEn || b.fin || '').localeCompare(a.terminadoEn || a.fin || ''));
-            maestros = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.tipo === 'arrendamiento_gbd' && c.estado !== 'terminado');
-            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && c.tipo !== 'arrendamiento_gbd')
+            maestros = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => ['arrendamiento_gbd', 'prestamo_gbd'].includes(c.tipo) && c.estado !== 'terminado');
+            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && !['arrendamiento_gbd', 'prestamo_gbd'].includes(c.tipo))
                 .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
                 .map(c => ({ ...c, _e: estadoDe(c), _a: alertasContrato(c) }));
 
@@ -304,8 +304,8 @@
             if (!el) return;
             const fila = c => {
                 const [txt, clase] = ESTADOS_GBD[facturasMesGBD[c.id]?.estadoPago] || [null, ''];
-                const caratula = c.tipo === 'renta' && maestros[0] ? maestros[0].id : '';
-                return `<tr${caratula ? ` class="abre-caratula" data-caratula="${esc(caratula)}" title="Abrir la carátula del contrato de arrendamiento del inmueble"` : ''}>
+                const caratula = (maestros.find(m => m.tipo === (c.tipo === 'renta' ? 'arrendamiento_gbd' : 'prestamo_gbd')) || {}).id || '';
+                return `<tr${caratula ? ` class="abre-caratula" data-caratula="${esc(caratula)}" title="Abrir la carátula del contrato"` : ''}>
                     <td class="contrato"><strong>${esc(c.nombre)}</strong><div class="gris" style="font-size:12px">${esc(c.contraparte)}</div></td>
                     <td class="concepto">${conceptoGBD(c)}</td>
                     <td class="num">${dinero(c.subtotal)}</td>

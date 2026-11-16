@@ -233,7 +233,7 @@
             if (contratos) return contratos;
             const snap = await getDocs(collection(db, 'contratos'));
             const hoy = hoyISO();
-            contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && c.tipo !== 'arrendamiento_gbd')
+            contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && !['arrendamiento_gbd', 'prestamo_gbd'].includes(c.tipo))
                 .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
                 .map(c => ({ ...c, vencido: !!(c.fin && c.fin < hoy) }));
             return contratos;
