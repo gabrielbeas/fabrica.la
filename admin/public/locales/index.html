@@ -72,6 +72,7 @@
         .seccion-gbd h2 { font-size: 20px; margin: 0 0 4px; }
         .seccion-gbd .sub { margin: 0 0 14px; }
         .tabla-gbd tbody tr { cursor: default; }
+        .tabla-gbd tbody tr.abre-caratula { cursor: pointer; }
         .tabla-gbd { font-size: 13px; }
         .tabla-gbd th, .tabla-gbd td { padding-left: 10px; padding-right: 10px; }
         .tabla-gbd th.num, .tabla-gbd td.num { padding-left: 6px; padding-right: 6px; }
@@ -136,7 +137,8 @@
             const snap = await getDocs(collection(db, 'contratos'));
             const anteriores = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado === 'terminado')
                 .sort((a, b) => (b.terminadoEn || b.fin || '').localeCompare(a.terminadoEn || a.fin || ''));
-            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado')
+            maestros = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.tipo === 'arrendamiento_gbd' && c.estado !== 'terminado');
+            const contratos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.estado !== 'terminado' && c.tipo !== 'arrendamiento_gbd')
                 .sort((a, b) => parseInt(a.locales?.[0] || 999) - parseInt(b.locales?.[0] || 999))
                 .map(c => ({ ...c, _e: estadoDe(c), _a: alertasContrato(c) }));
 
@@ -279,6 +281,7 @@
         const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
         const correoValido = x => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x);
         let gbd = [];
+        let maestros = [];          // contratos de arrendamiento del inmueble (GBD → LAFABDECHOC): carátula propia, no son locales
         let facturasMesGBD = {};          // factura de GBD del mes en curso por contrato (de ahí sale el estado)
         const mesHoy = hoyISO().slice(0, 7);
 
@@ -301,7 +304,8 @@
             if (!el) return;
             const fila = c => {
                 const [txt, clase] = ESTADOS_GBD[facturasMesGBD[c.id]?.estadoPago] || [null, ''];
-                return `<tr>
+                const caratula = c.tipo === 'renta' && maestros[0] ? maestros[0].id : '';
+                return `<tr${caratula ? ` class="abre-caratula" data-caratula="${esc(caratula)}" title="Abrir la carátula del contrato de arrendamiento del inmueble"` : ''}>
                     <td class="contrato"><strong>${esc(c.nombre)}</strong><div class="gris" style="font-size:12px">${esc(c.contraparte)}</div></td>
                     <td class="concepto">${conceptoGBD(c)}</td>
                     <td class="num">${dinero(c.subtotal)}</td>
@@ -323,6 +327,7 @@
                 </table></div>
                 <p class="gbd-nota">Total = subtotal + IVA − retenciones. El estado es el de la factura de este mes (se cambia en Facturación → Facturas de GBD). Los importes de aquí se copian a las facturas que se generen desde ahora.</p>
             </div>`;
+            el.querySelectorAll('tr.abre-caratula').forEach(tr => tr.addEventListener('click', ev => { if (ev.target.closest('a, button')) return; window.location.href = 'caratula.html?id=' + encodeURIComponent(tr.dataset.caratula); }));
             el.querySelectorAll('[data-editar-gbd]').forEach(b => b.addEventListener('click', () => editarGBD(gbd.find(x => x.id === b.dataset.editarGbd))));
         }
 

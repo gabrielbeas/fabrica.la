@@ -202,7 +202,7 @@
         function eventosEntre(desde, hasta) {
             const ev = [];
             const dentro = f => f >= desde && f <= hasta;
-            const nombreC = c => `${c.nombreComercial || c.razonSocial} · local ${(c.locales || []).join(', ')}`;
+            const nombreC = c => (c.locales || []).length ? `${c.nombreComercial || c.razonSocial} · local ${c.locales.join(', ')}` : (c.nombreComercial || c.razonSocial);
             // Contratos (solo admin)
             contratos.forEach(c => {
                 const link = `../locales/caratula.html?id=${encodeURIComponent(c.id)}`;

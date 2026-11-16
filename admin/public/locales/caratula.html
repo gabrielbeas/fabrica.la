@@ -269,7 +269,7 @@
                         <div>
                             <div class="emp">La Fábrica de Chocolate · Carátula de contrato de arrendamiento</div>
                             <h1>${esc(c.razonSocial)}</h1>
-                            <div class="loc">Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}</div>
+                            <div class="loc">${c.ubicacion ? esc(c.ubicacion) : `Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}`}</div>
                         </div>
                         <div class="der">
                             <img class="logo-print" src="../css/logo.png" alt="La Fábrica de Chocolate">
@@ -283,6 +283,7 @@
                             <dl>
                                 ${fila('Razón social', esc(c.razonSocial))}
                                 ${fila('RFC', esc(c.rfc))}
+                                ${fila('Arrendador', esc(c.arrendador))}
                                 ${fila('Nombre comercial', esc(c.nombreComercial))}
                                 ${fila((c.locales || []).length > 1 ? 'Locales' : 'Local', esc((c.locales || []).join(', ')))}
                                 ${fila('Superficie', c.m2 ? `${esc(c.m2)} m²` : '')}
@@ -311,12 +312,13 @@
                         <div class="seccion">
                             <h2>Renta actual</h2>
                             <dl>
+                                ${fila('Renta variable', esc(c.rentaVariable))}
                                 ${fila('Mantenimiento', mant)}
-                                ${fila('Renta mensual', dinero(c.total))}
-                                ${fila('Con IVA', dinero(c.totalIva))}
+                                ${c.rentaVariable ? '' : fila('Renta mensual', dinero(c.total))}
+                                ${c.rentaVariable ? '' : fila('Con IVA', dinero(c.totalIva))}
                             </dl>
                         </div>
-                        <div class="seccion">
+                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
                             <h2>Depósito</h2>
                             <div class="vig-wrap">
                             ${alertaDeposito(c)}
@@ -334,7 +336,7 @@
                             ${Array.isArray(c.historialDepositos) ? `<button class="btn-sec btn-mini no-print" id="btnDepositos">Ver historial de pagos de depósito</button>` : ''}
                             ${!c.propio ? `<button class="btn-sec btn-mini no-print" id="btnRequerimiento" title="Hoja de requerimiento de pago del saldo del depósito en garantía">Requerimiento de cobro (PDF)</button>` : ''}
                             ${!c.propio && cuentaDeposito(c).requerido > 0.005 && cuentaDeposito(c).saldo <= 0.005 ? `<button class="btn-sec btn-mini no-print" id="btnRecibo" title="Recibo del depósito completo, con folio">Recibo de depósito (PDF)</button>` : ''}
-                        </div>
+                        </div>`}
                         ${(c.rentas || []).length ? `
                         <div class="seccion ancha">
                             <h2>Historial de renta</h2>
@@ -351,11 +353,11 @@
                                 ${(c.pagosRenta || []).length ? `<button class="btn-sec btn-mini" id="btnPagosRenta">Ver historial de pagos de renta</button>` : ''}
                             </div>
                         </div>` : ''}
-                        <div class="seccion">
+                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
                             <h2>CFE</h2>
                             ${bloquesCFE(c)}
-                        </div>
-                        <div class="seccion">
+                        </div>`}
+                        ${c.tipo === 'arrendamiento_gbd' ? '' : `<div class="seccion">
                             <h2>Seguro y servicios</h2>
                             <dl>
                                 ${filaSiempre('Aseguradora', esc(c.seguro?.aseguradora))}
@@ -364,8 +366,8 @@
                                 ${filaSiempre('Vigencia del seguro', c.seguro?.vigencia ? fechaTxt(c.seguro.vigencia) : '')}
                                 ${filaSiempre('Telmex', esc(c.telmex))}
                             </dl>
-                        </div>
-                        <div class="seccion">
+                        </div>`}
+                        ${(c.garantia || (c.obligadosSolidarios || []).length || c.garantiaDetalle || c.segurosRequeridos) ? `<div class="seccion">
                             <h2>Garantías</h2>
                             <dl>
                                 ${fila('Garantía', esc(c.garantia))}
@@ -373,7 +375,7 @@
                                 ${fila('Detalle', esc(c.garantiaDetalle))}
                                 ${fila('Seguros requeridos', esc(c.segurosRequeridos))}
                             </dl>
-                        </div>
+                        </div>`: ''}
                         <div class="seccion ancha">
                             <h2>Condiciones del contrato</h2>
                             <dl>
@@ -777,6 +779,8 @@
         const CAMPOS = [
             ['razonSocial', 'Razón social', 'texto', 'Arrendatario'],
             ['rfc', 'RFC', 'texto', 'Arrendatario'],
+            ['arrendador', 'Arrendador', 'texto', 'Arrendatario'],
+            ['ubicacion', 'Ubicación (encabezado, para contratos del inmueble)', 'texto', 'Arrendatario'],
             ['locales', 'Locales (separados por coma)', 'lista', 'Arrendatario'],
             ['m2', 'm²', 'numero', 'Arrendatario'],
             ['nombreComercial', 'Nombre comercial', 'texto', 'Arrendatario'],
@@ -801,7 +805,9 @@
             ['fin', 'Fin', 'fecha', 'Vigencia'],
             ['incremento', 'Incremento de renta', 'fecha', 'Vigencia'],
             ['incrementoTipo', 'Tipo de incremento', 'texto', 'Vigencia'],
+            ['incrementoNota', 'Nota de revisión de renta', 'textarea', 'Vigencia'],
             ['fechaLimite', 'Fecha límite de pago', 'texto', 'Vigencia'],
+            ['rentaVariable', 'Renta variable (texto)', 'textarea', 'Renta'],
             ['total', 'Renta mensual (sin IVA)', 'dinero', 'Renta'],
             ['totalIva', 'Renta con IVA', 'dinero', 'Renta'],
             ['mantenimientoPct', 'Mantenimiento (%)', 'porcentaje', 'Renta'],
