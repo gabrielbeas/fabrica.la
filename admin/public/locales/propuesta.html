@@ -181,8 +181,27 @@
                 ['aumY1', 'Aplicar el primer aumento ya en el primer año', 'check', true]
             ] }
         ];
-        // Texto fijo (no editable): cómo se calcula el incremento y la fuente oficial
-        const EXPLICACION_INCREMENTO = 'Variación anual del INPC publicado por el INEGI (www.inegi.org.mx), del mes previo al aniversario, más 2 puntos porcentuales.';
+        // Incremento anual = INPC + un porcentaje extra acordado (puede ser cero). De lo que se escribe en «Incremento anual»
+        // ("INPC", "INPC + 2", "INPC + 1.5 %") se saca el extra y con él se arma la explicación (no editable) y los puntos de la proyección.
+        const BASE_INPC = 'Variación anual del INPC publicado por el INEGI (www.inegi.org.mx), del mes previo al aniversario';
+        function extraInpc(txt) {   // número de puntos extra sobre el INPC; null si el texto no es un incremento basado en el INPC
+            const t = String(txt || '');
+            if (!/inpc/i.test(t)) return null;
+            const m = t.match(/inpc\s*(?:\+|m[aá]s)\s*(\d+(?:[.,]\d+)?)/i);
+            return m ? Number(m[1].replace(',', '.')) : 0;
+        }
+        function explicacionIncremento(txt) {
+            const t = String(txt || '').trim();
+            if (!t) return '';
+            const extra = extraInpc(t);
+            if (extra === null) {
+                const f = t.match(/(\d+(?:[.,]\d+)?)\s*%/);
+                return f ? `Incremento fijo anual de ${f[1].replace(',', '.')} %, aplicado cada año de vigencia.` : `Incremento anual: ${t}.`;
+            }
+            if (!extra) return BASE_INPC + '.';
+            const n = extra.toLocaleString('es-MX', { maximumFractionDigits: 2 });
+            return `${BASE_INPC}, más ${n} ${extra === 1 ? 'punto porcentual' : 'puntos porcentuales'}.`;
+        }
         const CALC = {
             incrementoExpl: ['Explicación del incremento', 'c_incrementoExpl'],
             local: ['Número de local', 'c_local'], superficie: ['Superficie', 'c_superficie'], acceso: ['Acceso al local', 'c_acceso'],
@@ -403,7 +422,7 @@
             function pintar() {
                 const d = calcular();
                 $('c_local').textContent = locales;
-                $('c_incrementoExpl').textContent = EXPLICACION_INCREMENTO;
+                $('c_incrementoExpl').textContent = explicacionIncremento(val('incrementoTipo')) || '-';
                 $('c_superficie').textContent = m2 ? m2.toLocaleString('es-MX') + ' m²' : 'Sin metraje capturado';
                 $('c_acceso').textContent = c.acceso || '-';
                 $('c_fin').textContent = fechaTxt(d.fin);
@@ -459,6 +478,7 @@
                 sucio = true;
                 if (f[0] === 'renta') $('p_rentaIva').value = r2((+val('renta') || 0) * (1 + IVA));
                 if (f[0] === 'rentaIva') $('p_renta').value = r2((+val('rentaIva') || 0) / (1 + IVA));
+                if (f[0] === 'incrementoTipo') { const extra = extraInpc(val('incrementoTipo')); if (extra !== null) $('p_pts').value = extra; }   // la proyección usa el mismo extra sobre el INPC
                 pintar();
             }));
             pintar();
@@ -471,7 +491,7 @@
                 const tp = val('tipoPersona');
                 if (s.solo && tp && s.solo !== tp) return '';
                 const d = calcular();
-                const calcs = { incrementoExpl: EXPLICACION_INCREMENTO, local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
+                const calcs = { incrementoExpl: explicacionIncremento(val('incrementoTipo')), local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
                 const cs = Object.fromEntries(s.campos.filter(f => !(f[4] && tp && f[4] !== tp)).map(([k, et, tipo, ancho]) => {
                     let valor = blanco ? '' : val(k);
                     if (tipo === 'tipo') valor = blanco || !valor ? '☐ Persona física      ☐ Persona moral' : (valor === 'moral' ? 'Persona moral' : 'Persona física');
