@@ -51,7 +51,7 @@ const ESTILO = `#hoja-reporte { display: none; }
   #hoja-reporte { display: block !important; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
-#hoja-reporte .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
+#hoja-reporte .cab { display: flex; justify-content: flex-start; gap: 16px; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
 #hoja-reporte .cab img { height: 36px; }
 #hoja-reporte h1 { margin: 0; font-size: 18px; font-weight: 900; }
 #hoja-reporte .sub { color: #5f6670; font-size: 10.5px; margin-top: 2px; }
@@ -177,7 +177,7 @@ export async function exportarReporteContrato(c, boton, opc = {}) {
     let st = document.getElementById('estilo-hoja-reporte');
     if (!st) { st = document.createElement('style'); st.id = 'estilo-hoja-reporte'; document.head.appendChild(st); }
     st.textContent = ESTILO;
-    cont.innerHTML = `<div class="cab"><div><h1>Reporte del contrato · ${esc(nombre)}</h1><div class="sub">${esc(c.razonSocial)} · Local ${esc((c.locales || []).join(', '))} · La Fábrica de Chocolate</div></div><img src="${LOGO_URL}" alt="La Fábrica de Chocolate"></div>`
+    cont.innerHTML = `<div class="cab"><img src="${LOGO_URL}" alt="La Fábrica de Chocolate"><div><h1>Reporte del contrato · ${esc(nombre)}</h1><div class="sub">${esc(c.razonSocial)} · Local ${esc((c.locales || []).join(', '))} · La Fábrica de Chocolate</div></div></div>`
       + resumen + contrato + renta + cobros + depositos + facturasSec + agua + servicios + cambios
       + `<div class="pie">Generado el ${esc(fecha(hoy))} desde el panel de administración, con los datos guardados a esa fecha.</div>`;
     const img = cont.querySelector('img');

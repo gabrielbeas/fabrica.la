@@ -138,7 +138,7 @@ export const ESTILOS_CONTRATO = `
 @media print {
   @page { size: letter portrait; margin: 20mm 18mm; }
   #hoja.contrato { display: block !important; min-height: 0 !important; color: #1b2430; font: 10.5pt/1.4 Roboto, Arial, sans-serif; text-align: left; }
-  #hoja.contrato .ct-enc { text-align: center; margin-bottom: 10px; } #hoja.contrato .ct-enc img { height: 44px; }
+  #hoja.contrato .ct-enc { text-align: left; margin-bottom: 10px; } #hoja.contrato .ct-enc img { height: 44px; }
   #hoja.contrato .ct-titulo { text-align: center; font-size: 14pt; font-weight: 900; margin: 14px 0 8px; }
   #hoja.contrato .ct-centro { text-align: center; margin: 6px 0; }
   #hoja.contrato .ct-h { font-size: 10.5pt; font-weight: 700; margin: 14px 0 4px; break-after: avoid; }

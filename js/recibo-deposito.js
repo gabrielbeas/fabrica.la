@@ -6,7 +6,7 @@ import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, collection, query, where, getDocs, runTransaction, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-1';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
-import { dineroLegal } from './contrato-pdf.js?v=20261111-1';
+import { dineroLegal } from './contrato-pdf.js?v=20261117-1';
 import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './correos-contrato.js?v=20261014-6';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
