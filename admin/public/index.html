@@ -121,9 +121,9 @@
     <div class="main" id="app"><div class="cargando">Cargando...</div></div>
 
     <script type="module">
-        import { crearNavbar } from '../../js/navbar.js?v=20261112-1';
+        import { crearNavbar } from '../../js/navbar.js?v=20261117-1';
         import '../../js/dinero-input.js?v=20261028-1';
-        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261111-1';
+        import { getCurrentUser, isAuthenticated, esAdmin, db, basePath } from '../../js/auth.js?v=20261117-1';
         import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from '../../js/correos-contrato.js?v=20261014-6';
         import { telefonoWhatsApp } from '../../js/whatsapp.js?v=20261104-1';
@@ -140,7 +140,7 @@
             directorio: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17c.8-2 2.5-3 4.5-3s3.7 1 4.5 3"/></svg>',
             metrajes: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h9V3M12 12v9"/></svg>',
             locales: '<svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>',
-            nuevosInquilinos: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M18 8v6M15 11h6"/></svg>',
+            nuevosContratos: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M18 8v6M15 11h6"/></svg>',
             facturacion: '<svg viewBox="0 0 24 24"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
             agua: '<svg viewBox="0 0 24 24"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg>',
             siapa: '<svg viewBox="0 0 24 24"><path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg>',
@@ -160,7 +160,7 @@
             { id: 'directorio', nombre: 'Directorio', des: 'Contactos de cada local: teléfono y correos', href: '#directorio', soloAdmin: true },
             { id: 'locales', nombre: 'Contratos', des: 'Carátulas, vigencias y alertas', href: b + 'locales/', soloAdmin: true },
             { id: 'metrajes', nombre: 'Locales y metrajes', des: 'Superficie, renta y renta por m² de cada contrato', href: '#metrajes', soloAdmin: true },
-            { id: 'nuevosInquilinos', nombre: 'Nuevos inquilinos', des: 'Cambio de inquilino y renovaciones: propuesta, contrato, firma y activación', href: b + 'nuevos-inquilinos/', soloAdmin: true },
+            { id: 'nuevosContratos', nombre: 'Nuevos contratos', des: 'Cambio de inquilino y renovaciones: propuesta, contrato, firma y activación', href: b + 'nuevos-contratos/', soloAdmin: true },
             { id: 'facturacion', nombre: 'Facturación', des: 'Facturas del mes y exportación para contadores', href: b + 'facturacion/', soloAdmin: true },
             { id: 'depositos', nombre: 'Depósitos', des: 'Depósito en garantía de cada contrato: acuerdo, pagos y saldo', href: b + 'depositos/', soloAdmin: true },
             { id: 'pagos', nombre: 'Pagos mensuales', des: 'Impuestos, rentas, seguros y servicios que se pagan cada mes', href: b + 'pagos-mensuales/', soloAdmin: true },
@@ -507,7 +507,7 @@
                 recalcFila(tr);
             });
             totalesCot();
-            // Toda la fila abre la carátula del local (la propuesta se hace desde Contratos o desde Nuevos inquilinos)
+            // Toda la fila abre la carátula del local (la propuesta se hace desde Contratos o desde Nuevos contratos)
             app.querySelectorAll('.tabla-met tr[data-prop]').forEach(tr => tr.addEventListener('click', e => {
                 if (e.target.closest('a, input, button')) return;   // el número del local y el cotizador siguen funcionando solos
                 window.location.href = caratula(porId[tr.dataset.prop].id);

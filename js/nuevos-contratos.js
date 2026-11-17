@@ -1,5 +1,5 @@
-// Nuevos inquilinos (11/11/2026): proceso para cambiar de inquilino (o renovar) en un local que ya existe.
-// Un proceso = documento `nuevos_inquilinos/{id}`:
+// Nuevos contratos (11/11/2026): proceso para cambiar de inquilino (o renovar) en un local que ya existe.
+// Un proceso = documento `nuevos_contratos/{id}`:
 //   contratoId (contrato del local que se reemplaza), locales, estado (en_proceso | activado | descartado),
 //   interesado, datos {propuesta + cuestionario + contrato, mismas claves}, propuestaEnviada, aceptada (fechas),
 //   versionPdf (PDF del contrato), pagos [{concepto, fecha, monto, nota}], contratoNuevoId.

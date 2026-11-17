@@ -72,12 +72,12 @@
     <div id="hoja"></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
-        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261112-1';
-        import { resumenDocumentos } from '../../../js/nuevos-inquilinos.js?v=20261111-5';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-1';
+        import { resumenDocumentos } from '../../../js/nuevos-contratos.js?v=20261111-5';
         import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261111-1';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -87,7 +87,7 @@
         const r2 = n => (n < 0 ? -1 : 1) * Math.round(Number((Math.abs(n) * 100).toPrecision(13))) / 100 + 0;
         const dinero = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const IVA = 0.16;
-        const qs = new URLSearchParams(location.search), procId = qs.get('proceso'), idLegado = qs.get('id');   // proceso de Nuevos inquilinos (el contrato que se reemplaza va dentro)
+        const qs = new URLSearchParams(location.search), procId = qs.get('proceso'), idLegado = qs.get('id');   // proceso de Nuevos contratos (el contrato que se reemplaza va dentro)
         const fechaTxt = fechaLarga;
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
         const sumaDia = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
@@ -147,16 +147,16 @@
         const CALC = { fin: 'Fin del contrato', incremento: 'Primer incremento de renta', rentaIva: 'Renta mensual con IVA (16 %)', deposito: 'Depósito requerido' };
 
         async function iniciar() {
-            if (!procId) { location.href = '../nuevos-inquilinos/' + (idLegado ? '?local=' + encodeURIComponent(idLegado) : ''); return; }
-            const refProc = doc(db, 'nuevos_inquilinos', procId);
+            if (!procId) { location.href = '../nuevos-contratos/' + (idLegado ? '?local=' + encodeURIComponent(idLegado) : ''); return; }
+            const refProc = doc(db, 'nuevos_contratos', procId);
             const sproc = await getDoc(refProc);
-            if (!sproc.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-inquilinos/">Volver a Nuevos inquilinos</a><h1>Proceso no encontrado</h1>'; return; }
+            if (!sproc.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-contratos/">Volver a Nuevos contratos</a><h1>Proceso no encontrado</h1>'; return; }
             const borr = sproc.data();
             const snap = await getDoc(doc(db, 'contratos', borr.contratoId || '_'));
-            if (!snap.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-inquilinos/">Volver a Nuevos inquilinos</a><h1>Contrato del local no encontrado</h1>'; return; }
+            if (!snap.exists()) { app.innerHTML = '<a class="volver" href="../nuevos-contratos/">Volver a Nuevos contratos</a><h1>Contrato del local no encontrado</h1>'; return; }
             const c = { id: snap.id, ...snap.data() };
             const locales = (c.locales || []).join(', ');
-            const hrefProceso = '../nuevos-inquilinos/ficha.html?id=' + encodeURIComponent(procId);
+            const hrefProceso = '../nuevos-contratos/ficha.html?id=' + encodeURIComponent(procId);
 
             if (borr.estado === 'activado' || borr.estado === 'descartado') {
                 app.innerHTML = `<a class="volver" href="${hrefProceso}">Volver al proceso</a><h1>Contrato nuevo · Local ${esc(locales)}</h1>
@@ -395,7 +395,7 @@
                 batch.update(doc(db, 'contratos', c.id), { estado: 'terminado', terminadoEn: salidaF, reemplazadoPor: nuevoId, editadoPor: user.email, editadoEn: serverTimestamp() });
                 batch.set(doc(collection(db, 'contratos', c.id, 'historial')), { antes: { estado: c.estado ?? null }, despues: { estado: 'terminado', terminadoEn: salidaF, reemplazadoPor: nuevoId }, por: user.email, en: serverTimestamp(), nota: 'Contrato reemplazado por ' + nuevoId });
                 batch.set(refProc, { estado: 'activado', contratoNuevoId: nuevoId, activadoEn: serverTimestamp(), activadoPor: user.email }, { merge: true });
-                const otros = await getDocs(query(collection(db, 'nuevos_inquilinos'), where('contratoId', '==', c.id)));
+                const otros = await getDocs(query(collection(db, 'nuevos_contratos'), where('contratoId', '==', c.id)));
                 otros.docs.filter(x => x.id !== procId && x.data().estado === 'en_proceso').forEach(x => batch.update(x.ref, { estado: 'descartado', descartadoEn: serverTimestamp(), descartadoMotivo: 'Se activó otro contrato en este local' }));
                 await batch.commit();
                 return nuevoId;

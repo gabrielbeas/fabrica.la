@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Proceso de nuevo inquilino - La Fábrica de Chocolate</title>
+    <title>Proceso de nuevo contrato - La Fábrica de Chocolate</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231f4e79'/><text x='50' y='64' text-anchor='middle' font-family='Roboto,Arial,sans-serif' font-weight='900' font-size='40' textLength='88' lengthAdjust='spacingAndGlyphs' fill='white'>LFdC</text></svg>">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006">
     <meta name="apple-mobile-web-app-title" content="LFdC">
@@ -71,11 +71,11 @@
     <div id="hoja"></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261112-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
         import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
-        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261111-1';
+        import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-inquilinos.js?v=20261111-5';
+        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261111-5';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -92,8 +92,8 @@
         }
 
         async function cargar() {
-            const sp = await getDoc(doc(db, 'nuevos_inquilinos', id || '_'));
-            if (!sp.exists()) { app.innerHTML = '<a class="volver" href="./">Volver a Nuevos inquilinos</a><h1>Proceso no encontrado</h1>'; return; }
+            const sp = await getDoc(doc(db, 'nuevos_contratos', id || '_'));
+            if (!sp.exists()) { app.innerHTML = '<a class="volver" href="./">Volver a Nuevos contratos</a><h1>Proceso no encontrado</h1>'; return; }
             p = { id: sp.id, ...sp.data() };
             const sc = await getDoc(doc(db, 'contratos', p.contratoId || '_'));
             c = sc.exists() ? { id: sc.id, ...sc.data() } : {};
@@ -102,14 +102,14 @@
 
         async function guardar(cambios) {
             const user = getCurrentUser();
-            await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { ...cambios, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+            await updateDoc(doc(db, 'nuevos_contratos', p.id), { ...cambios, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
             Object.assign(p, cambios); pintar();
         }
 
         const hoyISO = () => { const x = new Date(); return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
         async function guardarDoc(clave, valor) {
             const user = getCurrentUser();
-            await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { ['documentos.' + clave]: valor, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+            await updateDoc(doc(db, 'nuevos_contratos', p.id), { ['documentos.' + clave]: valor, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
             p.documentos = { ...(p.documentos || {}), [clave]: valor }; pintar();
         }
 
@@ -143,7 +143,7 @@
                 <div class="pie"><button class="btn" id="btnPdfDocs">Exportar PDF de la lista</button><button class="btn-sec" id="btnCopiarDocs">Copiar la lista de lo que falta</button></div></div>`;
             const fechaCampo = (k, t) => est === 'en_proceso' ? `<div class="fecha"><label for="f_${k}">${t}</label><input type="date" id="f_${k}" value="${esc(p[k] || '')}"></div>` : '';
             app.innerHTML = `
-                <a class="volver" href="./">Volver a Nuevos inquilinos</a>
+                <a class="volver" href="./">Volver a Nuevos contratos</a>
                 <h1>Local ${esc(locales)}<span class="badge ${est}">${esc(est === 'activado' ? 'Activado' : est === 'descartado' ? 'Descartado' : et.nombre)}</span></h1>
                 <p class="sub">${d.tipoContrato === 'renovacion' ? 'Renovación' : 'Inquilino nuevo'} · interesado: <b>${esc(p.interesado || d.razonSocial || d.dirigidaA || 'sin nombre todavía')}</b></p>
                 <div class="resumen">
@@ -160,7 +160,7 @@
             ['propuestaEnviada', 'aceptada'].forEach(k => document.getElementById('f_' + k)?.addEventListener('change', e => guardar({ [k]: e.target.value || null })));
             document.getElementById('tipoPers')?.addEventListener('change', async e => {
                 const user = getCurrentUser();
-                await updateDoc(doc(db, 'nuevos_inquilinos', p.id), { 'datos.tipoPersona': e.target.value, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
+                await updateDoc(doc(db, 'nuevos_contratos', p.id), { 'datos.tipoPersona': e.target.value, actualizadoPor: user.email, actualizadoEn: serverTimestamp() });
                 p.datos = { ...(p.datos || {}), tipoPersona: e.target.value }; pintar();
             });
             app.querySelectorAll('[data-doc]').forEach(el => el.addEventListener('change', () => guardarDoc(el.dataset.doc, { recibido: el.checked ? hoyISO() : '', nota: (recDocs[el.dataset.doc] || {}).nota || '' })));
@@ -196,8 +196,8 @@
                 if (!confirm('SEGUNDA CONFIRMACIÓN\n\n¿Seguro que quieres borrar este proceso? Esta es la última pregunta.')) return;
                 try {
                     const user = getCurrentUser(), { id: pid, ...datosP } = p, batch = writeBatch(db);
-                    batch.set(doc(db, 'nuevos_inquilinos_eliminados', pid), { ...datosP, eliminadoPor: user.email, eliminadoEn: serverTimestamp() });
-                    batch.delete(doc(db, 'nuevos_inquilinos', pid));
+                    batch.set(doc(db, 'nuevos_contratos_eliminados', pid), { ...datosP, eliminadoPor: user.email, eliminadoEn: serverTimestamp() });
+                    batch.delete(doc(db, 'nuevos_contratos', pid));
                     await batch.commit();
                     location.href = './';
                 } catch (err) { console.error(err); alert('No se pudo borrar: ' + err.message); }
