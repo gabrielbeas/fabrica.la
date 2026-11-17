@@ -52,6 +52,8 @@
         .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
         .grid .ancho { grid-column: 1 / -1; }
+        .herr { display: flex; gap: 18px; justify-content: flex-end; margin: 0 0 8px; }
+        .enlace { background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: var(--accion); text-decoration: underline; cursor: pointer; }
         .grid.socios { grid-template-columns: 1.6fr 1fr 1fr; }
         .grid.socios .ancho { grid-column: auto; }   /* una fila por socio: nombre, RFC y CURP */
         @media (max-width: 700px) { .grid, .grid.socios { grid-template-columns: 1fr; } }
@@ -107,7 +109,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-3';
+        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-5';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -294,12 +296,12 @@
             app.innerHTML = `
                 <a class="volver" href="${volverHref}">${volverTxt}</a>
                 <h1>Propuesta de arrendamiento · Local ${esc(locales)}</h1>
-                <p class="sub">Primero se prepara la propuesta (paso 1) y, si el interesado la acepta, se le envía el cuestionario de datos generales (paso 2). Se guarda sola conforme la llenas: puedes cerrar y seguir después. <span id="estadoGuardado" style="font-weight:600"></span></p>
+                <p class="sub">Primero se prepara la propuesta y, si el interesado la acepta, se capturan los datos del arrendatario (en una renovación ya vienen del contrato actual). Se guarda sola conforme la llenas: puedes cerrar y seguir después. <span id="estadoGuardado" style="font-weight:600"></span></p>
                 <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · ${m2 ? '<b>' + m2.toLocaleString('es-MX') + ' m²</b> · ' : ''}renta <b>${dinero(rentaActual)}</b> sin IVA${m2 ? ' (' + dinero(rentaActual / m2) + ' por m²)' : ''} · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. El paso 1 arranca con estos valores.</div>
 
                 <div class="pasos">
-                    <button type="button" class="paso-tab act" data-paso="1"><b>Paso 1 · Propuesta</b><span>Generales de la renta, dirigida a una persona</span></button>
-                    <button type="button" class="paso-tab" data-paso="2"><b>Paso 2 · Cuestionario</b><span>Datos del arrendatario, persona física o moral</span></button>
+                    <button type="button" class="paso-tab act" data-paso="1"><b>Propuesta</b><span>Generales de la renta, dirigida a una persona</span></button>
+                    <button type="button" class="paso-tab" data-paso="2"><b>Datos del arrendatario</b><span>Datos del arrendatario, persona física o moral</span></button>
                     <button type="button" class="paso-tab" data-paso="3"><b>Proyección</b><span>Solo para consulta, no se exporta</span></button>
                 </div>
 
@@ -308,20 +310,17 @@
                     ${PASOS[1].map(seccionHtml).join('')}
                     <div class="acciones">
                         <button class="btn" id="btnPdf1">PDF de la propuesta</button>
-                        <button class="btn-sec" id="irPaso2">Continuar al paso 2</button>
                     </div>
                 </div>
 
                 <div class="panel-paso p2" id="paso2">
                     <div class="resumen-p1" id="resumenP1"></div>
+                    <div class="herr"><button type="button" class="enlace" id="btnPrecarga" title="Llena solo los campos vacíos con lo que ya consta en el contrato actual de este local">Rellenar con datos del contrato actual</button><button type="button" class="enlace" id="btnLimpiar">Limpiar el cuestionario</button></div>
                     ${PASOS[2].map(seccionHtml).join('')}
                     <div class="acciones">
                         <button class="btn" id="btnPdf2">PDF del cuestionario con lo capturado</button>
                         <button class="btn-sec" id="btnBlanco" title="Sale con todos los espacios vacíos, para enviarlo y que el interesado lo llene">PDF del cuestionario en blanco</button>
-                        <button class="btn-sec" id="btnPrecarga" title="Llena solo los campos vacíos con lo que ya consta en el contrato actual de este local">Rellenar con datos del contrato actual</button>
-                        <button class="btn-sec" id="btnLimpiar">Limpiar el cuestionario</button>
-                        <button class="btn-sec" id="volverPaso1">Volver al paso 1</button>
-                        ${procId ? `<a class="btn" style="text-decoration:none" href="contrato-nuevo.html?proceso=${encodeURIComponent(procId)}" title="Sigue con el borrador del contrato">Seguir con el contrato</a>` : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos contratos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
+                        ${procId ? '' : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos contratos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
                     </div>
                 </div>
                 <div class="panel-paso p3" id="paso3">
@@ -344,8 +343,6 @@
                 window.scrollTo({ top: 0 });
             }
             app.querySelectorAll('.paso-tab').forEach(b => b.addEventListener('click', () => irAPaso(+b.dataset.paso)));
-            $('irPaso2').addEventListener('click', () => irAPaso(2));
-            $('volverPaso1').addEventListener('click', () => irAPaso(1));
             if (qs.get('paso') === '2') irAPaso(2);
             // Renovación: abre un proceso en Nuevos contratos con lo capturado en esta propuesta
             $('btnProceso')?.addEventListener('click', async e => {
@@ -566,7 +563,7 @@
             $('btnPdf2').addEventListener('click', () => imprimirPaso2(false));
             $('btnBlanco').addEventListener('click', () => imprimirPaso2(true));
             $('btnLimpiar').addEventListener('click', () => {
-                if (!confirm('Se borran los datos del cuestionario (paso 2) de este borrador. ¿Continuar?')) return;
+                if (!confirm('Se borran los datos del arrendatario de este borrador. ¿Continuar?')) return;
                 todos.filter(f => PASOS[2].includes(f.s)).forEach(f => { $('p_' + f[0]).value = ''; });
                 pintar();
             });

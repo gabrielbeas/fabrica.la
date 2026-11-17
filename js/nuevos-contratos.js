@@ -8,8 +8,7 @@
 export const ETAPAS = [
     { clave: 'local', nombre: 'Local', corto: 'Local' },
     { clave: 'propuesta', nombre: 'Propuesta enviada', corto: 'Propuesta' },
-    { clave: 'cuestionario', nombre: 'Cuestionario de datos', corto: 'Cuestionario' },
-    { clave: 'contrato', nombre: 'Contrato (borrador y PDF)', corto: 'Contrato' },
+    { clave: 'contrato', nombre: 'Contrato, datos y documentos', corto: 'Contrato' },
     { clave: 'pagos', nombre: 'Firma y pagos', corto: 'Firma y pagos' },
     { clave: 'activo', nombre: 'Activo', corto: 'Activo' }
 ];
@@ -20,12 +19,17 @@ export function pasosDe(p) {
     const hecho = {
         local: true,
         propuesta: !!p.propuestaEnviada,
-        cuestionario: !!p.aceptada && !!(d.razonSocial && d.rfc),
-        contrato: (p.versionPdf || 0) > 0,
+        contrato: (p.versionPdf || 0) > 0 && !!(d.razonSocial && d.rfc),   // PDF generado y datos del arrendatario capturados (en una renovación se precargan del contrato actual)
         pagos: !!d.firma && pagos.some(x => x.concepto === 'deposito') && pagos.some(x => x.concepto === 'primera_renta'),
         activo: p.estado === 'activado'
     };
-    return ETAPAS.map(e => ({ ...e, hecho: hecho[e.clave] }));
+    // `fuera` = el paso ya está hecho pero hay uno anterior (sin contar «Local») que todavía no: se hizo fuera de orden
+    let pendiente = false;
+    return ETAPAS.map(e => {
+        const fuera = hecho[e.clave] && pendiente && e.clave !== 'local';
+        if (!hecho[e.clave] && e.clave !== 'local') pendiente = true;
+        return { ...e, hecho: hecho[e.clave], fuera };
+    });
 }
 
 /** Etapa en la que va: la primera que no está hecha. */
@@ -47,11 +51,14 @@ export function documentosDe(datos = {}, todos = false) {
     const d = datos, lista = [];
     const add = (grupo, clave, nombre, detalle = '', opcional = false, detallePdf = detalle) => lista.push({ grupo, clave, nombre, detalle, opcional, detallePdf });   // detallePdf = texto que sale en el PDF para el interesado
     const moral = d.tipoPersona === 'moral', fisica = d.tipoPersona === 'fisica';
+    // Renovación: el acta y el poder ya constan del contrato anterior, solo se piden si cambiaron; el obligado solidario solo si lo hay
+    const renov = d.tipoContrato === 'renovacion';
+    const conObligado = !renov || !!((d.obligadosSolidarios || '').trim() || (d.osNombre || '').trim() || /obligado|aval|fiador/i.test(d.garantia || ''));
     if (moral || (todos && !fisica)) {
-        add('A', 'm_acta', 'Acta constitutiva con boleta de inscripción en el Registro Público de Comercio', 'Para la declaración de constitución (escritura, notario, folio mercantil).');
+        add('A', 'm_acta', 'Acta constitutiva con boleta de inscripción en el Registro Público de Comercio', renov ? 'Ya consta del contrato anterior: solo si cambió.' : 'Para la declaración de constitución (escritura, notario, folio mercantil).', renov);
         add('A', 'm_reformas', 'Reformas o actas de asamblea posteriores', 'Si cambió su capital o su administración.', true);
         add('A', 'm_csf', 'Constancia de situación fiscal (RFC) de la empresa, emitida hace no más de 30 días');
-        add('A', 'm_poder', 'Poder del representante legal, con su inscripción', 'Pleitos y cobranzas y actos de administración (general, fiscal y laboral).');
+        add('A', 'm_poder', 'Poder del representante legal, con su inscripción', renov ? 'Ya consta del contrato anterior: solo si cambió el representante o sus facultades.' : 'Pleitos y cobranzas y actos de administración (general, fiscal y laboral).', renov);
         add('A', 'm_idRep', 'Identificación oficial vigente del representante legal');
         add('A', 'm_curpRep', 'CURP y constancia de situación fiscal (RFC) del representante legal (la constancia, emitida hace no más de 30 días)');
         const socios = [1, 2, 3, 4].filter(n => (d[`socio${n}`] || '').trim());
@@ -69,12 +76,14 @@ export function documentosDe(datos = {}, todos = false) {
         add('B', 'f_domicilio', 'Comprobante de domicilio (no mayor a 3 meses)');
         add('B', 'f_nacionalidad', 'Acta de nacimiento o comprobante de nacionalidad mexicana');
     }
+    if (conObligado) {
     add('C', 'o_id', 'Identificación oficial vigente del obligado solidario');
     add('C', 'o_curpcsf', 'CURP y constancia de situación fiscal (RFC) del obligado solidario (la constancia, emitida hace no más de 30 días)');
     add('C', 'o_domicilio', 'Comprobante de domicilio del obligado solidario');
     add('C', 'o_escritura', 'Escritura del inmueble en garantía, con su inscripción en el Registro Público de la Propiedad', 'Para la declaración III.C (escritura, notario, folio real).');
     add('C', 'o_predial', 'Boleta predial y clave catastral del inmueble');
     add('C', 'o_conyuge', 'Si es casado: acta de matrimonio y régimen, o consentimiento del cónyuge', 'Sugerencia: no lo pide el contrato actual; confirmar con el abogado.', true, '');
+    }
     return lista;
 }
 
