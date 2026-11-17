@@ -37,7 +37,7 @@ export function etapaDe(p) {
 
 // ---------- Documentos que debe enviar el interesado ----------
 // Grupos: A = persona moral, B = persona física, C = obligado solidario. Lo recibido se guarda en `p.documentos`
-// ({ clave: { recibido: 'AAAA-MM-DD' | '', nota } }). Es solo un checklist: no bloquea la activación.
+// ({ clave: { recibido: 'AAAA-MM-DD' | '', nota } }). Es solo un checklist: no bloquea la activación. Toda constancia de situación fiscal (RFC) debe tener no más de 30 días de emitida (regla de Gabriel, 17/11/2026): no se marca como recibida una más vieja.
 const GRUPOS = { A: 'A · Arrendatario, persona moral', B: 'B · Arrendatario, persona física', C: 'C · Obligado solidario' };
 export { GRUPOS as GRUPOS_DOCUMENTOS };
 
@@ -50,27 +50,27 @@ export function documentosDe(datos = {}, todos = false) {
     if (moral || (todos && !fisica)) {
         add('A', 'm_acta', 'Acta constitutiva con boleta de inscripción en el Registro Público de Comercio', 'Para la declaración de constitución (escritura, notario, folio mercantil).');
         add('A', 'm_reformas', 'Reformas o actas de asamblea posteriores', 'Si cambió su capital o su administración.', true);
-        add('A', 'm_csf', 'Constancia de situación fiscal (RFC) de la empresa, actualizada');
+        add('A', 'm_csf', 'Constancia de situación fiscal (RFC) de la empresa, emitida hace no más de 30 días');
         add('A', 'm_poder', 'Poder del representante legal, con su inscripción', 'Pleitos y cobranzas y actos de administración (general, fiscal y laboral).');
         add('A', 'm_idRep', 'Identificación oficial vigente del representante legal');
-        add('A', 'm_curpRep', 'CURP y constancia de situación fiscal (RFC) del representante legal');
+        add('A', 'm_curpRep', 'CURP y constancia de situación fiscal (RFC) del representante legal (la constancia, emitida hace no más de 30 días)');
         const socios = [1, 2, 3, 4].filter(n => (d[`socio${n}`] || '').trim());
         if (socios.length) socios.forEach(n => {
-            add('A', `m_socio${n}_csf`, `Constancia de situación fiscal (RFC) del socio: ${d[`socio${n}`].trim()}`);
+            add('A', `m_socio${n}_csf`, `Constancia de situación fiscal (RFC) del socio: ${d[`socio${n}`].trim()}, emitida hace no más de 30 días`);
             add('A', `m_socio${n}_curp`, `CURP del socio: ${d[`socio${n}`].trim()}`);
         });
-        else add('A', 'm_socios', 'Constancia de situación fiscal (RFC) y CURP de cada uno de los socios', 'Captura los socios en el cuestionario para que salga un renglón por socio.', false, 'Uno por cada socio o accionista.');
+        else add('A', 'm_socios', 'Constancia de situación fiscal (RFC), emitida hace no más de 30 días, y CURP de cada uno de los socios', 'Captura los socios en el cuestionario para que salga un renglón por socio.', false, 'Uno por cada socio o accionista.');
         add('A', 'm_domicilio', 'Comprobante de domicilio fiscal (no mayor a 3 meses)');
         add('A', 'm_opinion', 'Opinión de cumplimiento del SAT (32-D) en positivo');
     }
     if (fisica || (todos && !moral)) {
         add('B', 'f_id', 'Identificación oficial vigente');
-        add('B', 'f_curpcsf', 'CURP y constancia de situación fiscal (RFC)');
+        add('B', 'f_curpcsf', 'CURP y constancia de situación fiscal (RFC), esta última emitida hace no más de 30 días');
         add('B', 'f_domicilio', 'Comprobante de domicilio (no mayor a 3 meses)');
         add('B', 'f_nacionalidad', 'Acta de nacimiento o comprobante de nacionalidad mexicana');
     }
     add('C', 'o_id', 'Identificación oficial vigente del obligado solidario');
-    add('C', 'o_curpcsf', 'CURP y constancia de situación fiscal (RFC) del obligado solidario');
+    add('C', 'o_curpcsf', 'CURP y constancia de situación fiscal (RFC) del obligado solidario (la constancia, emitida hace no más de 30 días)');
     add('C', 'o_domicilio', 'Comprobante de domicilio del obligado solidario');
     add('C', 'o_escritura', 'Escritura del inmueble en garantía, con su inscripción en el Registro Público de la Propiedad', 'Para la declaración III.C (escritura, notario, folio real).');
     add('C', 'o_predial', 'Boleta predial y clave catastral del inmueble');
@@ -82,4 +82,29 @@ export function documentosDe(datos = {}, todos = false) {
 export function resumenDocumentos(p) {
     const lista = documentosDe(p.datos || {}).filter(x => !x.opcional), doc = p.documentos || {};
     return { total: lista.length, recibidos: lista.filter(x => doc[x.clave]?.recibido).length };
+}
+
+// ---- Precarga de una renovación con lo que ya consta en el contrato actual (17/11/2026) ----
+// Una renovación es el mismo inquilino: su razón social, RFC, representante, domicilio, correos, garantía, etc. ya están en
+// `contratos/{id}`. Esto devuelve esos datos con las claves del cuestionario y del borrador del contrato; solo trae lo que
+// existe (nunca inventa) y quien lo use debe llenar únicamente los campos vacíos.
+const lineas = x => Array.isArray(x) ? x.map(s => String(s).trim()).filter(Boolean).join('\n') : String(x ?? '').trim();
+const ES_MORAL = /(\bS\.?\s?A\.?\s?P\.?\s?I\.?\b|\bS\.?\s?A\.?(\s|,|$)|\bS\.?\s?DE\s?R\.?\s?L\.?|\bDE\s+C\.?\s?V\.?\s*$|\bS\.?\s?C\.?\s*$|\bA\.?\s?C\.?\s*$)/i;
+export function datosDeContrato(c) {
+    const dc = c.datosContrato || {};
+    const pagado = (c.historialDepositos || []).filter(p => p.tipo !== 'compartido').reduce((s, p) => s + (Number(p.monto) || 0), 0);
+    const socios = Array.isArray(c.socios) ? c.socios : [];
+    const d = {
+        tipoPersona: c.tipoPersona || dc.tipoPersona || (c.razonSocial ? (ES_MORAL.test(c.razonSocial) ? 'moral' : 'fisica') : ''),
+        razonSocial: c.razonSocial, rfc: c.rfc, curp: c.curp, nombreComercial: c.nombreComercial, giro: c.giro,
+        telefono: c.telefono, correosNotificacion: lineas(c.correosNotificacion), correosFacturacion: lineas(c.facturacion?.correos),
+        direccion: lineas(c.direccion), representante: c.representante, repRfc: c.repRfc, repCurp: c.repCurp,
+        garantia: c.garantia, garantiaDetalle: c.garantiaDetalle, obligadosSolidarios: lineas(c.obligadosSolidarios),
+        // Solo en el borrador del contrato
+        entradaLocal: dc.entradaLocal, constitucion: dc.constitucion, poderRepresentante: dc.poderRepresentante,
+        osNombre: dc.osNombre, osCurp: dc.osCurp, osRfc: dc.osRfc, osDomicilio: dc.osDomicilio, osInmueble: dc.osInmueble, osEscritura: dc.osEscritura,
+        posesionDesde: c.posesionDesde || dc.posesionDesde || c.inicio, depositoAnterior: pagado > 0 ? String(Math.round(pagado * 100) / 100) : ''
+    };
+    socios.slice(0, 4).forEach((s, i) => { d[`socio${i + 1}`] = s.nombre; d[`socio${i + 1}Rfc`] = s.rfc; d[`socio${i + 1}Curp`] = s.curp; });
+    return Object.fromEntries(Object.entries(d).map(([k, x]) => [k, String(x ?? '').trim()]).filter(([, x]) => x));
 }

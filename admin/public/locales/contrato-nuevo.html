@@ -35,7 +35,9 @@
         .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
         .grid .ancho { grid-column: 1 / -1; }
-        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        .grid.socios { grid-template-columns: 1.6fr 1fr 1fr; }
+        .grid.socios .ancho { grid-column: auto; }   /* una fila por socio: nombre, RFC y CURP */
+        @media (max-width: 700px) { .grid, .grid.socios { grid-template-columns: 1fr; } }
         label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
         input[type=text], input[type=number], input[type=date], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
         textarea { resize: vertical; }
@@ -77,7 +79,7 @@
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-1';
-        import { resumenDocumentos } from '../../../js/nuevos-contratos.js?v=20261111-5';
+        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-3';
         import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261111-1';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -179,6 +181,13 @@
             let versionPdf = borr.versionPdf || 0;
             let pagos = [...(borr.pagos || [])];
             let sucio = false;
+            // Renovación = mismo inquilino: el borrador arranca con lo que ya consta en el contrato actual (una sola vez, solo campos vacíos)
+            let precargado = false;
+            if (v.tipoContrato === 'renovacion' && !v.precargaBorrador) {
+                const claves = new Set(SECCIONES.flatMap(s => s.campos.map(f => f[0])));
+                for (const [k, x] of Object.entries(datosDeContrato(c))) if (claves.has(k) && !String(v[k] ?? '').trim()) v[k] = x;
+                v.precargaBorrador = true; precargado = true;
+            }
 
             const entrada = ([k, et, tipo, ancho, solo]) => {
                 const idc = 'p_' + k, val = esc(v[k] ?? '');
@@ -194,7 +203,7 @@
                 return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
             };
             const seccionHtml = s => `<div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}><h2>${s.t}</h2>${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
-                <div class="grid">${s.campos.map(entrada).join('')}${(s.calc || []).map(k => `<div><label>${CALC[k]}</label><div class="calc" id="c_${k}"></div></div>`).join('')}</div></div>`;
+                <div class="grid${s.t === 'Socios' ? ' socios' : ''}">${s.campos.map(entrada).join('')}${(s.calc || []).map(k => `<div><label>${CALC[k]}</label><div class="calc" id="c_${k}"></div></div>`).join('')}</div></div>`;
 
             const nota = 'Los datos son los del proceso (propuesta y cuestionario).';
             app.innerHTML = `
@@ -268,7 +277,7 @@
                 revision(d);
             }
             function datos() {
-                const g = {}; campos.forEach(k => { g[k] = ($('p_' + k).value ?? '').trim(); }); return g;
+                const g = {}; campos.forEach(k => { g[k] = ($('p_' + k).value ?? '').trim(); }); if (v.precargaBorrador) g.precargaBorrador = true; return g;
             }
 
             // Guardado automático del borrador (contratos_borradores/{id del contrato actual})
@@ -285,6 +294,7 @@
             }
             campos.forEach(k => $('p_' + k).addEventListener('input', () => { sucio = true; pone('Cambios sin guardar…'); clearTimeout(temporizador); temporizador = setTimeout(guardar, 900); pintar(); }));
             window.addEventListener('pagehide', () => { if (sucio) guardar(); });
+            if (precargado) guardar();   // deja registrado que ya se precargó con el contrato actual
             function pintarPagos() {
                 $('listaPagos').innerHTML = pagos.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="text-align:left">Concepto</th><th style="text-align:left">Fecha</th><th style="text-align:right">Monto</th><th style="text-align:left">Nota</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td>${esc(CONCEPTO_PAGO[p.concepto] || p.concepto)}</td><td>${esc(fechaTxt(p.fecha))}</td><td style="text-align:right">${dinero(p.monto)}</td><td>${esc(p.nota || '')}</td><td style="text-align:right"><button class="btn-sec" data-quitar="${i}" style="padding:4px 10px;font-size:12px">Quitar</button></td></tr>`).join('')}</tbody></table>` : '<p class="ayuda">Todavía no hay pagos registrados.</p>';
                 $('listaPagos').querySelectorAll('[data-quitar]').forEach(b => b.addEventListener('click', () => { pagos.splice(+b.dataset.quitar, 1); guardar().then(pintarPagos); pintar(); }));

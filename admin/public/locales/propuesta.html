@@ -52,7 +52,9 @@
         .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
         .grid .ancho { grid-column: 1 / -1; }
-        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        .grid.socios { grid-template-columns: 1.6fr 1fr 1fr; }
+        .grid.socios .ancho { grid-column: auto; }   /* una fila por socio: nombre, RFC y CURP */
+        @media (max-width: 700px) { .grid, .grid.socios { grid-template-columns: 1fr; } }
         label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
         input[type=text], input[type=number], input[type=date], input[type=email], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
         textarea { resize: vertical; }
@@ -105,6 +107,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
+        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-3';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -253,6 +256,17 @@
             } catch (e) { /* sin cotización */ }
             v.rentaIva = r2((+v.renta || 0) * (1 + IVA));   // la renta con IVA siempre sale de la renta mensual
 
+            // Renovación = el mismo inquilino: el cuestionario arranca con lo que ya consta en el contrato actual (razón social, RFC,
+            // representante, domicilio, correos, garantía…). Se hace una sola vez (v.precargaContrato) y solo en campos vacíos; el botón
+            // «Rellenar con datos del contrato actual» del paso 2 lo repite a demanda.
+            const camposForm = new Set([...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => f[0])));
+            const precarga = datosDeContrato(c);
+            const esRenovacion = procId ? v.tipoContrato === 'renovacion' : true;
+            if (esRenovacion && !v.precargaContrato) {
+                for (const [k, x] of Object.entries(precarga)) if (camposForm.has(k) && !String(v[k] ?? '').trim()) v[k] = x;
+                v.precargaContrato = true; sucio = true;
+            }
+
             const entrada = ([k, et, tipo, ancho, solo]) => {
                 const idc = 'p_' + k;
                 const val = esc(v[k] ?? '');
@@ -272,7 +286,7 @@
                 <div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}>
                     <h2>${s.t}</h2>
                     ${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
-                    <div class="grid">
+                    <div class="grid${s.t === 'Socios' ? ' socios' : ''}">
                         ${s.orden ? s.orden.map(x => x.startsWith('calc:') ? calcHtml(x.slice(5)) : entrada(s.campos.find(f => f[0] === x))).join('') : s.campos.map(entrada).join('') + (s.calc || []).map(calcHtml).join('')}
                     </div>
                 </div>`;
@@ -304,6 +318,7 @@
                     <div class="acciones">
                         <button class="btn" id="btnPdf2">PDF del cuestionario con lo capturado</button>
                         <button class="btn-sec" id="btnBlanco" title="Sale con todos los espacios vacíos, para enviarlo y que el interesado lo llene">PDF del cuestionario en blanco</button>
+                        <button class="btn-sec" id="btnPrecarga" title="Llena solo los campos vacíos con lo que ya consta en el contrato actual de este local">Rellenar con datos del contrato actual</button>
                         <button class="btn-sec" id="btnLimpiar">Limpiar el cuestionario</button>
                         <button class="btn-sec" id="volverPaso1">Volver al paso 1</button>
                         ${procId ? `<a class="btn" style="text-decoration:none" href="contrato-nuevo.html?proceso=${encodeURIComponent(procId)}" title="Sigue con el borrador del contrato">Seguir con el contrato</a>` : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos contratos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
@@ -439,6 +454,7 @@
                 app.querySelectorAll('[data-solo]').forEach(el => { el.style.display = tp && el.dataset.solo !== tp ? 'none' : ''; });
                 const g = {};
                 todos.forEach(f => { const el = $('p_' + f[0]); g[f[0]] = el.type === 'checkbox' ? el.checked : el.value; });
+                if (v.precargaContrato) g.precargaContrato = true;
                 pintarProyeccion(d);
                 try { localStorage.setItem(clave, JSON.stringify(g)); } catch (e) { /* sin almacenamiento */ }
                 if (sucio) programarGuardado(g);
@@ -553,6 +569,17 @@
                 if (!confirm('Se borran los datos del cuestionario (paso 2) de este borrador. ¿Continuar?')) return;
                 todos.filter(f => PASOS[2].includes(f.s)).forEach(f => { $('p_' + f[0]).value = ''; });
                 pintar();
+            });
+            // Rellena solo los campos vacíos con lo que ya consta en el contrato actual del local
+            $('btnPrecarga').addEventListener('click', () => {
+                let n = 0;
+                for (const [k, x] of Object.entries(precarga)) {
+                    const el = camposForm.has(k) ? $('p_' + k) : null;
+                    if (el && !el.value.trim()) { el.value = x; n++; }
+                }
+                v.precargaContrato = true; sucio = true;
+                pintar();
+                pone(n ? `Se llenaron ${n} campo${n === 1 ? '' : 's'} con los datos del contrato actual.` : 'No había campos vacíos que llenar con datos del contrato actual.', n ? 'var(--exito)' : 'var(--tinta-suave)');
             });
         }
     </script>
