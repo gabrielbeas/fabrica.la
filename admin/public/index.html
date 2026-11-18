@@ -50,6 +50,8 @@
         a.loc:hover { color: var(--accion); }
         .tabla-met tbody tr.fila-prop { cursor: pointer; }
         .tabla-met tbody tr.fila-prop:hover td { background: var(--fondo-hundido); }
+        /* Fila resaltada en las dos tablas a la vez: al pasar el mouse por el cotizador también se marca la fila del local, y al revés */
+        .met-lado tr.resalta td { background: var(--fondo-hundido); }
         .vencido { color: var(--peligro); font-size: 11px; font-weight: 600; }
         /* Locales y metrajes: cada fila en una sola línea (en pantallas anchas) */
         @media (min-width: 901px) { .tabla-met td, .tabla-met th { white-space: nowrap; } }
@@ -439,7 +441,7 @@
                                 return filasC.map((l, i) => {
                                     const primera = i === 0;
                                     const resto = '<span class="gris" title="Los m² y la renta son del contrato completo">incluido en el contrato</span>';
-                                    return `<tr${!primera ? ' class="sub-local"' : primera && !c.propio ? ` class="fila-prop" data-prop="${esc(c.id)}" title="Abrir la carátula"` : ''}>
+                                    return `<tr${!primera ? ' class="sub-local"' : primera && !c.propio ? ` class="fila-prop" data-prop="${esc(c.id)}" data-fila="${esc(c.id)}" title="Abrir la carátula"` : ` data-fila="${esc(c.id)}"`}>
                                 <td><a class="loc" href="${caratula(c.id)}" title="Abrir la carátula">${esc(l)}</a></td>
                                 <td>${esc(c.razonSocial || c.nombreComercial)}${primera && c.vencido ? ' <span class="vencido">Vencido</span>' : ''}</td>
                                 <td>${esc(c.acceso || '-')}</td>
@@ -516,6 +518,11 @@
                 recalcFila(tr);
             });
             totalesCot();
+            // Resaltado doble: la fila de la tabla y la del cotizador (están alineadas) se marcan juntas
+            const marcarFila = (tr, on) => { const id = tr?.dataset.fila || tr?.dataset.id; if (!id) return; app.querySelectorAll(`.met-lado tr[data-fila="${CSS.escape(id)}"], .met-lado tr[data-id="${CSS.escape(id)}"]`).forEach(f => f.classList.toggle('resalta', on)); };
+            const lado = app.querySelector('.met-lado');
+            lado.addEventListener('mouseover', e => { const tr = e.target.closest('tr'); if (tr) marcarFila(tr, true); });
+            lado.addEventListener('mouseout', e => { const tr = e.target.closest('tr'); if (tr) marcarFila(tr, false); });
             // Toda la fila abre la carátula del local (la propuesta se hace desde Contratos o desde Nuevos contratos)
             app.querySelectorAll('.tabla-met tr[data-prop]').forEach(tr => tr.addEventListener('click', e => {
                 if (e.target.closest('a, input, button')) return;   // el número del local y el cotizador siguen funcionando solos
