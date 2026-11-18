@@ -95,6 +95,32 @@ export function crearNavbar() {
   // Marcar sección activa
   marcarSeccionActiva(secciones);
   agregarVolverInicio(secciones);
+  recordarTamanoTextareas();
+}
+
+/**
+ * Tamaño de las cajas de texto (18/11/2026): el panel recuerda el alto que Gabriel le da a cada <textarea> (arrastrando la esquina)
+ * y lo devuelve al recargar o al volver a dibujar la página. Se guarda en este navegador (localStorage) por página y por id/nombre
+ * del campo; los textarea sin id ni name no se recuerdan.
+ */
+function recordarTamanoTextareas() {
+  if (window.__tamanoTextareas) return;
+  window.__tamanoTextareas = true;
+  const clave = t => 'ta_alto:' + location.pathname + ':' + (t.id || t.name);
+  const atender = t => {
+    if (t.dataset.altoRecordado || !(t.id || t.name)) return;
+    t.dataset.altoRecordado = '1';
+    try { const h = localStorage.getItem(clave(t)); if (h && +h > 0) t.style.height = h + 'px'; } catch (e) { /* sin almacenamiento */ }
+    let primera = true;
+    new ResizeObserver(() => {
+      if (primera) { primera = false; return; }
+      if (!t.offsetHeight) return;   // oculto: no es un cambio de tamaño del usuario
+      try { localStorage.setItem(clave(t), String(Math.round(t.offsetHeight))); } catch (e) { /* sin almacenamiento */ }
+    }).observe(t);
+  };
+  const buscar = raiz => { if (raiz.nodeType !== 1) return; if (raiz.tagName === 'TEXTAREA') atender(raiz); raiz.querySelectorAll?.('textarea').forEach(atender); };
+  buscar(document.body);
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(buscar))).observe(document.body, { childList: true, subtree: true });
 }
 
 /**
