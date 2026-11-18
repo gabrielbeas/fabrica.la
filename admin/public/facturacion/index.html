@@ -107,13 +107,14 @@
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { collection, getDocs, getDoc, setDoc, doc, writeBatch, updateDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import {
             ESTADOS, mesTxt, mesActual, mesMas, resumenCorte, dinero, esc, facturaId, IVA, r2, totales, generarFactura, contratosFacturables,
             cargarConfigGeneral, MORATORIOS_DEFAULT, cargarLecturas, cargarFacturasMes, ordenLocales, cargarTodasLasFacturas, lecturasFacturadas, actualizarAguaEnFactura, conceptoAgua,
             documentoContadores, imprimirHojas, totalesFactura, normalizarCorreos, correoValido, calcGBD, conceptoGBDTxt, montosGBD, rentaDelMes
-        } from '../../../js/facturacion.js?v=20261117-10';
+        } from '../../../js/facturacion.js?v=20261118-2';
 
         const app = document.getElementById('app');
         let mes = new URLSearchParams(location.search).get('mes') || mesActual();
@@ -262,7 +263,7 @@
                 const prendidas = ids.size + idsG.size, todas = filas.length + gbd.length;
                 // window.print() espera a que se cierre el diálogo de impresión
                 imprimirHojas(documentoContadores(mes, elegidas, porId, { resumen: conResumen, gbd }),
-                    `Facturas LAFABDECHOC ${mesTxt(mes)}${prendidas < todas ? ` (${prendidas} de ${todas})` : ''}`);
+                    nombreArchivo(['Facturación', mesTxt(mes), prendidas < todas ? `${prendidas} de ${todas}` : 'completa']));
                 return true;
             };
             document.getElementById('exportar')?.addEventListener('click', exportarPDF);
@@ -610,7 +611,7 @@
             const apagG = new Set(corte.apagadasGBD || []);
             const gbd = Array.isArray(corte.gbd) ? (await leerFacturasGBD(corte.mes)).map(f => ({ ...f, _redactada: apagG.has(f.contratoId) })) : [];
             if (elegidas.every(f => f._redactada) && gbd.every(f => f._redactada)) throw new Error('En ese corte todos los locales estaban apagados.');
-            imprimirHojas(documentoContadores(corte.mes, elegidas, porId, { resumen: true, gbd }), `Facturas LAFABDECHOC ${mesTxt(corte.mes)} (corte)`);
+            imprimirHojas(documentoContadores(corte.mes, elegidas, porId, { resumen: true, gbd }), nombreArchivo(['Facturación', mesTxt(corte.mes), 'corte']));
         }
 
         async function generar(faltan, contratos) {

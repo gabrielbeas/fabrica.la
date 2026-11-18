@@ -61,10 +61,12 @@ export function documentosDe(datos = {}, todos = false) {
         add('A', 'm_poder', 'Poder del representante legal, con su inscripción', renov ? 'Ya consta del contrato anterior: solo si cambió el representante o sus facultades.' : 'Pleitos y cobranzas y actos de administración (general, fiscal y laboral).', renov);
         add('A', 'm_idRep', 'Identificación oficial vigente del representante legal');
         add('A', 'm_curpRep', 'CURP y constancia de situación fiscal (RFC) del representante legal (la constancia, emitida hace no más de 30 días)');
-        const socios = [1, 2, 3, 4].filter(n => (d[`socio${n}`] || '').trim());
+        // Todos los socios: los que ya tienen nombre y también las filas palomeadas en el formulario aunque falte el nombre (se pide de todos)
+        const socios = Array.from({ length: 10 }, (_, i) => i + 1).filter(n => (d[`socio${n}`] || '').trim() || d[`socio${n}Mostrar`] === true || d[`socio${n}Mostrar`] === 'true');
         if (socios.length) socios.forEach(n => {
-            add('A', `m_socio${n}_csf`, `Constancia de situación fiscal (RFC) del socio: ${d[`socio${n}`].trim()}, emitida hace no más de 30 días`);
-            add('A', `m_socio${n}_curp`, `CURP del socio: ${d[`socio${n}`].trim()}`);
+            const nom = (d[`socio${n}`] || '').trim() || `Socio ${n} (nombre por capturar)`;
+            add('A', `m_socio${n}_csf`, `Constancia de situación fiscal (RFC) del socio: ${nom}, emitida hace no más de 30 días`);
+            add('A', `m_socio${n}_curp`, `CURP del socio: ${nom}`);
         });
         else add('A', 'm_socios', 'Constancia de situación fiscal (RFC), emitida hace no más de 30 días, y CURP de cada uno de los socios', 'Captura los socios en el cuestionario para que salga un renglón por socio.', false, 'Uno por cada socio o accionista.');
         add('A', 'm_domicilio', 'Comprobante de domicilio fiscal (no mayor a 3 meses)');
@@ -117,6 +119,6 @@ export function datosDeContrato(c) {
         osNombre: dc.osNombre, osCurp: dc.osCurp, osRfc: dc.osRfc, osDomicilio: dc.osDomicilio, osInmueble: dc.osInmueble, osEscritura: dc.osEscritura,
         posesionDesde: c.posesionDesde || dc.posesionDesde || c.inicio, depositoAnterior: pagado > 0 ? String(Math.round(pagado * 100) / 100) : ''
     };
-    socios.slice(0, 4).forEach((s, i) => { d[`socio${i + 1}`] = s.nombre; d[`socio${i + 1}Rfc`] = s.rfc; d[`socio${i + 1}Curp`] = s.curp; });
+    socios.slice(0, 10).forEach((s, i) => { d[`socio${i + 1}`] = s.nombre; d[`socio${i + 1}Rfc`] = s.rfc; d[`socio${i + 1}Curp`] = s.curp; });
     return Object.fromEntries(Object.entries(d).map(([k, x]) => [k, String(x ?? '').trim()]).filter(([, x]) => x));
 }

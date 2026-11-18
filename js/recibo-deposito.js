@@ -4,7 +4,8 @@
 // Si el depósito no ha cambiado desde el último recibo, se reimprime con el mismo folio.
 import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, collection, query, where, getDocs, runTransaction, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-10';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-2';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
 import { dineroLegal } from './contrato-pdf.js?v=20261117-10';
 import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './correos-contrato.js?v=20261014-6';
@@ -62,12 +63,8 @@ export function htmlRecibo(c, r, rec) {
     const html = `<div class="rq">
       <style>
         .rq { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12.5px; line-height: 1.55; }
-        .rq .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 20px; }
-        .rq .cab img { height: 49px; display: block; }
-        .rq .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
-        .rq .folio { font-size: 15px; font-weight: 700; color: #1b2430; }
-        .rq h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0; }
-        .rq .sub { text-align: center; color: #5b6572; margin: 0 0 18px; }
+        ${CSS_CABECERA}
+        .rq .lf-cab { margin-bottom: 20px !important; }
         .rq .dest { margin-bottom: 14px; } .rq .gris { color: #5b6572; }
         .rq p { margin: 0 0 12px; text-align: justify; }
         .rq table { width: 100%; border-collapse: collapse; margin: 0 0 14px; }
@@ -79,10 +76,7 @@ export function htmlRecibo(c, r, rec) {
         .rq .nota { font-size: 11px; color: #5b6572; font-style: italic; margin: 0 0 14px; }
         .rq .firma { width: 260px; margin: 64px auto 0; border-top: 1px solid #1b2430; padding-top: 4px; font-size: 11.5px; text-align: center; }
       </style>
-      <div class="cab"><img src="${LOGO_URL}" alt="La Fábrica de Chocolate">
-        <div class="der"><span class="folio">Folio ${esc(rec.folio)}</span><br>Guadalajara, Jalisco, a ${esc(fechaTxt(rec.fecha))}<br>Referencia: Local ${esc(locales)} · Depósito en garantía</div></div>
-      <h1>RECIBO DE DEPÓSITO EN GARANTÍA</h1>
-      <div class="sub">Depósito cubierto en su totalidad</div>
+      ${cabeceraExport('Recibo de depósito en garantía', [`Folio ${esc(rec.folio)} · Guadalajara, Jalisco, a ${esc(fechaTxt(rec.fecha))}`, `Referencia: Local ${esc(locales)} · Depósito cubierto en su totalidad`], LOGO_URL)}
       <div class="dest"><strong>${esc(c.razonSocial)}</strong><br>
         ${c.representante ? `Atención: ${esc(c.representante)}, representante<br>` : ''}
         <span class="gris">Local ${esc(locales)}${dir ? ` · ${dir}` : ''}</span></div>
@@ -124,7 +118,7 @@ export async function reciboDeposito(c, btn = null) {
     }
     const pagos = rec.pagos || [];
     const html = htmlRecibo(c, r, rec);
-    imprimirHojas(html, `Recibo de depósito ${rec.folio} · Local ${locales}`, { vertical: true });
+    imprimirHojas(html, nombreArchivo(['Recibo de depósito', rec.folio, `Local ${locales}`, c.nombreComercial || c.razonSocial], rec.fecha), { vertical: true });
     const user = getCurrentUser();
     await addDoc(collection(db, 'contratos', c.id, 'historial'), {
       antes: { reciboDeposito: null },

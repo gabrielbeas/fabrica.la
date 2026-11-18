@@ -150,6 +150,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -759,7 +760,7 @@
             const puntos = pers.map((p, i) => ({ p, v: valores[i] })).filter(d => d.v !== null);
             const hoy = new Date();
             const hoyTxt = `${hoy.getDate()} de ${MESES_L[hoy.getMonth()]} de ${hoy.getFullYear()}`;
-            const titulo = `Consumo de agua - Local ${fila.local || fila.tubo} - ${fila.nombre}`;
+            const titulo = nombreArchivo(['Reporte de consumo de agua', `Local ${fila.local || fila.tubo}`, fila.nombre]);
 
             // Gráfica: m³ por 30 días de este local, con su promedio de los últimos 12 periodos
             const W = 700, H = 230, izq = 42, der = 14, arriba = 10, abajo = 34;
@@ -786,11 +787,7 @@
             </svg>` : '<p class="gris">Sin lecturas para graficar.</p>';
 
             const html = `<div class="rep">
-                <div class="rep-cab">
-                    <img src="../css/logo-export.png" alt="La Fábrica de Chocolate">
-                    <div><div class="rep-et">Reporte de consumo de agua</div><div class="rep-fecha">Emitido el ${hoyTxt}</div></div>
-                </div>
-                <h1>${esc(fila.nombre)}</h1>
+                ${cabeceraExport('Reporte de consumo de agua', [`${esc(fila.nombre)} · Local ${esc(fila.local || '-')} · Tubo ${esc(fila.tubo)}`, `Emitido el ${hoyTxt}`], '../css/logo-export.png')}
                 <p class="rep-sub">Local ${esc(fila.local || '-')} · Tubo ${esc(fila.tubo)} · ${desde ? `Contrato desde el ${fechaCorta(desde)}` : 'Todo el histórico'}${lects.length ? ` · Lecturas del ${fechaCorta(lects[0].fecha)} al ${fechaCorta(lects[lects.length - 1].fecha)}` : ''}</p>
                 <div class="rep-tarjetas">
                     <div><span>Últimos 12 periodos</span><strong>${numero(fila.m12, 1)} m³</strong></div>
@@ -836,12 +833,7 @@
                         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     }
                     .rep { font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #333; font-size: 11px; }
-                    .rep-cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 14px; }
-                    .rep-cab img { height: 37px; }
-                    .rep-cab > div { text-align: left; }
-                    .rep-et { font-size: 13px; font-weight: 700; }
-                    .rep-fecha { font-size: 10px; color: #777; }
-                    .rep h1 { font-size: 18px; margin: 0 0 2px; }
+                    ${CSS_CABECERA}
                     .rep-sub { color: #666; margin: 0 0 12px; }
                     .rep h2 { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 16px 0 6px; }
                     .rep-tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }

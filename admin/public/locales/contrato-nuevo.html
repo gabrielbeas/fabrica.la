@@ -30,9 +30,13 @@
         .sec .ayuda { font-size: 12px; color: var(--tinta-suave); margin: 0 0 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
         .grid .ancho { grid-column: 1 / -1; }
-        .grid.socios { grid-template-columns: 1.6fr 1fr 1fr; }
-        .grid.socios .ancho { grid-column: auto; }   /* una fila por socio: nombre, RFC y CURP */
-        @media (max-width: 700px) { .grid, .grid.socios { grid-template-columns: 1fr; } }
+        .socio-fila { display: grid; grid-template-columns: 28px 1.6fr 1fr 1.1fr 38px; gap: 12px 18px; align-items: end; margin-bottom: 12px; } .socio-fila[hidden] { display: none; }
+        .obligado-fila { display: grid; grid-template-columns: 28px 1.6fr 1fr 1.1fr 38px; gap: 12px 18px; align-items: end; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--linea); } .obligado-fila[hidden] { display: none; }
+        .obligado-fila .chk-socio { grid-column: 1; grid-row: 1; } .obligado-fila .q-socio { grid-column: 5; grid-row: 1; } .obligado-fila .ancho { grid-column: 2 / 5; }
+        .q-socio { display: flex; align-items: center; height: 38px; } .q-socio .btn-basura { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; color: var(--tinta-suave); } .q-socio .btn-basura:hover { color: var(--peligro); border-color: var(--peligro); }
+        .chk-socio { display: flex; justify-content: center; align-items: center; height: 38px; } .chk-socio input { width: 18px; height: 18px; cursor: pointer; margin: 0; accent-color: var(--accion); }
+        .socio-fila .ancho { grid-column: auto; }   /* una fila por socio: casilla, nombre, RFC, CURP y quitar */
+        @media (max-width: 700px) { .grid, .socio-fila, .obligado-fila { grid-template-columns: 1fr; } .obligado-fila .chk-socio, .obligado-fila .q-socio, .obligado-fila .ancho { grid-column: auto; grid-row: auto; } }
         label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
         input[type=text], input[type=number], input[type=date], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
         textarea { resize: vertical; }
@@ -73,9 +77,10 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-10';
-        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-8';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261118-2';
+        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-10';
         import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261117-10';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -99,6 +104,10 @@
             else iniciar().catch(e => { console.error(e); app.innerHTML = `<p class="err">No se pudo cargar: ${esc(e.message)}</p>`; });
         }
 
+        const MAX_SOCIOS = 10, NS = Array.from({ length: MAX_SOCIOS }, (_, i) => i + 1);
+        const MAX_OBL = 5, NO = Array.from({ length: MAX_OBL }, (_, i) => i + 1);   // obligados solidarios: mismo formato que los socios
+        // «Nombre · CURP x · RFC y · domicilio» (el texto de antes) -> campos de una fila
+        const parseObligado = l => { const d = { nom: '', rfc: '', curp: '', dom: '' }; const partes = String(l || '').split(/\s·\s/).map(x => x.trim()).filter(Boolean); if (!partes.length) return d; d.nom = partes[0]; const resto = []; partes.slice(1).forEach(x => { let m; if ((m = x.match(/^CURP\s+(.+)$/i))) d.curp = m[1]; else if ((m = x.match(/^RFC\s+(.+)$/i))) d.rfc = m[1]; else resto.push(x); }); d.dom = resto.join(', '); return d; };   // los socios se agregan y se quitan desde el formulario (hasta 10)
         // [clave, etiqueta, tipo, ancho, solo]  (solo = 'fisica' | 'moral' | 'renovacion' | 'nuevo')
         const SECCIONES = [
             { t: 'Tipo de contrato', ayuda: 'Un cambio de inquilino es un contrato nuevo; una renovación es el mismo inquilino que continúa (cambian las declaraciones de posesión y de depósito).', campos: [
@@ -119,8 +128,8 @@
                 ['representante', 'Nombre completo', 'texto'], ['repRfc', 'RFC', 'texto'], ['repCurp', 'CURP', 'texto'],
                 ['poderRepresentante', 'Poder del representante (escritura, notario, folio; como irá en la declaración)', 'textarea', true]
             ] },
-            { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas.', campos:
-                [1, 2, 3, 4].flatMap(n => [[`socio${n}`, `Socio ${n} · nombre completo`, 'texto'], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
+            { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas. Palomea los socios que deben salir en la hoja de datos, aunque estén en blanco (así se ve que faltan); los que no palomees no se exportan.', campos:
+                NS.flatMap(n => [[`socio${n}Mostrar`, 'Mostrar en la hoja de datos', 'check'], [`socio${n}`, `Socio ${n} · nombre completo`, 'texto'], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
             { t: 'Vigencia', ayuda: 'Fechas y plazo del contrato nuevo.', campos: [
                 ['firma', 'Fecha de firma', 'fecha'], ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'],
                 ['fechaLimite', 'Fecha límite de pago', 'texto'], ['incrementoTipo', 'Tipo de incremento anual', 'texto'],
@@ -130,16 +139,11 @@
                 ['renta', 'Renta mensual (sin IVA y sin mantenimiento)', 'dinero'], ['mantenimientoPct', 'Mantenimiento aparte (% de la renta; 0 = incluido)', 'numero'],
                 ['moratoriosContrato', 'Intereses moratorios', 'texto'], ['mesesDeposito', 'Meses de depósito', 'numero']
             ], calc: ['rentaIva', 'deposito'] },
-            { t: 'Garantías', campos: [
-                ['garantia', 'Garantía', 'texto', true],
-                ['obligadosSolidarios', 'Obligado solidario (nombre, domicilio y teléfono; uno por renglón)', 'lineas', true],
-                ['garantiaDetalle', 'Detalle de la garantía', 'textarea', true]
-            ] },
-            { t: 'Obligado solidario (para el contrato)', ayuda: 'Datos que se imprimen en las declaraciones y cláusulas del contrato.', campos: [
-                ['osNombre', 'Nombre completo', 'texto'], ['osCurp', 'CURP', 'texto'], ['osRfc', 'RFC', 'texto'], ['osDomicilio', 'Domicilio', 'texto', true],
+            { t: 'Garantía y obligados solidarios', ayuda: 'Datos que se imprimen en las declaraciones y cláusulas del contrato. Agrega o quita obligados con los botones; palomea los que deben salir en la hoja de datos, aunque estén en blanco. El inmueble y su escritura (abajo) aplican a los obligados.',
+              campos: [['garantia', 'Garantía', 'texto', true]].concat(NO.flatMap(n => [[`obligado${n}Mostrar`, 'Mostrar en la hoja de datos', 'check'], [`obligado${n}`, `Obligado solidario ${n} · nombre completo`, 'texto'], [`obligado${n}Rfc`, 'RFC', 'texto'], [`obligado${n}Curp`, 'CURP', 'texto'], [`obligado${n}Domicilio`, 'Domicilio', 'texto', true]]).concat([
                 ['osInmueble', 'Inmueble en garantía (calle, colonia, municipio)', 'textarea', true],
                 ['osEscritura', 'Escritura del inmueble (como irá: «la escritura pública número ... folio real ... cuenta catastral ...»)', 'textarea', true]
-            ] }
+            ])) }
         ];
         const CALC = { fin: 'Fin del contrato', incremento: 'Primer incremento de renta', rentaIva: 'Renta mensual con IVA (16 %)', deposito: 'Depósito requerido' };
 
@@ -179,6 +183,15 @@
             const pagos = [...(borr.pagos || [])];   // solo lectura: los pagos se registran en la ficha del proceso
             let sucio = false;
             // Renovación = mismo inquilino: el borrador arranca con lo que ya consta en el contrato actual (una sola vez, solo campos vacíos)
+            // El «detalle de la garantía» ya no se captura aparte: si un proceso solo lo trae, se pasa al campo del inmueble en garantía (no se pierde)
+            if (!String(v.osInmueble ?? '').trim() && !String(v.osEscritura ?? '').trim() && String(v.garantiaDetalle ?? '').trim()) v.osInmueble = v.garantiaDetalle;
+            // Obligados solidarios en filas: si el proceso solo trae el texto anterior (un renglón por obligado) o el obligado único, se convierte a filas
+            if (!NO.some(n => String(v['obligado' + n] ?? '').trim())) {
+                const textoO = String(v.obligadosSolidarios || '').trim() || (v.tipoContrato === 'renovacion' ? (datosDeContrato(c).obligadosSolidarios || '') : '');
+                const filasO = lineas(textoO).slice(0, MAX_OBL).map(parseObligado);
+                if (!filasO.length && String(v.osNombre || '').trim()) filasO.push({ nom: v.osNombre, rfc: v.osRfc || '', curp: v.osCurp || '', dom: v.osDomicilio || '' });
+                filasO.forEach((d, i) => { const n = i + 1; v['obligado' + n] = d.nom; v['obligado' + n + 'Rfc'] = d.rfc; v['obligado' + n + 'Curp'] = d.curp; v['obligado' + n + 'Domicilio'] = d.dom; });
+            }
             let precargado = false;
             if (v.tipoContrato === 'renovacion' && !v.precargaBorrador) {
                 const claves = new Set(SECCIONES.flatMap(s => s.campos.map(f => f[0])));
@@ -189,6 +202,11 @@
             const entrada = ([k, et, tipo, ancho, solo]) => {
                 const idc = 'p_' + k, val = esc(v[k] ?? '');
                 let ctl;
+                if (tipo === 'check') {
+                    const mm = k.match(/^(socio|obligado)(\d+)Mostrar$/), pref = mm[1], n = mm[2], explicita = v[k] === true || v[k] === false || v[k] === 'true' || v[k] === 'false';
+                    const marcada = explicita ? (v[k] === true || v[k] === 'true') : !!String(v[pref + n] ?? '').trim();
+                    return `<div class="chk-socio"><input type="checkbox" id="${idc}" data-explicita="${explicita ? 1 : ''}" ${marcada ? 'checked' : ''} title="${esc(et)}" aria-label="${esc(et)} (${pref} ${n})"></div>`;
+                }
                 if (tipo === 'tcontrato') ctl = `<select id="${idc}"><option value="nuevo" ${v[k] !== 'renovacion' ? 'selected' : ''}>Contrato nuevo (cambio de inquilino)</option><option value="renovacion" ${v[k] === 'renovacion' ? 'selected' : ''}>Renovación (mismo inquilino)</option></select>`;
                 else if (tipo === 'tipo') ctl = `<select id="${idc}"><option value="">Seleccionar</option><option value="fisica" ${v[k] === 'fisica' ? 'selected' : ''}>Persona física</option><option value="moral" ${v[k] === 'moral' ? 'selected' : ''}>Persona moral</option></select>`;
                 else if (tipo === 'lineas' || tipo === 'textarea') ctl = `<textarea id="${idc}" rows="3">${val}</textarea>`;
@@ -199,8 +217,20 @@
                 else ctl = `<input type="text" id="${idc}" value="${val}">`;
                 return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
             };
-            const seccionHtml = s => `<div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}><h2>${s.t}</h2>${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
-                <div class="grid${s.t === 'Socios' ? ' socios' : ''}">${s.campos.map(entrada).join('')}${(s.calc || []).map(k => `<div><label>${CALC[k]}</label><div class="calc" id="c_${k}"></div></div>`).join('')}</div></div>`;
+            const hayDatosSocio = n => ['', 'Rfc', 'Curp'].some(sf => String(v['socio' + n + sf] ?? '').trim()) || v['socio' + n + 'Mostrar'] === true || v['socio' + n + 'Mostrar'] === 'true';
+            const cuentaSocios = Math.max(1, ...NS.filter(hayDatosSocio));   // filas visibles al abrir: hasta el último socio con datos
+            const seccionSocios = s => `<div class="sec" data-solo="${s.solo}"><h2>${s.t}</h2><p class="ayuda">${s.ayuda}</p>
+                <div id="listaSocios">${NS.map(n => `<div class="socio-fila" data-n="${n}"${n > cuentaSocios ? ' hidden' : ''}>${s.campos.filter(f => new RegExp('^socio' + n + '(Mostrar|Rfc|Curp)?$').test(f[0])).map(entrada).join('')}<div class="q-socio"><button type="button" class="btn-sec btn-basura" data-quitar-socio="${n}" title="Quitar este socio" aria-label="Quitar a este socio"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>`).join('')}</div>
+                <div class="acciones" style="margin-top:6px"><button type="button" class="btn-sec" id="btnAgregarSocio">Agregar socio</button><span class="err" id="socMsg"></span></div></div>`;
+            const hayDatosObl = n => ['', 'Rfc', 'Curp', 'Domicilio'].some(sf => String(v['obligado' + n + sf] ?? '').trim()) || v['obligado' + n + 'Mostrar'] === true || v['obligado' + n + 'Mostrar'] === 'true';
+            const cuentaObl = Math.max(1, ...NO.filter(hayDatosObl));
+            const seccionObligados = s => `<div class="sec"><h2>${s.t}</h2><p class="ayuda">${s.ayuda}</p>
+                <div class="grid" style="margin-bottom:14px">${s.campos.filter(f => f[0] === 'garantia').map(entrada).join('')}</div>
+                <div id="listaObligados">${NO.map(n => `<div class="obligado-fila" data-n="${n}"${n > cuentaObl ? ' hidden' : ''}>${s.campos.filter(f => new RegExp('^obligado' + n + '(Mostrar|Rfc|Curp|Domicilio)?$').test(f[0])).map(entrada).join('')}<div class="q-socio"><button type="button" class="btn-sec btn-basura" data-quitar-obligado="${n}" title="Quitar este obligado solidario" aria-label="Quitar a este obligado solidario"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>`).join('')}</div>
+                <div class="acciones" style="margin:6px 0 14px"><button type="button" class="btn-sec" id="btnAgregarObligado">Agregar obligado solidario</button><span class="err" id="oblMsg"></span></div>
+                <div class="grid">${s.campos.filter(f => f[0] === 'osInmueble' || f[0] === 'osEscritura').map(entrada).join('')}</div></div>`;
+            const seccionHtml = s => s.t === 'Garantía y obligados solidarios' ? seccionObligados(s) : s.t === 'Socios' ? seccionSocios(s) : `<div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}><h2>${s.t}</h2>${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
+                <div class="grid${s.t === 'Socios' ? ' socios' : ''}">${s.orden ? s.orden.map(x => x.startsWith('calc:') ? `<div><label>${CALC[x.slice(5)]}</label><div class="calc" id="c_${x.slice(5)}"></div></div>` : entrada(s.campos.find(f => f[0] === x))).join('') : s.campos.map(entrada).join('') + (s.calc || []).map(k => `<div><label>${CALC[k]}</label><div class="calc" id="c_${k}"></div></div>`).join('')}</div></div>`;
 
             const nota = 'Los datos son los del proceso (propuesta y cuestionario).';
             app.innerHTML = `
@@ -211,7 +241,7 @@
                 ${SECCIONES.map(seccionHtml).join('')}
                 <div class="revision" id="antesActivar"><h2>Antes de activar</h2><ul id="revision"></ul><p class="sub" style="margin:8px 0 0;font-size:12px">La fecha de firma y los pagos (depósito y primera renta) se registran en <a href="${hrefProceso}">el proceso</a>, en «Firma y pagos».</p></div>
                 <div class="acciones" style="justify-content:space-between;align-items:center">
-                    <button class="btn-sec" id="btnCaratula" title="La carátula con lo capturado aquí, como quedará en el contrato">PDF de la carátula</button>
+                    <button class="btn-sec" id="btnCaratula" title="La hoja de datos con lo capturado aquí, como quedará en la carátula del contrato">PDF de la hoja de datos</button>
                     <span class="err" id="msg"></span>
                     <button class="btn-sec" id="btnPdf" disabled title="Por ahora no está disponible">PDF del contrato</button>
                 </div>
@@ -256,7 +286,13 @@
                 revision(d);
             }
             function datos() {
-                const g = {}; campos.forEach(k => { g[k] = ($('p_' + k).value ?? '').trim(); }); if (v.precargaBorrador) g.precargaBorrador = true; return g;
+                const g = {}; campos.forEach(k => { const el = $('p_' + k); g[k] = el.type === 'checkbox' ? el.checked : (el.value ?? '').trim(); }); if (v.precargaBorrador) g.precargaBorrador = true;
+                // Compatibilidad: el texto «un renglón por obligado» y el obligado único (os*) se derivan de las filas, porque los usan el PDF del contrato, la activación y el checklist
+                const conNombre = NO.filter(n => (g['obligado' + n] || '').trim());
+                g.obligadosSolidarios = conNombre.map(n => [g['obligado' + n], g['obligado' + n + 'Curp'] && 'CURP ' + g['obligado' + n + 'Curp'], g['obligado' + n + 'Rfc'] && 'RFC ' + g['obligado' + n + 'Rfc'], g['obligado' + n + 'Domicilio']].filter(Boolean).join(' · ')).join('\n');
+                const p1 = conNombre[0] || 1;
+                g.osNombre = g['obligado' + p1] || ''; g.osCurp = g['obligado' + p1 + 'Curp'] || ''; g.osRfc = g['obligado' + p1 + 'Rfc'] || ''; g.osDomicilio = g['obligado' + p1 + 'Domicilio'] || '';
+                return g;
             }
 
             // Guardado automático del borrador (contratos_borradores/{id del contrato actual})
@@ -273,16 +309,45 @@
             }
             campos.forEach(k => $('p_' + k).addEventListener('input', () => { sucio = true; pone('Cambios sin guardar…'); clearTimeout(temporizador); temporizador = setTimeout(guardar, 900); pintar(); }));
             window.addEventListener('pagehide', () => { if (sucio) guardar(); });
+            // Agregar y quitar filas (socios y obligados solidarios): se muestran u ocultan filas; al quitar una, las de abajo suben y la última queda vacía
+            const listaDinamica = ({ pref, ns, sufijos, max, btn, msg, quitar, singular }) => {
+                const filaE = n => app.querySelector(`.${pref}-fila[data-n="${n}"]`);
+                const visibles = () => ns.filter(n => !filaE(n).hidden).length;
+                const idDe = (n, sf) => $('p_' + pref + n + sf);
+                const leer = n => Object.fromEntries(sufijos.map(sf => [sf, sf === 'Mostrar' ? idDe(n, sf).checked : idDe(n, sf).value]));
+                const poner = (n, d) => sufijos.forEach(sf => { if (sf === 'Mostrar') { idDe(n, sf).checked = d[sf]; idDe(n, sf).dataset.explicita = '1'; } else idDe(n, sf).value = d[sf]; });
+                const vacia = mostrar => Object.fromEntries(sufijos.map(sf => [sf, sf === 'Mostrar' ? mostrar : '']));
+                const avisar = () => $('p_' + pref + '1').dispatchEvent(new Event('input', { bubbles: true }));   // dispara el guardado automático y el repintado
+                const actualizarBoton = () => { $(btn).disabled = visibles() >= max; $(msg).textContent = visibles() >= max ? `Máximo ${max}.` : ''; };
+                ns.forEach(n => {
+                    const chk = idDe(n, 'Mostrar'), nom = idDe(n, '');
+                    chk.addEventListener('change', () => { chk.dataset.explicita = '1'; });
+                    nom.addEventListener('input', () => { if (!chk.dataset.explicita) chk.checked = !!nom.value.trim(); });
+                });
+                $(btn).addEventListener('click', () => {
+                    const c = visibles(); if (c >= max) return;
+                    filaE(c + 1).hidden = false; poner(c + 1, vacia(true));
+                    idDe(c + 1, '').focus(); actualizarBoton(); avisar();
+                });
+                app.querySelectorAll(`[${quitar}]`).forEach(b => b.addEventListener('click', () => {
+                    const n = +b.getAttribute(quitar), c = visibles(), d = leer(n);
+                    if (sufijos.some(sf => sf !== 'Mostrar' && d[sf]) && !confirm(`¿Quitar a ${d[''] || singular} de la lista?`)) return;
+                    for (let i = n; i < c; i++) poner(i, leer(i + 1));
+                    poner(c, vacia(false));
+                    if (c > 1) filaE(c).hidden = true;
+                    actualizarBoton(); avisar();
+                }));
+                actualizarBoton();
+            };
+            listaDinamica({ pref: 'socio', ns: NS, sufijos: ['', 'Rfc', 'Curp', 'Mostrar'], max: MAX_SOCIOS, btn: 'btnAgregarSocio', msg: 'socMsg', quitar: 'data-quitar-socio', singular: 'este socio' });
+            listaDinamica({ pref: 'obligado', ns: NO, sufijos: ['', 'Rfc', 'Curp', 'Domicilio', 'Mostrar'], max: MAX_OBL, btn: 'btnAgregarObligado', msg: 'oblMsg', quitar: 'data-quitar-obligado', singular: 'este obligado solidario' });
             if (precargado) guardar();   // deja registrado que ya se precargó con el contrato actual
             pintar();
 
-            // PDF de la carátula: lo capturado aquí es lo que después se vuelve la carátula del contrato (locales/caratula.html)
+            // PDF de la hoja de datos: lo capturado aquí es lo que después se vuelve la carátula del contrato (locales/caratula.html)
             const CSS_CARATULA = `@media print {
                 #hoja.caratula { display: block !important; min-height: 0; text-align: left; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
-                #hoja.caratula .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 6px; }
-                #hoja.caratula .cab img { height: 42px; width: auto; display: block; flex: none; }
-                #hoja.caratula h1 { margin: 0 0 3px; padding: 0; font-size: 18px; line-height: 1.15; font-weight: 900; }
-                #hoja.caratula .cab p { margin: 0; padding: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
+                ${CSS_CABECERA}
                 #hoja.caratula h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 4px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
                 #hoja.caratula table { width: 100%; border-collapse: collapse; }
                 #hoja.caratula td { padding: 3px 6px; border-bottom: 1px solid #e6e9ee; vertical-align: top; }
@@ -293,6 +358,8 @@
                 #hoja.caratula table.tsocios th { text-align: left; vertical-align: bottom; font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; font-weight: 400; padding: 0 6px 3px; border-bottom: 1px solid #dfe3e8; }
                 #hoja.caratula table.tsocios th.ts { width: 36%; font-size: 11px; letter-spacing: .06em; color: #1b2430; font-weight: 700; }
                 #hoja.caratula table.tsocios th:nth-child(2) { width: 27%; }
+                #hoja.caratula table.tsocios .dom { color: #5f6670; font-weight: 400; font-size: 9px; margin-top: 1px; }
+                #hoja.caratula table.tsocios .ph { color: #b4bac3; font-weight: 400; font-size: 9.5px; }
                 #hoja.caratula table.tsocios td { width: auto; color: #1b2430; font-weight: 600; white-space: normal; }
             }`;
             function htmlCaratula() {
@@ -301,9 +368,7 @@
                 const filas = rows => rows.filter(r => String(r[1] ?? '').trim()).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
                 const sec = (t, rows) => { const h = filas(rows); return h ? `<h2>${t}</h2><table>${h}</table>` : ''; };
                 const hoy = fechaTxt(hoyISO());
-                return `<div class="cab"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div><h1>Carátula provisional del contrato</h1>
-                    <p>Local ${esc(locales)} · ${esc(g.razonSocial || '')}</p>
-                    <p>Contrato de arrendamiento · ${renov ? 'Renovación' : 'Contrato nuevo'} · elaborada el ${esc(hoy)}</p></div></div>`
+                return cabeceraExport('Hoja de datos', [`Local ${esc(locales)} · ${esc(g.razonSocial || '')}`, `Contrato de arrendamiento · ${renov ? 'Renovación' : 'Contrato nuevo'} · elaborada el ${esc(hoy)}`], '../css/logo-export.png')
                 + sec('Arrendatario', [
                     ['Razón social o nombre', g.razonSocial], ['RFC', g.rfc], ['Tipo de persona', moral ? 'Persona moral' : g.tipoPersona === 'fisica' ? 'Persona física' : ''],
                     ['Constitución', moral ? g.constitucion : ''], ['Representante legal', moral ? g.representante : ''], ['Poder del representante', moral ? g.poderRepresentante : ''],
@@ -313,23 +378,29 @@
                     ['Dirección fiscal', lineas(g.direccion).join('\n')]
                 ])
                 + (() => {
-                    const so = [1, 2, 3, 4].filter(n => moral && (g[`socio${n}`] || '').trim());
-                    return so.length ? `<table class="tsocios"><thead><tr><th class="ts">Socios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${so.map(n => `<tr><td>${esc(g[`socio${n}`])}</td><td>${esc(g[`socio${n}Rfc`] || '')}</td><td>${esc(g[`socio${n}Curp`] || '')}</td></tr>`).join('')}</tbody></table>` : '';
+                    const mostrar = n => g[`socio${n}Mostrar`] === undefined ? !!(g[`socio${n}`] || '').trim() : (g[`socio${n}Mostrar`] === true || g[`socio${n}Mostrar`] === 'true');
+                    const so = NS.filter(n => moral && mostrar(n));
+                    return so.length ? `<table class="tsocios"><thead><tr><th class="ts">Socios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${so.map(n => `<tr><td>${esc(g[`socio${n}`] || '') || `<span class="ph">Socio ${n}</span>`}</td><td>${esc(g[`socio${n}Rfc`] || '') || '&nbsp;'}</td><td>${esc(g[`socio${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
                 })()
                 + sec('Vigencia', [
                     ['Tipo de contrato', renov ? 'Renovación' : 'Contrato nuevo (cambio de inquilino)'], ['En posesión del local desde', renov ? f(g.posesionDesde) : ''],
                     ['Fecha de firma', f(g.firma)], ['Plazo', `${d.anios} año${d.anios > 1 ? 's' : ''} forzosos`], ['Inicio', f(d.inicio)], ['Fin', f(d.fin)],
                     ['Incremento de renta', `Cada año de vigencia; primer incremento: ${f(d.incr)}`], ['Tipo de incremento', g.incrementoTipo], ['Fecha límite de pago', g.fechaLimite]
                 ])
-                + sec('Renta', [
+                + sec('Renta y depósito', [
                     ['Renta mensual (sin IVA)', d.renta ? dinero(d.renta) : ''], ['Renta mensual con IVA (16 %)', d.renta ? dinero(d.conIva) : ''],
                     ['Mantenimiento', +g.mantenimientoPct > 0 ? `Aparte: ${g.mantenimientoPct} % de la renta` : 'Incluido en la renta'],
-                    ['Periodo de gracia', +g.mesesGracia > 0 ? `${g.mesesGracia} mes${+g.mesesGracia === 1 ? '' : 'es'}` : 'Ninguno'], ['Intereses moratorios', g.moratoriosContrato]
+                    ['Periodo de gracia', +g.mesesGracia > 0 ? `${g.mesesGracia} mes${+g.mesesGracia === 1 ? '' : 'es'}` : 'Ninguno'], ['Intereses moratorios', g.moratoriosContrato],
+                    ['Meses de depósito', d.meses ? String(d.meses) : ''], ['Depósito requerido', d.meses ? dinero(d.deposito) : ''], ['Depósito entregado en el contrato anterior', renov && +g.depositoAnterior > 0 ? dinero(g.depositoAnterior) : '']
                 ])
-                + sec('Depósito y garantía', [
-                    ['Meses de depósito', d.meses ? String(d.meses) : ''], ['Depósito requerido', d.meses ? dinero(d.deposito) : ''], ['Depósito entregado en el contrato anterior', renov && +g.depositoAnterior > 0 ? dinero(g.depositoAnterior) : ''],
-                    ['Garantía', g.garantia], ['Detalle de la garantía', g.garantiaDetalle], ['Obligado solidario', lineas(g.obligadosSolidarios).join('\n') || g.osNombre]
-                ]);
+                + sec('Garantía y obligados solidarios', [
+                    ['Garantía', g.garantia], ['Inmueble en garantía', g.osInmueble], ['Escritura del inmueble', g.osEscritura]
+                ])
+                + (() => {
+                    const mostrarO = n => g[`obligado${n}Mostrar`] === undefined ? !!(g[`obligado${n}`] || '').trim() : (g[`obligado${n}Mostrar`] === true || g[`obligado${n}Mostrar`] === 'true');
+                    const oo = NO.filter(mostrarO);
+                    return oo.length ? `<table class="tsocios"><thead><tr><th class="ts">Obligados solidarios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${oo.map(n => `<tr><td>${esc(g[`obligado${n}`] || '') || `<span class="ph">Obligado solidario ${n}</span>`}${g[`obligado${n}Domicilio`] ? `<div class="dom">${esc(g[`obligado${n}Domicilio`])}</div>` : ''}</td><td>${esc(g[`obligado${n}Rfc`] || '') || '&nbsp;'}</td><td>${esc(g[`obligado${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
+                })();
             }
             $('btnCaratula').addEventListener('click', async () => {
                 if (sucio) await guardar();
@@ -338,7 +409,7 @@
                 hoja.innerHTML = htmlCaratula();
                 const img = hoja.querySelector('img');
                 if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 1500); });
-                const previo = document.title; document.title = `CARATULA PROVISIONAL LOCAL ${locales}`;
+                const previo = document.title; document.title = nombreArchivo(['Hoja de datos', `Local ${locales}`, val('nombreComercial') || val('razonSocial')]);
                 window.print();
                 document.title = previo;
             });
@@ -415,9 +486,9 @@
                     tipoPersona: g.tipoPersona, ...(g.tipoPersona === 'fisica' && g.curp ? { curp: g.curp } : {}),
                     direccion: lineas(g.direccion),
                     ...(moral ? { representante: g.representante, repRfc: g.repRfc, repCurp: g.repCurp,
-                        socios: [1, 2, 3, 4].map(i => ({ nombre: g[`socio${i}`], rfc: g[`socio${i}Rfc`], curp: g[`socio${i}Curp`] })).filter(s => s.nombre) } : {}),
+                        socios: NS.map(i => ({ nombre: g[`socio${i}`], rfc: g[`socio${i}Rfc`], curp: g[`socio${i}Curp`] })).filter(s => s.nombre) } : {}),
                     correosNotificacion: normalizarCorreos(lineas(g.correosNotificacion)),
-                    garantia: g.garantia, obligadosSolidarios: lineas(g.obligadosSolidarios), garantiaDetalle: g.garantiaDetalle,
+                    garantia: g.garantia, obligadosSolidarios: lineas(g.obligadosSolidarios), garantiaDetalle: [g.osInmueble, g.osEscritura].filter(Boolean).join('. '),
                     // Del local (no cambian con el inquilino)
                     locales: c.locales || [], m2: c.m2 ?? null, acceso: c.acceso || '',
                     cfe: c.cfe || '', cfeServicio: c.cfeServicio || '', cfeRmu: c.cfeRmu || '', cfeCuenta: c.cfeCuenta || '',

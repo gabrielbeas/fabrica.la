@@ -43,9 +43,10 @@
         .grid .ancho { grid-column: 1 / -1; }
         .herr { display: flex; gap: 18px; justify-content: flex-end; margin: 0 0 8px; }
         .enlace { background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: var(--accion); text-decoration: underline; cursor: pointer; }
-        .grid.socios { grid-template-columns: 1.6fr 1fr 1fr; }
-        .grid.socios .ancho { grid-column: auto; }   /* una fila por socio: nombre, RFC y CURP */
-        @media (max-width: 700px) { .grid, .grid.socios { grid-template-columns: 1fr; } }
+        .socio-fila { display: grid; grid-template-columns: 28px 1.6fr 1fr 1.1fr 38px; gap: 12px 18px; align-items: end; margin-bottom: 12px; } .socio-fila[hidden] { display: none; } .socio-fila .ancho { grid-column: auto; }
+        .chk-socio { display: flex; justify-content: center; align-items: center; height: 38px; } .chk-socio input { width: 18px; height: 18px; cursor: pointer; margin: 0; accent-color: var(--accion); }
+        .q-socio { display: flex; align-items: center; height: 38px; } .q-socio .btn-basura { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; color: var(--tinta-suave); } .q-socio .btn-basura:hover { color: var(--peligro); border-color: var(--peligro); }
+        @media (max-width: 700px) { .grid, .socio-fila { grid-template-columns: 1fr; } }
         label { display: block; font-size: 12px; color: var(--tinta-suave); margin-bottom: 4px; }
         input[type=text], input[type=number], input[type=date], input[type=email], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; background: #fff; }
         textarea { resize: vertical; }
@@ -68,8 +69,6 @@
             @page { size: letter portrait; margin: 14mm; }
             body > .main, #navbar-root, nav { display: none !important; }
             #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
-            #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 12px; margin-bottom: 16px; }
-            #hoja .enc img { height: 57px; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
             #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 16px 0 8px; border-bottom: 2px solid #1f4e79; padding-bottom: 4px; break-after: avoid; }
             #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 26px; }
@@ -98,7 +97,9 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-8';
+        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-10';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -126,6 +127,7 @@
 
         // [clave, etiqueta, tipo, ancho, solo]  ·  solo = 'fisica' | 'moral': el campo o la sección solo aplica a ese tipo de persona
         // PASO 1: propuesta sencilla con los generales, dirigida a una persona. PASO 2: cuestionario de datos del arrendatario (sigue la carátula).
+        const MAX_SOCIOS = 10, NS = Array.from({ length: MAX_SOCIOS }, (_, i) => i + 1);   // mismo formato de socios que el borrador del contrato
         const PASOS = {
             1: [
                 { t: 'Dirigida a', ayuda: 'Persona a quien va la propuesta.', campos: [
@@ -159,8 +161,8 @@
                 { t: 'Representante legal', solo: 'moral', ayuda: 'Persona moral: quien firmará el contrato.', campos: [
                     ['representante', 'Nombre completo', 'texto', true], ['repRfc', 'RFC', 'texto'], ['repCurp', 'CURP', 'texto']
                 ] },
-                { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas, con su RFC y CURP.', campos:
-                    [1, 2, 3, 4].flatMap(n => [[`socio${n}`, `Socio ${n} · nombre completo`, 'texto', true], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
+                { t: 'Socios', solo: 'moral', ayuda: 'Persona moral: socios o accionistas, con su RFC y CURP. Agrega o quita socios con los botones; palomea los que deben salir en la hoja de datos, aunque estén en blanco.', campos:
+                    NS.flatMap(n => [[`socio${n}Mostrar`, 'Mostrar en la hoja de datos', 'chksocio'], [`socio${n}`, `Socio ${n} · nombre completo`, 'texto', true], [`socio${n}Rfc`, 'RFC', 'texto'], [`socio${n}Curp`, 'CURP', 'texto']]) },
                 { t: 'Garantías', ayuda: 'Garantía que ofrece el interesado.', campos: [
                     ['garantia', 'Garantía', 'texto', true],
                     ['obligadosSolidarios', 'Obligado solidario (nombre, domicilio y teléfono; uno por renglón)', 'lineas', true],
@@ -257,6 +259,11 @@
                 const idc = 'p_' + k;
                 const val = esc(v[k] ?? '');
                 let ctl;
+                if (tipo === 'chksocio') {
+                    const n = k.match(/^socio(\d+)Mostrar$/)?.[1], explicita = v[k] === true || v[k] === false || v[k] === 'true' || v[k] === 'false';
+                    const marcada = explicita ? (v[k] === true || v[k] === 'true') : !!String(v['socio' + n] ?? '').trim();
+                    return `<div class="chk-socio"><input type="checkbox" id="${idc}" data-explicita="${explicita ? 1 : ''}" ${marcada ? 'checked' : ''} title="${et}" aria-label="${et} (socio ${n})"></div>`;
+                }
                 if (tipo === 'check') return `<div class="ancho"><label class="chk-lin"><input type="checkbox" id="${idc}" ${v[k] === true || v[k] === 'true' ? 'checked' : ''}> ${et}</label></div>`;
                 if (tipo === 'tipo') ctl = `<select id="${idc}"><option value="">Seleccionar</option><option value="fisica" ${v[k] === 'fisica' ? 'selected' : ''}>Persona física</option><option value="moral" ${v[k] === 'moral' ? 'selected' : ''}>Persona moral</option></select>`;
                 else if (tipo === 'lineas' || tipo === 'textarea') ctl = `<textarea id="${idc}" rows="3">${val}</textarea>`;
@@ -268,7 +275,14 @@
                 return `<div${ancho ? ' class="ancho"' : ''}${solo ? ` data-solo="${solo}"` : ''}><label for="${idc}">${et}</label>${ctl}</div>`;
             };
             const calcHtml = k => `<div><label>${CALC[k][0]}</label><div class="calc" id="${CALC[k][1]}"></div></div>`;
-            const seccionHtml = s => `
+            const hayDatosSocio = n => ['', 'Rfc', 'Curp'].some(sf => String(v['socio' + n + sf] ?? '').trim()) || v['socio' + n + 'Mostrar'] === true || v['socio' + n + 'Mostrar'] === 'true';
+            const cuentaSocios = Math.max(1, ...NS.filter(hayDatosSocio));   // filas visibles al abrir: hasta el último socio con datos
+            const seccionSocios = s => `
+                <div class="sec" data-solo="${s.solo}"><h2>${s.t}</h2><p class="ayuda">${s.ayuda}</p>
+                    <div id="listaSocios">${NS.map(n => `<div class="socio-fila" data-n="${n}"${n > cuentaSocios ? ' hidden' : ''}>${s.campos.filter(f => new RegExp('^socio' + n + '(Mostrar|Rfc|Curp)?$').test(f[0])).map(entrada).join('')}<div class="q-socio"><button type="button" class="btn-sec btn-basura" data-quitar-socio="${n}" title="Quitar este socio" aria-label="Quitar a este socio"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>`).join('')}</div>
+                    <div class="acciones" style="margin-top:6px"><button type="button" class="btn-sec" id="btnAgregarSocio">Agregar socio</button><span class="err" id="socMsg"></span></div>
+                </div>`;
+            const seccionHtml = s => s.t === 'Socios' ? seccionSocios(s) : `
                 <div class="sec"${s.solo ? ` data-solo="${s.solo}"` : ''}>
                     <h2>${s.t}</h2>
                     ${s.ayuda ? `<p class="ayuda">${s.ayuda}</p>` : ''}
@@ -408,16 +422,45 @@
             }));
             pintar();
 
+            // Socios: agregar y quitar filas (los de abajo suben al quitar) y casilla «mostrar en la hoja de datos»
+            NS.forEach(n => {
+                const chk = $('p_socio' + n + 'Mostrar'), nom = $('p_socio' + n);
+                chk.addEventListener('change', () => { chk.dataset.explicita = '1'; });
+                nom.addEventListener('input', () => { if (!chk.dataset.explicita) chk.checked = !!nom.value.trim(); });
+            });
+            const filaSocio = n => app.querySelector(`.socio-fila[data-n="${n}"]`);
+            const visiblesSocios = () => NS.filter(n => !filaSocio(n).hidden).length;
+            const leerSocio = n => ({ nom: $('p_socio' + n).value, rfc: $('p_socio' + n + 'Rfc').value, curp: $('p_socio' + n + 'Curp').value, mostrar: $('p_socio' + n + 'Mostrar').checked });
+            const ponerSocio = (n, d) => { $('p_socio' + n).value = d.nom; $('p_socio' + n + 'Rfc').value = d.rfc; $('p_socio' + n + 'Curp').value = d.curp; const chk = $('p_socio' + n + 'Mostrar'); chk.checked = d.mostrar; chk.dataset.explicita = '1'; };
+            const avisarSocios = () => $('p_socio1').dispatchEvent(new Event('input', { bubbles: true }));   // dispara el guardado y el repintado
+            const botonAgregar = () => { $('btnAgregarSocio').disabled = visiblesSocios() >= MAX_SOCIOS; $('socMsg').textContent = visiblesSocios() >= MAX_SOCIOS ? `Máximo ${MAX_SOCIOS} socios.` : ''; };
+            $('btnAgregarSocio').addEventListener('click', () => {
+                const c = visiblesSocios(); if (c >= MAX_SOCIOS) return;
+                filaSocio(c + 1).hidden = false; ponerSocio(c + 1, { nom: '', rfc: '', curp: '', mostrar: true });
+                $('p_socio' + (c + 1)).focus(); botonAgregar(); avisarSocios();
+            });
+            app.querySelectorAll('[data-quitar-socio]').forEach(b => b.addEventListener('click', () => {
+                const n = +b.dataset.quitarSocio, c = visiblesSocios(), d = leerSocio(n);
+                if ((d.nom || d.rfc || d.curp) && !confirm(`¿Quitar a ${d.nom || 'este socio'} de la lista de socios?`)) return;
+                for (let i = n; i < c; i++) ponerSocio(i, leerSocio(i + 1));
+                ponerSocio(c, { nom: '', rfc: '', curp: '', mostrar: false });
+                if (c > 1) filaSocio(c).hidden = true;
+                botonAgregar(); avisarSocios();
+            }));
+            botonAgregar();
+
             // ---- Impresión ----
             const campo = (et, valor, ancho, largo) => `<div class="campo${ancho ? ' ancho' : ''}"><div class="et">${esc(et)}</div><div class="v${largo ? ' largo' : ''}">${esc(valor)}</div></div>`;
-            const encabezado = titulo => `<div class="enc"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div style="text-align:left"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
+            const encabezado = titulo => cabeceraExport(titulo, [`Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}`, 'La Fábrica de Chocolate'], '../css/logo-export.png');
 
             function seccionImpresa(s, blanco) {
                 const tp = val('tipoPersona');
                 if (s.solo && tp && s.solo !== tp) return '';
                 const d = calcular();
                 const calcs = { incrementoExpl: explicacionIncremento(val('incrementoTipo')), local: locales, superficie: m2 ? m2.toLocaleString('es-MX') + ' m²' : '', acceso: c.acceso || '', fin: fechaTxt(d.fin), incrementoFecha: fechaTxt(d.incr), rentaIva: dinero(d.conIva), deposito: d.meses ? `${dinero(d.deposito)} (${d.meses} mes${d.meses === 1 ? '' : 'es'} de renta)` : '' };
-                const cs = Object.fromEntries(s.campos.filter(f => !(f[4] && tp && f[4] !== tp)).map(([k, et, tipo, ancho]) => {
+                const nSoc = blanco ? 4 : Math.max(1, ...NS.filter(n => ['', 'Rfc', 'Curp'].some(sf => (val('socio' + n + sf) || '').trim())));
+                const numSocio = k => +(k.match(/^socio(\d+)/)?.[1] || 0);
+                const cs = Object.fromEntries(s.campos.filter(f => !(f[4] && tp && f[4] !== tp) && !(s.t === 'Socios' && (f[2] === 'chksocio' || numSocio(f[0]) > nSoc))).map(([k, et, tipo, ancho]) => {
                     let valor = blanco ? '' : val(k);
                     if (tipo === 'tipo') valor = blanco || !valor ? '☐ Persona física      ☐ Persona moral' : (valor === 'moral' ? 'Persona moral' : 'Persona física');
                     if (!blanco && tipo === 'fecha') valor = fechaTxt(valor);
@@ -432,11 +475,12 @@
             }
 
             // Espera a que cargue el logo antes de abrir la impresión (si no, el PDF puede salir sin él)
-            const imprimirHoja = () => {
+            const imprimirHoja = nombre => {
                 const img = hoja.querySelector('img');
-                if (!img || img.complete) { window.print(); return; }
+                const imprimir = () => { const previo = document.title; document.title = nombre; window.print(); setTimeout(() => { document.title = previo; }, 1000); };
+                if (!img || img.complete) { imprimir(); return; }
                 let listo = false;
-                const ir = () => { if (!listo) { listo = true; window.print(); } };
+                const ir = () => { if (!listo) { listo = true; imprimir(); } };
                 img.addEventListener('load', ir); img.addEventListener('error', ir); setTimeout(ir, 1500);
             };
 
@@ -457,7 +501,7 @@
                     <div class="carta" style="margin-top:14px"><p>Si la propuesta es de su interés, le enviaremos un cuestionario para recopilar los datos generales del arrendatario, como persona física o persona moral, y preparar el contrato.${hasta ? ` Esta propuesta tiene vigencia hasta el ${hasta}.` : ''}</p></div>
                     <div class="firmas una"><div>La Fábrica de Chocolate</div></div>
                     <p class="pie">Cifras en pesos mexicanos. La renta se factura con IVA de 16 %; el agua se factura aparte. Esta propuesta no constituye contrato y está sujeta a la firma del contrato de arrendamiento.</p>`;
-                imprimirHoja();
+                imprimirHoja(nombreArchivo(['Propuesta de arrendamiento', `Local ${locales}`, val('empresa') || val('dirigidaA') || c.nombreComercial || c.razonSocial], val('fechaPropuesta') || undefined));
             }
 
             // Paso 2: cuestionario (lleno o en blanco)
@@ -469,7 +513,7 @@
                     ${PASOS[2].map(s => seccionImpresa(s, blanco)).join('')}
                     <div class="firmas una"><div>Interesado</div></div>
                     <p class="pie">Los datos se usarán únicamente para la elaboración del contrato de arrendamiento. Este cuestionario no constituye contrato.</p>`;
-                imprimirHoja();
+                imprimirHoja(nombreArchivo([blanco ? 'Cuestionario de datos (en blanco)' : 'Cuestionario de datos', `Local ${locales}`, val('empresa') || val('razonSocial') || c.nombreComercial || c.razonSocial]));
             }
             $('btnPdf1').addEventListener('click', imprimirPaso1);
             $('btnPdf2').addEventListener('click', () => imprimirPaso2(false));

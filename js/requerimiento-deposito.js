@@ -2,7 +2,8 @@
 // Lo usan la carátula y la sección Depósitos. Los datos bancarios salen de config_cobro/cuenta (solo Firestore).
 import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-10';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-2';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -59,11 +60,8 @@ Total a pagar: ${dinero(totalPagar)}` : ''}
         const html = `<div class="rq">
             <style>
                 .rq { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12.5px; line-height: 1.55; }
-                .rq .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 20px; }
-                .rq .cab img { height: 49px; display: block; }
-                .rq .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
-                .rq h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0; }
-                .rq .sub { text-align: center; color: #5b6572; margin: 0 0 18px; }
+                ${CSS_CABECERA}
+                .rq .lf-cab { margin-bottom: 20px !important; }
                 .rq .dest { margin-bottom: 14px; } .rq .gris { color: #5b6572; }
                 .rq p { margin: 0 0 12px; text-align: justify; }
                 .rq table { width: 100%; border-collapse: collapse; margin: 0 0 8px; }
@@ -77,10 +75,7 @@ Total a pagar: ${dinero(totalPagar)}` : ''}
                 .rq .firmas { display: flex; gap: 40px; margin-top: 56px; font-size: 11.5px; text-align: center; }
                 .rq .firmas div { flex: 1; border-top: 1px solid #1b2430; padding-top: 4px; }
             </style>
-            <div class="cab"><img src="${LOGO_URL}" alt="La Fábrica de Chocolate">
-                <div class="der">Guadalajara, Jalisco, a ${larga(hoy)}<br>Referencia: Local ${esc(locales)} · Depósito en garantía</div></div>
-            <h1>REQUERIMIENTO DE PAGO</h1>
-            <div class="sub">${otros.length ? 'Saldo del depósito en garantía y otros conceptos' : 'Saldo del depósito en garantía'}</div>
+            ${cabeceraExport('Requerimiento de pago', [`Guadalajara, Jalisco, a ${larga(hoy)}`, `Referencia: Local ${esc(locales)} · ${otros.length ? 'Saldo del depósito en garantía y otros conceptos' : 'Saldo del depósito en garantía'}`], LOGO_URL)}
             <div class="dest"><strong>${esc(c.razonSocial)}</strong><br>
                 ${c.representante ? `Atención: ${esc(c.representante)}, representante<br>` : ''}
                 <span class="gris">Local ${esc(locales)}${dir ? ` · ${dir}` : ''}${obligados ? `<br>Con copia al obligado solidario: ${esc(obligados)}` : ''}</span></div>
@@ -116,7 +111,7 @@ Total a pagar: ${dinero(totalPagar)}` : ''}
             </div>
             <div class="firmas"><div>Administración<br><span class="gris">LAFABDECHOC S DE RL DE CV</span></div><div>Recibí<br><span class="gris">Nombre, firma y fecha</span></div></div>
         </div>`;
-        imprimirHojas(html, `Requerimiento de depósito · Local ${locales} · ${iso(hoy)}`, { vertical: true });
+        imprimirHojas(html, nombreArchivo(['Requerimiento de pago', `Local ${locales}`, c.nombreComercial || c.razonSocial], iso(hoy)), { vertical: true });
         // Queda anotado en el historial del contrato
         const user = getCurrentUser();
         await addDoc(collection(db, 'contratos', c.id, 'historial'), {

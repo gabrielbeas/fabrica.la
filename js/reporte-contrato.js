@@ -4,7 +4,8 @@
 import { db } from './auth.js?v=20261117-1';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261112-1';
-import { LOGO_URL } from './facturacion.js?v=20261117-10';
+import { LOGO_URL } from './facturacion.js?v=20261118-2';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -51,9 +52,7 @@ const ESTILO = `#hoja-reporte { display: none; }
   #hoja-reporte { display: block !important; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
-#hoja-reporte .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
-#hoja-reporte .cab img { height: 44px; }
-#hoja-reporte h1 { margin: 0; font-size: 18px; font-weight: 900; }
+${CSS_CABECERA}
 #hoja-reporte .sub { color: #5f6670; font-size: 10.5px; margin-top: 2px; }
 #hoja-reporte h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
 #hoja-reporte section { break-inside: auto; }
@@ -177,13 +176,13 @@ export async function exportarReporteContrato(c, boton, opc = {}) {
     let st = document.getElementById('estilo-hoja-reporte');
     if (!st) { st = document.createElement('style'); st.id = 'estilo-hoja-reporte'; document.head.appendChild(st); }
     st.textContent = ESTILO;
-    cont.innerHTML = `<div class="cab"><div><h1>Reporte del contrato · ${esc(nombre)}</h1><div class="sub">${esc(c.razonSocial)} · Local ${esc((c.locales || []).join(', '))} · La Fábrica de Chocolate</div></div><img src="${LOGO_URL}" alt="La Fábrica de Chocolate"></div>`
+    cont.innerHTML = cabeceraExport('Reporte del contrato', [`${esc(c.razonSocial)}${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · Local ${esc((c.locales || []).join(', '))}`, `La Fábrica de Chocolate · generado el ${esc(fecha(hoy))}`], LOGO_URL)
       + resumen + contrato + renta + cobros + depositos + facturasSec + agua + servicios + cambios
       + `<div class="pie">Generado el ${esc(fecha(hoy))} desde el panel de administración, con los datos guardados a esa fecha.</div>`;
     const img = cont.querySelector('img');
     if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; });
     const previo = document.title;
-    document.title = `Reporte ${nombre} ${hoy.toISOString().slice(0, 10)}`;
+    document.title = nombreArchivo(['Reporte del contrato', `Local ${(c.locales || []).join(', ')}`, nombre]);
     window.print();
     setTimeout(() => { document.title = previo; }, 1000);
   } finally {

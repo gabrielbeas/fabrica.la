@@ -54,9 +54,6 @@
             body > .main, #navbar-root, nav { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #hoja { display: block; color: #1b2430; font: 11px/1.45 Roboto, Arial, sans-serif; }
-            #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
-            #hoja .enc img { height: 54px; }
-            #hoja .tit { text-align: left; } #hoja .tit h1 { font-size: 19px; margin: 0; font-weight: 900; line-height: 1.15; } #hoja .tit div { font-size: 11px; color: #5f6670; margin-top: 2px; }
             #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #d5dbe3; }
             #hoja .ficha .et { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: #5f6670; } #hoja .ficha .v { font-size: 12px; font-weight: 700; }
             #hoja .intro { margin: 0 0 6px; font-size: 11.5px; } #hoja .nota { margin: 0 0 4px; font-size: 10.5px; color: #5f6670; font-style: italic; }
@@ -80,7 +77,9 @@
         import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-8';
+        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-10';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -192,13 +191,13 @@
                 const quien = p.interesado || d.razonSocial || d.dirigidaA || '';
                 const tipoTxt = d.tipoPersona === 'moral' ? 'Persona moral' : d.tipoPersona === 'fisica' ? 'Persona física' : '';
                 const dato = (et, v) => v ? `<div><div class="et">${et}</div><div class="v">${esc(v)}</div></div>` : '';
-                hoja.innerHTML = `<div class="enc"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div class="tit"><h1>Documentos que debe enviar</h1><div>Contrato de arrendamiento · Local ${esc(locales)}</div></div></div>
+                hoja.innerHTML = cabeceraExport('Documentos que debe enviar', [`Contrato de arrendamiento · Local ${esc(locales)}`, 'La Fábrica de Chocolate'], '../css/logo-export.png') + `
                     <div class="ficha">${dato('Interesado', quien)}${dato('Arrendatario', tipoTxt)}${dato('Fecha', fechaTxt(hoyISO()))}</div>
                     <p class="intro">Para preparar el contrato de arrendamiento del Local ${esc(locales)}, le pedimos enviar los siguientes documentos en PDF o en imagen legible a <b>admin@fabrica.la</b>.</p>
                     ${d.tipoPersona ? '' : '<p class="nota">Según el arrendatario sea persona moral o persona física, se entregan los documentos del grupo A o del grupo B.</p>'}
                     ${Object.keys(GRUPOS_DOCUMENTOS).filter(g => docsLista.some(x => x.grupo === g)).map(g => `<div class="g"><h3>${esc(GRUPOS_DOCUMENTOS[g])}</h3>${docsLista.filter(x => x.grupo === g).map(x => { const r = recDocs[x.clave] || {}; return `<div class="d"><div class="cbx">${r.recibido ? '✓' : ''}</div><div><b>${esc(x.nombre)}</b>${x.opcional ? ' <i>(opcional)</i>' : ''}${x.detallePdf ? `<small>${esc(x.detallePdf)}</small>` : ''}${r.recibido ? `<span class="rec">Recibido el ${esc(fechaTxt(r.recibido))}${r.nota ? ' · ' + esc(r.nota) : ''}</span>` : (r.nota ? `<small>${esc(r.nota)}</small>` : '')}</div></div>`; }).join('')}</div>`).join('')}
                     <div class="pie">Los datos y documentos se usarán únicamente para la elaboración del contrato de arrendamiento.</div>`;
-                const previo = document.title; document.title = 'Documentos que debe enviar - Local ' + locales + (quien ? ' - ' + quien : '');
+                const previo = document.title; document.title = nombreArchivo(['Documentos que debe enviar', `Local ${locales}`, c.nombreComercial || c.razonSocial || quien]);
                 const img = hoja.querySelector('img');
                 const ir = () => { window.print(); document.title = previo; };
                 if (img && !img.complete) { let listo = false; const una = () => { if (!listo) { listo = true; ir(); } }; img.addEventListener('load', una); img.addEventListener('error', una); setTimeout(una, 1500); } else ir();

@@ -1,6 +1,7 @@
 // Orden de compra a un proveedor: cuentas, hoja para imprimir (PDF vía impresión) y correo desde admin@fabrica.la.
 // El catálogo (productos_compra), los proveedores y las órdenes (ordenes_compra) viven en Firestore; aquí solo está la lógica común.
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-10';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-2';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
 import { abrirCorreo, CORREO_REMITENTE } from './correos-contrato.js?v=20261014-6';
 
 export const IVA_COMPRAS = 0.16;
@@ -27,10 +28,8 @@ export function htmlOrdenCompra(o, prov) {
   return `<div class="oc">
     <style>
       .oc { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12px; line-height: 1.5; }
-      .oc .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 16px; }
-      .oc .cab img { height: 49px; display: block; }
-      .oc .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
-      .oc h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0 0 14px; }
+      ${CSS_CABECERA}
+      .oc .lf-cab { margin-bottom: 16px !important; }
       .oc .cajas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
       .oc .caja { border: 1px solid #9aa5b1; padding: 8px 12px; }
       .oc .caja .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #5b6572; margin-bottom: 2px; }
@@ -45,9 +44,7 @@ export function htmlOrdenCompra(o, prov) {
       .oc .firmas { display: flex; gap: 40px; margin-top: 46px; font-size: 11.5px; text-align: center; }
       .oc .firmas div { flex: 1; border-top: 1px solid #1b2430; padding-top: 4px; }
     </style>
-    <div class="cab"><img src="${LOGO_URL}" alt="La Fábrica de Chocolate">
-      <div class="der">Guadalajara, Jalisco, a ${esc(fechaLarga(o.fecha))}<br><strong style="font-size:13px;color:#1b2430">${esc(o.folio)}</strong></div></div>
-    <h1>ORDEN DE COMPRA</h1>
+    ${cabeceraExport('Orden de compra', [`Folio ${esc(o.folio)}`, `Guadalajara, Jalisco, a ${esc(fechaLarga(o.fecha))}`], LOGO_URL)}
     <div class="cajas">
       <div class="caja"><div class="k">Proveedor</div><strong>${esc(prov.nombre)}</strong>${prov.rfc ? `<br><span style="color:#5b6572">RFC ${esc(prov.rfc)}</span>` : ''}${prov.contacto ? `<br>Atención: ${esc(prov.contacto)}` : ''}${correos ? `<br><span style="color:#5b6572">${esc(correos)}</span>` : ''}${prov.telefono ? `<br><span style="color:#5b6572">Tel. ${esc(prov.telefono)}</span>` : ''}${prov.numeroCliente ? `<br><span style="color:#5b6572">Cliente ${esc(prov.numeroCliente)}</span>` : ''}</div>
       <div class="caja"><div class="k">Solicita</div><strong>LAFABDECHOC S DE RL DE CV</strong><br>La Fábrica de Chocolate${o.entrega ? `<br><span style="color:#5b6572">Entregar en: ${esc(o.entrega)}</span>` : ''}</div>
@@ -69,7 +66,7 @@ export function htmlOrdenCompra(o, prov) {
 
 /** Abre el diálogo de impresión (Guardar como PDF) con la orden */
 export function imprimirOrden(o, prov) {
-  imprimirHojas(htmlOrdenCompra(o, prov), `Orden de compra ${o.folio} · ${prov.nombre}`, { vertical: true });
+  imprimirHojas(htmlOrdenCompra(o, prov), nombreArchivo(['Orden de compra', o.folio, prov.nombre], o.fecha), { vertical: true });
 }
 
 /** Mensaje de correo de la orden (el PDF se adjunta a mano) */

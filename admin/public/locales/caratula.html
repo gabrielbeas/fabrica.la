@@ -57,10 +57,6 @@
         .aviso-dep { font-size: 13px; color: var(--peligro); margin: 14px 0 0; }
 
         .hoja { border: 1px solid var(--linea); border-radius: 10px; padding: 36px 40px; }
-        .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--tinta); padding-bottom: 16px; margin-bottom: 24px; }
-        .encabezado .emp { font-size: 12px; color: var(--tinta-suave); letter-spacing: .05em; text-transform: uppercase; }
-        .encabezado h1 { font-size: 22px; margin: 10px 0 6px; }
-        .encabezado .loc { font-size: 15px; color: var(--tinta-suave); }
         .estado { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 10px; }
         .e-vigente { background: var(--exito-suave); color: var(--exito); } .e-vencido { background: var(--peligro-suave); color: var(--peligro); } .e-termina { background: var(--atencion-suave); color: var(--atencion); }
 
@@ -106,15 +102,12 @@
         .alerta-fila .que span { color: var(--tinta-suave); font-size: 13px; }
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
-        .encabezado .der { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex: none; }
-        .logo-print { display: none; height: 50px; width: auto; margin: 0; }   /* el logo va a la derecha, sobre el estado; el título queda a la izquierda */
         @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 10px; align-items: flex-start; } .barra > div { flex-wrap: wrap; width: 100%; gap: 8px !important; } .barra > div .btn, .barra > div .btn-sec { flex: 1 1 auto; } .inc-form { grid-template-columns: 1fr; } .alerta-fila { flex-wrap: wrap; } .alerta-fila .que { flex: 1 1 70%; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
             .hoja { border: none; padding: 0; }
             body { font-size: 12px; }
-            .logo-print { display: block; }
         }
     </style>
 </head>
@@ -123,15 +116,17 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261117-10';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261118-2';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261117-10';
-        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261117-10';
-        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261117-10';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261118-2';
+        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261118-2';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261118-2';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS, VENTANA_INCREMENTO_DIAS } from '../../../js/alertas-contrato.js?v=20261112-2';
 
         const app = document.getElementById('app');
@@ -245,6 +240,10 @@
                 : c.estado === 'terminacion_anticipada' ? ['e-termina', 'Terminación anticipada']
                 : (c.fin && c.fin < hoyISO()) ? ['e-vencido', 'Vencido'] : ['e-vigente', 'Vigente'];
             document.title = `Carátula · ${c.razonSocial}`;
+            const nombreCaratula = nombreArchivo(['Carátula del contrato', (c.locales || []).length ? `Local ${(c.locales || []).join(', ')}` : '', c.nombreComercial || c.razonSocial]);
+            let tituloAntes = document.title;
+            window.onbeforeprint = () => { tituloAntes = document.title; document.title = nombreCaratula; };
+            window.onafterprint = () => { document.title = tituloAntes; };
 
             const gbdTipo = c.tipo === 'arrendamiento_gbd' || c.tipo === 'prestamo_gbd', esPrestamo = c.tipo === 'prestamo_gbd';
             const mant = [
@@ -265,17 +264,7 @@
                 ${c.estado === 'terminado' ? `<div class="aviso-term" style="background:var(--fondo-hundido);border:1px solid var(--linea);border-left:4px solid var(--ambar);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px">Contrato terminado${c.terminadoEn ? ` el <b>${fechaTxt(c.terminadoEn)}</b>` : ''}.${c.reemplazadoPor ? ` Lo reemplaza <a href="caratula.html?id=${encodeURIComponent(c.reemplazadoPor)}">${esc(c.reemplazadoPor)}</a>.` : ''}${c.liquidacion?.nota ? `<br>Liquidación: ${esc(c.liquidacion.nota)}` : ''}</div>`
                     : `${c.reemplazaA ? `<div style="font-size:13px;color:var(--tinta-suave);margin-bottom:12px">Reemplaza al contrato <a href="caratula.html?id=${encodeURIComponent(c.reemplazaA)}">${esc(c.reemplazaA)}</a>.</div>` : ''}${cajaAlertas(c)}`}
                 <div class="hoja">
-                    <div class="encabezado">
-                        <div>
-                            <div class="emp">La Fábrica de Chocolate · Carátula de contrato de ${esPrestamo ? 'crédito' : 'arrendamiento'}</div>
-                            <h1>${esc(c.razonSocial)}</h1>
-                            <div class="loc">${c.ubicacion ? esc(c.ubicacion) : `Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}`}</div>
-                        </div>
-                        <div class="der">
-                            <img class="logo-print" src="../css/logo-export.png" alt="La Fábrica de Chocolate">
-                            <span class="estado ${estado[0]}">${estado[1]}</span>
-                        </div>
-                    </div>
+                    ${cabeceraExport(`Carátula de contrato de ${esPrestamo ? 'crédito' : 'arrendamiento'}`, [esc(c.razonSocial), `${c.ubicacion ? esc(c.ubicacion) : `Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}`} · ${estado[1]}`], '../css/logo-export.png')}
 
                     <div class="secciones">
                         <div class="seccion">

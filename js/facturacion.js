@@ -1,5 +1,6 @@
 // Facturación mensual a locatarios: cálculo y utilidades compartidas
 import { db } from './auth.js?v=20261117-1';
+import { CSS_CABECERA, cabeceraExport } from './export-cabecera.js?v=20261118-2';
 import {
   collection, getDocs, getDoc, doc, query, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -328,13 +329,7 @@ const localesDe = (f, c = {}) => (f.locales && f.locales.length ? f.locales : c.
 
 export const ESTILO_HOJA = `
   .hc { font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 10.5px; line-height: 1.4; }
-  .hc h1 { font-size: 17px; margin: 0; line-height: 1.2; }
-  .hc .enc { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 12px; }
-  .hc .enc { display: grid; grid-template-columns: 1fr auto; align-items: end; }
-  .hc .enc-izq { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-  .hc .enc-centro { text-align: left; }
-  .hc .enc-logo { height: 42px; width: auto; display: block; }
-  .hc .enc .der { text-align: right; font-size: 9.5px; color: #555; }
+  ${CSS_CABECERA}
   .hc h2 { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; color: #555; }
   .hc table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
   .hc th, .hc td { font-size: 10.5px; line-height: 1.4; }
@@ -378,8 +373,7 @@ export const LOGO_URL = '../css/logo-export.png';
 if (typeof Image !== 'undefined') { try { new Image().src = LOGO_URL; } catch (e) { /* sin logo no pasa nada */ } }
 
 export function encabezadoHoja(mes) {
-  return `<div class="enc"><div class="enc-centro"><h1>Facturación ${mesCap(mes)}</h1></div>
-    <div class="enc-izq"><img class="enc-logo" src="${LOGO_URL}" alt="La Fábrica de Chocolate"><div class="der">Generado el ${fechaDMY(hoyISO())}</div></div></div>`;
+  return cabeceraExport(`Facturación ${mesCap(mes)}`, ['La Fábrica de Chocolate', `Generado el ${fechaDMY(hoyISO())}`], LOGO_URL);
 }
 
 

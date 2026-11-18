@@ -150,6 +150,7 @@
 
   <script type="module">
     import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
+    import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
     import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
     import '../../../js/dinero-input.js?v=20261028-1';
     import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261117-1';
@@ -352,9 +353,7 @@
           #hoja-caja { display: block !important; font: 11px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-        #hoja-caja .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
-        #hoja-caja .cab img { height: 47px; }
-        #hoja-caja h1 { margin: 0; font-size: 18px; font-weight: 900; }
+        ${CSS_CABECERA}
         #hoja-caja .sub { color: #5f6670; font-size: 11px; margin-top: 2px; }
         #hoja-caja .res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
         #hoja-caja .res div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 8px; }
@@ -368,7 +367,7 @@
         #hoja-caja .det { color: #5f6670; font-size: 9.5px; }
         #hoja-caja tr.rech td { color: #9aa1aa; text-decoration: line-through; }
         #hoja-caja .pie { margin-top: 10px; font-size: 9.5px; color: #5f6670; }`;
-      cont.innerHTML = `<div class="cab"><div><h1>Caja Chica · ${escapeHtml(periodoTxt)}</h1><div class="sub">${escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))}</div></div><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"></div>
+      cont.innerHTML = cabeceraExport(`Caja Chica · ${escapeHtml(periodoTxt)}`, [escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))], '../css/logo-export.png') + `
         <div class="res"><div><span>Gastos en efectivo</span><b>${money(gE)}</b></div><div><span>Gastos con tarjeta</span><b>${money(gT)}</b></div><div><span>Total gastado</span><b>${money(gE + gT)}</b></div><div><span>Reposiciones</span><b>${money(rE + rT)}</b></div></div>
         ${saldos ? `<div class="sub" style="margin-bottom:8px">${escapeHtml(saldos)}</div>` : ''}
         ${lista.length ? `<table><thead><tr><th>Fecha</th><th>Movimiento</th><th>Categoría</th><th>Pago</th><th>Estado</th><th class="num">Importe</th></tr></thead><tbody>${filas}</tbody></table>` : '<p>No hay movimientos con estos filtros.</p>'}
@@ -376,7 +375,7 @@
       const img = cont.querySelector('img');
       if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; });
       const tituloPrevio = document.title;
-      document.title = `Caja Chica ${periodoTxt}`;
+      document.title = nombreArchivo(['Caja Chica', periodoTxt]);
       window.print();
       setTimeout(() => { document.title = tituloPrevio; }, 1000);
     }

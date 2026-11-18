@@ -205,6 +205,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
         import { auth, db, isAuthenticated, esAdmin, getCurrentUser } from '../../../js/auth.js?v=20261117-1';
         import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
@@ -592,9 +593,7 @@
                     #hoja-formulario { display: block !important; font: 11.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
                     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 }
-                #hoja-formulario .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
-                #hoja-formulario .cab img { height: 47px; }
-                #hoja-formulario h1 { margin: 0; font-size: 18px; font-weight: 900; }
+                ${CSS_CABECERA}
                 #hoja-formulario .sub { color: #5f6670; font-size: 11px; margin-top: 2px; }
                 #hoja-formulario .inst { background: #f2f4f7; border-radius: 6px; padding: 8px 10px; margin: 0 0 10px; font-size: 11px; }
                 #hoja-formulario h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 14px 0 6px; border-bottom: 1px solid #dfe3e8; padding-bottom: 3px; }
@@ -609,7 +608,7 @@
                 #hoja-formulario .nota { font-size: 10px; color: #5f6670; }
                 #hoja-formulario .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 34px; }
                 #hoja-formulario .firma { border-top: 1px solid #1b2430; padding-top: 4px; text-align: center; font-size: 10px; color: #5f6670; }`;
-            cont.innerHTML = `<div class="cab"><div><h1>Datos del personal</h1><div class="sub">La Fábrica de Chocolate · LAFABDECHOC S. de R.L. de C.V.</div></div><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"></div>
+            cont.innerHTML = cabeceraExport('Datos del personal', ['La Fábrica de Chocolate · LAFABDECHOC S. de R.L. de C.V.'], '../css/logo-export.png') + `
                 <p class="inst"><b>Instrucciones:</b> llena con letra de molde y tinta. Los datos que ya vienen impresos son los que tenemos registrados; si alguno está mal, táchalo y escribe el correcto a un lado. Firma al final y envía una foto o PDF a Administración, junto con los documentos de la lista.</p>
                 <h2>Datos del trabajo</h2>
                 <div class="rej">${campo('Nombre completo', p.nombre, true)}${campo('Puesto', p.puesto)}${campo('Fecha de ingreso', ingreso)}</div>
@@ -624,7 +623,7 @@
                 <div class="firmas"><div class="firma">Firma de ${esc(p.nombre)}</div><div class="firma">Fecha</div></div>`;
             const img = cont.querySelector('img');
             const tituloPrevio = document.title;
-            const imprimir = () => { document.title = `Datos del personal ${p.nombre}`; window.print(); setTimeout(() => { document.title = tituloPrevio; }, 1000); };
+            const imprimir = () => { document.title = nombreArchivo(['Datos del personal', p.nombre]); window.print(); setTimeout(() => { document.title = tituloPrevio; }, 1000); };
             if (img && !img.complete) { img.onload = img.onerror = imprimir; } else imprimir();
         }
 

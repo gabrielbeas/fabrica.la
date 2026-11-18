@@ -273,6 +273,7 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { selectorFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db, basePath } from '../../../js/auth.js?v=20261117-1';
@@ -1123,8 +1124,7 @@
                             ${conSaldo ? `<td class="n tenue">${dinero(saldos[m.id])}</td>` : ''}</tr>`).join('');
                 }).join('');
                 const html = `<div class="tr-rep">
-                    <div class="enc"><div class="enc-izq"><div><h1>Tesorería · ${esc(r.titulo)}</h1><div class="sub">${esc(filtrosTxt)}</div></div></div>
-                        <div class="der">${movs.length} movimiento${movs.length === 1 ? '' : 's'}<br>Generado el ${fechaTxt(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10))}</div><img class="logo" src="${basePath()}css/logo-export.png" alt="La Fábrica de Chocolate"></div>
+                    ${cabeceraExport(`Tesorería · ${esc(r.titulo)}`, [esc(filtrosTxt), `${movs.length} movimiento${movs.length === 1 ? '' : 's'} · Generado el ${fechaTxt(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10))}`], basePath() + 'css/logo-export.png')}
                     <div class="tarjetas" style="grid-template-columns:repeat(${conSaldo ? 5 : 3}, 1fr)">
                         ${conSaldo ? `<div><span>Saldo al inicio</span><b>${d(saldoIni)}</b></div>` : ''}
                         <div><span>Ingresos</span><b>${d(ingresos)}</b></div>
@@ -1151,14 +1151,7 @@
                             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                         }
                         #tr-impresion .tr-rep { font-family: Roboto, Arial, sans-serif; color: #1b2430; font-size: 9.5px; line-height: 1.35; }
-                        #tr-impresion .tr-rep .enc { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 6px; margin-bottom: 10px; }
-                        #tr-impresion .tr-rep .enc-izq { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
-                        #tr-impresion .tr-rep .enc .der { margin-left: auto; }
-                        #tr-impresion .tr-rep .logo { height: 37px; width: auto; flex: none; display: block; }
-                        #tr-impresion.vertical .tr-rep .logo { height: 32px; }
-                        #tr-impresion .tr-rep h1 { font-size: 16px; line-height: 1.2; font-weight: 900; margin: 0; }
-                        #tr-impresion .tr-rep .sub, #tr-impresion .tr-rep .der { font-size: 9px; color: #5f6670; margin-top: 2px; }
-                        #tr-impresion .tr-rep .der { text-align: right; white-space: nowrap; }
+                        ${CSS_CABECERA}
                         #tr-impresion .tr-rep .tarjetas { display: grid; gap: 8px; margin-bottom: 12px; }
                         #tr-impresion .tr-rep .tarjetas div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 10px; }
                         #tr-impresion .tr-rep .tarjetas span { display: block; font-size: 7.5px; text-transform: uppercase; letter-spacing: .06em; color: #5f6670; margin-bottom: 2px; }
@@ -1193,9 +1186,9 @@
                 cont.classList.toggle('vertical', orientacion === 'portrait');
                 cont.innerHTML = html;
                 const previo = document.title;
-                document.title = `Tesoreria ${r.titulo}${cta === 'todas' ? '' : ' ' + nomCta(cta)}`.replace(/[\\/:*?"<>|]/g, '-');
+                document.title = nombreArchivo(['Tesorería', r.titulo, cta === 'todas' ? '' : nomCta(cta)]);
                 // Se espera a que cargue el logo para que salga en el PDF (máx. 2 s)
-                const logo = cont.querySelector('img.logo');
+                const logo = cont.querySelector('.lf-cab img');
                 const listo = logo && !logo.complete ? new Promise(res => { logo.onload = logo.onerror = res; setTimeout(res, 2000); }) : Promise.resolve();
                 listo.then(() => { window.print(); setTimeout(() => { document.title = previo; }, 1000); });
             }
