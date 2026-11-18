@@ -29,6 +29,8 @@
         .num { width: 30px; height: 30px; border-radius: 50%; background: var(--fondo-hundido); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
         .hecho .num { background: var(--exito); color: #fff; } .actual .num { background: var(--accion); color: #fff; }
         details.docs { margin: 0 0 12px 0; } details.docs > summary { cursor: pointer; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; list-style: none; padding: 10px 14px; border: 1px solid var(--linea); border-radius: 10px; background: var(--fondo-hundido); } details.docs > summary::-webkit-details-marker { display: none; } details.docs > summary h2 { margin: 0; font-size: 14px; } details.docs[open] > summary { margin-bottom: 8px; }
+        .tpagos { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; } .tpagos th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-suave); padding: 4px 6px; border-bottom: 1px solid var(--tinta); } .tpagos td { padding: 5px 6px; border-bottom: 1px solid var(--linea); } .tpagos .n { text-align: right; white-space: nowrap; }
+        .pform { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; } .pform select, .pform input { padding: 7px 9px; border: 1px solid var(--borde-control); border-radius: 8px; font: inherit; font-size: 13px; } .pform input[data-dinero] { width: 130px; } .pform #pgNota { flex: 1; min-width: 180px; }
         .paso .fuera { color: var(--ambar-oscuro, #8a5a00); font-size: 12px; font-style: italic; margin-top: 4px; }
         .paso h2 { font-size: 15px; margin: 0 0 4px; } .paso p { margin: 0; font-size: 13px; color: var(--tinta-suave); }
         .paso .acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
@@ -52,9 +54,9 @@
             body > .main, #navbar-root, nav { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #hoja { display: block; color: #1b2430; font: 11px/1.45 Roboto, Arial, sans-serif; }
-            #hoja .enc { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
+            #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
             #hoja .enc img { height: 44px; }
-            #hoja .tit { text-align: right; } #hoja .tit h1 { font-size: 19px; margin: 0; font-weight: 900; line-height: 1.15; } #hoja .tit div { font-size: 11px; color: #5f6670; margin-top: 2px; }
+            #hoja .tit { text-align: left; } #hoja .tit h1 { font-size: 19px; margin: 0; font-weight: 900; line-height: 1.15; } #hoja .tit div { font-size: 11px; color: #5f6670; margin-top: 2px; }
             #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #d5dbe3; }
             #hoja .ficha .et { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: #5f6670; } #hoja .ficha .v { font-size: 12px; font-weight: 700; }
             #hoja .intro { margin: 0 0 6px; font-size: 11.5px; } #hoja .nota { margin: 0 0 4px; font-size: 10.5px; color: #5f6670; font-style: italic; }
@@ -74,10 +76,11 @@
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-5';
+        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-7';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -123,16 +126,16 @@
             const acciones = {
                 local: '',
                 propuesta: `<a class="btn" href="../locales/propuesta.html${q}">Abrir propuesta</a>`,
-                contrato: `<a class="btn" href="../locales/contrato-nuevo.html${q}">Abrir contrato</a>${d.tipoContrato === 'renovacion' ? '' : `<a class="btn-sec" style="text-decoration:none" href="../locales/propuesta.html${q}&paso=2" title="Cuestionario de datos para que lo llene el interesado (PDF en blanco o con lo capturado)">Cuestionario del interesado</a>`}`,
-                pagos: `<a class="btn" href="../locales/contrato-nuevo.html${q}#seccionPagos">Registrar pagos</a>`,
-                activo: p.contratoNuevoId ? `<a class="btn" href="../locales/caratula.html?id=${encodeURIComponent(p.contratoNuevoId)}">Ver contrato nuevo</a>` : ''
+                contrato: `<a class="btn" href="../locales/contrato-nuevo.html${q}">${pasos.find(x => x.clave === 'contrato')?.hecho ? 'Revisar datos' : 'Capturar datos'}</a>${d.tipoContrato === 'renovacion' ? '' : `<a class="btn-sec" style="text-decoration:none" href="../locales/propuesta.html${q}&paso=2" title="Cuestionario de datos para que lo llene el interesado (PDF en blanco o con lo capturado)">Cuestionario del interesado</a>`}`,
+                pagos: '',
+                activo: p.contratoNuevoId ? `<a class="btn" href="../locales/caratula.html?id=${encodeURIComponent(p.contratoNuevoId)}">Ver contrato nuevo</a>` : (est === 'en_proceso' ? `<a class="btn" href="../locales/contrato-nuevo.html${q}&activar=1" title="Revisa lo que falta y activa el contrato nuevo">Activar contrato</a>` : '')
             };
             const detalle = {
                 local: `Local ${esc(locales)}${c.m2 ? ` · ${esc(c.m2)} m²` : ''}. Inquilino actual: ${esc(c.razonSocial || '-')}.`,
                 propuesta: p.propuestaEnviada ? `Enviada el ${esc(fechaTxt(p.propuestaEnviada))}.` : 'Es el primer documento que se manda: renta, plazo, depósito y condiciones generales.',
                 cuestionario: `${d.razonSocial ? `Datos de ${esc(d.razonSocial)}${d.rfc ? '' : ' (falta el RFC)'}.` : 'Faltan los datos del arrendatario.'}${d.tipoContrato === 'renovacion' ? ' En una renovación se precargan con el contrato actual.' : ''} Documentos recibidos: ${resumenDocumentos(p).recibidos} de ${resumenDocumentos(p).total}.`,
-                contrato: `${d.razonSocial ? `Arrendatario: ${esc(d.razonSocial)}${d.rfc ? '' : ' (falta el RFC)'}.` : 'Faltan los datos del arrendatario.'}${d.tipoContrato === 'renovacion' ? ' En una renovación se precargan con el contrato actual.' : ' Si hace falta, manda primero el cuestionario al interesado.'} ${(p.versionPdf || 0) > 0 ? `Contrato generado en PDF (versión ${p.versionPdf}).` : 'Falta generar el PDF del contrato.'} Documentos recibidos: ${resumenDocumentos(p).recibidos} de ${resumenDocumentos(p).total}.`,
-                pagos: `${d.firma ? `Firma el ${esc(fechaTxt(d.firma))}.` : 'Falta la fecha de firma: captúrala aquí.'} ${pagos.length ? pagos.map(x => `${esc(x.concepto === 'deposito' ? 'Depósito' : x.concepto === 'primera_renta' ? 'Primera renta' : 'Pago')} ${dinero(x.monto)} (${esc(fechaTxt(x.fecha))})`).join(' · ') : 'Sin pagos registrados (depósito y primera renta).'}`,
+                contrato: `${d.razonSocial ? `Arrendatario: ${esc(d.razonSocial)}${d.rfc ? '' : ' (falta el RFC)'}.` : 'Faltan los datos del arrendatario.'}${d.tipoContrato === 'renovacion' ? ' En una renovación se precargan con el contrato actual.' : ' Si hace falta, manda primero el cuestionario al interesado.'} Documentos recibidos: ${resumenDocumentos(p).recibidos} de ${resumenDocumentos(p).total}.`,
+                pagos: `${d.firma ? `Firma el ${esc(fechaTxt(d.firma))}.` : 'Falta la fecha de firma.'} ${[['deposito', 'depósito'], ['primera_renta', 'primera renta']].filter(([k]) => !pagos.some(x => x.concepto === k)).map(([, t]) => t).join(' y ') ? 'Falta registrar: ' + [['deposito', 'depósito'], ['primera_renta', 'primera renta']].filter(([k]) => !pagos.some(x => x.concepto === k)).map(([, t]) => t).join(' y ') + '.' : 'Depósito y primera renta registrados.'}`,
                 activo: est === 'activado' ? `Activado${p.contratoNuevoId ? ` como ${esc(p.contratoNuevoId)}` : ''}. El contrato anterior quedó inactivo.` : 'Se activa desde el contrato, cuando están el contrato firmado, el depósito y la primera renta.'
             };
             const docsLista = documentosDe(d, true), recDocs = p.documentos || {}, resDocs = resumenDocumentos(p);
@@ -142,6 +145,9 @@
                 ${d.tipoPersona ? '' : '<p class="sub" style="margin-bottom:6px">Mientras no se defina, el avance solo cuenta el grupo C y la lista y el PDF incluyen A y B.</p>'}
                 ${Object.keys(GRUPOS_DOCUMENTOS).filter(g => docsLista.some(x => x.grupo === g)).map(g => `<h3>${esc(GRUPOS_DOCUMENTOS[g])}</h3>${docsLista.filter(x => x.grupo === g).map(x => { const r = recDocs[x.clave] || {}; return `<div class="doc ${r.recibido ? 'ok' : ''}"><label class="chk"><input type="checkbox" data-doc="${esc(x.clave)}" ${r.recibido ? 'checked' : ''}><span><b>${esc(x.nombre)}</b>${x.opcional ? ' <i>(opcional)</i>' : ''}${x.detalle ? `<br><small>${esc(x.detalle)}</small>` : ''}</span></label><div class="dfecha">${r.recibido ? 'Recibido el ' + esc(fechaTxt(r.recibido)) : ''}</div><input type="text" data-nota="${esc(x.clave)}" placeholder="Nota o archivo" value="${esc(r.nota || '')}"></div>`; }).join('')}`).join('')}
                 <div class="pie"><button class="btn" id="btnPdfDocs">Exportar PDF de la lista</button><button class="btn-sec" id="btnCopiarDocs">Copiar la lista de lo que falta</button></div></details>`;
+            const CONCEPTO_PAGO = { deposito: 'Depósito en garantía', primera_renta: 'Primera renta', otro: 'Otro' };
+            const pagosHtml = () => `${pagos.length ? `<table class="tpagos"><thead><tr><th>Concepto</th><th>Fecha</th><th class="n">Monto</th><th>Nota</th><th></th></tr></thead><tbody>${pagos.map((x, i) => `<tr><td>${esc(CONCEPTO_PAGO[x.concepto] || x.concepto)}</td><td>${esc(fechaTxt(x.fecha))}</td><td class="n">${dinero(x.monto)}</td><td>${esc(x.nota || '')}</td><td class="n">${est === 'en_proceso' ? `<button class="btn-sec" data-quitar-pago="${i}" style="padding:3px 10px;font-size:12px">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="sub" style="margin:8px 0 0">Todavía no hay pagos registrados.</p>'}
+                ${est === 'en_proceso' ? `<div class="pform"><select id="pgConcepto"><option value="deposito">Depósito en garantía</option><option value="primera_renta">Primera renta</option><option value="otro">Otro</option></select><input type="date" id="pgFecha" value="${hoyISO()}"><input type="text" id="pgMonto" data-dinero placeholder="Monto"><input type="text" id="pgNota" placeholder="Nota (forma de pago, referencia)"><button class="btn-sec" id="pgAgregar">Registrar pago</button><span class="err" id="pgMsg"></span></div>` : ''}`;
             const firmaCampo = () => est === 'en_proceso' ? `<div class="fecha"><label for="f_firma">Fecha de firma</label><input type="date" id="f_firma" value="${esc(d.firma || '')}"></div>` : '';
             const fechaCampo = (k, t) => est === 'en_proceso' ? `<div class="fecha"><label for="f_${k}">${t}</label><input type="date" id="f_${k}" value="${esc(p[k] || '')}"></div>` : '';
             app.innerHTML = `
@@ -154,11 +160,20 @@
                 </div>
                 ${pasos.map((x, i) => `<div class="paso ${x.hecho ? 'hecho' : (x.clave === et.clave && est === 'en_proceso' ? 'actual' : '')}">
                     <div class="num">${x.hecho ? '✓' : i + 1}</div>
-                    <div><h2>${esc(x.nombre)}</h2><p>${detalle[x.clave]}</p>${x.clave === 'propuesta' ? fechaCampo('propuestaEnviada', 'Enviada el') + fechaCampo('aceptada', 'Aceptada el') : ''}${x.clave === 'pagos' ? firmaCampo() : ''}${x.fuera ? '<p class="fuera">Hecho antes de terminar un paso anterior.</p>' : ''}</div>
+                    <div><h2>${esc(x.nombre)}</h2><p>${detalle[x.clave]}</p>${x.clave === 'propuesta' ? fechaCampo('propuestaEnviada', 'Enviada el') + fechaCampo('aceptada', 'Aceptada el') : ''}${x.clave === 'pagos' ? firmaCampo() + pagosHtml() : ''}${x.fuera ? '<p class="fuera">Hecho antes de terminar un paso anterior.</p>' : ''}</div>
                     <div class="acc">${est === 'descartado' ? '' : acciones[x.clave]}</div></div>${x.clave === 'contrato' ? seccionDocs : ''}`).join('')}
                 <div class="pie">${est === 'en_proceso' ? '<button class="btn-sec" id="btnDescartar">Descartar este proceso</button>' : ''}${est === 'descartado' ? '<button class="btn-sec" id="btnReabrir">Reabrir</button>' : ''}${est !== 'activado' ? '<button class="btn-sec" id="btnBorrar" style="color:var(--peligro)">Borrar proceso</button>' : ''}</div>
                 ${p.descartadoMotivo ? `<p class="sub" style="margin-top:12px">Descartado: ${esc(p.descartadoMotivo)}</p>` : ''}`;
             ['propuestaEnviada', 'aceptada'].forEach(k => document.getElementById('f_' + k)?.addEventListener('change', e => guardar({ [k]: e.target.value || null })));
+            document.getElementById('pgAgregar')?.addEventListener('click', () => {
+                const monto = parseFloat(document.getElementById('pgMonto').value), fecha = document.getElementById('pgFecha').value, msg = document.getElementById('pgMsg');
+                if (!(monto > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { msg.textContent = 'Escribe el monto y la fecha.'; return; }
+                guardar({ pagos: [...pagos, { concepto: document.getElementById('pgConcepto').value, fecha, monto: Math.round(monto * 100) / 100, nota: document.getElementById('pgNota').value.trim(), por: getCurrentUser()?.email || '' }] });
+            });
+            app.querySelectorAll('[data-quitar-pago]').forEach(b => b.addEventListener('click', () => {
+                if (!confirm('¿Quitar este pago de la lista?')) return;
+                guardar({ pagos: pagos.filter((_, i) => i !== +b.dataset.quitarPago) });
+            }));
             document.getElementById('detDocs')?.addEventListener('toggle', e => { docsAbierto = e.target.open; });
             document.getElementById('f_firma')?.addEventListener('change', async e => {
                 const user = getCurrentUser();

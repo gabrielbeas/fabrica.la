@@ -352,7 +352,7 @@
           #hoja-caja { display: block !important; font: 11px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-        #hoja-caja .cab { display: flex; justify-content: flex-start; gap: 16px; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
+        #hoja-caja .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
         #hoja-caja .cab img { height: 38px; }
         #hoja-caja h1 { margin: 0; font-size: 18px; font-weight: 900; }
         #hoja-caja .sub { color: #5f6670; font-size: 11px; margin-top: 2px; }
@@ -368,7 +368,7 @@
         #hoja-caja .det { color: #5f6670; font-size: 9.5px; }
         #hoja-caja tr.rech td { color: #9aa1aa; text-decoration: line-through; }
         #hoja-caja .pie { margin-top: 10px; font-size: 9.5px; color: #5f6670; }`;
-      cont.innerHTML = `<div class="cab"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div><h1>Caja Chica · ${escapeHtml(periodoTxt)}</h1><div class="sub">${escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))}</div></div></div>
+      cont.innerHTML = `<div class="cab"><div><h1>Caja Chica · ${escapeHtml(periodoTxt)}</h1><div class="sub">${escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))}</div></div><img src="../css/logo.png" alt="La Fábrica de Chocolate"></div>
         <div class="res"><div><span>Gastos en efectivo</span><b>${money(gE)}</b></div><div><span>Gastos con tarjeta</span><b>${money(gT)}</b></div><div><span>Total gastado</span><b>${money(gE + gT)}</b></div><div><span>Reposiciones</span><b>${money(rE + rT)}</b></div></div>
         ${saldos ? `<div class="sub" style="margin-bottom:8px">${escapeHtml(saldos)}</div>` : ''}
         ${lista.length ? `<table><thead><tr><th>Fecha</th><th>Movimiento</th><th>Categoría</th><th>Pago</th><th>Estado</th><th class="num">Importe</th></tr></thead><tbody>${filas}</tbody></table>` : '<p>No hay movimientos con estos filtros.</p>'}

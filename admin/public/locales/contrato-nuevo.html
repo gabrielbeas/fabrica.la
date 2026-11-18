@@ -20,14 +20,9 @@
         .btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 18px; border-radius: var(--radio-sm); border: 1px solid var(--accion); background: var(--accion); color: var(--on-accion); cursor: pointer; }
         .btn:hover:not(:disabled) { background: var(--accion-hover); border-color: var(--accion-hover); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-sec:disabled { opacity: .55; cursor: not-allowed; background: var(--fondo-hundido); color: var(--tinta-suave); }
         .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
         .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
-        .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .flujo div { border: 1px solid var(--linea); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--tinta-suave); background: #fff; }
-        .flujo div b { display: block; font-size: 14px; color: var(--tinta); }
-        .flujo div.act { border-color: var(--accion); background: var(--accion-suave); box-shadow: inset 0 0 0 1px var(--accion); }
-        .flujo div.hecho { background: var(--fondo-hundido); }
-        @media (max-width: 700px) { .flujo { grid-template-columns: 1fr 1fr; } }
         .actual { font-size: 13px; color: var(--tinta-suave); background: var(--fondo-hundido); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
         .actual b { color: var(--tinta); }
         .sec { border: 1px solid var(--linea); border-left: 4px solid var(--accion); border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
@@ -78,9 +73,9 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-1';
-        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-5';
-        import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261117-1';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-9';
+        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-7';
+        import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261117-9';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -179,7 +174,7 @@
             };
             const v = { ...base, ...(borr.datos || {}) };
             let versionPdf = borr.versionPdf || 0;
-            let pagos = [...(borr.pagos || [])];
+            const pagos = [...(borr.pagos || [])];   // solo lectura: los pagos se registran en la ficha del proceso
             let sucio = false;
             // Renovación = mismo inquilino: el borrador arranca con lo que ya consta en el contrato actual (una sola vez, solo campos vacíos)
             let precargado = false;
@@ -210,36 +205,18 @@
                 <a class="volver" href="${hrefProceso}">Volver al proceso</a>
                 <h1>Contrato nuevo · Local ${esc(locales)}</h1>
                 <p class="sub">Sustituye al contrato actual de este local. ${nota} Se guarda solo conforme lo llenas. <span id="estadoGuardado" style="font-weight:600"></span></p>
-                <div class="flujo">
-                    <div class="hecho"><b>1-3 · Propuesta y cuestionario</b>En el proceso</div>
-                    <div class="act"><b>4 · Contrato</b>Aquí: borrador y PDF</div>
-                    <div class="act"><b>5 · Firma y pagos</b>Aquí abajo</div>
-                    <div><b>6 · Activar</b>Reemplaza al actual</div>
-                </div>
                 <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · renta <b>${dinero(c.total)}</b> sin IVA · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. No cambia nada de él hasta que actives el contrato nuevo. <a href="propuesta.html?proceso=${encodeURIComponent(procId)}">Ver propuesta</a></div>
                 ${SECCIONES.map(seccionHtml).join('')}
-                <div class="sec" id="seccionPagos"><h2>Firma y pagos</h2>
-                    <p class="ayuda">Para activar el contrato deben estar la fecha de firma (arriba, en Vigencia), el depósito y la primera renta. Registra aquí cada pago recibido.</p>
-                    <div id="listaPagos"></div>
-                    <div class="grid" style="margin-top:12px">
-                        <div><label for="pgConcepto">Concepto</label><select id="pgConcepto"><option value="deposito">Depósito en garantía</option><option value="primera_renta">Primera renta</option><option value="otro">Otro</option></select></div>
-                        <div><label for="pgFecha">Fecha del pago</label><input type="date" id="pgFecha" value="${hoyISO()}"></div>
-                        <div><label for="pgMonto">Monto recibido</label><input type="text" id="pgMonto" data-dinero></div>
-                        <div><label for="pgNota">Nota (forma de pago, referencia)</label><input type="text" id="pgNota"></div>
-                    </div>
-                    <div class="acciones" style="margin-top:12px"><button class="btn-sec" id="pgAgregar">Registrar pago</button><span class="err" id="pgMsg"></span></div>
-                </div>
-                <div class="revision"><h2>Antes de activar</h2><ul id="revision"></ul></div>
-                <div class="acciones">
-                    <button class="btn-sec" id="btnPdf">PDF del contrato</button>
-                    <button class="btn" id="btnActivar">Activar contrato</button>
+                <div class="revision" id="antesActivar"><h2>Antes de activar</h2><ul id="revision"></ul><p class="sub" style="margin:8px 0 0;font-size:12px">La fecha de firma y los pagos (depósito y primera renta) se registran en <a href="${hrefProceso}">el proceso</a>, en «Firma y pagos».</p></div>
+                <div class="acciones" style="justify-content:space-between;align-items:center">
+                    <button class="btn-sec" id="btnCaratula" title="La carátula con lo capturado aquí, como quedará en el contrato">PDF de la carátula</button>
                     <span class="err" id="msg"></span>
+                    <button class="btn-sec" id="btnPdf" disabled title="Por ahora no está disponible">PDF del contrato</button>
                 </div>
                 <p class="sub" style="margin-top:14px;font-size:12px">Al activar, el contrato nuevo se crea con su propio id, hereda del local los m², el acceso, el tubo de agua, la basura y los servicios de CFE, y el contrato actual pasa a «Terminado» sin borrarse (facturas, pagos y depósito se conservan). Queda nota en el historial de los dos.</p>`;
 
             const $ = x => document.getElementById(x);
             activarSelectoresFecha(app, { atras: 2, adelante: 12 });
-            const CONCEPTO_PAGO = { deposito: 'Depósito en garantía', primera_renta: 'Primera renta', otro: 'Otro' };
             const campos = SECCIONES.flatMap(s => s.campos.map(f => f[0]));
             const val = k => ($('p_' + k)?.value ?? '').trim();
 
@@ -288,28 +265,74 @@
                 clearTimeout(temporizador); pone('Guardando…');
                 try {
                     const dd = datos();
-                    await setDoc(refProc, { datos: dd, interesado: dd.razonSocial || dd.nombreComercial || '', versionPdf, pagos, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' }, { merge: true });
+                    await setDoc(refProc, { datos: dd, interesado: dd.razonSocial || dd.nombreComercial || '', versionPdf, actualizadoEn: serverTimestamp(), actualizadoPor: getCurrentUser()?.email || '' }, { merge: true });
                     sucio = false; pone('Guardado', 'var(--exito)');
                 } catch (e) { console.error(e); pone('No se pudo guardar. Revisa tu conexión.', 'var(--peligro)'); }
             }
             campos.forEach(k => $('p_' + k).addEventListener('input', () => { sucio = true; pone('Cambios sin guardar…'); clearTimeout(temporizador); temporizador = setTimeout(guardar, 900); pintar(); }));
             window.addEventListener('pagehide', () => { if (sucio) guardar(); });
             if (precargado) guardar();   // deja registrado que ya se precargó con el contrato actual
-            function pintarPagos() {
-                $('listaPagos').innerHTML = pagos.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="text-align:left">Concepto</th><th style="text-align:left">Fecha</th><th style="text-align:right">Monto</th><th style="text-align:left">Nota</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td>${esc(CONCEPTO_PAGO[p.concepto] || p.concepto)}</td><td>${esc(fechaTxt(p.fecha))}</td><td style="text-align:right">${dinero(p.monto)}</td><td>${esc(p.nota || '')}</td><td style="text-align:right"><button class="btn-sec" data-quitar="${i}" style="padding:4px 10px;font-size:12px">Quitar</button></td></tr>`).join('')}</tbody></table>` : '<p class="ayuda">Todavía no hay pagos registrados.</p>';
-                $('listaPagos').querySelectorAll('[data-quitar]').forEach(b => b.addEventListener('click', () => { pagos.splice(+b.dataset.quitar, 1); guardar().then(pintarPagos); pintar(); }));
-            }
-            $('pgAgregar').addEventListener('click', () => {
-                const monto = parseFloat($('pgMonto').value), fecha = $('pgFecha').value;
-                if (!(monto > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { $('pgMsg').textContent = 'Escribe el monto y la fecha.'; return; }
-                $('pgMsg').textContent = '';
-                pagos.push({ concepto: $('pgConcepto').value, fecha, monto: r2(monto), nota: $('pgNota').value.trim(), por: getCurrentUser()?.email || '' });
-                $('pgMonto').value = ''; $('pgNota').value = '';
-                guardar().then(pintarPagos); pintar();
-            });
-            pintar(); pintarPagos();
+            pintar();
 
-            // PDF del contrato: la plantilla está en Firestore (contratos_plantillas); si no existe, sale un documento de prueba
+            // PDF de la carátula: lo capturado aquí es lo que después se vuelve la carátula del contrato (locales/caratula.html)
+            const CSS_CARATULA = `@media print {
+                #hoja.caratula { display: block !important; min-height: 0; text-align: left; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
+                #hoja.caratula .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 6px; }
+                #hoja.caratula .cab img { height: 34px; width: auto; display: block; flex: none; }
+                #hoja.caratula h1 { margin: 0 0 3px; padding: 0; font-size: 18px; line-height: 1.15; font-weight: 900; }
+                #hoja.caratula .cab p { margin: 0; padding: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
+                #hoja.caratula h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 4px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
+                #hoja.caratula table { width: 100%; border-collapse: collapse; }
+                #hoja.caratula td { padding: 3px 6px; border-bottom: 1px solid #e6e9ee; vertical-align: top; }
+                #hoja.caratula td:first-child { width: 36%; color: #5f6670; }
+                #hoja.caratula td:last-child { font-weight: 600; white-space: pre-line; }
+                #hoja.caratula tr { break-inside: avoid; }
+            }`;
+            function htmlCaratula() {
+                const g = datos(), d = calcular(), moral = g.tipoPersona === 'moral', renov = g.tipoContrato === 'renovacion';
+                const f = x => /^\d{4}-\d{2}-\d{2}$/.test(x || '') ? fechaTxt(x) : (x || '');
+                const filas = rows => rows.filter(r => String(r[1] ?? '').trim()).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
+                const sec = (t, rows) => { const h = filas(rows); return h ? `<h2>${t}</h2><table>${h}</table>` : ''; };
+                const hoy = fechaTxt(hoyISO());
+                return `<div class="cab"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div><h1>Carátula provisional del contrato</h1>
+                    <p>Local ${esc(locales)} · ${esc(g.razonSocial || '')}</p>
+                    <p>Contrato de arrendamiento · ${renov ? 'Renovación' : 'Contrato nuevo'} · elaborada el ${esc(hoy)}</p></div></div>`
+                + sec('Arrendatario', [
+                    ['Razón social o nombre', g.razonSocial], ['RFC', g.rfc], ['Tipo de persona', moral ? 'Persona moral' : g.tipoPersona === 'fisica' ? 'Persona física' : ''],
+                    ['Constitución', moral ? g.constitucion : ''], ['Representante legal', moral ? g.representante : ''], ['Poder del representante', moral ? g.poderRepresentante : ''],
+                    ['Local', `${locales}${c.m2 ? ' · ' + Number(c.m2).toLocaleString('es-MX') + ' m²' : ''}`], ['Entrada del local', g.entradaLocal || c.acceso],
+                    ['Nombre comercial', g.nombreComercial], ['Giro', g.giro], ['Teléfono de contacto', g.telefono],
+                    ['Correos de notificación', lineas(g.correosNotificacion).join('\n')], ['Correos de facturación', lineas(g.correosFacturacion).join('\n')],
+                    ['Dirección fiscal', lineas(g.direccion).join('\n')]
+                ])
+                + sec('Vigencia', [
+                    ['Tipo de contrato', renov ? 'Renovación' : 'Contrato nuevo (cambio de inquilino)'], ['En posesión del local desde', renov ? f(g.posesionDesde) : ''],
+                    ['Fecha de firma', f(g.firma)], ['Plazo', `${d.anios} año${d.anios > 1 ? 's' : ''} forzosos`], ['Inicio', f(d.inicio)], ['Fin', f(d.fin)],
+                    ['Incremento de renta', `Cada año de vigencia; primer incremento: ${f(d.incr)}`], ['Tipo de incremento', g.incrementoTipo], ['Fecha límite de pago', g.fechaLimite]
+                ])
+                + sec('Renta', [
+                    ['Renta mensual (sin IVA)', d.renta ? dinero(d.renta) : ''], ['Renta mensual con IVA (16 %)', d.renta ? dinero(d.conIva) : ''],
+                    ['Mantenimiento', +g.mantenimientoPct > 0 ? `Aparte: ${g.mantenimientoPct} % de la renta` : 'Incluido en la renta'],
+                    ['Periodo de gracia', +g.mesesGracia > 0 ? `${g.mesesGracia} mes${+g.mesesGracia === 1 ? '' : 'es'}` : 'Ninguno'], ['Intereses moratorios', g.moratoriosContrato]
+                ])
+                + sec('Depósito y garantía', [
+                    ['Meses de depósito', d.meses ? String(d.meses) : ''], ['Depósito requerido', d.meses ? dinero(d.deposito) : ''], ['Depósito entregado en el contrato anterior', renov && +g.depositoAnterior > 0 ? dinero(g.depositoAnterior) : ''],
+                    ['Garantía', g.garantia], ['Detalle de la garantía', g.garantiaDetalle], ['Obligado solidario', lineas(g.obligadosSolidarios).join('\n') || g.osNombre]
+                ]);
+            }
+            $('btnCaratula').addEventListener('click', async () => {
+                if (sucio) await guardar();
+                if (!document.getElementById('estilosCaratula')) { const st = document.createElement('style'); st.id = 'estilosCaratula'; st.textContent = CSS_CARATULA; document.head.appendChild(st); }
+                hoja.className = 'caratula';
+                hoja.innerHTML = htmlCaratula();
+                const img = hoja.querySelector('img');
+                if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 1500); });
+                const previo = document.title; document.title = `CARATULA PROVISIONAL LOCAL ${locales}`;
+                window.print();
+                document.title = previo;
+            });
+
+            // PDF del contrato (desactivado por ahora: el botón está en gris): la plantilla está en Firestore (contratos_plantillas); si no existe, sale un documento de prueba
             const PLANTILLA = 'arrendamiento-local2';
             $('btnPdf').addEventListener('click', async () => {
                 const btn = $('btnPdf'); btn.disabled = true;
@@ -338,7 +361,8 @@
             });
 
             // Activación
-            $('btnActivar').addEventListener('click', () => {
+            // Se abre desde la ficha del proceso («Activar contrato», con ?activar=1): esta página ya no lleva el botón
+            const abrirActivacion = () => {
                 const d = calcular(), r = revision(d);
                 if (r.faltan.length) { $('msg').textContent = 'Falta: ' + r.faltan.map(x => x[1]).join(', ') + '.'; return; }
                 if (r.malos.length) { $('msg').textContent = 'Revisa los correos de facturación.'; return; }
@@ -362,7 +386,8 @@
                     try { const nuevoId = await activar(d, salidaF); location.href = 'caratula.html?id=' + encodeURIComponent(nuevoId); }
                     catch (err) { console.error(err); aMsg.textContent = 'No se pudo activar: ' + err.message; e.target.disabled = false; }
                 });
-            });
+            };
+            if (qs.get('activar') === '1') abrirActivacion();
 
             async function activar(d, salidaF) {
                 const user = getCurrentUser();

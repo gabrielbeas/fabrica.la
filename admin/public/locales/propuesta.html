@@ -24,17 +24,6 @@
         .btn-sec { font: inherit; font-size: 14px; font-weight: 600; line-height: 20px; padding: 9px 16px; border-radius: var(--radio-sm); border: 1px solid var(--borde-control); background: var(--fondo); color: var(--tinta); cursor: pointer; }
         .btn-sec:hover:not(:disabled) { background: var(--fondo-hundido); }
         .pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-        .p3 .sec { border-left: 4px solid var(--agua, #17739f); }
-        .proy-nota { font-size: 12px; color: var(--tinta-suave); margin: 0 0 14px; }
-        .tabla-wrap { border: 1px solid var(--linea); border-radius: 10px; overflow-x: auto; margin-bottom: 18px; }
-        .tabla-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px; }
-        .tabla-wrap th { text-align: right; font-weight: 600; color: var(--tinta-suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 11px 12px; background: var(--fondo-hundido); border-bottom: 1px solid var(--linea); white-space: nowrap; }
-        .tabla-wrap td { text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--linea); white-space: nowrap; font-variant-numeric: tabular-nums; }
-        .tabla-wrap th:first-child, .tabla-wrap td:first-child, .tabla-wrap th:nth-child(2), .tabla-wrap td:nth-child(2) { text-align: left; }
-        .tabla-wrap tfoot td { font-weight: 700; background: var(--fondo-hundido); border-bottom: none; }
-        .tabla-wrap tr.actual-esc td { background: var(--ambar-suave); }
-        .proy-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accion); margin: 22px 0 8px; }
-        .grafica svg { width: 100%; height: auto; display: block; }
         .chk-lin { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--tinta); margin: 0; }
         @media (max-width: 700px) { .pasos { grid-template-columns: 1fr; } }
         .paso-tab { text-align: left; font: inherit; border: 1px solid var(--linea); border-radius: 10px; padding: 12px 16px; background: #fff; cursor: pointer; color: var(--tinta); }
@@ -79,7 +68,7 @@
             @page { size: letter portrait; margin: 14mm; }
             body > .main, #navbar-root, nav { display: none !important; }
             #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
-            #hoja .enc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 12px; margin-bottom: 16px; }
+            #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 12px; margin-bottom: 16px; }
             #hoja .enc img { height: 46px; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
             #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 16px 0 8px; border-bottom: 2px solid #1f4e79; padding-bottom: 4px; break-after: avoid; }
@@ -109,7 +98,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-5';
+        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-7';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -179,15 +168,8 @@
                 ] }
             ]
         };
-        // PROYECCIÓN: solo para consulta (no sale en ningún PDF). Sus supuestos también se guardan con la propuesta.
-        PASOS[3] = [
-            { t: 'Supuestos de la proyección', ayuda: 'Parten de la renta y el plazo del paso 1. Aumento anual = inflación + puntos adicionales.', campos: [
-                ['infl', 'Inflación anual (%)', 'numero'], ['pts', 'Puntos adicionales (%)', 'numero'],
-                ['aumY1', 'Aplicar el primer aumento ya en el primer año', 'check', true]
-            ] }
-        ];
         // Incremento anual = INPC + un porcentaje extra acordado (puede ser cero). De lo que se escribe en «Incremento anual»
-        // ("INPC", "INPC + 2", "INPC + 1.5 %") se saca el extra y con él se arma la explicación (no editable) y los puntos de la proyección.
+        // ("INPC", "INPC + 2", "INPC + 1.5 %") se saca el extra y con él se arma la explicación (no editable).
         const BASE_INPC = 'Variación anual del INPC publicado por el INEGI (www.inegi.org.mx), del mes previo al aniversario';
         function extraInpc(txt) {   // número de puntos extra sobre el INPC; null si el texto no es un incremento basado en el INPC
             const t = String(txt || '');
@@ -247,7 +229,6 @@
                 inicio: inicioSug, anios: 5, fechaLimite: c.fechaLimite || '', renta: rentaActual,
                 incrementoTipo: 'INPC + 2', mesesDeposito: c.mesesDeposito ?? 1,
                 periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || '', tipoPersona: '',
-                infl: 4, pts: 2, aumY1: false,
                 ...guardado
             };
             // Renta cotizada en Locales y metrajes (Cotizador): sustituye la renta del borrador y se usa una sola vez
@@ -266,7 +247,7 @@
             const esRenovacion = procId ? v.tipoContrato === 'renovacion' : true;
             if (esRenovacion && !v.precargaContrato) {
                 for (const [k, x] of Object.entries(precarga)) if (camposForm.has(k) && !String(v[k] ?? '').trim()) v[k] = x;
-                v.precargaContrato = true; sucio = true;
+                v.precargaContrato = true;   // solo en pantalla: se guarda cuando se edite algo (sucio), no por abrir la propuesta
             }
 
             const entrada = ([k, et, tipo, ancho, solo]) => {
@@ -299,10 +280,9 @@
                 <p class="sub">Primero se prepara la propuesta y, si el interesado la acepta, se capturan los datos del arrendatario (en una renovación ya vienen del contrato actual). Se guarda sola conforme la llenas: puedes cerrar y seguir después. <span id="estadoGuardado" style="font-weight:600"></span></p>
                 <div class="actual">Contrato actual: <b>${esc(c.razonSocial || '-')}</b>${c.nombreComercial ? ' (' + esc(c.nombreComercial) + ')' : ''} · ${m2 ? '<b>' + m2.toLocaleString('es-MX') + ' m²</b> · ' : ''}renta <b>${dinero(rentaActual)}</b> sin IVA${m2 ? ' (' + dinero(rentaActual / m2) + ' por m²)' : ''} · vigente hasta <b>${fechaTxt(c.fin) || '-'}</b>. El paso 1 arranca con estos valores.</div>
 
-                <div class="pasos">
+                <div class="pasos"${esRenovacion ? ' style="display:none"' : ''}>
                     <button type="button" class="paso-tab act" data-paso="1"><b>Propuesta</b><span>Generales de la renta, dirigida a una persona</span></button>
                     <button type="button" class="paso-tab" data-paso="2"><b>Datos del arrendatario</b><span>Datos del arrendatario, persona física o moral</span></button>
-                    <button type="button" class="paso-tab" data-paso="3"><b>Proyección</b><span>Solo para consulta, no se exporta</span></button>
                 </div>
 
                 <div class="panel-paso p1 act" id="paso1">
@@ -310,6 +290,7 @@
                     ${PASOS[1].map(seccionHtml).join('')}
                     <div class="acciones">
                         <button class="btn" id="btnPdf1">PDF de la propuesta</button>
+                        ${procId ? '' : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos contratos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
                     </div>
                 </div>
 
@@ -320,30 +301,23 @@
                     <div class="acciones">
                         <button class="btn" id="btnPdf2">PDF del cuestionario con lo capturado</button>
                         <button class="btn-sec" id="btnBlanco" title="Sale con todos los espacios vacíos, para enviarlo y que el interesado lo llene">PDF del cuestionario en blanco</button>
-                        ${procId ? '' : `<button class="btn" id="btnProceso" title="Abre un proceso en Nuevos contratos con lo capturado, para preparar el contrato de renovación">Pasar a contrato (renovación)</button>`}
                     </div>
-                </div>
-                <div class="panel-paso p3" id="paso3">
-                    <p class="proy-nota">Vista de consulta para ver cómo evoluciona la renta durante el plazo. No se incluye en el PDF de la propuesta ni del cuestionario.</p>
-                    ${PASOS[3].map(seccionHtml).join('')}
-                    <div id="proyeccion"></div>
                 </div>
                 <p class="sub" style="margin-top:14px;font-size:12px">La propuesta se guarda en el panel (una por local), así que puedes retomarla desde cualquier equipo. El agua se factura aparte; IVA de 16 %.</p>`;
 
             const $ = x => document.getElementById(x);
             activarSelectoresFecha(app, { atras: 1, adelante: 12 });   // fechas con el mes en letra, en español
-            const todos = [...PASOS[1], ...PASOS[2], ...PASOS[3]].flatMap(s => s.campos.map(f => ({ ...f, s })));
+            const todos = [...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => ({ ...f, s })));
             const val = k => ($('p_' + k)?.value ?? '').trim();
 
             function irAPaso(n) {
                 app.querySelectorAll('.paso-tab').forEach(b => b.classList.toggle('act', +b.dataset.paso === n));
                 $('paso1').classList.toggle('act', n === 1);
                 $('paso2').classList.toggle('act', n === 2);
-                $('paso3').classList.toggle('act', n === 3);
                 window.scrollTo({ top: 0 });
             }
             app.querySelectorAll('.paso-tab').forEach(b => b.addEventListener('click', () => irAPaso(+b.dataset.paso)));
-            if (qs.get('paso') === '2') irAPaso(2);
+            if (qs.get('paso') === '2' && !esRenovacion) irAPaso(2);
             // Renovación: abre un proceso en Nuevos contratos con lo capturado en esta propuesta
             $('btnProceso')?.addEventListener('click', async e => {
                 if (!confirm('Se abre un proceso de renovación en Nuevos contratos con lo capturado en esta propuesta. ¿Continuar?')) return;
@@ -368,69 +342,6 @@
                 };
             }
 
-            // Proyección de la renta durante el plazo (solo pantalla)
-            function proyectar(renta0, pct, anios, aumY1, inicio) {
-                const filas = []; let renta = renta0, acum = 0, acumIva = 0;
-                for (let i = 0; i < anios; i++) {
-                    const aum = i > 0 || aumY1;
-                    if (aum) renta = r2(renta * (1 + pct));
-                    const iva = r2(renta * IVA), conIva = r2(renta + iva);
-                    acum = r2(acum + renta * 12); acumIva = r2(acumIva + conIva * 12);
-                    filas.push({ n: i + 1, desde: sumaMeses(inicio, i * 12), hasta: sumaDia(sumaMeses(inicio, (i + 1) * 12), -1), aum: aum ? pct : 0, renta, iva, conIva, m2: m2 ? r2(renta / m2) : null, anual: r2(renta * 12), anualIva: r2(conIva * 12), acum, acumIva });
-                }
-                return filas;
-            }
-            function pintarProyeccion(d) {
-                const infl = (+$('p_infl').value || 0) / 100, pts = (+$('p_pts').value || 0) / 100, pct = infl + pts, aumY1 = $('p_aumY1').checked;
-                const fs = proyectar(d.renta, pct, d.anios, aumY1, d.inicio);
-                const pri = fs[0], ult = fs[fs.length - 1], p = f => (+(f * 100).toFixed(2)) + ' %';
-                const base = d.renta || 1;
-                // Gráfica de línea: renta mensual por año (eje desde un poco debajo del mínimo para que se vea la evolución)
-                const vals = fs.map(f => f.renta).concat(rentaActual ? [rentaActual] : []);
-                const W = 1000, H = 300, izq = 74, der = 40, arriba = 30, abajo = 34;
-                const lo0 = Math.min(...vals), hi0 = Math.max(...vals), paso = Math.max(1000, Math.ceil((hi0 - lo0) / 4 / 1000) * 1000);
-                const minY = Math.max(0, Math.floor(lo0 * 0.92 / paso) * paso), maxY = Math.ceil(hi0 * 1.06 / paso) * paso || 1;
-                const y = n => H - abajo - (H - abajo - arriba) * (n - minY) / (maxY - minY);
-                const px = i => fs.length === 1 ? (izq + W - der) / 2 : izq + (W - izq - der) * i / (fs.length - 1);
-                const marcas = []; for (let v = minY; v <= maxY + 1; v += paso) marcas.push(v);
-                const puntos = fs.map((f, i) => `${px(i).toFixed(1)},${y(f.renta).toFixed(1)}`).join(' ');
-                const grafica = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Renta mensual por año">`
-                    + marcas.map(v => `<line x1="${izq}" x2="${W - der}" y1="${y(v)}" y2="${y(v)}" stroke="#eef0f3"/><text x="${izq - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#5f6670">${(v / 1000).toLocaleString('es-MX')} mil</text>`).join('')
-                    + (rentaActual ? `<line x1="${izq}" x2="${W - der}" y1="${y(rentaActual)}" y2="${y(rentaActual)}" stroke="#d08a1e" stroke-dasharray="6 4"/><text x="${izq + 6}" y="${y(rentaActual) + 15}" font-size="11" fill="#d08a1e">Renta del contrato actual ${dinero(rentaActual)}</text>` : '')
-                    + (fs.length > 1 ? `<polyline points="${puntos}" fill="none" stroke="#1f4e79" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : '')
-                    + fs.map((f, i) => `<circle cx="${px(i)}" cy="${y(f.renta)}" r="5.5" fill="${i === 0 ? '#1f4e79' : '#fff'}" stroke="#1f4e79" stroke-width="2.5"/><text x="${px(i)}" y="${y(f.renta) - 13}" text-anchor="middle" font-size="${fs.length > 7 ? 10 : 12}" font-weight="700" fill="#1b2430">${dinero(f.renta)}</text><text x="${px(i)}" y="${H - 12}" text-anchor="middle" font-size="12" fill="#5f6670">${f.desde.slice(0, 4)}</text>`).join('')
-                    + '</svg>';
-                // Escenarios de inflación con los mismos puntos adicionales
-                const refTot = ult.acum;
-                const esc2 = [2, 3, 4, 5, 6].map(i => {
-                    const q = proyectar(d.renta, i / 100 + pts, d.anios, aumY1, d.inicio), l = q[q.length - 1], dif = r2(l.acum - refTot);
-                    const act = Math.abs(i / 100 - infl) < 1e-9;
-                    return `<tr${act ? ' class="actual-esc"' : ''}><td>${i} % + ${+(pts * 100).toFixed(2)}</td><td>${p(i / 100 + pts)}</td><td>${dinero(q[0].renta)}</td><td>${dinero(l.renta)}</td><td>${dinero(l.acum)}</td><td>${dinero(l.acumIva)}</td><td>${act ? 'escenario actual' : (dif > 0 ? '+' : '−') + dinero(Math.abs(dif))}</td></tr>`;
-                }).join('');
-                $('proyeccion').innerHTML = `
-                    <div class="primera">
-                        <div class="tarjeta"><div class="et">Aumento anual</div><div class="val">${p(pct)}</div></div>
-                        <div class="tarjeta dest"><div class="et">Renta mensual ${pri.desde.slice(0, 4)}</div><div class="val">${dinero(pri.renta)}</div></div>
-                        <div class="tarjeta"><div class="et">Renta mensual ${ult.desde.slice(0, 4)}</div><div class="val">${dinero(ult.renta)}</div></div>
-                        <div class="tarjeta"><div class="et">Crecimiento de la renta</div><div class="val">${((ult.renta / base - 1) * 100).toFixed(1)} %</div></div>
-                        <div class="tarjeta"><div class="et">Total del plazo (${d.anios} año${d.anios > 1 ? 's' : ''})</div><div class="val">${dinero(ult.acum)}</div></div>
-                        <div class="tarjeta"><div class="et">Total con IVA</div><div class="val">${dinero(ult.acumIva)}</div></div>
-                    </div>
-                    <div class="proy-h">Renta por año</div>
-                    <div class="tabla-wrap"><table>
-                        <thead><tr><th>Año</th><th>Periodo</th><th>Aumento</th><th>Renta mensual</th><th>IVA 16 %</th><th>Mensual con IVA</th>${m2 ? '<th>Por m²</th>' : ''}<th>Anual sin IVA</th><th>Acumulado sin IVA</th></tr></thead>
-                        <tbody>${fs.map(f => `<tr><td>${f.n}</td><td>${fechaTxt(f.desde)} – ${fechaTxt(f.hasta)}</td><td>${f.aum ? p(f.aum) : 'sin aumento'}</td><td>${dinero(f.renta)}</td><td>${dinero(f.iva)}</td><td>${dinero(f.conIva)}</td>${m2 ? `<td>${dinero(f.m2)}</td>` : ''}<td>${dinero(f.anual)}</td><td>${dinero(f.acum)}</td></tr>`).join('')}</tbody>
-                        <tfoot><tr><td colspan="${m2 ? 7 : 6}">Total ${d.anios} año${d.anios > 1 ? 's' : ''}</td><td>${dinero(ult.acum)}</td><td>${dinero(ult.acumIva)} con IVA</td></tr></tfoot>
-                    </table></div>
-                    <div class="proy-h">Cómo crece la renta</div>
-                    <div class="grafica">${grafica}</div>
-                    <div class="proy-h">Otros escenarios de inflación (mismos puntos adicionales)</div>
-                    <div class="tabla-wrap"><table>
-                        <thead><tr><th>Inflación + puntos</th><th>Aumento anual</th><th>Renta primer año</th><th>Renta último año</th><th>Total sin IVA</th><th>Total con IVA</th><th>Diferencia</th></tr></thead>
-                        <tbody>${esc2}</tbody>
-                    </table></div>`;
-            }
-
             function pintar() {
                 const d = calcular();
                 $('c_local').textContent = locales;
@@ -452,8 +363,7 @@
                 const g = {};
                 todos.forEach(f => { const el = $('p_' + f[0]); g[f[0]] = el.type === 'checkbox' ? el.checked : el.value; });
                 if (v.precargaContrato) g.precargaContrato = true;
-                pintarProyeccion(d);
-                try { localStorage.setItem(clave, JSON.stringify(g)); } catch (e) { /* sin almacenamiento */ }
+                if (sucio) { try { localStorage.setItem(clave, JSON.stringify(g)); } catch (e) { /* sin almacenamiento */ } }   // el respaldo del navegador también solo si se editó algo
                 if (sucio) programarGuardado(g);
             }
 
@@ -491,14 +401,13 @@
                 sucio = true;
                 if (f[0] === 'renta') $('p_rentaIva').value = r2((+val('renta') || 0) * (1 + IVA));
                 if (f[0] === 'rentaIva') $('p_renta').value = r2((+val('rentaIva') || 0) / (1 + IVA));
-                if (f[0] === 'incrementoTipo') { const extra = extraInpc(val('incrementoTipo')); if (extra !== null) $('p_pts').value = extra; }   // la proyección usa el mismo extra sobre el INPC
                 pintar();
             }));
             pintar();
 
             // ---- Impresión ----
             const campo = (et, valor, ancho, largo) => `<div class="campo${ancho ? ' ancho' : ''}"><div class="et">${esc(et)}</div><div class="v${largo ? ' largo' : ''}">${esc(valor)}</div></div>`;
-            const encabezado = titulo => `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div style="text-align:right"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
+            const encabezado = titulo => `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div style="text-align:left"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
 
             function seccionImpresa(s, blanco) {
                 const tp = val('tipoPersona');

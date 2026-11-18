@@ -4,9 +4,9 @@
 // Si el depósito no ha cambiado desde el último recibo, se reimprime con el mismo folio.
 import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, collection, query, where, getDocs, runTransaction, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-1';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-9';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
-import { dineroLegal } from './contrato-pdf.js?v=20261117-1';
+import { dineroLegal } from './contrato-pdf.js?v=20261117-9';
 import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './correos-contrato.js?v=20261014-6';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -62,9 +62,9 @@ export function htmlRecibo(c, r, rec) {
     const html = `<div class="rq">
       <style>
         .rq { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12.5px; line-height: 1.55; }
-        .rq .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 20px; }
+        .rq .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 20px; }
         .rq .cab img { height: 40px; display: block; }
-        .rq .cab .der { text-align: right; font-size: 11px; color: #5b6572; }
+        .rq .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
         .rq .folio { font-size: 15px; font-weight: 700; color: #1b2430; }
         .rq h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0; }
         .rq .sub { text-align: center; color: #5b6572; margin: 0 0 18px; }

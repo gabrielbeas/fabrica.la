@@ -8,7 +8,7 @@
 export const ETAPAS = [
     { clave: 'local', nombre: 'Local', corto: 'Local' },
     { clave: 'propuesta', nombre: 'Propuesta enviada', corto: 'Propuesta' },
-    { clave: 'contrato', nombre: 'Contrato, datos y documentos', corto: 'Contrato' },
+    { clave: 'contrato', nombre: 'Datos y documentos', corto: 'Datos' },
     { clave: 'pagos', nombre: 'Firma y pagos', corto: 'Firma y pagos' },
     { clave: 'activo', nombre: 'Activo', corto: 'Activo' }
 ];
@@ -19,7 +19,7 @@ export function pasosDe(p) {
     const hecho = {
         local: true,
         propuesta: !!p.propuestaEnviada,
-        contrato: (p.versionPdf || 0) > 0 && !!(d.razonSocial && d.rfc),   // PDF generado y datos del arrendatario capturados (en una renovación se precargan del contrato actual)
+        contrato: !!(d.razonSocial && d.rfc),   // datos del arrendatario capturados (en una renovación se precargan del contrato actual); el PDF del contrato está desactivado por ahora
         pagos: !!d.firma && pagos.some(x => x.concepto === 'deposito') && pagos.some(x => x.concepto === 'primera_renta'),
         activo: p.estado === 'activado'
     };
