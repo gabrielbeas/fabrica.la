@@ -55,7 +55,7 @@
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #hoja { display: block; color: #1b2430; font: 11px/1.45 Roboto, Arial, sans-serif; }
             #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 14px; }
-            #hoja .enc img { height: 44px; }
+            #hoja .enc img { height: 54px; }
             #hoja .tit { text-align: left; } #hoja .tit h1 { font-size: 19px; margin: 0; font-weight: 900; line-height: 1.15; } #hoja .tit div { font-size: 11px; color: #5f6670; margin-top: 2px; }
             #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #d5dbe3; }
             #hoja .ficha .et { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: #5f6670; } #hoja .ficha .v { font-size: 12px; font-weight: 700; }
@@ -80,7 +80,7 @@
         import { fechaLarga } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-7';
+        import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-8';
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -156,7 +156,7 @@
                 <p class="sub">${d.tipoContrato === 'renovacion' ? 'Renovación' : 'Inquilino nuevo'} · interesado: <b>${esc(p.interesado || d.razonSocial || d.dirigidaA || 'sin nombre todavía')}</b></p>
                 <div class="resumen">
                     <div class="caja"><div class="et">Contrato actual del local</div><b>${esc(c.razonSocial || '-')}</b><br>Renta ${dinero(c.total)} + IVA · vence ${esc(fechaTxt(c.fin))}</div>
-                    <div class="caja"><div class="et">Condiciones propuestas</div>Renta <b>${dinero(d.renta)}</b> + IVA · inicio ${esc(fechaTxt(d.inicio))} · ${esc(d.anios || '-')} año(s)<br>Depósito: ${esc(d.mesesDeposito ?? '-')} mes(es)</div>
+                    <div class="caja"><div class="et">Condiciones propuestas</div>Renta ${Number(d.renta) > 0 ? `<b>${dinero(d.renta)}</b> + IVA` : '<b>por definir</b>'} · inicio ${esc(fechaTxt(d.inicio))} · ${esc(d.anios || '-')} año(s)<br>Depósito: ${d.mesesDeposito != null && d.mesesDeposito !== '' ? esc(d.mesesDeposito) + ' mes(es)' : '<b>por definir</b>'}</div>
                 </div>
                 ${pasos.map((x, i) => `<div class="paso ${x.hecho ? 'hecho' : (x.clave === et.clave && est === 'en_proceso' ? 'actual' : '')}">
                     <div class="num">${x.hecho ? '✓' : i + 1}</div>
@@ -192,7 +192,7 @@
                 const quien = p.interesado || d.razonSocial || d.dirigidaA || '';
                 const tipoTxt = d.tipoPersona === 'moral' ? 'Persona moral' : d.tipoPersona === 'fisica' ? 'Persona física' : '';
                 const dato = (et, v) => v ? `<div><div class="et">${et}</div><div class="v">${esc(v)}</div></div>` : '';
-                hoja.innerHTML = `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div class="tit"><h1>Documentos que debe enviar</h1><div>Contrato de arrendamiento · Local ${esc(locales)}</div></div></div>
+                hoja.innerHTML = `<div class="enc"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div class="tit"><h1>Documentos que debe enviar</h1><div>Contrato de arrendamiento · Local ${esc(locales)}</div></div></div>
                     <div class="ficha">${dato('Interesado', quien)}${dato('Arrendatario', tipoTxt)}${dato('Fecha', fechaTxt(hoyISO()))}</div>
                     <p class="intro">Para preparar el contrato de arrendamiento del Local ${esc(locales)}, le pedimos enviar los siguientes documentos en PDF o en imagen legible a <b>admin@fabrica.la</b>.</p>
                     ${d.tipoPersona ? '' : '<p class="nota">Según el arrendatario sea persona moral o persona física, se entregan los documentos del grupo A o del grupo B.</p>'}

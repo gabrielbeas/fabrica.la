@@ -69,7 +69,7 @@
             body > .main, #navbar-root, nav { display: none !important; }
             #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
             #hoja .enc { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 12px; margin-bottom: 16px; }
-            #hoja .enc img { height: 46px; }
+            #hoja .enc img { height: 57px; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
             #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 16px 0 8px; border-bottom: 2px solid #1f4e79; padding-bottom: 4px; break-after: avoid; }
             #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 26px; }
@@ -98,7 +98,7 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-7';
+        import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-8';
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -245,6 +245,7 @@
             const camposForm = new Set([...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => f[0])));
             const precarga = datosDeContrato(c);
             const esRenovacion = procId ? v.tipoContrato === 'renovacion' : true;
+            if (esRenovacion && guardado.periodoGracia === undefined) v.periodoGracia = '0';   // en una renovación no hay periodo de gracia: el del contrato anterior ya se disfrutó
             if (esRenovacion && !v.precargaContrato) {
                 for (const [k, x] of Object.entries(precarga)) if (camposForm.has(k) && !String(v[k] ?? '').trim()) v[k] = x;
                 v.precargaContrato = true;   // solo en pantalla: se guarda cuando se edite algo (sucio), no por abrir la propuesta
@@ -407,7 +408,7 @@
 
             // ---- Impresión ----
             const campo = (et, valor, ancho, largo) => `<div class="campo${ancho ? ' ancho' : ''}"><div class="et">${esc(et)}</div><div class="v${largo ? ' largo' : ''}">${esc(valor)}</div></div>`;
-            const encabezado = titulo => `<div class="enc"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div style="text-align:left"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
+            const encabezado = titulo => `<div class="enc"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div style="text-align:left"><h1>${titulo}</h1><div>Local ${esc(locales)}${m2 ? ' · ' + m2.toLocaleString('es-MX') + ' m²' : ''}</div></div></div>`;
 
             function seccionImpresa(s, blanco) {
                 const tp = val('tipoPersona');

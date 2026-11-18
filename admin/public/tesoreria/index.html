@@ -1124,7 +1124,7 @@
                 }).join('');
                 const html = `<div class="tr-rep">
                     <div class="enc"><div class="enc-izq"><div><h1>Tesorería · ${esc(r.titulo)}</h1><div class="sub">${esc(filtrosTxt)}</div></div></div>
-                        <div class="der">${movs.length} movimiento${movs.length === 1 ? '' : 's'}<br>Generado el ${fechaTxt(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10))}</div><img class="logo" src="${basePath()}css/logo.png" alt="La Fábrica de Chocolate"></div>
+                        <div class="der">${movs.length} movimiento${movs.length === 1 ? '' : 's'}<br>Generado el ${fechaTxt(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10))}</div><img class="logo" src="${basePath()}css/logo-export.png" alt="La Fábrica de Chocolate"></div>
                     <div class="tarjetas" style="grid-template-columns:repeat(${conSaldo ? 5 : 3}, 1fr)">
                         ${conSaldo ? `<div><span>Saldo al inicio</span><b>${d(saldoIni)}</b></div>` : ''}
                         <div><span>Ingresos</span><b>${d(ingresos)}</b></div>
@@ -1154,8 +1154,8 @@
                         #tr-impresion .tr-rep .enc { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 6px; margin-bottom: 10px; }
                         #tr-impresion .tr-rep .enc-izq { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
                         #tr-impresion .tr-rep .enc .der { margin-left: auto; }
-                        #tr-impresion .tr-rep .logo { height: 30px; width: auto; flex: none; display: block; }
-                        #tr-impresion.vertical .tr-rep .logo { height: 26px; }
+                        #tr-impresion .tr-rep .logo { height: 37px; width: auto; flex: none; display: block; }
+                        #tr-impresion.vertical .tr-rep .logo { height: 32px; }
                         #tr-impresion .tr-rep h1 { font-size: 16px; line-height: 1.2; font-weight: 900; margin: 0; }
                         #tr-impresion .tr-rep .sub, #tr-impresion .tr-rep .der { font-size: 9px; color: #5f6670; margin-top: 2px; }
                         #tr-impresion .tr-rep .der { text-align: right; white-space: nowrap; }

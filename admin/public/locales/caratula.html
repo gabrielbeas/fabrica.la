@@ -107,7 +107,7 @@
         .alerta-fila .cuando { font-weight: 600; white-space: nowrap; font-size: 13px; }
 
         .encabezado .der { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex: none; }
-        .logo-print { display: none; height: 40px; width: auto; margin: 0; }   /* el logo va a la derecha, sobre el estado; el título queda a la izquierda */
+        .logo-print { display: none; height: 50px; width: auto; margin: 0; }   /* el logo va a la derecha, sobre el estado; el título queda a la izquierda */
         @media (max-width: 700px) { .secciones { grid-template-columns: minmax(0, 1fr); } .hoja { padding: 18px 14px; } .encabezado { flex-wrap: wrap; gap: 10px; } .barra { gap: 10px; align-items: flex-start; } .barra > div { flex-wrap: wrap; width: 100%; gap: 8px !important; } .barra > div .btn, .barra > div .btn-sec { flex: 1 1 auto; } .inc-form { grid-template-columns: 1fr; } .alerta-fila { flex-wrap: wrap; } .alerta-fila .que { flex: 1 1 70%; } }
         @media print {
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
@@ -126,12 +126,12 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261117-9';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261117-10';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261117-9';
-        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261117-9';
-        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261117-9';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261117-10';
+        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261117-10';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261117-10';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS, VENTANA_INCREMENTO_DIAS } from '../../../js/alertas-contrato.js?v=20261112-2';
 
         const app = document.getElementById('app');
@@ -257,7 +257,6 @@
                     <a href="./">← Locales</a>
                     <div style="display:flex;gap:10px">
                         <button class="btn-sec" id="btnEditar">Editar</button>
-                        ${!c.propio && c.estado !== 'terminado' ? `<a class="btn-sec" style="text-decoration:none;display:inline-flex;align-items:center" href="propuesta.html?id=${encodeURIComponent(contratoId)}" title="Propuesta de arrendamiento de este local: para renovar o para un inquilino nuevo">Propuesta</a><a class="btn-sec" style="text-decoration:none;display:inline-flex;align-items:center" href="../nuevos-contratos/?local=${encodeURIComponent(contratoId)}" title="Abrir un proceso de cambio de inquilino o renovación para este local">Nuevo contrato</a><button class="btn-sec" id="btnLiquidar" title="Cerrar este contrato: fecha de salida, depósito y saldos">Liquidar contrato</button>` : ''}
                         <button class="btn-sec" id="btnReporte" title="Reporte completo del contrato: renta, pagos, depósito, facturas, agua, historial">EXPORTAR REPORTE</button>
                         <button class="btn" onclick="window.print()">Imprimir / PDF</button>
                     </div>
@@ -273,7 +272,7 @@
                             <div class="loc">${c.ubicacion ? esc(c.ubicacion) : `Local ${esc((c.locales || []).join(', '))}${c.m2 ? ` · ${c.m2} m²` : ''}`}</div>
                         </div>
                         <div class="der">
-                            <img class="logo-print" src="../css/logo.png" alt="La Fábrica de Chocolate">
+                            <img class="logo-print" src="../css/logo-export.png" alt="La Fábrica de Chocolate">
                             <span class="estado ${estado[0]}">${estado[1]}</span>
                         </div>
                     </div>
@@ -413,7 +412,6 @@
             document.getElementById('btnRecibo')?.addEventListener('click', e => reciboDeposito({ ...c, id: contratoId }, e.currentTarget));
             document.getElementById('btnPagosRenta')?.addEventListener('click', () => ventanaPagosRenta(c));
             document.getElementById('btnIncremento')?.addEventListener('click', () => ventanaIncremento(c));
-            document.getElementById('btnLiquidar')?.addEventListener('click', () => ventanaLiquidar(c));
             if (avisoPendiente) { document.getElementById('aviso').innerHTML = avisoPendiente; avisoPendiente = ''; }
         }
 

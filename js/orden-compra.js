@@ -1,6 +1,6 @@
 // Orden de compra a un proveedor: cuentas, hoja para imprimir (PDF vía impresión) y correo desde admin@fabrica.la.
 // El catálogo (productos_compra), los proveedores y las órdenes (ordenes_compra) viven en Firestore; aquí solo está la lógica común.
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-9';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-10';
 import { abrirCorreo, CORREO_REMITENTE } from './correos-contrato.js?v=20261014-6';
 
 export const IVA_COMPRAS = 0.16;
@@ -28,7 +28,7 @@ export function htmlOrdenCompra(o, prov) {
     <style>
       .oc { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12px; line-height: 1.5; }
       .oc .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 16px; }
-      .oc .cab img { height: 40px; display: block; }
+      .oc .cab img { height: 49px; display: block; }
       .oc .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
       .oc h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0 0 14px; }
       .oc .cajas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }

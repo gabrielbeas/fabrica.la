@@ -333,7 +333,7 @@ export const ESTILO_HOJA = `
   .hc .enc { display: grid; grid-template-columns: 1fr auto; align-items: end; }
   .hc .enc-izq { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
   .hc .enc-centro { text-align: left; }
-  .hc .enc-logo { height: 34px; width: auto; display: block; }
+  .hc .enc-logo { height: 42px; width: auto; display: block; }
   .hc .enc .der { text-align: right; font-size: 9.5px; color: #555; }
   .hc h2 { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; color: #555; }
   .hc table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
@@ -374,7 +374,7 @@ export const ESTILO_HOJA = `
 
 // Logo del encabezado: se precarga al cargar el módulo para que ya esté listo al imprimir
 // (la ruta es relativa porque todas las páginas que exportan están un nivel dentro de admin/ o admin/public/)
-export const LOGO_URL = '../css/logo.png';
+export const LOGO_URL = '../css/logo-export.png';
 if (typeof Image !== 'undefined') { try { new Image().src = LOGO_URL; } catch (e) { /* sin logo no pasa nada */ } }
 
 export function encabezadoHoja(mes) {

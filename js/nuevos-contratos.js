@@ -103,8 +103,11 @@ export function datosDeContrato(c) {
     const dc = c.datosContrato || {};
     const pagado = (c.historialDepositos || []).filter(p => p.tipo !== 'compartido').reduce((s, p) => s + (Number(p.monto) || 0), 0);
     const socios = Array.isArray(c.socios) ? c.socios : [];
+    const tipoPersona = c.tipoPersona || dc.tipoPersona || (c.razonSocial ? (ES_MORAL.test(c.razonSocial) ? 'moral' : 'fisica') : '');
     const d = {
-        tipoPersona: c.tipoPersona || dc.tipoPersona || (c.razonSocial ? (ES_MORAL.test(c.razonSocial) ? 'moral' : 'fisica') : ''),
+        tipoPersona,
+        // «Dirigida a» y «Empresa» de la propuesta: en una renovación es el mismo inquilino (persona moral: su representante; persona física: él mismo)
+        dirigidaA: tipoPersona === 'moral' ? c.representante : c.razonSocial, empresa: tipoPersona === 'moral' ? c.razonSocial : c.nombreComercial,
         razonSocial: c.razonSocial, rfc: c.rfc, curp: c.curp, nombreComercial: c.nombreComercial, giro: c.giro,
         telefono: c.telefono, correosNotificacion: lineas(c.correosNotificacion), correosFacturacion: lineas(c.facturacion?.correos),
         direccion: lineas(c.direccion), representante: c.representante, repRfc: c.repRfc, repCurp: c.repCurp,

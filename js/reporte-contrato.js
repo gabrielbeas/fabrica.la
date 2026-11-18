@@ -4,7 +4,7 @@
 import { db } from './auth.js?v=20261117-1';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261112-1';
-import { LOGO_URL } from './facturacion.js?v=20261117-9';
+import { LOGO_URL } from './facturacion.js?v=20261117-10';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -52,7 +52,7 @@ const ESTILO = `#hoja-reporte { display: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 #hoja-reporte .cab { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f4e79; padding-bottom: 8px; margin-bottom: 10px; }
-#hoja-reporte .cab img { height: 36px; }
+#hoja-reporte .cab img { height: 44px; }
 #hoja-reporte h1 { margin: 0; font-size: 18px; font-weight: 900; }
 #hoja-reporte .sub { color: #5f6670; font-size: 10.5px; margin-top: 2px; }
 #hoja-reporte h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }

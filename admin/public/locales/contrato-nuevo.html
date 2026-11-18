@@ -73,9 +73,9 @@
         import '../../../js/dinero-input.js?v=20261028-1';
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-9';
-        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-7';
-        import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261117-9';
+        import { normalizarCorreos, correoValido } from '../../../js/facturacion.js?v=20261117-10';
+        import { resumenDocumentos, datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-8';
+        import { htmlContrato, ESTILOS_CONTRATO } from '../../../js/contrato-pdf.js?v=20261117-10';
         import { doc, getDoc, getDocs, setDoc, writeBatch, collection, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const app = document.getElementById('app');
@@ -278,7 +278,7 @@
             const CSS_CARATULA = `@media print {
                 #hoja.caratula { display: block !important; min-height: 0; text-align: left; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
                 #hoja.caratula .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 6px; }
-                #hoja.caratula .cab img { height: 34px; width: auto; display: block; flex: none; }
+                #hoja.caratula .cab img { height: 42px; width: auto; display: block; flex: none; }
                 #hoja.caratula h1 { margin: 0 0 3px; padding: 0; font-size: 18px; line-height: 1.15; font-weight: 900; }
                 #hoja.caratula .cab p { margin: 0; padding: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
                 #hoja.caratula h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 4px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
@@ -287,6 +287,11 @@
                 #hoja.caratula td:first-child { width: 36%; color: #5f6670; }
                 #hoja.caratula td:last-child { font-weight: 600; white-space: pre-line; }
                 #hoja.caratula tr { break-inside: avoid; }
+                #hoja.caratula table.tsocios { table-layout: fixed; margin-top: 14px; }
+                #hoja.caratula table.tsocios th { text-align: left; vertical-align: bottom; font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; font-weight: 400; padding: 0 6px 3px; border-bottom: 1px solid #dfe3e8; }
+                #hoja.caratula table.tsocios th.ts { width: 36%; font-size: 11px; letter-spacing: .06em; color: #1b2430; font-weight: 700; }
+                #hoja.caratula table.tsocios th:nth-child(2) { width: 27%; }
+                #hoja.caratula table.tsocios td { width: auto; color: #1b2430; font-weight: 600; white-space: normal; }
             }`;
             function htmlCaratula() {
                 const g = datos(), d = calcular(), moral = g.tipoPersona === 'moral', renov = g.tipoContrato === 'renovacion';
@@ -294,7 +299,7 @@
                 const filas = rows => rows.filter(r => String(r[1] ?? '').trim()).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
                 const sec = (t, rows) => { const h = filas(rows); return h ? `<h2>${t}</h2><table>${h}</table>` : ''; };
                 const hoy = fechaTxt(hoyISO());
-                return `<div class="cab"><img src="../css/logo.png" alt="La Fábrica de Chocolate"><div><h1>Carátula provisional del contrato</h1>
+                return `<div class="cab"><img src="../css/logo-export.png" alt="La Fábrica de Chocolate"><div><h1>Carátula provisional del contrato</h1>
                     <p>Local ${esc(locales)} · ${esc(g.razonSocial || '')}</p>
                     <p>Contrato de arrendamiento · ${renov ? 'Renovación' : 'Contrato nuevo'} · elaborada el ${esc(hoy)}</p></div></div>`
                 + sec('Arrendatario', [
@@ -305,6 +310,10 @@
                     ['Correos de notificación', lineas(g.correosNotificacion).join('\n')], ['Correos de facturación', lineas(g.correosFacturacion).join('\n')],
                     ['Dirección fiscal', lineas(g.direccion).join('\n')]
                 ])
+                + (() => {
+                    const so = [1, 2, 3, 4].filter(n => moral && (g[`socio${n}`] || '').trim());
+                    return so.length ? `<table class="tsocios"><thead><tr><th class="ts">Socios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${so.map(n => `<tr><td>${esc(g[`socio${n}`])}</td><td>${esc(g[`socio${n}Rfc`] || '')}</td><td>${esc(g[`socio${n}Curp`] || '')}</td></tr>`).join('')}</tbody></table>` : '';
+                })()
                 + sec('Vigencia', [
                     ['Tipo de contrato', renov ? 'Renovación' : 'Contrato nuevo (cambio de inquilino)'], ['En posesión del local desde', renov ? f(g.posesionDesde) : ''],
                     ['Fecha de firma', f(g.firma)], ['Plazo', `${d.anios} año${d.anios > 1 ? 's' : ''} forzosos`], ['Inicio', f(d.inicio)], ['Fin', f(d.fin)],
@@ -344,7 +353,7 @@
                     if (pl) {
                         if (!document.getElementById('estilosContrato')) { const st = document.createElement('style'); st.id = 'estilosContrato'; st.textContent = ESTILOS_CONTRATO; document.head.appendChild(st); }
                         hoja.className = 'contrato';
-                        hoja.innerHTML = htmlContrato(pl, datos(), c, '../css/logo.png');
+                        hoja.innerHTML = htmlContrato(pl, datos(), c, '../css/logo-export.png');
                         nombre = `CONTRATO LOCAL ${locales}_V${versionPdf}`;
                     } else {
                         hoja.className = '';

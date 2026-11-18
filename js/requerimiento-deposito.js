@@ -2,7 +2,7 @@
 // Lo usan la carátula y la sección Depósitos. Los datos bancarios salen de config_cobro/cuenta (solo Firestore).
 import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-9';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261117-10';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -60,7 +60,7 @@ Total a pagar: ${dinero(totalPagar)}` : ''}
             <style>
                 .rq { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12.5px; line-height: 1.55; }
                 .rq .cab { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1b2430; padding-bottom: 10px; margin-bottom: 20px; }
-                .rq .cab img { height: 40px; display: block; }
+                .rq .cab img { height: 49px; display: block; }
                 .rq .cab .der { text-align: left; font-size: 11px; color: #5b6572; }
                 .rq h1 { text-align: center; font-size: 16px; letter-spacing: .05em; margin: 0; }
                 .rq .sub { text-align: center; color: #5b6572; margin: 0 0 18px; }
