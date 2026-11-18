@@ -67,6 +67,15 @@
         #hoja { display: none; }
         @media print {
             @page { size: letter portrait; margin: 14mm; }
+            /* El encabezado con logo se repite en cada hoja: va como thead de una tabla que envuelve la hoja */
+            #hoja table.hoja-tabla { width: 100%; border-collapse: collapse; }
+            #hoja table.hoja-tabla > thead { display: table-header-group; }
+            #hoja table.hoja-tabla > tbody > tr > td, #hoja table.hoja-tabla > thead > tr > td { padding: 0; font: inherit; }
+            #hoja table.hoja-tabla > thead .lf-cab { margin-bottom: 14px !important; }
+            /* En la 1.ª hoja el título va a la izquierda, en el mismo renglón del logo; las siguientes hojas solo repiten el logo con su línea */
+            #hoja .cab-titulo { margin: -68px 0 26px !important; height: 42px; display: flex; flex-direction: column; justify-content: center; font-family: Roboto, Arial, sans-serif; }
+            #hoja .cab-titulo h1 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; font-weight: 900; color: #1b2430; }
+            #hoja .cab-titulo p { margin: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
             body > .main, #navbar-root, nav { display: none !important; }
             #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
@@ -74,6 +83,9 @@
             #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 26px; }
             #hoja .campo { break-inside: avoid; }
             #hoja .campo.ancho { grid-column: 1 / -1; }
+            #hoja .campo:has(.v.largo) { break-inside: auto; }   /* los textos largos (notas) se parten entre páginas y aprovechan el espacio libre */
+            #hoja .campo:has(.v.largo) .v { orphans: 3; widows: 3; }
+            #hoja .campo:has(.v.largo) .et { break-after: avoid; }
             #hoja .campo .et { font-size: 9.5px; color: #5f6670; text-transform: uppercase; letter-spacing: .04em; }
             #hoja .campo .et { margin-bottom: 3px; }
             #hoja .campo .v { border-bottom: 1px solid #9aa2ad; min-height: 21px; padding: 3px 0; white-space: pre-wrap; }
@@ -81,7 +93,7 @@
             #hoja .carta p { margin: 0 0 10px; }
             #hoja .dest-carta { margin-bottom: 18px; line-height: 1.7; }
             #hoja .dest-carta b { font-size: 13px; }
-            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; text-align: center; font-size: 10.5px; }
+            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 80px; break-inside: avoid; text-align: center; font-size: 10.5px; }
             #hoja .firmas.una { grid-template-columns: 1fr; width: 50%; margin-left: auto; margin-right: auto; }
             #hoja .firmas div { border-top: 1px solid #1b2430; padding-top: 4px; }
             #hoja .pie { margin-top: 14px; font-size: 9.5px; color: #5f6670; }
@@ -93,9 +105,9 @@
     <div id="hoja"></div>
 
     <script type="module">
-        import { crearNavbar } from '../../../js/navbar.js?v=20261117-1';
+        import { crearNavbar } from '../../../js/navbar.js?v=20261118-1';
         import '../../../js/dinero-input.js?v=20261028-1';
-        import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261028-1';
+        import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261118-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-10';
         import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
@@ -137,14 +149,16 @@
                 ] },
                 { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [], calc: ['local', 'superficie', 'acceso'] },
                 { t: 'Vigencia', ayuda: 'Fechas y plazo propuestos.', campos: [
-                    ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'], ['fechaLimite', 'Fecha límite de pago', 'texto']
-                ], calc: ['fin', 'incrementoFecha'], orden: ['inicio', 'calc:fin', 'anios', 'fechaLimite', 'calc:incrementoFecha'] },
+                    ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'], ['fechaLimite', 'Fecha límite de pago', 'texto'],
+                    ['notasInternas', 'Notas', 'textarea', true]
+                ], calc: ['fin', 'incrementoFecha'], orden: ['inicio', 'calc:fin', 'anios', 'fechaLimite', 'calc:incrementoFecha', 'notasInternas'] },
                 { t: 'Renta', ayuda: 'Renta con la que empieza el primer año, condiciones de pago y depósito en garantía. Sin proyección de años siguientes.', campos: [
                     ['renta', 'Renta mensual (sin IVA)', 'dinero'], ['rentaIva', 'Renta mensual con IVA (16 %)', 'dinero'],
                     ['incrementoTipo', 'Incremento anual', 'texto'],
                     ['periodoGracia', 'Periodo de gracia (meses)', 'texto'], ['moratoriosContrato', 'Intereses moratorios', 'texto'],
-                    ['mesesDeposito', 'Meses de depósito', 'numero']
-                ], calc: ['incrementoExpl', 'deposito'], orden: ['renta', 'rentaIva', 'incrementoTipo', 'calc:incrementoExpl', 'periodoGracia', 'moratoriosContrato', 'mesesDeposito', 'calc:deposito'] }
+                    ['mesesDeposito', 'Meses de depósito', 'numero'],
+                    ['notasIncremento', 'Notas sobre el incremento anual', 'textarea', true]
+                ], calc: ['incrementoExpl', 'deposito'], orden: ['renta', 'rentaIva', 'incrementoTipo', 'calc:incrementoExpl', 'notasIncremento', 'periodoGracia', 'moratoriosContrato', 'mesesDeposito', 'calc:deposito'] }
             ],
             2: [
                 { t: 'Arrendatario', ayuda: 'Datos del interesado, como irán en el contrato.', campos: [
@@ -471,12 +485,23 @@
                 }));
                 const cc = Object.fromEntries((s.calc || []).map(k => ['calc:' + k, campo(CALC[k][0], calcs[k])]));
                 const todo = { ...cs, ...cc };
+                for (const n of ['notasInternas', 'notasIncremento']) if (blanco || !val(n).trim()) delete todo[n];   // las notas solo salen si se escribió algo
                 const claves = s.orden ? s.orden.filter(k => k in todo) : Object.keys(todo);
                 return `<h3>${s.t}</h3><div class="campos">${claves.map(k => todo[k]).join('')}</div>`;
             }
 
             // Espera a que cargue el logo antes de abrir la impresión (si no, el PDF puede salir sin él)
             const imprimirHoja = nombre => {
+                const cab = hoja.querySelector(':scope > .lf-cab');
+                if (cab) {   // encabezado repetido en cada hoja
+                    const tabla = document.createElement('table'); tabla.className = 'hoja-tabla';
+                    const titulo = cab.querySelector(':scope > div'); titulo.className = 'cab-titulo';   // el texto se queda en la 1.ª hoja; en el encabezado repetido solo queda el logo
+                    const th = tabla.createTHead().insertRow().insertCell(); th.append(cab);
+                    const td = tabla.appendChild(document.createElement('tbody')).insertRow().insertCell();
+                    td.append(titulo);
+                    while (hoja.firstChild) td.append(hoja.firstChild);
+                    hoja.append(tabla);
+                }
                 const img = hoja.querySelector('img');
                 const imprimir = () => { const previo = document.title; document.title = nombre; window.print(); setTimeout(() => { document.title = previo; }, 1000); };
                 if (!img || img.complete) { imprimir(); return; }

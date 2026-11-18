@@ -94,6 +94,34 @@ export function crearNavbar() {
 
   // Marcar sección activa
   marcarSeccionActiva(secciones);
+  agregarVolverInicio(secciones);
+}
+
+/**
+ * Botón «← Inicio» (18/11/2026) en todas las ventanas principales del panel (las secciones del menú y Configuración):
+ * se coloca justo antes del contenido, con el mismo ancho que `.main`. Las páginas internas (fichas, carátula, propuesta…)
+ * ya traen su propio «Volver a…», y Inicio no lo necesita.
+ */
+function agregarVolverInicio(secciones) {
+  const limpia = ruta => ruta.replace(/index\.html$/, '').replace(/\/+$/, '');
+  const ruta = limpia(location.pathname), raiz = limpia(new URL(basePath(), location.origin).pathname);
+  if (!ruta || ruta === raiz) return;   // Inicio
+  const rutasDeSecciones = secciones.filter(x => x.id !== 'inicio').map(x => limpia(new URL(x.url, location.origin).pathname));
+  rutasDeSecciones.push(raiz + '/config');
+  if (!rutasDeSecciones.includes(ruta)) return;
+  const principal = document.querySelector('.main');
+  if (!principal || document.querySelector('.volver-inicio-wrap')) return;
+  const envoltorio = document.createElement('div');
+  envoltorio.className = 'main volver-inicio-wrap';
+  envoltorio.innerHTML = `<a class="volver-inicio" href="${basePath()}">← Inicio</a>`;
+  principal.parentNode.insertBefore(envoltorio, principal);
+  const st = document.createElement('style');
+  st.textContent = `.volver-inicio-wrap { padding-top: 20px !important; padding-bottom: 0 !important; }
+    .volver-inicio-wrap + .main { padding-top: 12px !important; }
+    .volver-inicio { display: inline-block; color: var(--accion, #1f4e79); text-decoration: none; font-size: 14px; }
+    .volver-inicio:hover { text-decoration: underline; }
+    @media print { .volver-inicio-wrap { display: none !important; } }`;
+  document.head.appendChild(st);
 }
 
 /**
