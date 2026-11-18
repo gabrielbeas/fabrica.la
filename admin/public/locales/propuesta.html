@@ -133,7 +133,7 @@
                 { t: 'Dirigida a', ayuda: 'Persona a quien va la propuesta.', campos: [
                     ['dirigidaA', 'Nombre de la persona', 'texto', true],
                     ['empresa', 'Empresa o proyecto (opcional)', 'texto'], ['fechaPropuesta', 'Fecha de la propuesta', 'fecha'],
-                    ['vigenciaDias', 'Días de vigencia de la propuesta', 'numero']
+                    ['vigenciaActiva', 'La propuesta tiene vigencia', 'check'], ['vigenciaDias', 'Días de vigencia de la propuesta', 'numero']
                 ] },
                 { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [], calc: ['local', 'superficie', 'acceso'] },
                 { t: 'Vigencia', ayuda: 'Fechas y plazo propuestos.', campos: [
@@ -227,7 +227,7 @@
 
             // Lo de Administración arranca con lo del contrato actual; lo del interesado arranca en blanco.
             const v = {
-                fechaPropuesta: hoyISO(), vigenciaDias: 15,
+                fechaPropuesta: hoyISO(), vigenciaActiva: true, vigenciaDias: 15,
                 inicio: inicioSug, anios: 5, fechaLimite: c.fechaLimite || '', renta: rentaActual,
                 incrementoTipo: 'INPC + 2', mesesDeposito: c.mesesDeposito ?? 1,
                 periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || '', tipoPersona: '',
@@ -376,6 +376,7 @@
                 $('resumenP1').innerHTML = `Propuesta del paso 1${val('dirigidaA') ? ' para <b>' + esc(val('dirigidaA')) + '</b>' : ''}: inicio <b>${fechaTxt(d.inicio)}</b>, plazo <b>${d.anios} año${d.anios > 1 ? 's' : ''}</b>, renta mensual <b>${dinero(d.renta)}</b> + IVA, depósito <b>${dinero(d.deposito)}</b>.`;
                 // Persona física o moral: se ocultan las secciones y campos que no aplican
                 const tp = val('tipoPersona');
+                $('p_vigenciaDias').disabled = !$('p_vigenciaActiva').checked;   // sin vigencia, los días no aplican y el PDF no menciona la fecha límite
                 app.querySelectorAll('[data-solo]').forEach(el => { el.style.display = tp && el.dataset.solo !== tp ? 'none' : ''; });
                 const g = {};
                 todos.forEach(f => { const el = $('p_' + f[0]); g[f[0]] = el.type === 'checkbox' ? el.checked : el.value; });
@@ -487,7 +488,7 @@
             // Paso 1: carta-propuesta corta con los generales
             function imprimirPaso1() {
                 const d = calcular();
-                const hasta = val('vigenciaDias') && val('fechaPropuesta') ? fechaTxt(sumaDia(val('fechaPropuesta'), +val('vigenciaDias'))) : '';
+                const hasta = $('p_vigenciaActiva').checked && val('vigenciaDias') && val('fechaPropuesta') ? fechaTxt(sumaDia(val('fechaPropuesta'), +val('vigenciaDias'))) : '';
                 const datos = PASOS[1].filter(s => s.t !== 'Dirigida a').map(s => seccionImpresa(s, false)).join('');
                 hoja.innerHTML = `
                     ${encabezado('Propuesta de arrendamiento')}
