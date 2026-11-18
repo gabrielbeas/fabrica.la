@@ -70,6 +70,7 @@
         .tabla-cot input { font: inherit; font-family: var(--font-mono); font-size: 13px; width: 96px; text-align: right; padding: 3px 6px; border: 1px solid var(--borde-control); border-radius: var(--radio-sm); background: var(--fondo); color: var(--tinta); }
         .tabla-cot input:focus { outline: 2px solid var(--foco); outline-offset: 1px; }
         .tabla-cot .sube { color: var(--exito); } .tabla-cot .baja { color: var(--peligro); }
+        .tabla-cot .dif input { width: 78px; color: inherit; }
         .tabla-cot .dif { font-size: 13px; }
         @media (max-width: 1100px) { .met-lado { flex-wrap: wrap; } .met-lado > .met-der { flex: 1 1 100%; overflow-x: auto; } }
         .solo-movil { display: none; }
@@ -405,6 +406,7 @@
         const numCot = t => { const v = Number(String(t).replace(/[$,\s]/g, '')); return String(t).trim() === '' || !Number.isFinite(v) ? null : v; };
         const signo = (n, f) => (Math.abs(n) < 0.005 ? f(0) : (n > 0 ? '+' : '−') + f(Math.abs(n)));
         const pctTxt = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(1)}%`;
+        const numPct = t => { const v = Number(String(t).replace(/[%\s+]/g, '').replace('−', '-').replace(',', '.')); return String(t).replace(/[%\s]/g, '') === '' || !Number.isFinite(v) ? null : v; };
 
         function vistaMetrajes() {
             const m2Total = contratos.reduce((s, c) => s + (Number(c.m2) || 0), 0);
@@ -454,7 +456,7 @@
                 </div>
                 </div>
                 <div class="met-col met-der">
-                <div class="met-cab"><span><strong>Cotizador</strong> · edita la renta por m² o la mensual y se ajusta la otra</span><button type="button" id="cotReset">Restablecer</button></div>
+                <div class="met-cab"><span><strong>Cotizador</strong> · edita m², renta o % y se ajustan los demás</span><button type="button" id="cotReset">Restablecer</button></div>
                 <div class="tabla-wrap">
                     <table class="tabla-cot tabla-movil">
                         <thead><tr><th class="solo-movil">Contrato</th>${th('cotM2', 'Renta por m²', 'num')}${th('cotRenta', 'Renta mensual', 'num')}${th('cotDif', 'Diferencia $', 'num')}${th('cotDifPct', 'Diferencia %', 'num')}</tr></thead>
@@ -467,7 +469,7 @@
                                 <td class="solo-movil">Local ${esc((c.locales || []).join(', '))} · ${esc(c.razonSocial || c.nombreComercial || '')}</td>
                                 <td class="num"><input inputmode="decimal" data-dinero class="cot-m2" value="${c.m2 ? fmtCot(x.m2p) : ''}" ${c.m2 ? '' : 'disabled title="Sin m² capturados"'} aria-label="Renta por m² cotizada"></td>
                                 <td class="num"><input inputmode="decimal" data-dinero class="cot-renta" value="${fmtCot(x.renta)}" aria-label="Renta mensual cotizada"></td>
-                                <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"></td>
+                                <td class="num dif" data-d="$"></td><td class="num dif" data-d="%"><input inputmode="decimal" class="cot-pct" value="" aria-label="Diferencia porcentual cotizada" title="Escribe el % de aumento o baja y se ajustan la renta mensual y la renta por m²"></td>
                             </tr>`).join('');
                             }).join('')}
                         </tbody>
@@ -481,7 +483,9 @@
             const porId = Object.fromEntries(contratos.map(c => [c.id, c]));
             const pintarDif = (el, d, p) => {
                 el.querySelector('[data-d="$"]').textContent = p === null ? '-' : signo(d, dinero);
-                el.querySelector('[data-d="%"]').textContent = p === null ? '-' : pctTxt(p);
+                const ip = el.querySelector('.cot-pct');
+                ip.disabled = p === null;
+                if (document.activeElement !== ip) ip.value = p === null ? '-' : pctTxt(p);
                 el.querySelectorAll('.dif').forEach(td => { td.classList.toggle('sube', p !== null && d > 0.005); td.classList.toggle('baja', p !== null && d < -0.005); });
             };
             const totalesCot = () => {
@@ -503,6 +507,11 @@
                 const c = porId[tr.dataset.id], x = cot[tr.dataset.id], iM2 = tr.querySelector('.cot-m2'), iR = tr.querySelector('.cot-renta');
                 iM2.addEventListener('input', () => { const v = numCot(iM2.value); if (v === null || v < 0) return; x.m2p = v; x.renta = v * c.m2; iR.value = fmtCot(x.renta); recalcFila(tr); totalesCot(); });
                 iR.addEventListener('input', () => { const v = numCot(iR.value); if (v === null || v < 0) return; x.renta = v; x.m2p = c.m2 ? v / c.m2 : 0; if (c.m2) iM2.value = fmtCot(x.m2p); recalcFila(tr); totalesCot(); });
+                const iP = tr.querySelector('.cot-pct');
+                // Diferencia %: la renta mensual pasa a ser la actual más ese porcentaje (ej. 4 = +4 %, -3 = baja de 3 %)
+                iP.addEventListener('input', () => { const v = numPct(iP.value); if (v === null || !c.total || v <= -100) return; x.renta = Math.round(c.total * (1 + v / 100) * 100) / 100; x.m2p = c.m2 ? x.renta / c.m2 : 0; iR.value = fmtCot(x.renta); if (c.m2) iM2.value = fmtCot(x.m2p); recalcFila(tr); totalesCot(); });
+                iP.addEventListener('focus', () => iP.select());
+                iP.addEventListener('blur', () => { const d = x.renta - (c.total || 0); if (c.total) iP.value = pctTxt(d / c.total * 100); });
                 [iM2, iR].forEach(i => { i.addEventListener('focus', () => i.select()); i.addEventListener('blur', () => { const v = numCot(i.value); if (v !== null && v >= 0) i.value = fmtCot(v); }); });
                 recalcFila(tr);
             });
