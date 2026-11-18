@@ -245,6 +245,8 @@
             const camposForm = new Set([...PASOS[1], ...PASOS[2]].flatMap(s => s.campos.map(f => f[0])));
             const precarga = datosDeContrato(c);
             const esRenovacion = procId ? v.tipoContrato === 'renovacion' : true;
+            // Renovación = mismas condiciones: el incremento sale del contrato actual (no el «INPC + 2» por defecto de un inquilino nuevo)
+            if (esRenovacion && guardado.incrementoTipo === undefined && c.incrementoTipo) v.incrementoTipo = c.incrementoTipo;
             if (esRenovacion && guardado.periodoGracia === undefined) v.periodoGracia = '0';   // en una renovación no hay periodo de gracia: el del contrato anterior ya se disfrutó
             if (esRenovacion && !v.precargaContrato) {
                 for (const [k, x] of Object.entries(precarga)) if (camposForm.has(k) && !String(v[k] ?? '').trim()) v[k] = x;

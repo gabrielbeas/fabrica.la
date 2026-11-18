@@ -173,6 +173,8 @@
                 periodoGracia: c.periodoGracia || '', moratoriosContrato: c.moratoriosContrato || ''
             };
             const v = { ...base, ...(borr.datos || {}) };
+            // Renovación = mismas condiciones: el incremento sale del contrato actual (no el «INPC + 2» por defecto de un inquilino nuevo)
+            if ((borr.datos || {}).tipoContrato === 'renovacion' && (borr.datos || {}).incrementoTipo === undefined && c.incrementoTipo) v.incrementoTipo = c.incrementoTipo;
             let versionPdf = borr.versionPdf || 0;
             const pagos = [...(borr.pagos || [])];   // solo lectura: los pagos se registran en la ficha del proceso
             let sucio = false;
