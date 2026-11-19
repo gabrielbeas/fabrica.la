@@ -138,13 +138,13 @@ export const ESTILOS_CONTRATO = `
 @media print {
   @page { size: letter portrait; margin: 20mm 18mm; }
   #hoja.contrato { display: block !important; min-height: 0 !important; color: #1b2430; font: 10.5pt/1.4 Roboto, Arial, sans-serif; text-align: left; }
-  #hoja.contrato .ct-enc { text-align: right; margin-bottom: 10px; } #hoja.contrato .ct-enc img { height: 54px; }
+  #hoja.contrato .ct-enc { text-align: right; margin-bottom: 10px; } #hoja.contrato .ct-enc img { height: 42px; }   /* mismo tamaño de logo que el encabezado de los exports */
   #hoja.contrato .ct-titulo { text-align: center; font-size: 14pt; font-weight: 900; margin: 14px 0 8px; }
   #hoja.contrato .ct-centro { text-align: center; margin: 6px 0; }
   #hoja.contrato .ct-h { font-size: 10.5pt; font-weight: 700; margin: 14px 0 4px; break-after: avoid; }
   #hoja.contrato .ct-p, #hoja.contrato .ct-li { text-align: justify; margin: 0 0 7px; font-size: 10.5pt; }
   #hoja.contrato .ct-li { margin-left: 18px; }
-  #hoja.contrato .ct-fila { display: grid; grid-template-columns: 38% 62%; gap: 8px; padding: 5px 0; border-bottom: 1px solid #d5dbe3; break-inside: avoid; }
+  #hoja.contrato .ct-fila { display: grid; grid-template-columns: 38% 62%; gap: 8px; padding: 5px 0; border-bottom: 1px solid #e6e9ee; break-inside: avoid; }
   #hoja.contrato .ct-et { font-weight: 700; }
   #hoja.contrato .ct-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 34px 40px; margin: 26px 0; text-align: center; break-inside: avoid; }
   #hoja.contrato .ct-firma { break-inside: avoid; } #hoja.contrato .ct-linea { border-top: 1px solid #1b2430; margin: 34px 0 4px; }

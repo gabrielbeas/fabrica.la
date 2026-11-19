@@ -50,20 +50,20 @@
         @media (max-width: 700px) { .paso { grid-template-columns: 34px minmax(0, 1fr); padding: 14px; gap: 10px 12px; } .paso .acc { grid-column: 1 / -1; justify-content: flex-start; } .paso .acc .btn, .paso .acc .btn-sec { flex: 1 1 auto; text-align: center; } }
         #hoja { display: none; }
         @media print {
-            @page { size: letter portrait; margin: 14mm 16mm 12mm; }
+            @page { size: letter portrait; margin: 14mm; }
             body > .main, #navbar-root, nav { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            #hoja { display: block; color: #1b2430; font: 11px/1.45 Roboto, Arial, sans-serif; }
-            #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #d5dbe3; }
+            #hoja { display: block; color: #1b2430; font: 10.5px/1.4 Roboto, Arial, sans-serif; }
+            #hoja .ficha { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 28px; justify-content: start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px solid #e6e9ee; }
             #hoja .ficha .et { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: #5f6670; } #hoja .ficha .v { font-size: 12px; font-weight: 700; }
-            #hoja .intro { margin: 0 0 6px; font-size: 11.5px; } #hoja .nota { margin: 0 0 4px; font-size: 10.5px; color: #5f6670; font-style: italic; }
+            #hoja .intro { margin: 0 0 6px; font-size: 11px; } #hoja .nota { margin: 0 0 4px; font-size: 9.5px; color: #5f6670; font-style: italic; }
             #hoja .g { break-inside: avoid; margin-bottom: 6px; }
-            #hoja .g h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 12px 0 4px; border-bottom: 2px solid #1f4e79; padding-bottom: 3px; }
-            #hoja .d { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 3.5px 0; border-bottom: 1px solid #d5dbe3; break-inside: avoid; }
+            #hoja .g h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #1b2430; margin: 14px 0 6px; border-bottom: 1px solid #dfe3e8; padding-bottom: 3px; }   /* = h2 de cssDoc */
+            #hoja .d { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 3.5px 0; border-bottom: 1px solid #e6e9ee; break-inside: avoid; }
             #hoja .cbx { width: 13px; height: 13px; border: 1.5px solid #1b2430; border-radius: 2px; margin-top: 1px; text-align: center; font-size: 11px; line-height: 11px; font-weight: 700; color: #2e7d32; }
             #hoja .d b { font-weight: 700; } #hoja .d small { display: block; color: #5f6670; font-size: 9.5px; margin-top: 1px; }
             #hoja .rec { display: block; font-size: 9.5px; color: #2e7d32; margin-top: 1px; }
-            #hoja .pie { margin-top: 14px; padding-top: 8px; border-top: 1px solid #d5dbe3; font-size: 9.5px; color: #5f6670; }
+            #hoja .pie { margin-top: 14px; padding-top: 8px; border-top: 1px solid #e6e9ee; font-size: 9px; color: #5f6670; }
         }
     </style>
 </head>
@@ -78,7 +78,7 @@
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { pasosDe, etapaDe, documentosDe, resumenDocumentos, GRUPOS_DOCUMENTOS } from '../../../js/nuevos-contratos.js?v=20261117-10';
-        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-4';
         { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
 
         const app = document.getElementById('app');

@@ -77,26 +77,26 @@
             #hoja .cab-titulo h1 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; font-weight: 900; color: #1b2430; }
             #hoja .cab-titulo p { margin: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
             body > .main, #navbar-root, nav { display: none !important; }
-            #hoja { display: block; color: #1b2430; font: 11.5px/1.5 Roboto, Arial, sans-serif; }
+            #hoja { display: block; color: #1b2430; font: 10.5px/1.4 Roboto, Arial, sans-serif; }
             #hoja h1 { font-size: 19px; margin: 0; font-weight: 900; }
-            #hoja h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #1f4e79; margin: 16px 0 8px; border-bottom: 2px solid #1f4e79; padding-bottom: 4px; break-after: avoid; }
+            #hoja h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #1b2430; margin: 14px 0 6px; border-bottom: 1px solid #dfe3e8; padding-bottom: 3px; break-after: avoid; }   /* = h2 de cssDoc */
             #hoja .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 26px; }
             #hoja .campo { break-inside: avoid; }
             #hoja .campo.ancho { grid-column: 1 / -1; }
             #hoja .campo:has(.v.largo) { break-inside: auto; }   /* los textos largos (notas) se parten entre páginas y aprovechan el espacio libre */
             #hoja .campo:has(.v.largo) .v { orphans: 3; widows: 3; }
             #hoja .campo:has(.v.largo) .et { break-after: avoid; }
-            #hoja .campo .et { font-size: 9.5px; color: #5f6670; text-transform: uppercase; letter-spacing: .04em; }
+            #hoja .campo .et { font-size: 8.5px; color: #5f6670; text-transform: uppercase; letter-spacing: .05em; }
             #hoja .campo .et { margin-bottom: 3px; }
-            #hoja .campo .v { border-bottom: 1px solid #9aa2ad; min-height: 21px; padding: 3px 0; white-space: pre-wrap; }
+            #hoja .campo .v { border-bottom: 1px solid #8a929c; min-height: 21px; padding: 3px 0; white-space: pre-wrap; font-size: 11px; }
             #hoja .campo .v.largo { min-height: 54px; }
-            #hoja .carta p { margin: 0 0 10px; }
-            #hoja .dest-carta { margin-bottom: 18px; line-height: 1.7; }
-            #hoja .dest-carta b { font-size: 13px; }
-            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 80px; break-inside: avoid; text-align: center; font-size: 10.5px; }
+            #hoja .carta p { margin: 0 0 10px; font-size: 11px; line-height: 1.5; }
+            #hoja .dest-carta { margin-bottom: 18px; font-size: 11px; line-height: 1.6; }
+            #hoja .dest-carta b { font-size: 12px; }
+            #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 80px; break-inside: avoid; text-align: center; font-size: 10px; }
             #hoja .firmas.una { grid-template-columns: 1fr; width: 50%; margin-left: auto; margin-right: auto; }
             #hoja .firmas div { border-top: 1px solid #1b2430; padding-top: 4px; }
-            #hoja .pie { margin-top: 14px; font-size: 9.5px; color: #5f6670; }
+            #hoja .pie { margin-top: 14px; font-size: 9px; color: #5f6670; }
         }
     </style>
 </head>
@@ -110,7 +110,7 @@
         import { fechaLarga, activarSelectoresFecha } from '../../../js/selector-fecha.js?v=20261118-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { datosDeContrato } from '../../../js/nuevos-contratos.js?v=20261117-10';
-        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-4';
         { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
         import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 

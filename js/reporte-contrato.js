@@ -4,8 +4,8 @@
 import { db } from './auth.js?v=20261117-1';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { cuentaDeposito, BASES_DEPOSITO } from './depositos.js?v=20261112-1';
-import { LOGO_URL } from './facturacion.js?v=20261118-2';
-import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
+import { LOGO_URL } from './facturacion.js?v=20261118-4';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc, MARGEN_VERTICAL } from './export-cabecera.js?v=20261118-4';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -46,35 +46,24 @@ function graficaAgua(lects) {
 }
 
 const ESTILO = `#hoja-reporte { display: none; }
-@page { size: letter portrait; margin: 14mm 14mm; }
+@page { size: letter portrait; margin: ${MARGEN_VERTICAL}; }
 @media print {
   body > *:not(#hoja-reporte) { display: none !important; }
-  #hoja-reporte { display: block !important; font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
-  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #hoja-reporte { display: block !important; }
 }
+${cssDoc('#hoja-reporte')}
 ${CSS_CABECERA}
 #hoja-reporte .sub { color: #5f6670; font-size: 10.5px; margin-top: 2px; }
-#hoja-reporte h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #1f4e79; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
 #hoja-reporte section { break-inside: auto; }
-#hoja-reporte .res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0 8px; }
-#hoja-reporte .res div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 8px; }
-#hoja-reporte .res span { display: block; font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; }
-#hoja-reporte .res b { font-size: 13px; font-variant-numeric: tabular-nums; }
-#hoja-reporte .res small { display: block; font-size: 8.5px; color: #5f6670; }
 #hoja-reporte dl { display: grid; grid-template-columns: 150px 1fr; gap: 2px 12px; margin: 0; }
 #hoja-reporte dt { color: #5f6670; }
 #hoja-reporte dd { margin: 0; font-weight: 600; }
-#hoja-reporte table { width: 100%; border-collapse: collapse; }
-#hoja-reporte th { text-align: left; font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; border-bottom: 1px solid #1b2430; padding: 4px 5px; }
-#hoja-reporte td { padding: 3px 5px; border-bottom: 1px solid #e6e9ee; vertical-align: top; }
-#hoja-reporte tr { break-inside: avoid; }
-#hoja-reporte thead { display: table-header-group; }
+#hoja-reporte td { padding: 3px 6px; }
 #hoja-reporte .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-#hoja-reporte tfoot td { font-weight: 700; border-top: 1px solid #1b2430; border-bottom: 0; }
-#hoja-reporte tr.total td { font-weight: 700; background: #f2f4f7; }
-#hoja-reporte .vacio, #hoja-reporte .nota { color: #5f6670; font-size: 9.5px; margin: 4px 0 0; }
-#hoja-reporte .graf { width: 100%; height: auto; margin-top: 6px; }
-#hoja-reporte .pie { margin-top: 14px; font-size: 9px; color: #5f6670; }`;
+#hoja-reporte tfoot td { border-bottom: 0; }
+#hoja-reporte tr.total td { font-weight: 700; background: #f2f4f7; border-top: 1px solid #1b2430; }
+#hoja-reporte .vacio { color: #5f6670; font-size: 9.5px; margin: 4px 0 0; }
+#hoja-reporte .graf { width: 100%; height: auto; margin-top: 6px; }`;
 
 /**
  * Genera e imprime el reporte del contrato.

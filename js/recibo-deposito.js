@@ -4,10 +4,10 @@
 // Si el depósito no ha cambiado desde el último recibo, se reimprime con el mismo folio.
 import { db, getCurrentUser } from './auth.js?v=20261117-1';
 import { doc, collection, query, where, getDocs, runTransaction, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-2';
-import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-4';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc } from './export-cabecera.js?v=20261118-4';
 import { cuentaDeposito } from './depositos.js?v=20261112-1';
-import { dineroLegal } from './contrato-pdf.js?v=20261117-10';
+import { dineroLegal } from './contrato-pdf.js?v=20261118-1';
 import { correosDeContrato, abrirCorreo, CORREO_REMITENTE, urlGmail } from './correos-contrato.js?v=20261014-6';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -62,20 +62,15 @@ export function htmlRecibo(c, r, rec) {
     const meses = Number(c.mesesDeposito) || 1;
     const html = `<div class="rq">
       <style>
-        .rq { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12.5px; line-height: 1.55; }
+        ${cssDoc('.rq')}
         ${CSS_CABECERA}
-        .rq .lf-cab { margin-bottom: 20px !important; }
-        .rq .dest { margin-bottom: 14px; } .rq .gris { color: #5b6572; }
-        .rq p { margin: 0 0 12px; text-align: justify; }
-        .rq table { width: 100%; border-collapse: collapse; margin: 0 0 14px; }
-        .rq th { background: #1b2430; color: #fff; text-align: left; padding: 6px 10px; font-weight: 600; font-size: 12px; }
-        .rq th.n, .rq td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .rq td { padding: 6px 10px; border-bottom: 1px solid #d5dbe1; }
-        .rq tr.tot td { background: #eef1f4; font-weight: 700; font-size: 13.5px; border-bottom: none; }
-        .rq .ok { border: 1px solid #2e7d32; color: #2e7d32; padding: 8px 12px; text-align: center; font-weight: 700; margin: 0 0 14px; }
-        .rq .nota { font-size: 11px; color: #5b6572; font-style: italic; margin: 0 0 14px; }
-        .rq .firma { width: 260px; margin: 64px auto 0; border-top: 1px solid #1b2430; padding-top: 4px; font-size: 11.5px; text-align: center; }
-      </style>
+        .rq .lf-cab { margin-bottom: 18px !important; }
+        .rq .dest { margin-bottom: 14px; font-size: 11px; }
+        .rq p { margin: 0 0 12px; text-align: justify; font-size: 11px; line-height: 1.5; }
+        .rq p.nota { font-size: 9.5px; font-style: italic; margin: 0 0 14px; }
+        .rq table { margin: 0 0 12px; }
+        .rq .ok { border: 1px solid #2e7d32; border-radius: 6px; color: #2e7d32; padding: 8px 12px; text-align: center; font-weight: 700; margin: 0 0 14px; }
+    </style>
       ${cabeceraExport('Recibo de depósito en garantía', [`Folio ${esc(rec.folio)} · Guadalajara, Jalisco, a ${esc(fechaTxt(rec.fecha))}`, `Referencia: Local ${esc(locales)} · Depósito cubierto en su totalidad`], LOGO_URL)}
       <div class="dest"><strong>${esc(c.razonSocial)}</strong><br>
         ${c.representante ? `Atención: ${esc(c.representante)}, representante<br>` : ''}

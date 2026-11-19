@@ -1,7 +1,7 @@
 // Orden de compra a un proveedor: cuentas, hoja para imprimir (PDF vía impresión) y correo desde admin@fabrica.la.
 // El catálogo (productos_compra), los proveedores y las órdenes (ordenes_compra) viven en Firestore; aquí solo está la lógica común.
-import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-2';
-import { CSS_CABECERA, cabeceraExport, nombreArchivo } from './export-cabecera.js?v=20261118-2';
+import { imprimirHojas, LOGO_URL } from './facturacion.js?v=20261118-4';
+import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc } from './export-cabecera.js?v=20261118-4';
 import { abrirCorreo, CORREO_REMITENTE } from './correos-contrato.js?v=20261014-6';
 
 export const IVA_COMPRAS = 0.16;
@@ -27,40 +27,33 @@ export function htmlOrdenCompra(o, prov) {
   const correos = (prov.correos || []).filter(Boolean).join(' · ');
   return `<div class="oc">
     <style>
-      .oc { font-family: Arial, Helvetica, sans-serif; color: #1b2430; font-size: 12px; line-height: 1.5; }
+      ${cssDoc('.oc')}
       ${CSS_CABECERA}
-      .oc .lf-cab { margin-bottom: 16px !important; }
+      .oc .lf-cab { margin-bottom: 14px !important; }
       .oc .cajas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-      .oc .caja { border: 1px solid #9aa5b1; padding: 8px 12px; }
-      .oc .caja .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #5b6572; margin-bottom: 2px; }
-      .oc table { width: 100%; border-collapse: collapse; margin: 0 0 10px; }
-      .oc th { background: #1b2430; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; font-size: 11px; }
-      .oc th.n, .oc td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-      .oc td { padding: 6px 8px; border-bottom: 1px solid #d5dbe1; vertical-align: top; }
-      .oc td .g { color: #5b6572; font-size: 10.5px; }
-      .oc tr.tot td { border-bottom: none; padding: 3px 8px; }
-      .oc tr.tot.gran td { font-weight: 700; font-size: 13px; border-top: 1px solid #1b2430; }
-      .oc .nota { font-size: 11.5px; margin: 10px 0; }
-      .oc .firmas { display: flex; gap: 40px; margin-top: 46px; font-size: 11.5px; text-align: center; }
-      .oc .firmas div { flex: 1; border-top: 1px solid #1b2430; padding-top: 4px; }
+      .oc .caja { border: 1px solid #dfe3e8; border-radius: 6px; padding: 8px 12px; }
+      .oc .caja .k { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; margin-bottom: 2px; }
+      .oc table { margin: 0 0 10px; }
+      .oc td .g { color: #5f6670; font-size: 9.5px; }
+      .oc tr.sub td { border-bottom: none; padding: 2px 6px; }
     </style>
     ${cabeceraExport('Orden de compra', [`Folio ${esc(o.folio)}`, `Guadalajara, Jalisco, a ${esc(fechaLarga(o.fecha))}`], LOGO_URL)}
     <div class="cajas">
-      <div class="caja"><div class="k">Proveedor</div><strong>${esc(prov.nombre)}</strong>${prov.rfc ? `<br><span style="color:#5b6572">RFC ${esc(prov.rfc)}</span>` : ''}${prov.contacto ? `<br>Atención: ${esc(prov.contacto)}` : ''}${correos ? `<br><span style="color:#5b6572">${esc(correos)}</span>` : ''}${prov.telefono ? `<br><span style="color:#5b6572">Tel. ${esc(prov.telefono)}</span>` : ''}${prov.numeroCliente ? `<br><span style="color:#5b6572">Cliente ${esc(prov.numeroCliente)}</span>` : ''}</div>
-      <div class="caja"><div class="k">Solicita</div><strong>LAFABDECHOC S DE RL DE CV</strong><br>La Fábrica de Chocolate${o.entrega ? `<br><span style="color:#5b6572">Entregar en: ${esc(o.entrega)}</span>` : ''}</div>
+      <div class="caja"><div class="k">Proveedor</div><strong>${esc(prov.nombre)}</strong>${prov.rfc ? `<br><span class="gris">RFC ${esc(prov.rfc)}</span>` : ''}${prov.contacto ? `<br>Atención: ${esc(prov.contacto)}` : ''}${correos ? `<br><span class="gris">${esc(correos)}</span>` : ''}${prov.telefono ? `<br><span class="gris">Tel. ${esc(prov.telefono)}</span>` : ''}${prov.numeroCliente ? `<br><span class="gris">Cliente ${esc(prov.numeroCliente)}</span>` : ''}</div>
+      <div class="caja"><div class="k">Solicita</div><strong>LAFABDECHOC S DE RL DE CV</strong><br>La Fábrica de Chocolate${o.entrega ? `<br><span class="gris">Entregar en: ${esc(o.entrega)}</span>` : ''}</div>
     </div>
     <table>
       <thead><tr><th>Producto</th><th>Clave</th><th>Unidad</th><th class="n">Cantidad</th><th class="n">Precio s/IVA</th><th class="n">Importe</th></tr></thead>
       <tbody>
         ${o.lineas.map(l => `<tr><td>${esc(l.nombre)}${l.marca ? `<div class="g">${esc(l.marca)}${l.contenido ? ' · ' + esc(l.contenido) : ''}</div>` : (l.contenido ? `<div class="g">${esc(l.contenido)}</div>` : '')}</td><td>${esc(l.clave || '')}</td><td>${esc(l.unidad || '')}</td><td class="n">${esc(String(l.cantidad))}</td><td class="n">${dinero(l.precioSinIva)}</td><td class="n">${dinero((Number(l.cantidad) || 0) * (Number(l.precioSinIva) || 0))}</td></tr>`).join('')}
-        <tr class="tot"><td colspan="5" class="n">Subtotal</td><td class="n">${dinero(t.subtotal)}</td></tr>
-        <tr class="tot"><td colspan="5" class="n">IVA 16%</td><td class="n">${dinero(t.iva)}</td></tr>
-        <tr class="tot gran"><td colspan="5" class="n">Total</td><td class="n">${dinero(t.total)}</td></tr>
+        <tr class="sub"><td colspan="5" class="n">Subtotal</td><td class="n">${dinero(t.subtotal)}</td></tr>
+        <tr class="sub"><td colspan="5" class="n">IVA 16%</td><td class="n">${dinero(t.iva)}</td></tr>
+        <tr class="tot"><td colspan="5" class="n">Total</td><td class="n">${dinero(t.total)}</td></tr>
       </tbody>
     </table>
-    ${o.notas ? `<div class="nota"><strong>Notas:</strong> ${esc(o.notas).replace(/\n/g, '<br>')}</div>` : ''}
-    <div class="nota" style="color:#5b6572">Favor de confirmar la recepción de esta orden y la fecha de entrega por correo.</div>
-    <div class="firmas"><div>Administración<br><span style="color:#5b6572">LAFABDECHOC S DE RL DE CV</span></div><div>Recibe el proveedor<br><span style="color:#5b6572">Nombre, firma y fecha</span></div></div>
+    ${o.notas ? `<div style="margin:10px 0"><strong>Notas:</strong> ${esc(o.notas).replace(/\n/g, '<br>')}</div>` : ''}
+    <div class="nota">Favor de confirmar la recepción de esta orden y la fecha de entrega por correo.</div>
+    <div class="firmas"><div>Administración<br><span class="gris">LAFABDECHOC S DE RL DE CV</span></div><div>Recibe el proveedor<br><span class="gris">Nombre, firma y fecha</span></div></div>
   </div>`;
 }
 

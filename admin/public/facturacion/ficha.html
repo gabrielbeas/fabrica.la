@@ -70,12 +70,12 @@
     </style>
 </head>
 <body>
-    <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
+    <div class="main" id="app"><p style="color:var(--tinta-tenue)">Cargando...</p></div>
 
     <script type="module">
         import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
         import { crearNavbar } from '../../../js/navbar.js?v=20261118-2';
-        import { nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        import { nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-4';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -83,7 +83,7 @@
             IVA, ESTADOS, mesTxt, mesActual, dinero, esc, r2, facturaId, generarFactura, totales,
             cargarConfigGeneral, cargarLecturas, cargarFacturasContrato, lecturasFacturadas,
             documentoContadores, imprimirHojas, normalizarConceptos, normalizarCorreos, correoValido, CORREO_COPIA
-        } from '../../../js/facturacion.js?v=20261118-2';
+        } from '../../../js/facturacion.js?v=20261118-4';
 
         const app = document.getElementById('app');
         const params = new URLSearchParams(location.search);
@@ -207,7 +207,7 @@
         // «Enviar a» con la etiqueta de dónde viene cada correo en el Directorio (Facturación, y Contrato si también es de notificación)
         function correosVista(cfg) {
             const lista = normalizarCorreos(cfg.correos || []);
-            if (!lista.length) return '<span style="color:#999">Sin correos. Usa Editar para agregarlos.</span>';
+            if (!lista.length) return '<span style="color:var(--tinta-tenue)">Sin correos. Usa Editar para agregarlos.</span>';
             const deContrato = new Set(normalizarCorreos(contrato.correosNotificacion || []).map(x => x.toLowerCase()));
             return lista.map(x => `<span class="cor-fila"><a href="mailto:${esc(x)}">${esc(x)}</a>${deContrato.has(x.toLowerCase()) ? '<span class="cor-tipo">Facturación · Contrato</span>' : '<span class="cor-tipo">Facturación</span>'}</span>`).join('')
                 + `<span class="cor-nota">En copia siempre: ${CORREO_COPIA} · <a href="../#directorio">Ver en Directorio</a></span>`;
@@ -255,7 +255,7 @@
             const el = document.getElementById('factura');
             if (!factura) {
                 el.innerHTML = `
-                    <p style="color:#777">No hay factura de <strong>${mesTxt(mes)}</strong> para este locatario.</p>
+                    <p style="color:var(--tinta-suave)">No hay factura de <strong>${mesTxt(mes)}</strong> para este locatario.</p>
                     <button class="btn" id="generar">Generar factura de ${mesTxt(mes)}</button>
                     <span id="msg">${msg}</span>`;
                 document.getElementById('generar').addEventListener('click', generarUna);

@@ -107,26 +107,42 @@
             nav, .navbar, .barra, #aviso, .alertas-caja, .no-print, .modal-fondo { display: none !important; }
             .main { max-width: none; padding: 0; }
             .hoja { border: none; padding: 0; }
-            body { font-size: 12px; }
+            /* Cuerpo igual al de los demás exports (cssDoc de js/export-cabecera.js) */
+            @page { size: letter portrait; margin: 14mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { font: 10.5px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
+            .secciones { gap: 4px; }
+            .seccion { break-inside: auto; }
+            .seccion h2 { font-size: 11px; font-weight: 700; color: #1b2430; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #dfe3e8; break-after: avoid; }
+            dl { font-size: 10.5px; grid-template-columns: 170px 1fr; gap: 3px 12px; }
+            dd { font-weight: 600; }
+            table { font-size: 10.5px; }
+            th { font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; border-bottom: 1px solid #1b2430; padding: 4px 6px; background: none !important; }
+            td { padding: 4px 6px; border-bottom: 1px solid #e6e9ee; }
+            tr { break-inside: avoid; }
+            .total td { background: #f2f4f7; border-top: 1px solid #1b2430; }
+            .notas, .nota-p, .nota-dep { font-size: 9.5px; }
+            .vig-alerta { padding: 8px 10px; } .vig-titulo { font-size: 11px; } .vig-det { font-size: 9.5px; }
+            .pie { font-size: 9px; color: #5f6670; }
         }
     </style>
 </head>
 <body>
-    <div class="main" id="app"><p style="color:#999">Cargando...</p></div>
+    <div class="main" id="app"><p style="color:var(--tinta-tenue)">Cargando...</p></div>
 
     <script type="module">
         import { crearNavbar } from '../../../js/navbar.js?v=20261118-2';
-        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-4';
         { const stCab = document.createElement('style'); stCab.textContent = CSS_CABECERA; document.head.appendChild(stCab); }   // encabezado único de los exports
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
         import { doc, getDoc, getDocs, updateDoc, addDoc, writeBatch, query, where, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261118-2';
+        import { actualizarRentaEnFactura, mesTxt, imprimirHojas, LOGO_URL } from '../../../js/facturacion.js?v=20261118-4';
         import { telefonoWhatsApp } from '../../../js/whatsapp.js?v=20261104-1';
         import { cuentaDeposito, BASES_DEPOSITO } from '../../../js/depositos.js?v=20261112-1';
-        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261118-2';
-        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261118-2';
-        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261118-2';
+        import { requerimientoDeposito } from '../../../js/requerimiento-deposito.js?v=20261118-4';
+        import { reciboDeposito } from '../../../js/recibo-deposito.js?v=20261118-4';
+        import { exportarReporteContrato } from '../../../js/reporte-contrato.js?v=20261118-4';
         import { alertasContrato, cuandoTxt, diasHasta, nivelDe, COLOR_NIVEL, COLOR_OTRA, TEXTO_NIVEL, VENTANA_DIAS, VENTANA_INCREMENTO_DIAS } from '../../../js/alertas-contrato.js?v=20261112-2';
 
         const app = document.getElementById('app');
@@ -387,7 +403,7 @@
                             <h2>Notas de la hoja original</h2>
                             <ul class="notas">
                                 ${c.totalNota ? `<li>Renta mensual ${esc(c.totalNota)}.</li>` : ''}
-                                ${(c.extras || []).map(x => `<li>${esc(x.valor)} <span style="color:#bbb">(fila ${x.fila}, col ${x.col})</span></li>`).join('')}
+                                ${(c.extras || []).map(x => `<li>${esc(x.valor)} <span style="color:var(--tinta-tenue)">(fila ${x.fila}, col ${x.col})</span></li>`).join('')}
                             </ul>
                         </div>` : ''}
                     </div>
@@ -700,7 +716,7 @@
                     <h4>Pagos que cuentan para este contrato</h4>
                     <table class="tabla-dep">
                         <thead><tr><th>Fecha</th><th>Concepto</th><th>Locales</th><th>Banco</th><th class="num">Monto</th></tr></thead>
-                        <tbody>${cuentan.length ? cuentan.map(filaPago).join('') : '<tr><td colspan="5" style="text-align:center;color:#999;padding:16px">Sin pagos de depósito registrados.</td></tr>'}</tbody>
+                        <tbody>${cuentan.length ? cuentan.map(filaPago).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--tinta-tenue);padding:16px">Sin pagos de depósito registrados.</td></tr>'}</tbody>
                     </table>
                     <div class="resumen-dep">
                         <div><span>Pagado</span><strong>${dinero(pagado)}</strong></div>
@@ -834,9 +850,9 @@
                     </div></div>`).join('')}
                 ${(c.extras || []).length ? `
                 <div class="form-sec"><h2>Notas de la hoja original</h2>
-                    <p style="font-size:13px;color:#888;margin:0 0 10px">Marca las que ya no necesitas; se quitan al guardar.</p>
+                    <p style="font-size:13px;color:var(--tinta-suave);margin:0 0 10px">Marca las que ya no necesitas; se quitan al guardar.</p>
                     ${(c.extras || []).map((x, i) => `
-                        <div class="extra" id="extra_${i}"><span>${esc(x.valor)} <span style="color:#bbb">(fila ${x.fila}, col ${x.col})</span></span>
+                        <div class="extra" id="extra_${i}"><span>${esc(x.valor)} <span style="color:var(--tinta-tenue)">(fila ${x.fila}, col ${x.col})</span></span>
                         <button class="btn-mini" data-extra="${i}">Quitar</button></div>`).join('')}
                     <button class="btn-mini" id="quitarTodas" style="margin-top:10px">Quitar todas</button>
                 </div>` : ''}

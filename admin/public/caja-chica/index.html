@@ -150,7 +150,7 @@
 
   <script type="module">
     import { selectorMes } from '../../../js/selector-mes.js?v=20261012-1';
-    import { CSS_CABECERA, cabeceraExport, nombreArchivo } from '../../../js/export-cabecera.js?v=20261118-2';
+    import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc, MARGEN_VERTICAL } from '../../../js/export-cabecera.js?v=20261118-4';
     import { crearNavbar } from '../../../js/navbar.js?v=20261118-2';
     import '../../../js/dinero-input.js?v=20261028-1';
     import { auth, db, isAuthenticated, esAdmin, esOperario, getCurrentUser } from '../../../js/auth.js?v=20261117-1';
@@ -347,26 +347,18 @@
       let st = document.getElementById('estilo-hoja-caja');
       if (!st) { st = document.createElement('style'); st.id = 'estilo-hoja-caja'; document.head.appendChild(st); }
       st.textContent = `#hoja-caja { display: none; }
-        @page { size: letter portrait; margin: 14mm 14mm; }
+        @page { size: letter portrait; margin: ${MARGEN_VERTICAL}; }
         @media print {
           body > *:not(#hoja-caja) { display: none !important; }
-          #hoja-caja { display: block !important; font: 11px/1.4 Roboto, Arial, sans-serif; color: #1b2430; }
-          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          #hoja-caja { display: block !important; }
         }
+        ${cssDoc('#hoja-caja')}
         ${CSS_CABECERA}
-        #hoja-caja .sub { color: #5f6670; font-size: 11px; margin-top: 2px; }
-        #hoja-caja .res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
-        #hoja-caja .res div { border: 1px solid #dfe3e8; border-radius: 6px; padding: 6px 8px; }
-        #hoja-caja .res span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; }
-        #hoja-caja .res b { font-size: 14px; font-variant-numeric: tabular-nums; }
-        #hoja-caja table { width: 100%; border-collapse: collapse; }
-        #hoja-caja th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5f6670; border-bottom: 1px solid #1b2430; padding: 5px 6px; }
-        #hoja-caja td { padding: 5px 6px; border-bottom: 1px solid #e6e9ee; vertical-align: top; }
-        #hoja-caja tr { break-inside: avoid; }
+        #hoja-caja .sub { color: #5f6670; font-size: 10.5px; margin-top: 2px; }
         #hoja-caja .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
         #hoja-caja .det { color: #5f6670; font-size: 9.5px; }
         #hoja-caja tr.rech td { color: #9aa1aa; text-decoration: line-through; }
-        #hoja-caja .pie { margin-top: 10px; font-size: 9.5px; color: #5f6670; }`;
+`;
       cont.innerHTML = cabeceraExport(`Caja Chica · ${escapeHtml(periodoTxt)}`, [escapeHtml(['La Fábrica de Chocolate', ...filtros].join(' · '))], '../css/logo-export.png') + `
         <div class="res"><div><span>Gastos en efectivo</span><b>${money(gE)}</b></div><div><span>Gastos con tarjeta</span><b>${money(gT)}</b></div><div><span>Total gastado</span><b>${money(gE + gT)}</b></div><div><span>Reposiciones</span><b>${money(rE + rT)}</b></div></div>
         ${saldos ? `<div class="sub" style="margin-bottom:8px">${escapeHtml(saldos)}</div>` : ''}

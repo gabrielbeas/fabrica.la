@@ -1,6 +1,6 @@
 // Facturación mensual a locatarios: cálculo y utilidades compartidas
 import { db } from './auth.js?v=20261117-1';
-import { CSS_CABECERA, cabeceraExport } from './export-cabecera.js?v=20261118-2';
+import { CSS_CABECERA, cabeceraExport, cssDoc, MARGEN_VERTICAL, MARGEN_HORIZONTAL } from './export-cabecera.js?v=20261118-4';
 import {
   collection, getDocs, getDoc, doc, query, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -328,43 +328,36 @@ const correosDe = (f, c = {}) => {
 const localesDe = (f, c = {}) => (f.locales && f.locales.length ? f.locales : c.locales || []).join(', ');
 
 export const ESTILO_HOJA = `
-  .hc { font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 10.5px; line-height: 1.4; }
+  ${cssDoc('.hc')}
   ${CSS_CABECERA}
-  .hc h2 { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; color: #555; }
-  .hc table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-  .hc th, .hc td { font-size: 10.5px; line-height: 1.4; }
-  .hc th { background: #111; color: #fff; font-weight: 600; text-align: left; padding: 5px 7px; font-size: 8px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
-  .hc td { padding: 5px 7px; border-bottom: 1px solid #e2e2e2; vertical-align: top; }
-  .hc tr:nth-child(even) td { background: #f7f7f7; }
+  .hc table { font-size: 10.5px; }
+  .hc th { white-space: nowrap; }
   .hc table.fija { table-layout: fixed; }
-  .hc .n, .hc th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .hc .mon { display: flex; justify-content: space-between; gap: 4px; font-variant-numeric: tabular-nums; }
   .hc .mon strong { display: contents; }
-  .hc .guion { color: #999; }
+  .hc .guion { color: #9aa1aa; }
   .hc td { overflow: hidden; text-overflow: ellipsis; }
-  .hc td.loc { white-space: nowrap; color: #333; }
-  .hc .tot td { background: #ececec !important; font-weight: 700; border-top: 2px solid #111; border-bottom: 2px solid #111; font-size: 11px; }
-  .hc .falta { color: #c00; font-weight: 700; }
-  .hc .peq, .hc td.peq { color: #666; font-size: 9.5px; }
-  .hc .ficha { page-break-inside: avoid; break-inside: avoid; border: 2px solid #333; border-radius: 5px; margin: 0 0 14px; overflow: hidden; }
-  .hc .ficha-cab { display: grid; grid-template-columns: 2.4fr 1.1fr 1.1fr 0.8fr; border-bottom: 1px solid #bbb; }
+  .hc td.loc { white-space: nowrap; }
+  .hc .tot td { font-size: 11px; }
+  .hc .falta { color: #b3261e; font-weight: 700; }
+  .hc .peq, .hc td.peq { color: #5f6670; font-size: 9.5px; }
+  .hc .ficha { page-break-inside: avoid; break-inside: avoid; border: 1px solid #8a929c; border-radius: 6px; margin: 0 0 14px; overflow: hidden; }
+  .hc .ficha-cab { display: grid; grid-template-columns: 2.4fr 1.1fr 1.1fr 0.8fr; border-bottom: 1px solid #dfe3e8; }
   /* En las fichas, las líneas de TOTAL A FACTURAR son más ligeras que en el resumen */
-  .hc .ficha .tot td { border-top: 1px solid #888; border-bottom: 1px solid #888; background: #f4f4f4 !important; }
+  .hc .ficha .tot td { border-top: 1px solid #8a929c; border-bottom: 0; }
   /* Páginas de fichas: se reparten a lo alto de la hoja carta horizontal */
   .hc .pag-fichas { display: flex; flex-direction: column; justify-content: space-between; }
   .hc .pag-fichas.ultima { justify-content: flex-start; gap: 9mm; }
   .hc .pag-fichas .ficha { margin: 0; }
   .hc .pag-fichas:not(.fin) { break-after: page; page-break-after: always; }
-  .hc .ficha-cab div { padding: 6px 9px; border-right: 1px solid #e2e2e2; }
+  .hc .ficha-cab div { padding: 6px 9px; border-right: 1px solid #e6e9ee; }
   .hc .ficha-cab div:last-child { border-right: none; }
-  .hc .k { display: block; font-size: 7.5px; color: #777; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  .hc .k { display: block; font-size: 8px; color: #5f6670; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
   .hc .v { font-size: 12px; font-weight: 700; }
-  .hc .ficha table th { background: #f0f0f0; color: #333; }
-  .hc .ficha table td { background: #fff !important; }
-  .hc .ficha-pie { display: grid; grid-template-columns: 1.4fr 1fr; border-top: 1px solid #bbb; font-size: 10px; }
+  .hc .ficha-pie { display: grid; grid-template-columns: 1.4fr 1fr; border-top: 1px solid #dfe3e8; font-size: 10px; }
   .hc .ficha-pie div { padding: 6px 9px; }
   .hc .salto { page-break-before: always; break-before: page; }
-  .hc .redact { color: #111 !important; letter-spacing: -1px; white-space: nowrap; overflow: hidden; display: inline-block; max-width: 100%; vertical-align: bottom; }
+  .hc .redact { color: #1b2430 !important; letter-spacing: -1px; white-space: nowrap; overflow: hidden; display: inline-block; max-width: 100%; vertical-align: bottom; }
 `;
 
 // Logo del encabezado: se precarga al cargar el módulo para que ya esté listo al imprimir
@@ -631,7 +624,7 @@ export function imprimirHojas(html, titulo, { vertical = false } = {}) {
   if (!st) { st = document.createElement('style'); st.id = 'estilo-hojas-impresion'; document.head.appendChild(st); }
   st.textContent = ESTILO_HOJA + `
       #hojas-impresion { display: none; }
-      @page { size: letter ${vertical ? 'portrait' : 'landscape'}; margin: ${vertical ? '16mm 18mm' : '10mm 12mm'}; }
+      @page { size: letter ${vertical ? 'portrait' : 'landscape'}; margin: ${vertical ? MARGEN_VERTICAL : MARGEN_HORIZONTAL}; }
       @media print {
         body > *:not(#hojas-impresion) { display: none !important; }
         #hojas-impresion { display: block !important; }
