@@ -146,7 +146,7 @@
         }
 
         async function modalNuevo(localId) {
-            const locales = contratos.filter(c => !c.propio && c.estado !== 'terminado').sort(ordenLocal);
+            const locales = contratos.filter(c => (!c.propio || c.id === 'contrato_14') && c.estado !== 'terminado').sort(ordenLocal);   // el local 14 es de Gabriel (propio) pero también entra a Nuevos contratos
             const fondo = document.createElement('div');
             fondo.className = 'modal-fondo';
             fondo.innerHTML = `<div class="modal" role="dialog" aria-label="Nuevo proceso">

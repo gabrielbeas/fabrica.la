@@ -361,30 +361,42 @@
                 #hoja.caratula table.tsocios .dom { color: #5f6670; font-weight: 400; font-size: 9px; margin-top: 1px; }
                 #hoja.caratula table.tsocios .ph { color: #b4bac3; font-weight: 400; font-size: 9.5px; }
                 #hoja.caratula table.tsocios td { width: auto; color: #1b2430; font-weight: 600; white-space: normal; }
+                #hoja.caratula td.falta { background: #fff7c2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                /* El encabezado con logo se repite en cada hoja (como en la propuesta): va como thead de una tabla que envuelve la hoja */
+                #hoja.caratula table.hoja-tabla { width: 100%; border-collapse: collapse; }
+                #hoja.caratula table.hoja-tabla > thead { display: table-header-group; }
+                #hoja.caratula table.hoja-tabla > tbody > tr > td, #hoja.caratula table.hoja-tabla > thead > tr > td { width: auto; padding: 0; border: 0; background: none; font: inherit; color: inherit; font-weight: inherit; white-space: normal; }
+                #hoja.caratula table.hoja-tabla > thead .lf-cab { margin-bottom: 14px !important; }
+                /* En la 1.ª hoja el título va a la izquierda, en el renglón del logo; las siguientes hojas solo repiten el logo con su línea */
+                #hoja.caratula .cab-titulo { margin: -68px 0 26px !important; height: 42px; display: flex; flex-direction: column; justify-content: center; font-family: Roboto, Arial, sans-serif; }
+                #hoja.caratula .cab-titulo h1 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; font-weight: 900; color: #1b2430; }
+                #hoja.caratula .cab-titulo p { margin: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
             }`;
             function htmlCaratula() {
                 const g = datos(), d = calcular(), moral = g.tipoPersona === 'moral', renov = g.tipoContrato === 'renovacion';
                 const f = x => /^\d{4}-\d{2}-\d{2}$/.test(x || '') ? fechaTxt(x) : (x || '');
-                const filas = rows => rows.filter(r => String(r[1] ?? '').trim()).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
+                // Tercer elemento de un renglón = dato obligatorio: si falta, el renglón sale con la celda en amarillo
+                const filas = rows => rows.filter(r => r[2] || String(r[1] ?? '').trim()).map(r => `<tr><td>${esc(r[0])}</td><td${String(r[1] ?? '').trim() ? '' : ' class="falta"'}>${esc(r[1])}</td></tr>`).join('');
+                const vacio = x => String(x ?? '').trim() ? '' : ' class="falta"';
                 const sec = (t, rows) => { const h = filas(rows); return h ? `<h2>${t}</h2><table>${h}</table>` : ''; };
                 const hoy = fechaTxt(hoyISO());
                 return cabeceraExport('Hoja de datos', [`Local ${esc(locales)} · ${esc(g.razonSocial || '')}`, `Contrato de arrendamiento · ${renov ? 'Renovación' : 'Contrato nuevo'} · elaborada el ${esc(hoy)}`], '../css/logo-export.png')
                 + sec('Arrendatario', [
-                    ['Razón social o nombre', g.razonSocial], ['RFC', g.rfc], ['Tipo de persona', moral ? 'Persona moral' : g.tipoPersona === 'fisica' ? 'Persona física' : ''],
-                    ['Constitución', moral ? g.constitucion : ''], ['Representante legal', moral ? g.representante : ''], ['Poder del representante', moral ? g.poderRepresentante : ''],
-                    ['Local', `${locales}${c.m2 ? ' · ' + Number(c.m2).toLocaleString('es-MX') + ' m²' : ''}`], ['Entrada del local', g.entradaLocal || c.acceso],
-                    ['Nombre comercial', g.nombreComercial], ['Giro', g.giro], ['Teléfono de contacto', g.telefono],
-                    ['Correos de notificación', lineas(g.correosNotificacion).join('\n')], ['Correos de facturación', lineas(g.correosFacturacion).join('\n')],
-                    ['Dirección fiscal', lineas(g.direccion).join('\n')]
+                    ['Razón social o nombre', g.razonSocial, true], ['RFC', g.rfc, true], ['Tipo de persona', moral ? 'Persona moral' : g.tipoPersona === 'fisica' ? 'Persona física' : '', true],
+                    ['Constitución', moral ? g.constitucion : '', moral], ['Representante legal', moral ? g.representante : '', moral], ['Poder del representante', moral ? g.poderRepresentante : '', moral],
+                    ['Local', `${locales}${c.m2 ? ' · ' + Number(c.m2).toLocaleString('es-MX') + ' m²' : ''}`], ['Entrada del local', g.entradaLocal || c.acceso, true],
+                    ['Nombre comercial', g.nombreComercial], ['Giro', g.giro, true], ['Teléfono de contacto', g.telefono],
+                    ['Correos de notificación', lineas(g.correosNotificacion).join('\n'), true], ['Correos de facturación', lineas(g.correosFacturacion).join('\n'), true],
+                    ['Dirección fiscal', lineas(g.direccion).join('\n'), true]
                 ])
                 + (() => {
                     const mostrar = n => g[`socio${n}Mostrar`] === undefined ? !!(g[`socio${n}`] || '').trim() : (g[`socio${n}Mostrar`] === true || g[`socio${n}Mostrar`] === 'true');
                     const so = NS.filter(n => moral && mostrar(n));
-                    return so.length ? `<table class="tsocios"><thead><tr><th class="ts">Socios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${so.map(n => `<tr><td>${esc(g[`socio${n}`] || '') || `<span class="ph">Socio ${n}</span>`}</td><td>${esc(g[`socio${n}Rfc`] || '') || '&nbsp;'}</td><td>${esc(g[`socio${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
+                    return so.length ? `<table class="tsocios"><thead><tr><th class="ts">Socios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${so.map(n => `<tr><td${vacio(g[`socio${n}`])}>${esc(g[`socio${n}`] || '') || `<span class="ph">Socio ${n}</span>`}</td><td${vacio(g[`socio${n}Rfc`])}>${esc(g[`socio${n}Rfc`] || '') || '&nbsp;'}</td><td${vacio(g[`socio${n}Curp`])}>${esc(g[`socio${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
                 })()
                 + sec('Vigencia', [
                     ['Tipo de contrato', renov ? 'Renovación' : 'Contrato nuevo (cambio de inquilino)'], ['En posesión del local desde', renov ? f(g.posesionDesde) : ''],
-                    ['Fecha de firma', f(g.firma)], ['Plazo', `${d.anios} año${d.anios > 1 ? 's' : ''} forzosos`], ['Inicio', f(d.inicio)], ['Fin', f(d.fin)],
+                    ['Fecha de firma', f(g.firma), true], ['Plazo', `${d.anios} año${d.anios > 1 ? 's' : ''} forzosos`], ['Inicio', f(d.inicio)], ['Fin', f(d.fin)],
                     ['Incremento de renta', `Cada año de vigencia; primer incremento: ${f(d.incr)}`], ['Tipo de incremento', g.incrementoTipo], ['Fecha límite de pago', g.fechaLimite]
                 ])
                 + sec('Renta y depósito', [
@@ -394,12 +406,12 @@
                     ['Meses de depósito', d.meses ? String(d.meses) : ''], ['Depósito requerido', d.meses ? dinero(d.deposito) : ''], ['Depósito entregado en el contrato anterior', renov && +g.depositoAnterior > 0 ? dinero(g.depositoAnterior) : '']
                 ])
                 + sec('Garantía y obligados solidarios', [
-                    ['Garantía', g.garantia], ['Inmueble en garantía', g.osInmueble], ['Escritura del inmueble', g.osEscritura]
+                    ['Garantía', g.garantia, true], ['Inmueble en garantía', g.osInmueble, !g.garantia || /propiedad/i.test(g.garantia)], ['Escritura del inmueble', g.osEscritura, !g.garantia || /propiedad/i.test(g.garantia)]
                 ])
                 + (() => {
                     const mostrarO = n => g[`obligado${n}Mostrar`] === undefined ? !!(g[`obligado${n}`] || '').trim() : (g[`obligado${n}Mostrar`] === true || g[`obligado${n}Mostrar`] === 'true');
                     const oo = NO.filter(mostrarO);
-                    return oo.length ? `<table class="tsocios"><thead><tr><th class="ts">Obligados solidarios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${oo.map(n => `<tr><td>${esc(g[`obligado${n}`] || '') || `<span class="ph">Obligado solidario ${n}</span>`}${g[`obligado${n}Domicilio`] ? `<div class="dom">${esc(g[`obligado${n}Domicilio`])}</div>` : ''}</td><td>${esc(g[`obligado${n}Rfc`] || '') || '&nbsp;'}</td><td>${esc(g[`obligado${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
+                    return oo.length ? `<table class="tsocios"><thead><tr><th class="ts">Obligados solidarios</th><th>RFC</th><th>CURP</th></tr></thead><tbody>${oo.map(n => `<tr><td${vacio(g[`obligado${n}`])}>${esc(g[`obligado${n}`] || '') || `<span class="ph">Obligado solidario ${n}</span>`}${g[`obligado${n}Domicilio`] ? `<div class="dom">${esc(g[`obligado${n}Domicilio`])}</div>` : ''}</td><td${vacio(g[`obligado${n}Rfc`])}>${esc(g[`obligado${n}Rfc`] || '') || '&nbsp;'}</td><td${vacio(g[`obligado${n}Curp`])}>${esc(g[`obligado${n}Curp`] || '') || '&nbsp;'}</td></tr>`).join('')}</tbody></table>` : '';
                 })();
             }
             $('btnCaratula').addEventListener('click', async () => {
@@ -407,6 +419,16 @@
                 if (!document.getElementById('estilosCaratula')) { const st = document.createElement('style'); st.id = 'estilosCaratula'; st.textContent = CSS_CARATULA; document.head.appendChild(st); }
                 hoja.className = 'caratula';
                 hoja.innerHTML = htmlCaratula();
+                const cab = hoja.querySelector(':scope > .lf-cab');
+                if (cab) {   // encabezado con logo repetido en cada hoja; el título se queda solo en la 1.ª
+                    const tabla = document.createElement('table'); tabla.className = 'hoja-tabla';
+                    const titulo = cab.querySelector(':scope > div'); titulo.className = 'cab-titulo';
+                    tabla.createTHead().insertRow().insertCell().append(cab);
+                    const td = tabla.appendChild(document.createElement('tbody')).insertRow().insertCell();
+                    td.append(titulo);
+                    while (hoja.firstChild) td.append(hoja.firstChild);
+                    hoja.append(tabla);
+                }
                 const img = hoja.querySelector('img');
                 if (img && !img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 1500); });
                 const previo = document.title; document.title = nombreArchivo(['Hoja de datos', `Local ${locales}`, val('nombreComercial') || val('razonSocial')]);
