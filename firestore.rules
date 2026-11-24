@@ -140,11 +140,12 @@ service cloud.firestore {
           && request.resource.data.responsable in ['Claudio Del Angel', 'Victor Navarro', 'Victor Navaro', 'Admin LAFABDECHOC']
           && request.resource.data.proveedor is string
           && request.resource.data.descripcion is string
+          && (!('plaza' in request.resource.data) || request.resource.data.plaza in ['La Fábrica', 'Roca 1909'])
           && request.resource.data.importe is number
           && request.resource.data.importe > 0
           && request.resource.data.comprobantePath is string
           && (request.resource.data.comprobantePath == resource.data.comprobantePath || request.resource.data.comprobantePath.matches('caja-chica/' + request.auth.uid + '/.*'))
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipo', 'fecha', 'importe', 'descripcion', 'categoria', 'responsable', 'proveedor', 'metodoPago', 'comprobantePath', 'comprobanteNombre', 'comprobanteTipo', 'comprobanteBytes', 'editadoPor', 'editadoEn', 'ultimaEdicionHistorialId'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipo', 'fecha', 'importe', 'descripcion', 'categoria', 'responsable', 'proveedor', 'plaza', 'metodoPago', 'comprobantePath', 'comprobanteNombre', 'comprobanteTipo', 'comprobanteBytes', 'editadoPor', 'editadoEn', 'ultimaEdicionHistorialId'])
           && !exists(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId))
           && existsAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId))
           && getAfter(/databases/$(database)/documents/caja_chica_movimientos/$(id)/historial/$(request.resource.data.ultimaEdicionHistorialId)).data.accion == 'editado'
@@ -159,6 +160,7 @@ service cloud.firestore {
         && request.resource.data.responsable in ['Claudio Del Angel', 'Victor Navarro', 'Victor Navaro', 'Admin LAFABDECHOC']
         && request.resource.data.proveedor is string
         && request.resource.data.descripcion is string
+        && (!('plaza' in request.resource.data) || request.resource.data.plaza in ['La Fábrica', 'Roca 1909'])
         && request.resource.data.importe is number
         && request.resource.data.importe > 0
         && request.resource.data.estado == (isAdmin() ? 'aprobado' : 'pendiente')

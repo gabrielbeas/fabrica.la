@@ -97,6 +97,7 @@
       <div class="field"><label for="fecha">Fecha</label><input class="input" id="fecha" type="date"></div>
       <div class="field"><label for="importe">Importe (MXN)</label><input class="input" id="importe" data-dinero type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="$0.00"></div>
       <div class="field"><label for="categoria">Categoría</label><select class="select" id="categoria"></select></div>
+      <div class="field full"><label for="plaza">Plaza</label><select class="select" id="plaza"><option value="">Selecciona plaza</option><option>La Fábrica</option><option>Roca 1909</option></select></div>
       <div class="field full"><label for="proveedor">Proveedor (nombre del establecimiento)</label><input class="input" id="proveedor" maxlength="120" placeholder="Nombre del establecimiento"></div>
       <div class="field full"><label for="descripcion">Descripción</label><input class="input" id="descripcion" maxlength="180" placeholder="¿Qué se pagó o recibió?"></div>
       <div class="field"><label for="responsable">Responsable</label><select class="select" id="responsable" required><option value="">Selecciona responsable</option><option>Claudio Del Angel</option><option>Victor Navarro</option><option>Admin LAFABDECHOC</option></select></div>
@@ -167,6 +168,8 @@
     const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
     const CATEGORIAS_GASTO = ['Mantenimiento', 'Insumos', 'Traslados', 'Limpieza', 'Servicios', 'Otro'];
     const RESPONSABLES = ['Claudio Del Angel', 'Victor Navarro', 'Admin LAFABDECHOC'];
+    // Plaza a la que corresponde cada gasto (24/11/2026); los movimientos anteriores no la tienen
+    const PLAZAS = ['La Fábrica', 'Roca 1909'];
     // Movimientos guardados antes del 04/10/2026 traen la grafía anterior «Victor Navaro»
     const normResp = r => r === 'Victor Navaro' ? 'Victor Navarro' : r;
     let movimientos = [], config = null, ultimoCorte = null, archivo = null, urlPreview = '', editingMovementId = null;
@@ -305,13 +308,13 @@
         </section>
         <div class="layout"><section class="panel">
           <div class="panel-head"><div><h2>Movimientos</h2><p class="hint">Todos los cambios quedan registrados en el historial.</p></div><div class="head-acciones"><button class="btn" id="exportarPdf" type="button">Exportar PDF</button><input class="select" type="month" id="filtroMes" value="${mesActual}" aria-label="Filtrar por mes"></div></div>
-          <div class="toolbar"><input class="search" id="buscar" type="search" placeholder="Buscar descripción o responsable"><select class="select" id="filtroTipo"><option value="todos">Todos los tipos</option><option value="gasto">Gastos</option><option value="entrada">Entradas</option></select><select class="select" id="filtroEstado"><option value="todos">Todos los estados</option><option value="pendiente">Pendiente</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option></select></div>
+          <div class="toolbar"><input class="search" id="buscar" type="search" placeholder="Buscar descripción o responsable"><select class="select" id="filtroTipo"><option value="todos">Todos los tipos</option><option value="gasto">Gastos</option><option value="entrada">Entradas</option></select><select class="select" id="filtroEstado"><option value="todos">Todos los estados</option><option value="pendiente">Pendiente</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option></select><select class="select" id="filtroPlaza"><option value="todas">Todas las plazas</option><option value="La Fábrica">La Fábrica</option><option value="Roca 1909">Roca 1909</option><option value="sin">Sin plaza</option></select></div>
           <div class="table-wrap"><table class="tabla-movil"><thead><tr><th>Movimiento</th><th>Fecha</th><th>Categoría</th><th>Pago</th><th>Estado</th><th>Comprobante</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody id="filas"></tbody></table><div class="empty" id="sinFilas">No hay movimientos para esos filtros.</div></div>
         </section></div>`;
       document.getElementById('buscar').addEventListener('input', renderFilas);
       document.getElementById('exportarPdf').addEventListener('click', exportarPdf);
       selectorMes(document.getElementById('filtroMes'));
-      ['filtroTipo', 'filtroEstado', 'filtroMes'].forEach(id => document.getElementById(id).addEventListener('change', renderFilas));
+      ['filtroTipo', 'filtroEstado', 'filtroPlaza', 'filtroMes'].forEach(id => document.getElementById(id).addEventListener('change', renderFilas));
       document.querySelectorAll('[data-reposicion]').forEach(b => b.addEventListener('click', () => abrirMovimiento('entrada', b.dataset.reposicion)));
       document.querySelectorAll('[data-editar-saldo]').forEach(b => b.addEventListener('click', () => abrirSaldos(b.dataset.editarSaldo)));
       renderFilas();
@@ -320,18 +323,18 @@
     // Movimientos que se ven en la lista según el mes, el tipo, el estado y la búsqueda
     function filtrarMovimientos() {
       const q = document.getElementById('buscar').value.trim().toLocaleLowerCase('es-MX');
-      const tipo = document.getElementById('filtroTipo').value, estado = document.getElementById('filtroEstado').value, mes = document.getElementById('filtroMes').value;
-      return movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.proveedor || ''} ${m.categoria || ''}`.toLocaleLowerCase('es-MX').includes(q)));
+      const tipo = document.getElementById('filtroTipo').value, estado = document.getElementById('filtroEstado').value, mes = document.getElementById('filtroMes').value, plaza = document.getElementById('filtroPlaza').value;
+      return movimientos.filter(m => (!mes || String(m.fecha || '').startsWith(mes)) && (tipo === 'todos' || m.tipo === tipo) && (estado === 'todos' || m.estado === estado) && (plaza === 'todas' || (plaza === 'sin' ? !m.plaza : m.plaza === plaza)) && (`${m.descripcion || ''} ${m.responsable || ''} ${m.proveedor || ''} ${m.categoria || ''} ${m.plaza || ''}`.toLocaleLowerCase('es-MX').includes(q)));
     }
 
     // ---- Exportar a PDF lo que se ve en la lista (impresión del navegador, hoja carta) ----
     async function exportarPdf() {
       const lista = filtrarMovimientos();
       const mes = document.getElementById('filtroMes').value;
-      const tipoSel = document.getElementById('filtroTipo'), estSel = document.getElementById('filtroEstado'), q = document.getElementById('buscar').value.trim();
+      const tipoSel = document.getElementById('filtroTipo'), estSel = document.getElementById('filtroEstado'), plazaSel = document.getElementById('filtroPlaza'), q = document.getElementById('buscar').value.trim();
       const periodo = mes ? new Date(`${mes}-15T12:00:00`).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }) : 'Todos los meses';
       const periodoTxt = periodo.charAt(0).toUpperCase() + periodo.slice(1);
-      const filtros = [tipoSel.value !== 'todos' ? `Tipo: ${tipoSel.selectedOptions[0].textContent}` : '', estSel.value !== 'todos' ? `Estado: ${estSel.selectedOptions[0].textContent}` : '', q ? `Búsqueda: «${q}»` : ''].filter(Boolean);
+      const filtros = [tipoSel.value !== 'todos' ? `Tipo: ${tipoSel.selectedOptions[0].textContent}` : '', estSel.value !== 'todos' ? `Estado: ${estSel.selectedOptions[0].textContent}` : '', plazaSel.value !== 'todas' ? `Plaza: ${plazaSel.selectedOptions[0].textContent}` : '', q ? `Búsqueda: «${q}»` : ''].filter(Boolean);
       const cuenta = m => cuentaDe(m.metodoPago);
       const cuentan = lista.filter(m => m.estado !== 'rechazado');
       const suma = f => cuentan.filter(f).reduce((t, m) => t + Number(m.importe || 0), 0);
@@ -339,7 +342,7 @@
       const rE = suma(m => m.tipo === 'entrada' && cuenta(m) === 'efectivo'), rT = suma(m => m.tipo === 'entrada' && cuenta(m) === 'tarjeta');
       const pago = m => ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }[m.metodoPago || 'efectivo'] || m.metodoPago);
       const estadoTxt = m => ({ pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado');
-      const filas = lista.map(m => `<tr class="${m.estado === 'rechazado' ? 'rech' : ''}"><td>${escapeHtml(parseDate(m.fecha || ''))}</td><td><b>${escapeHtml(m.descripcion || '')}</b><div class="det">${escapeHtml([m.responsable || m.registradoPorNombre || '', m.proveedor && m.proveedor !== m.descripcion ? m.proveedor : ''].filter(Boolean).join(' · '))}</div></td><td>${escapeHtml(m.categoria || '')}</td><td>${escapeHtml(pago(m))}</td><td>${estadoTxt(m)}</td><td class="num">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td></tr>`).join('');
+      const filas = lista.map(m => `<tr class="${m.estado === 'rechazado' ? 'rech' : ''}"><td>${escapeHtml(parseDate(m.fecha || ''))}</td><td><b>${escapeHtml(m.descripcion || '')}</b><div class="det">${escapeHtml([m.plaza || '', m.responsable || m.registradoPorNombre || '', m.proveedor && m.proveedor !== m.descripcion ? m.proveedor : ''].filter(Boolean).join(' · '))}</div></td><td>${escapeHtml(m.categoria || '')}</td><td>${escapeHtml(pago(m))}</td><td>${estadoTxt(m)}</td><td class="num">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td></tr>`).join('');
       const saldos = config ? `Saldo actual: tarjeta ${money(saldoDe('tarjeta'))} · efectivo ${money(saldoDe('efectivo'))} · total ${money(saldoActual())}` : '';
       const hoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
       let cont = document.getElementById('hoja-caja');
@@ -382,7 +385,7 @@
           ? `<select class="pill pendiente estado-sel" data-estado-sel="${escapeHtml(m.id)}" aria-label="Cambiar estado"><option value="pendiente" selected>Pendiente</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option></select>`
           : `<span class="pill ${escapeHtml(m.estado || 'aprobado')}">${estadoLabel}</span>`;
         const edit = admin || (operador && m.estado === 'pendiente' && m.creadoPor === auth.currentUser?.uid) ? `<button class="link-btn" data-editar="${escapeHtml(m.id)}">Editar</button>` : '';
-        const details = [m.responsable || m.registradoPorNombre || '', (m.proveedor && m.proveedor !== m.descripcion ? m.proveedor : ''), m.previo ? 'Historial previo, no afecta el saldo' : ''].filter(Boolean).join(' · ');
+        const details = [m.plaza || '', m.responsable || m.registradoPorNombre || '', (m.proveedor && m.proveedor !== m.descripcion ? m.proveedor : ''), m.previo ? 'Historial previo, no afecta el saldo' : ''].filter(Boolean).join(' · ');
         const metodo = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }[m.metodoPago || 'efectivo'] || m.metodoPago;
         const pagoEstilo = cuentaDe(m.metodoPago) === 'tarjeta' ? ' style="background:var(--accion-suave);color:var(--accion)"' : '';
         const borrar = admin ? `<button class="btn-basura" data-eliminar="${escapeHtml(m.id)}" aria-label="Eliminar movimiento" title="Eliminar movimiento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>` : '';
@@ -499,6 +502,7 @@
       const rep = document.getElementById('tipo').value === 'entrada';
       document.getElementById('proveedor').closest('.field').hidden = rep;
       document.getElementById('descripcion').closest('.field').hidden = rep;
+      document.getElementById('plaza').closest('.field').hidden = rep;
     }
     function actualizarCategorias() { opcionesCategoria(document.getElementById('tipo').value); ajustarCamposTipo(); }
     function abrirMovimiento(tipo = 'gasto', metodo = 'efectivo') {
@@ -512,6 +516,7 @@
       document.getElementById('descripcion').value = '';
       document.getElementById('responsable').value = tipo === 'entrada' && admin ? 'Admin LAFABDECHOC' : '';
       document.getElementById('proveedor').value = '';
+      document.getElementById('plaza').value = '';
       document.getElementById('metodo').value = metodo === 'tarjeta' ? 'tarjeta' : 'efectivo';
       document.getElementById('movimientoError').textContent = '';
       document.getElementById('notaRevision').style.display = admin ? 'none' : '';
@@ -533,6 +538,7 @@
       document.getElementById('descripcion').value = m.descripcion || '';
       document.getElementById('responsable').value = RESPONSABLES.includes(m.responsable) ? m.responsable : '';
       document.getElementById('proveedor').value = m.proveedor || (m.responsable && !RESPONSABLES.includes(m.responsable) ? m.responsable : '');
+      document.getElementById('plaza').value = PLAZAS.includes(m.plaza) ? m.plaza : '';
       ajustarCamposTipo();
       document.getElementById('metodo').value = m.metodoPago || 'efectivo';
       document.getElementById('movimientoError').textContent = '';
@@ -589,6 +595,9 @@
       if (tipo === 'entrada' && !descripcion) descripcion = `Reposición de saldo de ${cuentaDe(document.getElementById('metodo').value) === 'tarjeta' ? 'tarjeta' : 'efectivo'}`;
       const responsable = document.getElementById('responsable').value, proveedor = document.getElementById('proveedor').value.trim();
       if (!fecha || !descripcion || !RESPONSABLES.includes(responsable) || !Number.isFinite(importe) || importe <= 0) { error.textContent = 'Completa fecha, responsable, descripción e importe válido.'; return; }
+      // La plaza se pide en los gastos; una reposición no la lleva
+      const plaza = tipo === 'gasto' ? document.getElementById('plaza').value : '';
+      if (tipo === 'gasto' && !PLAZAS.includes(plaza)) { error.textContent = 'Elige la plaza: La Fábrica o Roca 1909.'; return; }
       if (archivo && (!TIPOS.includes(archivo.type) || archivo.size > MAX_BYTES)) { error.textContent = 'Revisa el tipo de archivo y el límite de 10 MB.'; return; }
       const editing = editingMovementId ? movimientos.find(m => m.id === editingMovementId) : null;
       if (editingMovementId && (!editing || (!admin && (!operador || editing.estado !== 'pendiente' || editing.creadoPor !== auth.currentUser?.uid)))) { error.textContent = 'Este movimiento ya no se puede editar.'; return; }
@@ -603,6 +612,7 @@
           categoria: document.getElementById('categoria').value,
           responsable,
           proveedor,
+          ...(plaza ? { plaza } : {}),
           metodoPago: document.getElementById('metodo').value,
           comprobantePath: objectPath,
           comprobanteNombre: archivo?.name || editing?.comprobanteNombre || '',
@@ -611,7 +621,7 @@
         };
         if (editing) {
           const batch = writeBatch(db), historyRef = doc(collection(db, 'caja_chica_movimientos', editing.id, 'historial'));
-          const before = Object.fromEntries(['tipo','fecha','importe','descripcion','categoria','responsable','proveedor','metodoPago','comprobantePath','comprobanteNombre','comprobanteTipo','comprobanteBytes'].map(key => [key, editing[key] ?? '']));
+          const before = Object.fromEntries(['tipo','fecha','importe','descripcion','categoria','responsable','proveedor','plaza','metodoPago','comprobantePath','comprobanteNombre','comprobanteTipo','comprobanteBytes'].map(key => [key, editing[key] ?? '']));
           const after = { ...values };
           batch.update(movementRef, { ...values, editadoPor: auth.currentUser.uid, editadoEn: serverTimestamp(), ultimaEdicionHistorialId: historyRef.id });
           batch.set(historyRef, { accion: 'editado', antes: before, despues: after, registradoPor: auth.currentUser.uid, registradoPorNombre: user.nombre || user.email, registradoEn: serverTimestamp() });
