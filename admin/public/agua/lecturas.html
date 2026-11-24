@@ -128,6 +128,7 @@
         import { crearNavbar } from '../../../js/navbar.js?v=20261118-2';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { getCurrentUser, isAuthenticated, esAdmin, db, auth } from '../../../js/auth.js?v=20261117-1';
+        import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc, MARGEN_VERTICAL } from '../../../js/export-cabecera.js?v=20261118-4';
         import {
             collection, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch, serverTimestamp
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -294,6 +295,7 @@
 
                 <div class="acciones">
                     <button class="btn" id="guardar">Guardar lecturas</button>
+                    <button class="btn-sec" id="exportarPdf" title="Hoja carta con las lecturas de la fecha elegida (Guardar como PDF)">Exportar PDF</button>
                     <span class="mensaje" id="mensaje"></span>
                 </div>
             `;
@@ -305,6 +307,7 @@
                 document.getElementById('guardarCosto').addEventListener('click', guardarCosto);
             }
             document.getElementById('guardar').addEventListener('click', guardarLecturas);
+            document.getElementById('exportarPdf').addEventListener('click', exportarFecha);
             dibujarFilas();
         }
 
@@ -453,7 +456,7 @@
                 <div class="modal" role="dialog" aria-label="Histórico de lecturas">
                     <div class="modal-cab">
                         <div><div class="emp">Histórico de lecturas de agua</div><h3>Tubo ${escape(m.tubo)} · ${escape(m.empresa)}</h3></div>
-                        <button class="btn-sec" data-cerrar>Cerrar</button>
+                        <div style="display:flex;gap:8px">${filas.length ? '<button class="btn-sec" data-pdf>Exportar PDF</button>' : ''}<button class="btn-sec" data-cerrar>Cerrar</button></div>
                     </div>
                     ${filas.length ? `
                     <div class="resumen-h ${esAdmin() ? '' : 'cuatro'}">
@@ -472,8 +475,157 @@
             const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); };
             const teclas = e => { if (e.key === 'Escape') cerrar(); };
             fondo.addEventListener('click', e => { if (e.target === fondo || e.target.hasAttribute('data-cerrar')) cerrar(); });
+            fondo.querySelector('[data-pdf]')?.addEventListener('click', () => exportarHistorico(m, filas, { totalC, totalI, anomalas, ANOMALO }));
             document.addEventListener('keydown', teclas);
             document.body.appendChild(fondo);
+        }
+
+        // ---------- Exports (hoja carta para Guardar como PDF; encabezado y cuerpo únicos de js/export-cabecera.js) ----------
+        const fechaLargaTxt = f => { if (!/^\d{4}-\d{2}-\d{2}$/.test(f || '')) return '-'; const [y, m, d] = f.split('-'); return `${+d} de ${MESES_LARGOS[+m - 1]} de ${y}`; };
+        const emitidoTxt = () => `Emitido el ${fechaLargaTxt(hoy())}`;
+        const LOGO_EXPORT = '../css/logo-export.png';
+
+        // Imprime la hoja; desde la 2.ª hoja se repite el encabezado con el logo y su línea (thead de una tabla que envuelve la hoja)
+        function imprimirHoja(html, nombre) {
+            let hoja = document.getElementById('hoja-lecturas');
+            if (!hoja) {
+                hoja = document.createElement('div'); hoja.id = 'hoja-lecturas'; document.body.appendChild(hoja);
+                const st = document.createElement('style');
+                st.textContent = `
+                    #hoja-lecturas { display: none; }
+                    @page { size: letter portrait; margin: ${MARGEN_VERTICAL}; }
+                    @media print {
+                        body > *:not(#hoja-lecturas) { display: none !important; }
+                        #hoja-lecturas { display: block !important; }
+                    }
+                    ${cssDoc('#hoja-lecturas')}
+                    ${CSS_CABECERA}
+                    #hoja-lecturas table.hoja-tabla { width: 100%; border-collapse: collapse; }
+                    #hoja-lecturas table.hoja-tabla > thead { display: table-header-group; }
+                    #hoja-lecturas table.hoja-tabla > tbody > tr > td, #hoja-lecturas table.hoja-tabla > thead > tr > td { padding: 0; border: 0; font: inherit; }
+                    #hoja-lecturas table.hoja-tabla > thead .lf-cab { margin-bottom: 14px !important; }
+                    #hoja-lecturas .cab-titulo { margin: -68px 0 26px !important; height: 42px; display: flex; flex-direction: column; justify-content: center; font-family: Roboto, Arial, sans-serif; }
+                    #hoja-lecturas .cab-titulo h1 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; font-weight: 900; color: #1b2430; }
+                    #hoja-lecturas .cab-titulo p { margin: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
+                    #hoja-lecturas .fecha-ant { display: block; font-size: 8.5px; color: #5f6670; }
+                    #hoja-lecturas tr.neg td { background: #fff4e0; }
+                    #hoja-lecturas tr.anom td { color: #b3261e; }
+                    #hoja-lecturas .res.tres { grid-template-columns: repeat(3, 1fr); }
+                    #hoja-lecturas .res .alerta { border-color: #d08a1e; }`;
+                document.head.appendChild(st);
+            }
+            hoja.innerHTML = html;
+            const cab = hoja.querySelector(':scope > .lf-cab');
+            if (cab) {
+                const tabla = document.createElement('table'); tabla.className = 'hoja-tabla';
+                const titulo = cab.querySelector(':scope > div'); titulo.className = 'cab-titulo';   // el título solo va en la 1.ª hoja
+                tabla.createTHead().insertRow().insertCell().append(cab);
+                const td = tabla.appendChild(document.createElement('tbody')).insertRow().insertCell();
+                td.append(titulo);
+                while (hoja.firstChild) td.append(hoja.firstChild);
+                hoja.append(tabla);
+            }
+            const img = hoja.querySelector('img');
+            const imprimir = () => { const previo = document.title; document.title = nombre; window.print(); setTimeout(() => { document.title = previo; }, 1000); };
+            if (!img || img.complete) { imprimir(); return; }
+            let listo = false;
+            const ir = () => { if (!listo) { listo = true; imprimir(); } };
+            img.addEventListener('load', ir); img.addEventListener('error', ir); setTimeout(ir, 1500);
+        }
+
+        // Lecturas de la fecha elegida, tal como se ven en la pantalla (las que aún no se guardan van marcadas)
+        function exportarFecha() {
+            const fecha = document.getElementById('fecha').value;
+            const admin = esAdmin();
+            const filaPdf = m => {
+                const r = calcular(m.id);
+                const porGuardar = r.valor !== null && !r.guardada;
+                return { r, porGuardar, html: `<tr class="${typeof r.consumo === 'number' && r.consumo < 0 ? 'neg' : ''}">
+                    <td><b>${escape(m.tubo)}</b></td>
+                    <td>${escape(m.empresa)}</td>
+                    <td class="n">${r.ant ? fmt(r.ant.lectura) : '-'}<span class="fecha-ant">${r.ant ? fechaCorta(r.ant.fecha) : 'sin lecturas previas'}</span></td>
+                    <td class="n">${r.valor === null ? '-' : fmt(r.valor) + (porGuardar ? ' *' : '')}</td>
+                    <td class="n">${r.valor === null ? '-' : r.consumo === null ? 'primera' : fmt(r.consumo)}</td>
+                    ${admin ? `<td class="n">${r.valor === null ? '-' : dinero(r.costo)}</td><td class="n">${r.valor === null || r.importe === null ? '-' : dinero(r.importe)}</td>` : ''}
+                </tr>` };
+            };
+            const normales = medidores.filter(m => m.id !== TUBO_MAESTRO).map(filaPdf);
+            const maestro = medidores.filter(m => m.id === TUBO_MAESTRO).map(filaPdf);
+            const conLectura = normales.filter(f => f.r.valor !== null).length;
+            const pendientes = [...normales, ...maestro].filter(f => f.porGuardar).length;
+            let c = 0, i = 0, locales = 0, propio = 0;
+            medidores.filter(m => m.id !== TUBO_MAESTRO).forEach(m => {
+                const r = calcular(m.id);
+                if (typeof r.consumo === 'number') { c += r.consumo; if (m.id === 'SG') propio += r.consumo; else locales += r.consumo; }
+                if (typeof r.importe === 'number') i += r.importe;
+            });
+            const cMaestro = maestro.length ? maestro[0].r.consumo : null;
+            const cab = `<thead><tr><th>Tubo</th><th>Empresa</th><th class="n">Lectura anterior (m³)</th><th class="n">Lectura actual (m³)</th><th class="n">Consumo (m³)</th>${admin ? '<th class="n">Costo m³</th><th class="n">Importe</th>' : ''}</tr></thead>`;
+            let comparacion = '';
+            if (typeof cMaestro === 'number') {
+                const dif = Math.round((cMaestro - c) * 1000) / 1000;
+                const pct = cMaestro > 0 ? (dif / cMaestro) * 100 : null;
+                const lejos = pct !== null && Math.abs(pct) > UMBRAL_DIF;
+                const signo = n => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+                comparacion = `<div class="res">
+                    <div><span>Maestro</span><b>${fmt(cMaestro)} m³</b></div>
+                    <div><span>Suma de los demás</span><b>${fmt(c)} m³</b><small>locales ${fmt(locales)} · serv. generales ${fmt(propio)}</small></div>
+                    <div class="${lejos ? 'alerta' : ''}"><span>Diferencia (maestro − suma)</span><b>${signo(dif)} m³</b><small>${pct === null ? '' : `${fmt(Math.abs(pct), 1)} % ${dif >= 0 ? 'más en el maestro' : 'más en la suma'}`}</small></div>
+                    <div class="${lejos ? 'alerta' : ''}"><span>Relación suma / maestro</span><b>${cMaestro > 0 ? fmt((c / cMaestro) * 100, 1) + ' %' : '-'}</b><small>${lejos ? `Revisar: la diferencia pasa de ${UMBRAL_DIF} %` : 'Casi 1 a 1'}</small></div>
+                </div>`;
+            } else if (maestro.length) comparacion = '<p class="nota">Sin lectura del maestro en esta fecha: no se puede comparar contra la suma de los demás medidores.</p>';
+            const html = `
+                ${cabeceraExport('Lecturas de agua', [`Fecha de lectura: ${fechaLargaTxt(fecha)}${admin ? ` · Costo por m³ para lecturas nuevas: ${dinero(costoActual())} (IVA incluido)` : ''}`, emitidoTxt()], LOGO_EXPORT)}
+                <div class="res ${admin ? '' : 'tres'}">
+                    <div><span>Medidores con lectura</span><b>${conLectura} de ${normales.length}</b><small>sin contar el maestro</small></div>
+                    <div><span>Consumo total</span><b>${fmt(c)} m³</b><small>sin el maestro</small></div>
+                    ${admin ? `<div><span>Importe total</span><b>${dinero(i)}</b><small>IVA incluido</small></div>` : ''}
+                    <div><span>Maestro</span><b>${typeof cMaestro === 'number' ? fmt(cMaestro) + ' m³' : '-'}</b><small>entrada general</small></div>
+                </div>
+                <h2>Medidores</h2>
+                <table>${cab}<tbody>${normales.map(f => f.html).join('')}</tbody>
+                    <tfoot><tr><td colspan="4">Total de los medidores (sin el maestro)</td><td class="n">${fmt(c)}</td>${admin ? `<td></td><td class="n">${dinero(i)}</td>` : ''}</tr></tfoot>
+                </table>
+                ${maestro.length ? `<h2>Medidor maestro</h2><table>${cab}<tbody>${maestro.map(f => f.html).join('')}</tbody></table>
+                <p class="nota">Es la entrada general: no se suma en el total de arriba. Se compara con la suma de todos los demás medidores y, en teoría, deben ser casi iguales.</p>
+                ${comparacion}` : ''}
+                <p class="pie">${pendientes ? `* ${pendientes} lectura${pendientes > 1 ? 's' : ''} capturada${pendientes > 1 ? 's' : ''} en pantalla que aún no se ${pendientes > 1 ? 'han' : 'ha'} guardado. ` : ''}${admin ? 'Importes con IVA incluido; las lecturas guardadas conservan el costo con que se grabaron. ' : ''}Con fondo amarillo: consumo negativo (la lectura bajó). La Fábrica de Chocolate · Panel de administración.</p>`;
+            imprimirHoja(html, nombreArchivo(['Lecturas de agua'], fecha));
+        }
+
+        // Histórico de un tubo (desde la ventana del histórico)
+        function exportarHistorico(m, filas, { totalC, totalI, anomalas, ANOMALO }) {
+            const admin = esAdmin();
+            const anios = [...new Set(filas.map(f => f.fecha.slice(0, 4)))];
+            const cuerpo = anios.map(a => {
+                const del = filas.filter(f => f.fecha.startsWith(a));
+                const ok = del.filter(f => !f.anomala);
+                const c = ok.reduce((s, f) => s + (f.consumo || 0), 0), imp = ok.reduce((s, f) => s + (f.importe || 0), 0);
+                return del.map(f => `<tr class="${f.anomala ? 'anom' : f.consumo < 0 ? 'neg' : ''}">
+                        <td>${fechaCorta(f.fecha)}</td>
+                        <td>${periodoTxt(f.periodo || f.fecha.slice(0, 7))}</td>
+                        <td class="n">${fmt(f.lectura)}</td>
+                        <td class="n">${f.consumo === null ? 'primera' : fmt(f.consumo)}${f.anomala ? ' (anómala)' : ''}</td>
+                        ${admin ? `<td class="n">${f.costo === null ? '-' : dinero(f.costo)}</td><td class="n">${dinero(f.importe)}</td>` : ''}
+                    </tr>`).join('') +
+                    `<tr class="tot"><td colspan="3">Total ${a} (${del.length} lectura${del.length > 1 ? 's' : ''})</td><td class="n">${fmt(c)}</td>${admin ? `<td></td><td class="n">${dinero(imp)}</td>` : ''}</tr>`;
+            }).join('');
+            const conConsumo = filas.filter(f => f.consumo !== null).length;
+            const html = `
+                ${cabeceraExport('Histórico de lecturas de agua', [`Tubo ${escape(m.tubo)} · ${escape(m.empresa)}`, `Lecturas del ${fechaCorta(filas[0].fecha)} al ${fechaCorta(filas[filas.length - 1].fecha)} · ${emitidoTxt()}`], LOGO_EXPORT)}
+                <div class="res ${admin ? '' : 'tres'}">
+                    <div><span>Lecturas</span><b>${filas.length}</b><small>desde ${fechaCorta(filas[0].fecha)}</small></div>
+                    <div><span>Consumo total</span><b>${fmt(totalC)} m³</b></div>
+                    ${admin ? `<div><span>Importe total</span><b>${dinero(totalI)}</b><small>IVA incluido</small></div>` : ''}
+                    <div><span>Promedio por lectura</span><b>${fmt(totalC / Math.max(1, conConsumo))} m³</b></div>
+                </div>
+                <table>
+                    <thead><tr><th>Fecha</th><th>Periodo</th><th class="n">Lectura (m³)</th><th class="n">Consumo (m³)</th>${admin ? '<th class="n">Costo m³</th><th class="n">Importe</th>' : ''}</tr></thead>
+                    <tbody>${cuerpo}</tbody>
+                </table>
+                <p class="pie">${admin ? 'Importes con IVA incluido, al costo por m³ vigente en cada lectura. ' : ''}Con fondo amarillo: consumo negativo (la lectura bajó).${anomalas ? ` En rojo: ${anomalas} lectura${anomalas > 1 ? 's' : ''} con consumo imposible (más de ${ANOMALO.toLocaleString('es-MX')} m³), que no se suma${anomalas > 1 ? 'n' : ''} en los totales.` : ''} La Fábrica de Chocolate · Panel de administración.</p>`;
+            const local = (m.empresa || '');
+            imprimirHoja(html, nombreArchivo(['Histórico de lecturas de agua', `Tubo ${m.tubo}`, local]));
         }
 
         let eliminando = false;
