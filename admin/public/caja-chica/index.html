@@ -80,6 +80,20 @@
       .tabla-movil td .row-actions { justify-content: flex-end; }
       .tabla-movil td .desc { font-size: 15px; }
     }
+    /* Movimientos: renglón resaltado al pasar el mouse y vista previa flotante (20/11/2026) */
+    #filas tr { transition: background-color .12s; }
+    #filas tr:hover td, #filas tr.activo td { background: var(--accion-suave); }
+    .vista-mov { position: fixed; z-index: 900; width: 320px; background: var(--fondo); border: 1px solid var(--linea); border-radius: var(--radio-lg); box-shadow: var(--sombra-modal); padding: 14px 16px; font-size: 13px; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+    .vista-mov.on { opacity: 1; transform: none; }
+    .vista-mov .vm-cab { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .vista-mov .vm-tit { font-weight: 700; font-size: 14px; line-height: 1.3; }
+    .vista-mov .vm-imp { font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
+    .vista-mov .vm-imp.entrada { color: var(--exito); }
+    .vista-mov dl { display: grid; grid-template-columns: 96px 1fr; gap: 3px 10px; margin: 0; }
+    .vista-mov dt { color: var(--tinta-suave); } .vista-mov dd { margin: 0; overflow-wrap: anywhere; }
+    .vista-mov .vm-img { margin-top: 10px; border-radius: var(--radio-md); overflow: hidden; background: var(--fondo-hundido); display: flex; align-items: center; justify-content: center; min-height: 60px; color: var(--tinta-suave); font-size: 12px; }
+    .vista-mov .vm-img img { display: block; width: 100%; max-height: 220px; object-fit: contain; }
+    @media (hover: none), (max-width: 700px) { .vista-mov { display: none; } }
   </style>
 </head>
 <body>
@@ -378,6 +392,7 @@
     function renderFilas() {
       const visibles = filtrarMovimientos();
       const tbody = document.getElementById('filas');
+      ocultarVista();
       tbody.innerHTML = visibles.map(m => {
         const estadoLabel = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado';
         const attachment = m.comprobantePath ? `<button class="link-btn" data-comprobante="${escapeHtml(m.id)}">Ver archivo</button>` : '<span class="hint">Sin archivo</span>';
@@ -389,13 +404,17 @@
         const metodo = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }[m.metodoPago || 'efectivo'] || m.metodoPago;
         const pagoEstilo = cuentaDe(m.metodoPago) === 'tarjeta' ? ' style="background:var(--accion-suave);color:var(--accion)"' : '';
         const borrar = admin ? `<button class="btn-basura" data-eliminar="${escapeHtml(m.id)}" aria-label="Eliminar movimiento" title="Eliminar movimiento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>` : '';
-        return `<tr><td><div class="desc">${escapeHtml(m.descripcion)}</div><div class="detail">${escapeHtml(details)}</div></td><td class="date">${escapeHtml(parseDate(m.fecha || ''))}</td><td><span class="pill">${escapeHtml(m.categoria || '')}</span></td><td><span class="pill"${pagoEstilo}>${escapeHtml(metodo)}</span></td><td>${estadoCelda}</td><td>${attachment}</td><td class="amount ${m.tipo === 'entrada' ? 'entrada' : 'salida'}">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td><td><div class="row-actions">${edit}${borrar}</div></td></tr>`;
+        return `<tr data-mov="${escapeHtml(m.id)}"><td><div class="desc">${escapeHtml(m.descripcion)}</div><div class="detail">${escapeHtml(details)}</div></td><td class="date">${escapeHtml(parseDate(m.fecha || ''))}</td><td><span class="pill">${escapeHtml(m.categoria || '')}</span></td><td><span class="pill"${pagoEstilo}>${escapeHtml(metodo)}</span></td><td>${estadoCelda}</td><td>${attachment}</td><td class="amount ${m.tipo === 'entrada' ? 'entrada' : 'salida'}">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</td><td><div class="row-actions">${edit}${borrar}</div></td></tr>`;
       }).join('');
       document.getElementById('sinFilas').style.display = visibles.length ? 'none' : 'block';
       tbody.querySelectorAll('[data-estado-sel]').forEach(sel => sel.addEventListener('change', async () => { if (sel.value !== 'pendiente') await revisar(sel.dataset.estadoSel, sel.value); renderFilas(); }));
       tbody.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => editarMovimiento(b.dataset.editar)));
       tbody.querySelectorAll('[data-eliminar]').forEach(b => b.addEventListener('click', () => pedirEliminar(b.dataset.eliminar)));
       tbody.querySelectorAll('[data-comprobante]').forEach(b => b.addEventListener('click', () => abrirComprobante(movimientos.find(m => m.id === b.dataset.comprobante))));
+      tbody.querySelectorAll('tr[data-mov]').forEach(tr => {
+        tr.addEventListener('mouseenter', () => programarVista(tr));
+        tr.addEventListener('mouseleave', ocultarVista);
+      });
     }
 
     // ---- Importar de Clara (solo la tarjeta Caja Chica ···4903) ----
@@ -678,6 +697,50 @@
         console.error(err);
         error.textContent = err.code === 'permission-denied' ? 'Permiso denegado: falta publicar las reglas de Firestore que permiten borrar.' : 'No se pudo eliminar. Inténtalo de nuevo.';
       } finally { button.disabled = false; }
+    }
+
+    // Vista previa de un movimiento al pasar el mouse por su renglón: datos completos y, si hay comprobante de imagen, su miniatura
+    // (se descarga solo al pasar el mouse y queda en memoria mientras la página está abierta)
+    const miniaturas = new Map();   // id → URL del blob (imagen) o '' si no es imagen
+    let vistaTimer = 0, vistaId = '';
+    function ocultarVista() {
+      clearTimeout(vistaTimer); vistaId = '';
+      document.querySelectorAll('#filas tr.activo').forEach(x => x.classList.remove('activo'));
+      document.getElementById('vistaMov')?.classList.remove('on');
+    }
+    function programarVista(tr) {
+      clearTimeout(vistaTimer);
+      vistaTimer = setTimeout(() => mostrarVista(tr), 250);
+    }
+    async function mostrarVista(tr) {
+      const m = movimientos.find(x => x.id === tr.dataset.mov); if (!m) return;
+      vistaId = m.id;
+      let caja = document.getElementById('vistaMov');
+      if (!caja) { caja = document.createElement('div'); caja.id = 'vistaMov'; caja.className = 'vista-mov'; caja.setAttribute('aria-hidden', 'true'); document.body.appendChild(caja); }
+      const estado = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }[m.estado] || 'Aprobado';
+      const metodo = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }[m.metodoPago || 'efectivo'] || m.metodoPago;
+      const filas = [['Fecha', parseDate(m.fecha || '')], ['Tipo', m.tipo === 'entrada' ? 'Reposición / entrada' : 'Gasto'], ['Plaza', m.plaza || ''], ['Categoría', m.categoria || ''],
+        ['Proveedor', m.proveedor || ''], ['Responsable', m.responsable || ''], ['Pago', metodo], ['Estado', estado], ['Registró', m.registradoPorNombre || ''], ['Comprobante', m.comprobantePath ? (m.comprobanteNombre || 'Sí') : 'Sin archivo']]
+        .filter(([, v]) => String(v || '').trim());
+      const esImagen = m.comprobantePath && String(m.comprobanteTipo || '').startsWith('image/');
+      caja.innerHTML = `<div class="vm-cab"><div class="vm-tit">${escapeHtml(m.descripcion || '')}</div><div class="vm-imp ${m.tipo === 'entrada' ? 'entrada' : ''}">${m.tipo === 'entrada' ? '+' : '−'} ${money(m.importe)}</div></div>
+        <dl>${filas.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>
+        ${m.comprobantePath ? `<div class="vm-img">${esImagen ? (miniaturas.get(m.id) ? `<img src="${miniaturas.get(m.id)}" alt="">` : miniaturas.has(m.id) ? 'No se pudo cargar la vista previa' : 'Cargando comprobante…') : 'Comprobante en PDF: clic en «Ver archivo» para abrirlo'}</div>` : ''}`;
+      document.querySelectorAll('#filas tr.activo').forEach(x => x.classList.remove('activo'));
+      tr.classList.add('activo');
+      // Posición: a la derecha del renglón si cabe, si no a la izquierda; sin salirse de la pantalla
+      const r = tr.getBoundingClientRect(), W = 320, H = caja.offsetHeight || 260;
+      let left = Math.min(r.right - W - 12, window.innerWidth - W - 12);
+      let top = r.bottom + 6; if (top + H > window.innerHeight - 8) top = Math.max(8, r.top - H - 6);
+      caja.style.left = Math.max(12, left) + 'px'; caja.style.top = top + 'px';
+      caja.classList.add('on');
+      if (esImagen && !miniaturas.has(m.id)) {
+        try {
+          const blob = await getBlob(ref(storage, m.comprobantePath), MAX_BYTES);
+          miniaturas.set(m.id, URL.createObjectURL(new Blob([blob], { type: m.comprobanteTipo })));
+        } catch (e) { miniaturas.set(m.id, ''); }
+        if (vistaId === m.id) mostrarVista(tr);   // el mouse sigue en el renglón: se redibuja con la imagen
+      }
     }
 
     let urlVisor = '';
