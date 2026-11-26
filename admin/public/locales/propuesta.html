@@ -73,7 +73,7 @@
             #hoja table.hoja-tabla > tbody > tr > td, #hoja table.hoja-tabla > thead > tr > td { padding: 0; font: inherit; }
             #hoja table.hoja-tabla > thead .lf-cab { margin-bottom: 14px !important; }
             /* En la 1.ª hoja el título va a la izquierda, en el mismo renglón del logo; las siguientes hojas solo repiten el logo con su línea */
-            #hoja .cab-titulo { margin: -68px 0 26px !important; height: 42px; display: flex; flex-direction: column; justify-content: center; font-family: Roboto, Arial, sans-serif; }
+            #hoja .cab-titulo { margin: -68px 0 18px !important; height: 42px; display: flex; flex-direction: column; justify-content: center; font-family: Roboto, Arial, sans-serif; }
             #hoja .cab-titulo h1 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; font-weight: 900; color: #1b2430; }
             #hoja .cab-titulo p { margin: 0; color: #5f6670; font-size: 10.5px; line-height: 1.35; }
             body > .main, #navbar-root, nav { display: none !important; }
@@ -96,7 +96,7 @@
             #hoja .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 80px; break-inside: avoid; text-align: center; font-size: 10px; }
             #hoja .firmas.una { grid-template-columns: 1fr; width: 50%; margin-left: auto; margin-right: auto; }
             #hoja .firmas div { border-top: 1px solid #1b2430; padding-top: 4px; }
-            #hoja .pie { margin-top: 14px; font-size: 9px; color: #5f6670; }
+            #hoja .pie { margin: 14px 0 0; font-size: 9px; color: #5f6670; }   /* sin margen abajo: si no, unos px de sobra pasan a una 2.ª hoja en blanco */
         }
     </style>
 </head>
@@ -147,7 +147,9 @@
                     ['empresa', 'Empresa o proyecto (opcional)', 'texto'], ['fechaPropuesta', 'Fecha de la propuesta', 'fecha'],
                     ['vigenciaActiva', 'La propuesta tiene vigencia', 'check'], ['vigenciaDias', 'Días de vigencia de la propuesta', 'numero']
                 ] },
-                { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [], calc: ['local', 'superficie', 'acceso'] },
+                { t: 'Local', ayuda: 'Local que se propone, con su superficie (tomada del contrato).', campos: [
+                    ['notasLocal', 'Notas', 'textarea', true]
+                ], calc: ['local', 'superficie', 'acceso'], orden: ['calc:local', 'calc:superficie', 'calc:acceso', 'notasLocal'] },
                 { t: 'Vigencia', ayuda: 'Fechas y plazo propuestos.', campos: [
                     ['inicio', 'Inicio', 'fecha'], ['anios', 'Plazo', 'plazo'], ['fechaLimite', 'Fecha límite de pago', 'texto'],
                     ['notasInternas', 'Notas', 'textarea', true]
@@ -485,7 +487,7 @@
                 }));
                 const cc = Object.fromEntries((s.calc || []).map(k => ['calc:' + k, campo(CALC[k][0], calcs[k])]));
                 const todo = { ...cs, ...cc };
-                for (const n of ['notasInternas', 'notasIncremento']) if (blanco || !val(n).trim()) delete todo[n];   // las notas solo salen si se escribió algo
+                for (const n of ['notasLocal', 'notasInternas', 'notasIncremento']) if (blanco || !val(n).trim()) delete todo[n];   // las notas solo salen si se escribió algo
                 const claves = s.orden ? s.orden.filter(k => k in todo) : Object.keys(todo);
                 return `<h3>${s.t}</h3><div class="campos">${claves.map(k => todo[k]).join('')}</div>`;
             }
