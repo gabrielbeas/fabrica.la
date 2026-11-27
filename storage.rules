@@ -56,5 +56,14 @@ service firebase.storage {
         && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
       allow list, update: if false;
     }
+
+    // Recibos de SIAPA (toma general): solo el administrador
+    match /siapa/{fileName} {
+      allow get, delete: if esAdmin();
+      allow create: if esAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow list, update: if false;
+    }
   }
 }

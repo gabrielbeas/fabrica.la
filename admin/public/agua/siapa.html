@@ -124,6 +124,9 @@
         .recibo .tit { font-weight: 600; }
         .recibo .det { font-size: 12px; color: var(--tinta-suave); line-height: 1.6; }
         .recibo .tot { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .archivo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+        .progreso { height: 4px; background: var(--linea); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .progreso i { display: block; height: 100%; width: 0; background: var(--accion); }
         .recibo .tot small { display: block; font-weight: 400; font-size: 12px; color: var(--tinta-suave); }
         .dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 900px) { .dos-col { grid-template-columns: 1fr; } }
@@ -153,7 +156,15 @@
         import { CSS_CABECERA, cabeceraExport, nombreArchivo, cssDoc, MARGEN_VERTICAL } from '../../../js/export-cabecera.js?v=20261118-4';
         import '../../../js/dinero-input.js?v=20261028-1';
         import { isAuthenticated, esAdmin, getCurrentUser, db } from '../../../js/auth.js?v=20261117-1';
-        import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getStorage, ref, uploadBytesResumable, getBlob, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // Recibo escaneado o PDF de cada recibo: Storage siapa/{emision}_{marca}_{archivo} (solo admin, igual que cfe/)
+        const storage = getStorage(getApp());
+        const ARCHIVOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        const MAX_BYTES = 10 * 1024 * 1024;
+        const nombreSeguro = n => String(n || 'recibo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.-]+/g, '_').slice(-80);
 
         const app = document.getElementById('app');
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -167,7 +178,15 @@
         const mesCorto = f => { const [y, m] = f.split('-'); return `${MESES[+m - 1]} ${y.slice(2)}`; };
         const mesLargo = f => { const [y, m] = f.split('-'); return `${MESES_L[+m - 1]} ${y}`; };
         const hoyISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
-        const NOTA_TXT = 'SIAPA marcó la lectura con nota (210 / 206); la lectura se repite del periodo anterior, así que el consumo parece estimado';
+        // Notas de lectura de SIAPA (tabla del reverso del recibo). Con nota, el lecturista no tomó la lectura:
+        // el recibo repite la lectura anterior y cobra un consumo estimado.
+        const NOTAS_SIAPA = {
+            103: 'Sellos violados', 104: 'Otro medidor', 105: 'Servicios restringidos', 106: 'Casa sola', 107: 'No funciona', 108: 'No utiliza',
+            109: 'Otra nota', 200: 'Medidor destruido', 201: 'Medidor ilegible', 202: 'Casa con perro', 203: 'Medidor anegado', 204: 'Medidor aterrado',
+            205: 'Medidor tapado', 206: 'No localizado', 207: 'No existe medidor', 208: 'Casa cerrada', 209: 'Predio sin lectura', 210: 'No visitado'
+        };
+        const NOTA_TXT = n => `Nota ${n} de SIAPA: ${NOTAS_SIAPA[String(n).trim()] || 'código sin descripción'}. No se tomó la lectura: se repite la anterior y el consumo es estimado`;
+        const notaPill = n => `<span class="nota-pill" title="${esc(NOTA_TXT(n))}">${esc(n)}${NOTAS_SIAPA[String(n).trim()] ? ` · ${esc(NOTAS_SIAPA[String(n).trim()])}` : ''}</span>`;
 
         let periodos = [], recibos = [], pagos = [], lecturas = [], medidores = [], inicioTubo = {}, localesTubo = {}, tarifa = null;
 
@@ -393,7 +412,7 @@
                         <tbody>${[...periodos].reverse().map(p => `<tr>
                             <td><strong>${fechaCorta(p.fechaLectura)}</strong></td>
                             <td class="num">${numero(p.lectura)}</td>
-                            <td>${p.nota ? `<span class="nota-pill" title="${esc(NOTA_TXT)}">${esc(p.nota)}</span>` : ''}</td>
+                            <td>${p.nota ? notaPill(p.nota) : ''}</td>
                             <td class="num">${numero(p.m3)}</td>
                             <td class="num">${numero(p.dias)}</td>
                             <td class="num">${numero(p.m3Dia, 3)}</td>
@@ -409,9 +428,11 @@
                         ${recibos.length ? recibos.map(r => `<div class="recibo">
                             <div>
                                 <div class="tit">${r.tipo === 'recibo de pago' ? 'Recibo de pago' : `Periodo ${r.periodoDel ? fechaCorta(r.periodoDel) + ' al ' + fechaCorta(r.periodoAl) : '-'}`}</div>
-                                <div class="det">Emitido ${fechaCorta(r.emision)} · vence ${fechaCorta(r.vence)}${r.totalMes ? ` · mes ${dinero(r.totalMes)}` : ''}${r.recargos ? ` · recargos ${dinero(r.recargos)}` : ''}
-                                ${r.desglose ? `<br>Consumo ${dinero(r.desglose.consumo)} · alcantarillado ${dinero(r.desglose.alcantarillado)} · saneamiento ${dinero(r.desglose.saneamiento)} · descarga ${dinero(r.desglose.descarga)} · IVA ${dinero(r.desglose.iva)}` : ''}
-                                ${r.nota ? `<br>${esc(r.nota)}` : ''}</div>
+                                <div class="det">Emitido ${fechaCorta(r.emision)} · vence ${fechaCorta(r.vence)}${r.totalMes ? ` · mes ${dinero(r.totalMes)}` : ''}${r.adeudoAnterior ? ` · <span class="err">adeudo anterior ${dinero(r.adeudoAnterior)}</span>` : ''}${r.recargos ? ` · recargos ${dinero(r.recargos)}` : ''}
+                                ${r.desglose ? `<br>Consumo ${dinero(r.desglose.consumo)} · alcantarillado ${dinero(r.desglose.alcantarillado)} · saneamiento ${dinero(r.desglose.saneamiento)} · descarga ${dinero(r.desglose.descarga)} · IVA ${dinero(r.desglose.iva)}${r.desglose.redondeo ? ` · redondeo ${dinero(r.desglose.redondeo)}` : ''}` : ''}
+                                ${r.ultimoPago ? `<br>Último pago según el recibo: ${fechaCorta(r.ultimoPago.fecha)} · ${dinero(r.ultimoPago.monto)}` : ''}
+                                ${r.nota ? `<br>${esc(r.nota)}` : ''}
+                                <br>${r.archivo?.path ? `<button class="btn-mini" data-ver-recibo="${esc(r.id)}">Ver recibo</button> <button class="btn-mini" data-adjuntar-recibo="${esc(r.id)}">Reemplazar archivo</button>` : `<button class="btn-mini" data-adjuntar-recibo="${esc(r.id)}">Adjuntar recibo</button>`}</div>
                             </div>
                             <div class="tot">${dinero(r.totalAPagar)}<small>total a pagar</small><button class="btn-mini borrar" data-borrar-recibo="${esc(r.id)}" style="margin-top:6px">Borrar</button></div>
                         </div>`).join('') : '<p class="vacio">Sin recibos.</p>'}
@@ -439,7 +460,12 @@
             document.getElementById('nPago').addEventListener('click', ventanaPago);
             app.querySelectorAll('[data-editar]').forEach(b => b.addEventListener('click', () => ventanaRecibo(periodos.find(p => p.id === b.dataset.editar))));
             app.querySelectorAll('[data-borrar-pago]').forEach(b => b.addEventListener('click', () => borrar('siapa_pagos', b.dataset.borrarPago, 'este pago')));
-            app.querySelectorAll('[data-borrar-recibo]').forEach(b => b.addEventListener('click', () => borrar('siapa_recibos', b.dataset.borrarRecibo, 'este recibo (el periodo y su consumo se conservan)')));
+            app.querySelectorAll('[data-borrar-recibo]').forEach(b => b.addEventListener('click', () => {
+                const r = recibos.find(x => x.id === b.dataset.borrarRecibo);
+                borrar('siapa_recibos', r.id, `este recibo${r?.archivo?.path ? ' y su archivo' : ''} (el periodo y su consumo se conservan)`, r?.archivo?.path);
+            }));
+            app.querySelectorAll('[data-ver-recibo]').forEach(b => b.addEventListener('click', () => verArchivo(recibos.find(x => x.id === b.dataset.verRecibo))));
+            app.querySelectorAll('[data-adjuntar-recibo]').forEach(b => b.addEventListener('click', () => adjuntarArchivo(recibos.find(x => x.id === b.dataset.adjuntarRecibo))));
         }
 
         // Consumo de LAFABDECHOC (medidor general de SIAPA) contra la suma de locales y el tubo MTO.
@@ -738,7 +764,7 @@
                     <table class="tabla-movil">
                         <thead><tr><th>Periodo</th><th class="num">m³</th><th class="num">Importe SIAPA</th><th class="num">SIAPA por m³</th><th class="num">Cobras por m³</th><th class="num">Diferencia por m³</th></tr></thead>
                         <tbody>${[...filas].reverse().map(f => `<tr>
-                            <td><strong>${fechaCorta(f.p.fechaLectura)}</strong>${f.p.nota ? ` <span class="nota-pill" title="${esc(NOTA_TXT)}">${esc(f.p.nota)}</span>` : ''}</td>
+                            <td><strong>${fechaCorta(f.p.fechaLectura)}</strong>${f.p.nota ? ` ${notaPill(f.p.nota)}` : ''}</td>
                             <td class="num">${numero(f.p.m3)}</td>
                             <td class="num">${pesos(f.p.importe)}</td>
                             <td class="num">${dinero(f.siapa)}</td>
@@ -893,7 +919,7 @@
             const y = v => arriba + (H - arriba - abajo) * (1 - v / tope);
             const etiquetaCada = Math.ceil(datos.length / 9);
             el.innerHTML = `<h3>${titulo}</h3>
-                <div class="leyenda"><span><i style="background:#1f4e79"></i>Lectura tomada</span><span><i style="background-image:repeating-linear-gradient(45deg,#1f4e79 0 2px,#fbf0dd 2px 4px)"></i>Con nota de SIAPA (210 / 206)</span></div>
+                <div class="leyenda"><span><i style="background:#1f4e79"></i>Lectura tomada</span><span><i style="background-image:repeating-linear-gradient(45deg,#1f4e79 0 2px,#fbf0dd 2px 4px)"></i>Sin lectura, consumo estimado (nota de SIAPA)</span></div>
                 <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">
                     <defs><pattern id="rayas" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#c9d0f7"/><rect width="2" height="4" fill="#1f4e79"/></pattern></defs>
                     ${ticks.map(t => `<line x1="${izq}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#eee"/><text x="${izq - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t).replace(' m³', '')}</text>`).join('')}
@@ -913,7 +939,7 @@
             el.querySelectorAll('g[data-i]').forEach(g => {
                 const d = datos[+g.dataset.i];
                 g.querySelector('.hit').addEventListener('mousemove', e => {
-                    tip.innerHTML = `<strong>${fmt(d.v)}</strong>${mesLargo(d.p.fechaLectura)} · lectura ${fechaCorta(d.p.fechaLectura)}<br><span class="gris">${numero(d.p.m3)} m³ en ${numero(d.p.dias)} días · ${pesos(d.p.importe)}${d.p.nota ? ` · nota ${esc(d.p.nota)}` : ''}</span>`;
+                    tip.innerHTML = `<strong>${fmt(d.v)}</strong>${mesLargo(d.p.fechaLectura)} · lectura ${fechaCorta(d.p.fechaLectura)}<br><span class="gris">${numero(d.p.m3)} m³ en ${numero(d.p.dias)} días · ${pesos(d.p.importe)}${d.p.nota ? ` · nota ${esc(d.p.nota)} (${esc(NOTAS_SIAPA[String(d.p.nota).trim()] || 'sin descripción')})` : ''}</span>`;
                     tip.style.display = 'block';
                     const caja = el.getBoundingClientRect();
                     let left = e.clientX - caja.left + 12;
@@ -958,9 +984,13 @@
                     ${campo('r_al', 'Periodo al', 'date')}
                     ${campo('r_emision', 'Fecha de emisión', 'date', hoyISO())}
                     ${campo('r_vence', 'Vencimiento', 'date')}
+                    ${campo('r_saldo', 'Saldo (con adeudo anterior)', 'dinero')}
                     ${campo('r_total', 'Total a pagar', 'dinero')}
                     ${campo('r_recargos', 'Recargos', 'dinero')}
+                    ${campo('r_upFecha', 'Último pago: fecha', 'date')}
+                    ${campo('r_upMonto', 'Último pago: monto', 'dinero')}
                 </div>
+                <p class="gris" id="adeudoTxt" style="margin-top:6px"></p>
                 <h4>Detalle de la facturación (opcional)</h4>
                 <div class="campos">
                     ${campo('d_consumo', 'Consumo del periodo', 'dinero')}
@@ -968,7 +998,12 @@
                     ${campo('d_san', 'Plantas de saneamiento', 'dinero')}
                     ${campo('d_desc', 'Descarga aguas residuales', 'dinero')}
                     ${campo('d_iva', 'IVA', 'dinero')}
-                </div>`}
+                    ${campo('d_red', 'Redondeo', 'dinero')}
+                </div>
+                <p class="gris" id="sumaTxt" style="margin-top:6px"></p>
+                <h4>Recibo escaneado (opcional)</h4>
+                <div class="archivo"><input type="file" id="r_archivo" accept="application/pdf,image/jpeg,image/png,image/webp"><span class="gris">PDF o foto, máximo 10 MB.</span></div>
+                <div class="progreso"><i id="progreso"></i></div>`}
                 <div class="pie">
                     <span class="msg" id="vmsg"></span>
                     <button class="btn-sec" data-cerrar>Cancelar</button>
@@ -976,6 +1011,21 @@
                 </div>`, (fondo, cerrar) => {
                 const v = id => fondo.querySelector('#' + id)?.value.trim() ?? '';
                 const n = id => { const x = v(id); return x === '' ? null : parseFloat(x); };
+                // Revisión en vivo: el desglose debe sumar el importe del mes, y el saldo menos el mes es el adeudo anterior
+                const revisar = () => {
+                    const sumaEl = fondo.querySelector('#sumaTxt'), adeudoEl = fondo.querySelector('#adeudoTxt');
+                    if (!sumaEl) return;
+                    const partes = ['d_consumo', 'd_alc', 'd_san', 'd_desc', 'd_iva', 'd_red'].map(n);
+                    const imp = n('f_importe');
+                    if (partes.some(x => x !== null) && imp !== null) {
+                        const suma = r2(partes.reduce((a, x) => a + (x || 0), 0));
+                        sumaEl.innerHTML = Math.abs(suma - imp) < 0.005 ? `<span class="ok">El desglose suma ${dinero(suma)}, igual que el importe del mes.</span>` : `<span class="err">El desglose suma ${dinero(suma)} y el importe del mes es ${dinero(imp)}: revisa los conceptos.</span>`;
+                    } else sumaEl.textContent = '';
+                    const saldo = n('r_saldo');
+                    adeudoEl.innerHTML = saldo !== null && imp !== null ? (r2(saldo - imp) > 0.004 ? `Adeudo anterior que trae el recibo: <strong>${dinero(r2(saldo - imp))}</strong>.` : 'Sin adeudo anterior.') : '';
+                };
+                fondo.addEventListener('input', revisar);
+                fondo.addEventListener('change', revisar);
                 fondo.querySelector('#vguardar').addEventListener('click', async () => {
                     const msg = fondo.querySelector('#vmsg');
                     const error = t => { msg.innerHTML = `<span class="err">${t}</span>`; };
@@ -990,30 +1040,100 @@
                         fechaLectura: fecha, lectura: n('f_lectura'), nota: v('f_nota'), m3, dias,
                         m3Dia: r2(m3 / dias * 1000) / 1000, importe, origen: ed ? (p.origen || 'panel') : 'panel', ...sello
                     }, { merge: true })];
+                    let emision = null, archivo = null, reciboDatos = null;
                     if (!ed) {
-                        const emision = v('r_emision');
+                        emision = v('r_emision');
                         if (!/^\d{4}-\d{2}-\d{2}$/.test(emision)) return error('Falta la fecha de emisión del recibo.');
-                        const desglose = { consumo: n('d_consumo'), alcantarillado: n('d_alc'), saneamiento: n('d_san'), descarga: n('d_desc'), iva: n('d_iva') };
-                        tareas.push(setDoc(doc(db, 'siapa_recibos', emision), {
+                        const upFecha = v('r_upFecha');
+                        if (upFecha && !/^\d{4}-\d{2}-\d{2}$/.test(upFecha)) return error('Revisa la fecha del último pago.');
+                        if (recibos.some(r => r.id === emision) && !confirm('Ya hay un recibo con esa fecha de emisión. ¿Reemplazarlo?')) return;
+                        archivo = fondo.querySelector('#r_archivo').files[0] || null;
+                        if (archivo && !ARCHIVOS.includes(archivo.type)) return error('El archivo debe ser PDF o foto (JPG, PNG o WebP).');
+                        if (archivo && archivo.size > MAX_BYTES) return error('El archivo pasa de 10 MB.');
+                        const desglose = { consumo: n('d_consumo'), alcantarillado: n('d_alc'), saneamiento: n('d_san'), descarga: n('d_desc'), iva: n('d_iva'), redondeo: n('d_red') };
+                        const saldo = n('r_saldo');
+                        reciboDatos = {
                             periodoDel: v('r_del') || null, periodoAl: v('r_al') || fecha, emision, vence: v('r_vence') || null,
-                            totalMes: importe, totalAPagar: n('r_total') ?? importe, recargos: n('r_recargos'),
+                            totalMes: importe, saldo, adeudoAnterior: saldo === null ? null : r2(Math.max(0, saldo - importe)),
+                            totalAPagar: n('r_total') ?? saldo ?? importe, recargos: n('r_recargos'),
+                            ultimoPago: upFecha || n('r_upMonto') !== null ? { fecha: upFecha || null, monto: n('r_upMonto') } : null,
                             desglose: Object.values(desglose).some(x => x !== null) ? desglose : null,
                             cuenta: recibos.find(r => r.cuenta)?.cuenta || null, origen: 'panel', ...sello
-                        }));
+                        };
                     }
                     const btn = fondo.querySelector('#vguardar');
                     btn.disabled = true;
+                    let subido = null;
+                    const anterior = emision ? recibos.find(r => r.id === emision) : null;
                     try {
+                        if (archivo) subido = await subirArchivo(archivo, emision, fondo.querySelector('#progreso'));
+                        if (reciboDatos) tareas.push(setDoc(doc(db, 'siapa_recibos', emision), { ...reciboDatos, archivo: subido || anterior?.archivo || null }));
                         await Promise.all(tareas);
+                        if (subido && anterior?.archivo?.path) borrarArchivo(anterior.archivo.path);
                         cerrar();
                         cargar(`<span class="ok">${ed ? 'Periodo actualizado.' : 'Recibo guardado.'}</span>`);
                     } catch (err) {
                         console.error(err);
+                        if (subido) borrarArchivo(subido.path);
                         btn.disabled = false;
-                        error('No se pudo guardar: ' + esc(err.message));
+                        error(err.code === 'storage/unauthorized' ? 'Permiso denegado en Storage: falta publicar la regla de la carpeta siapa/.' : 'No se pudo guardar: ' + esc(err.message));
                     }
                 });
             });
+        }
+
+        async function subirArchivo(archivo, emision, barra) {
+            const path = `siapa/${emision}_${Date.now()}_${nombreSeguro(archivo.name)}`;
+            await new Promise((ok, mal) => {
+                const t = uploadBytesResumable(ref(storage, path), archivo, { contentType: archivo.type, customMetadata: { uploadedBy: getCurrentUser().uid || '' } });
+                t.on('state_changed', s => { if (barra) barra.style.width = `${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`; }, mal, ok);
+            });
+            return { path, nombre: archivo.name, tipo: archivo.type, bytes: archivo.size };
+        }
+        async function borrarArchivo(path) {
+            try { await deleteObject(ref(storage, path)); } catch (err) { console.warn('No se borró', path, err); }
+        }
+
+        // Adjunta (o reemplaza) el PDF de un recibo ya capturado
+        function adjuntarArchivo(r) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = ARCHIVOS.join(',');
+            input.addEventListener('change', async () => {
+                const archivo = input.files[0], msg = document.getElementById('msg');
+                if (!archivo) return;
+                if (!ARCHIVOS.includes(archivo.type)) { msg.innerHTML = '<span class="err">El archivo debe ser PDF o foto (JPG, PNG o WebP).</span>'; return; }
+                if (archivo.size > MAX_BYTES) { msg.innerHTML = '<span class="err">El archivo pasa de 10 MB.</span>'; return; }
+                msg.textContent = 'Subiendo...';
+                let subido = null;
+                try {
+                    subido = await subirArchivo(archivo, r.emision || r.id);
+                    await updateDoc(doc(db, 'siapa_recibos', r.id), { archivo: subido, actualizadoPor: getCurrentUser().email, actualizadoEn: serverTimestamp() });
+                    if (r.archivo?.path) borrarArchivo(r.archivo.path);
+                    cargar('<span class="ok">Recibo adjuntado.</span>');
+                } catch (err) {
+                    console.error(err);
+                    if (subido) borrarArchivo(subido.path);
+                    msg.innerHTML = `<span class="err">${err.code === 'storage/unauthorized' ? 'Permiso denegado en Storage: falta publicar la regla de la carpeta siapa/.' : 'No se pudo adjuntar: ' + esc(err.message)}</span>`;
+                }
+            });
+            input.click();
+        }
+
+        // Abre el recibo guardado en otra pestaña (el archivo es privado: se descarga con la sesión y se abre como blob)
+        async function verArchivo(r) {
+            const f = r?.archivo;
+            if (!f?.path) return;
+            const pestana = window.open('', '_blank');
+            try {
+                const datos = await getBlob(ref(storage, f.path), MAX_BYTES);
+                const url = URL.createObjectURL(new Blob([datos], { type: f.tipo || datos.type || 'application/pdf' }));
+                if (pestana) pestana.location.href = url; else window.location.href = url;
+            } catch (err) {
+                console.error(err);
+                if (pestana) pestana.close();
+                document.getElementById('msg').innerHTML = '<span class="err">No se pudo abrir el recibo. Revisa las reglas de Storage.</span>';
+            }
         }
 
         function ventanaPago() {
@@ -1048,10 +1168,11 @@
             });
         }
 
-        async function borrar(coleccion, id, que) {
+        async function borrar(coleccion, id, que, archivoPath) {
             if (!confirm(`¿Borrar ${que}?`)) return;
             try {
                 await deleteDoc(doc(db, coleccion, id));
+                if (archivoPath) await borrarArchivo(archivoPath);
                 cargar('<span class="ok">Borrado.</span>');
             } catch (err) {
                 document.getElementById('msg').innerHTML = `<span class="err">No se pudo borrar: ${esc(err.message)}</span>`;
